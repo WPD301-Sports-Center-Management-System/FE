@@ -7,7 +7,8 @@ import {
   Smartphone, 
   LogIn, 
   Flame, 
-  ChevronRight
+  ChevronRight,
+  Sparkles
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -18,37 +19,81 @@ interface NavbarProps {
 export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>('');
+  const [scrollProgress, setScrollProgress] = useState<number>(0);
+
+  const navLinks = [
+    { id: 'courses', label: 'Khóa Tập', href: '#courses' },
+    { id: 'coaches', label: 'Đội Ngũ PT', href: '#coaches' },
+    { id: 'how-it-works', label: 'Quy Trình', href: '#how-it-works' },
+    { id: 'pricing', label: 'Bảng Giá', href: '#pricing' },
+    { id: 'mobile-app', label: 'Ứng Dụng', href: '#mobile-app' },
+    { id: 'testimonials', label: 'Đánh Giá', href: '#testimonials' },
+    { id: 'faq', label: 'FAQ', href: '#faq' },
+  ];
 
   useEffect(() => {
     const handleScroll = () => {
+      // 1. Calculate overall scroll progress (0% -> 100%)
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight - windowHeight;
+      if (documentHeight > 0) {
+        const progress = Math.min(100, Math.max(0, (window.scrollY / documentHeight) * 100));
+        setScrollProgress(progress);
+      }
+
       setIsScrolled(window.scrollY > 20);
+
+      // 2. ScrollSpy logic: detect which section is in view
+      const sectionIds = ['courses', 'coaches', 'how-it-works', 'pricing', 'mobile-app', 'testimonials', 'faq'];
+      const scrollPosition = window.scrollY + 200; // Trigger slightly before reaching the section top
+
+      let currentSection = '';
+      for (let i = 0; i < sectionIds.length; i++) {
+        const id = sectionIds[i];
+        const element = document.getElementById(id);
+        if (element) {
+          const top = element.offsetTop;
+          const height = element.offsetHeight;
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            currentSection = id;
+            break;
+          }
+        }
+      }
+
+      // Check if user reached bottom of page
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 80) {
+        currentSection = 'faq';
+      }
+
+      setActiveSection(currentSection);
     };
-    window.addEventListener('scroll', handleScroll);
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const navLinks = [
-    { label: 'Khóa Tập', href: '#courses' },
-    { label: 'Đội Ngũ PT', href: '#coaches' },
-    { label: 'Quy Trình', href: '#how-it-works' },
-    { label: 'Bảng Giá', href: '#pricing' },
-    { label: 'Ứng Dụng', href: '#mobile-app' },
-    { label: 'Đánh Giá', href: '#testimonials' },
-    { label: 'FAQ', href: '#faq' },
-  ];
 
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled 
           ? 'bg-[#070a11]/95 backdrop-blur-md border-b border-white/10 shadow-2xl py-2.5' 
-          : 'bg-gradient-to-b from-[#070a11]/90 via-[#070a11]/60 to-transparent py-4'
+          : 'bg-gradient-to-b from-[#070a11]/95 via-[#070a11]/60 to-transparent py-4'
       }`}
     >
+      {/* Top Scroll Progress Indicator Bar */}
+      <div 
+        className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-orange-600 via-amber-400 to-orange-500 shadow-[0_0_10px_rgba(255,87,34,0.8)] transition-all duration-150 ease-out z-50"
+        style={{ width: `${scrollProgress}%` }}
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4">
           
-          {/* Logo (Shrink 0 to prevent squishing) */}
+          {/* Logo */}
           <a href="#" className="flex items-center gap-2.5 shrink-0 group">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/30 group-hover:scale-105 transition-transform">
               <Dumbbell className="w-4 h-4 text-white transform -rotate-45" />
@@ -68,21 +113,30 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
             </div>
           </a>
 
-          {/* Desktop Nav Links (Hidden below 1024px, compact & nowrap) */}
-          <nav className="hidden lg:flex items-center gap-4 xl:gap-6 shrink-0">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="text-xs xl:text-sm font-semibold text-slate-300 hover:text-orange-400 transition-colors whitespace-nowrap relative py-1 group"
-              >
-                {link.label}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full" />
-              </a>
-            ))}
+          {/* Desktop Nav Links with Real-time Scroll Glow */}
+          <nav className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0 p-1 rounded-full bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+            {navLinks.map((link) => {
+              const isActive = activeSection === link.id;
+              return (
+                <a
+                  key={link.id}
+                  href={link.href}
+                  className={`relative px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-300 flex items-center gap-1.5 ${
+                    isActive
+                      ? 'text-white bg-gradient-to-r from-orange-600 to-amber-500 shadow-[0_0_16px_rgba(255,87,34,0.45)] border border-orange-400/40 scale-105'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  {isActive && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                  )}
+                  <span>{link.label}</span>
+                </a>
+              );
+            })}
           </nav>
 
-          {/* Action CTAs (Clean, No-wrap, Balanced) */}
+          {/* Action CTAs */}
           <div className="hidden lg:flex items-center gap-2.5 shrink-0">
             {/* Link to Web Portal Login */}
             <Link
@@ -137,17 +191,33 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
       {mobileMenuOpen && (
         <div className="lg:hidden bg-[#0a0f1d]/98 backdrop-blur-xl border-b border-white/10 px-4 pt-3 pb-6 space-y-3 mt-2 shadow-2xl animate-in slide-in-from-top duration-200">
           <div className="grid grid-cols-1 gap-1.5 pt-2 border-t border-slate-800">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between py-2 px-3 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800/80 hover:text-orange-400 transition-colors"
-              >
-                <span>{link.label}</span>
-                <ChevronRight className="w-4 h-4 text-slate-500" />
-              </a>
-            ))}
+            {navLinks.map((link) => {
+              const isActive = activeSection === link.id;
+              return (
+                <a
+                  key={link.id}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center justify-between py-2 px-3 rounded-xl text-sm font-medium transition-all ${
+                    isActive
+                      ? 'bg-gradient-to-r from-orange-600/20 to-amber-500/20 border border-orange-500/40 text-orange-400 font-bold'
+                      : 'text-slate-200 hover:bg-slate-800/80 hover:text-orange-400'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {isActive && <Sparkles className="w-3.5 h-3.5 text-orange-400" />}
+                    <span>{link.label}</span>
+                  </div>
+                  {isActive ? (
+                    <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded bg-orange-500 text-white shadow-sm">
+                      Đang Xem
+                    </span>
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                  )}
+                </a>
+              );
+            })}
           </div>
 
           <div className="pt-3 border-t border-slate-800 grid grid-cols-2 gap-2">
