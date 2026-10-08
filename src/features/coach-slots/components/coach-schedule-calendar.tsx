@@ -1,0 +1,282 @@
+import { useMemo } from 'react'
+import {
+  format,
+  startOfWeek,
+  addDays,
+  isSameDay,
+} from 'date-fns'
+import {
+  BookOpen,
+  Clock,
+  User,
+  MapPin,
+  Lock,
+  Plus,
+} from 'lucide-react'
+import { STANDARD_TEMPLATE_SLOTS, type TemplateSlotConfig, SLOT_STATUS_CONFIG } from '../constants/coach-slot.constants'
+import type { CalendarEvent } from '../types/coach-slot-types'
+
+export interface SelectedTimeRange {
+  dateStr: string
+  startTime: string
+  endTime: string
+}
+
+interface CoachScheduleCalendarProps {
+  events: CalendarEvent[]
+  date: Date
+  view: string
+  onNavigate: (newDate: Date) => void
+  onView: (newView: any) => void
+  onEventClick: (slotId: string, event: CalendarEvent) => void
+  onTimeSelect?: (selection: SelectedTimeRange) => void
+  isLoading?: boolean
+}
+
+export function CoachScheduleCalendar({
+  events,
+  date,
+  view,
+  onEventClick,
+  onTimeSelect,
+  isLoading = false,
+}: CoachScheduleCalendarProps) {
+  // Tính danh sách các ngày hiển thị
+  const days = useMemo(() => {
+    if (view === 'day') {
+      const dayNames = ['CN', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7']
+      const dayName = dayNames[date.getDay()]
+      return [
+        {
+          date,
+          dateStr: format(date, 'yyyy-MM-dd'),
+          dayName,
+          dayNumber: format(date, 'dd'),
+          formatted: `${dayName} (${format(date, 'dd/MM')})`,
+          isToday: isSameDay(date, new Date()),
+        },
+      ]
+    }
+
+    // Weekly Matrix: Thứ 2 -> Chủ Nhật
+    const monday = startOfWeek(date, { weekStartsOn: 1 })
+    const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN']
+
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = addDays(monday, i)
+      const name = dayNames[i] || ''
+      return {
+        date: d,
+        dateStr: format(d, 'yyyy-MM-dd'),
+        dayName: name,
+        dayNumber: format(d, 'dd'),
+        formatted: `${name} (${format(d, 'dd/MM')})`,
+        isToday: isSameDay(d, new Date()),
+      }
+    })
+  }, [date, view])
+
+  // Helper tìm các event khớp với ngày và slot
+  const findEventsForCell = (dateStr: string, slot: TemplateSlotConfig): CalendarEvent[] => {
+    return events.filter((ev) => {
+      const evDate = format(ev.start, 'yyyy-MM-dd')
+      if (evDate !== dateStr) return false
+
+      const evStartStr = format(ev.start, 'HH:mm')
+      if (evStartStr === slot.startTime) return true
+
+      // Mapping fallback nếu thời gian rơi vào khoảng slot
+      const [sH, sM] = slot.startTime.split(':').map(Number)
+      const [eH, eM] = slot.endTime.split(':').map(Number)
+      const [evH, evM] = evStartStr.split(':').map(Number)
+
+      const slotStartMin = (sH ?? 0) * 60 + (sM ?? 0)
+      const slotEndMin = (eH ?? 0) * 60 + (eM ?? 0)
+      const evStartMin = (evH ?? 0) * 60 + (evM ?? 0)
+
+      return evStartMin >= slotStartMin - 15 && evStartMin < slotEndMin
+    })
+  }
+
+  return (
+    <div className="relative rounded-2xl border border-slate-800 bg-slate-950/80 shadow-2xl backdrop-blur-md overflow-hidden">
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs">
+          <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 shadow-lg">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-400 border-t-transparent" />
+            <span className="text-xs font-medium text-slate-200">Đang đồng bộ dữ liệu thời khóa biểu...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Table Matrix Container with horizontal scroll */}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[1000px] border-collapse text-left select-none">
+          {/* Table Header */}
+          <thead>
+            <tr className="border-b border-slate-800 bg-slate-900/90 divide-x divide-slate-800/80 text-center">
+              <th className="w-16 py-3.5 px-2 text-xs font-bold text-slate-200 uppercase tracking-wider sticky left-0 z-10 bg-slate-900 text-center">
+                Slot
+              </th>
+              {days.map((d) => (
+                <th
+                  key={d.dateStr}
+                  className={`py-3.5 px-3 text-xs font-bold transition-colors ${
+                    d.isToday
+                      ? 'bg-orange-500/10 text-orange-300 font-extrabold ring-inset ring-1 ring-orange-500/30'
+                      : 'text-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span>{d.formatted}</span>
+                    {d.isToday && (
+                      <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" title="Hôm nay" />
+                    )}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+
+          {/* Table Body - 7 Standard Template Slots */}
+          <tbody className="divide-y divide-slate-800/60">
+            {STANDARD_TEMPLATE_SLOTS.map((slot) => (
+              <tr key={slot.index} className="divide-x divide-slate-800/60 hover:bg-slate-900/30 transition-colors">
+                {/* Slot Number Column */}
+                <td className="w-16 p-3 text-center align-middle sticky left-0 z-10 bg-slate-950/95 border-r border-slate-800">
+                  <span className="text-base font-bold text-slate-300 font-mono">
+                    {slot.index}
+                  </span>
+                </td>
+
+                {/* Day Cells */}
+                {days.map((d) => {
+                  const cellEvents = findEventsForCell(d.dateStr, slot)
+                  const [year, month, day] = d.dateStr.split('-').map(Number)
+                  const [sH, sM] = slot.startTime.split(':').map(Number)
+                  const slotStartDateTime = new Date(year, month - 1, day, sH, sM, 0, 0)
+                  const isPast = slotStartDateTime <= new Date()
+
+                  return (
+                    <td
+                      key={`${d.dateStr}-${slot.index}`}
+                      className={`p-2 align-top transition-colors relative min-w-[130px] h-[105px] ${
+                        d.isToday ? 'bg-orange-950/10' : isPast ? 'bg-slate-950/60' : ''
+                      }`}
+                    >
+                      {cellEvents.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {cellEvents.map((ev) => {
+                            const status = ev.status || 'OPEN'
+                            const cfg = SLOT_STATUS_CONFIG[status] || SLOT_STATUS_CONFIG.OPEN
+                            const isBooked = status === 'BOOKED'
+                            const isBlocked = status === 'BLOCKED'
+
+                            return (
+                              <div
+                                key={ev.id}
+                                onClick={() => onEventClick(ev.id, ev)}
+                                className={`group/card cursor-pointer rounded-xl p-2.5 transition-all shadow-sm hover:shadow-md border ${
+                                  isPast ? 'opacity-70 saturate-50 hover:opacity-100 hover:saturate-100 ' : ''
+                                }${
+                                  status === 'OPEN'
+                                    ? 'bg-emerald-950/40 border-emerald-500/30 hover:border-emerald-500/60 hover:bg-emerald-950/60'
+                                    : status === 'BOOKED'
+                                    ? 'bg-sky-950/40 border-sky-500/30 hover:border-sky-500/60 hover:bg-sky-950/60'
+                                    : status === 'BLOCKED'
+                                    ? 'bg-slate-900 border-slate-700/60 hover:border-slate-600'
+                                    : status === 'COMPLETED'
+                                    ? 'bg-teal-950/40 border-teal-500/30 hover:border-teal-500/60'
+                                    : 'bg-rose-950/40 border-rose-500/30 hover:border-rose-500/60'
+                                }`}
+                              >
+                                {/* Top: Course Name & Status Tag */}
+                                <div className="flex items-start justify-between gap-1.5 mb-1.5">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <BookOpen className={`h-3.5 w-3.5 shrink-0 ${cfg.textClass}`} />
+                                    <span className="text-xs font-bold text-slate-100 truncate leading-tight group-hover/card:text-white">
+                                      {ev.courseName || 'PT 1:1 Cá Nhân'}
+                                    </span>
+                                  </div>
+                                  <span
+                                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 uppercase tracking-wider ${cfg.badgeBg} ${cfg.badgeText}`}
+                                  >
+                                    {isPast && status === 'OPEN' ? 'Hết hạn' : cfg.shortLabel}
+                                  </span>
+                                </div>
+
+                                {/* Time range */}
+                                <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-300 font-medium mb-1">
+                                  <Clock className="h-3 w-3 text-slate-400 shrink-0" />
+                                  <span>
+                                    {format(ev.start, 'HH:mm')} – {format(ev.end, 'HH:mm')}
+                                  </span>
+                                </div>
+
+                                {/* Bottom info: Location & Member/Note */}
+                                <div className="space-y-0.5 text-[11px] text-slate-300">
+                                  {isBooked ? (
+                                    <div className="flex items-center gap-1 font-semibold text-sky-300 truncate">
+                                      <User className="h-3 w-3 shrink-0 text-sky-400" />
+                                      <span className="truncate">{ev.memberName || 'Hội viên đã đặt'}</span>
+                                    </div>
+                                  ) : isBlocked ? (
+                                    <div className="flex items-center gap-1 text-slate-400 truncate">
+                                      <Lock className="h-3 w-3 shrink-0 text-amber-400" />
+                                      <span className="truncate">{ev.note || 'Khóa bận'}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1 text-slate-400 text-[10px]">
+                                      <MapPin className="h-3 w-3 shrink-0 text-slate-500" />
+                                      <span>Khu vực PT 1:1</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : isPast ? (
+                        /* Past Empty Cell - LOCKED / DISABLED */
+                        <div
+                          className="h-full w-full min-h-[75px] rounded-xl flex flex-col items-center justify-center text-slate-700 bg-slate-950/40 cursor-not-allowed select-none opacity-40"
+                          title="Đã qua thời gian (Quá khứ - Không thể mở slot)"
+                        >
+                          <span className="text-slate-700 text-sm font-bold">-</span>
+                        </div>
+                      ) : (
+                        /* Future Empty Cell - Clickable to Open Slot */
+                        <div
+                          onClick={() => {
+                            if (onTimeSelect) {
+                              onTimeSelect({
+                                dateStr: d.dateStr,
+                                startTime: slot.startTime,
+                                endTime: slot.endTime,
+                              })
+                            }
+                          }}
+                          className="h-full w-full min-h-[75px] rounded-xl flex items-center justify-center text-slate-500 font-semibold cursor-pointer hover:bg-slate-900/60 hover:text-orange-400 transition-all group/empty"
+                          title={`Click để mở Ca ${slot.index} (${slot.startTime} - ${slot.endTime}) ngày ${d.formatted}`}
+                        >
+                          <span className="group-hover/empty:hidden text-slate-600 text-sm font-medium">
+                            -
+                          </span>
+                          <span className="hidden group-hover/empty:inline-flex items-center gap-1 text-[11px] font-semibold text-orange-400 bg-orange-500/10 px-2 py-1 rounded-lg border border-orange-500/20 shadow-xs animate-in fade-in duration-150">
+                            <Plus className="h-3 w-3" />
+                            Mở ca
+                          </span>
+                        </div>
+                      )}
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
