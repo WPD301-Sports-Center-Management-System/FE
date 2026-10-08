@@ -18,6 +18,7 @@ import type { CalendarEvent } from '../types/coach-slot-types'
 
 export interface SelectedTimeRange {
   dateStr: string
+  slotIndex?: number
   startTime: string
   endTime: string
 }
@@ -252,6 +253,7 @@ export function CoachScheduleCalendar({
                             if (onTimeSelect) {
                               onTimeSelect({
                                 dateStr: d.dateStr,
+                                slotIndex: slot.index,
                                 startTime: slot.startTime,
                                 endTime: slot.endTime,
                               })

@@ -120,6 +120,7 @@ export function CoachSlotsPage() {
     (selection: SelectedTimeRange) => {
       setPrefilledCreate({
         date: selection.dateStr,
+        slotIndex: selection.slotIndex,
         startTime: selection.startTime,
         endTime: selection.endTime,
         offeringId: offerings[0]?.id || '',
@@ -287,6 +288,7 @@ export function CoachSlotsPage() {
         isOpen={isQuickModalOpen}
         onClose={() => setIsQuickModalOpen(false)}
         offerings={offerings}
+        existingSlots={slots}
         onSubmit={handleQuickBulkSubmit}
         isSubmitting={bulkCreateTemplateMutation.isPending}
       />
@@ -300,6 +302,7 @@ export function CoachSlotsPage() {
         onSubmit={handleCreateSubmit}
         initialValues={prefilledCreate}
         offerings={offerings}
+        existingSlots={slots}
         isSubmitting={createSlotMutation.isPending}
       />
 

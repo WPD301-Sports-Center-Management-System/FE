@@ -304,19 +304,72 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
   } else if (url === 'coach-slots' && method === 'get') {
     resData = db.slots
   } else if (url === 'coach-slots' && method === 'post') {
+    const coachId = data.coachId || 'coa-01'
+    const candStart = new Date(data.startsAt).getTime()
+    const candEnd = new Date(data.endsAt).getTime()
+
+    // 1. Kiểm tra quá khứ
+    if (candStart <= Date.now()) {
+      return {
+        data: {
+          success: false,
+          code: 'SLOT_IN_PAST',
+          message: 'Không thể mở ca dạy vì thời gian này đã ở trong quá khứ.',
+        },
+        status: 400,
+        statusText: 'Bad Request',
+        headers: {},
+        config,
+      }
+    }
+
+    // 2. Chống trùng lịch (1 PT không thể có 2 ca dạy trùng hoặc giao thoa nhau)
+    const conflict = db.slots.find((s) => {
+      if (s.coachId !== coachId || s.status === 'CANCELLED') return false
+      const sStart = new Date(s.startsAt).getTime()
+      const sEnd = new Date(s.endsAt).getTime()
+      return sStart < candEnd && sEnd > candStart
+    })
+
+    if (conflict) {
+      return {
+        data: {
+          success: false,
+          code: 'SLOT_OVERLAP_CONFLICT',
+          message: `Trùng lịch: Huấn luyện viên đã có ca dạy trong khung giờ này (Trạng thái: ${conflict.status}). Một PT không thể mở 2 ca trùng giờ!`,
+        },
+        status: 409,
+        statusText: 'Conflict',
+        headers: {},
+        config,
+      }
+    }
+
+    const offering = db.offerings.find((o) => o.id === data.offeringId) || db.offerings[0]
+
     const newSlot = {
       id: 'slt-' + Date.now(),
-      coachId: data.coachId || 'coa-01',
+      coachId,
       offeringId: data.offeringId || 'off-01',
       startsAt: data.startsAt,
       endsAt: data.endsAt,
       status: 'OPEN' as const,
       note: data.note,
       coachName: 'Nguyễn Văn Coach Minh',
-      courseName: 'Hypertrophy & Strength',
+      courseName: offering?.courseName || 'Hypertrophy & Strength',
     }
     db.slots.unshift(newSlot)
-    resData = newSlot
+    return {
+      data: {
+        success: true,
+        data: newSlot,
+        message: 'Đã tạo thành công ca dạy.',
+      },
+      status: 201,
+      statusText: 'Created',
+      headers: {},
+      config,
+    }
   } else if (url === 'pt-bookings' && method === 'get') {
     resData = mockPaginate(db.bookings)
   } else if (url === 'pt-bookings' && method === 'post') {

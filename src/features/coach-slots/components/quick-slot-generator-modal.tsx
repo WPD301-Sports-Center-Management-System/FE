@@ -12,6 +12,7 @@ import { Modal } from '@/shared/components/ui/modal'
 import { Button } from '@/shared/components/ui/button'
 import { STANDARD_TEMPLATE_SLOTS } from '../constants/coach-slot.constants'
 import type { QuickBulkCreateSlotsInput } from '../types/coach-slot-types'
+import type { CoachSlot } from '@/shared/types/api'
 
 export interface ApprovedOfferingOption {
   id: string
@@ -24,6 +25,7 @@ interface QuickSlotGeneratorModalProps {
   isOpen: boolean
   onClose: () => void
   offerings: ApprovedOfferingOption[]
+  existingSlots?: CoachSlot[]
   onSubmit: (data: QuickBulkCreateSlotsInput) => Promise<void>
   isSubmitting?: boolean
 }
@@ -42,6 +44,7 @@ export function QuickSlotGeneratorModal({
   isOpen,
   onClose,
   offerings,
+  existingSlots = [],
   onSubmit,
   isSubmitting = false,
 }: QuickSlotGeneratorModalProps) {
@@ -56,9 +59,10 @@ export function QuickSlotGeneratorModal({
   const [startDate, setStartDate] = useState<string>('')
   const [endDate, setEndDate] = useState<string>('')
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]) // T2 -> T6
-  const [selectedSlotIndexes, setSelectedSlotIndexes] = useState<number[]>([4, 5, 6, 7]) // Mặc định ca tối
+  const [selectedSlotIndexes, setSelectedSlotIndexes] = useState<number[]>([4, 5, 6, 7])
   const [note, setNote] = useState<string>('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
   const todayStr = useMemo(() => {
     const d = new Date()
     const y = d.getFullYear()
@@ -82,6 +86,26 @@ export function QuickSlotGeneratorModal({
     return false
   }
 
+  // Helper kiểm tra ca đã tồn tại trên lịch chưa (Chống trùng slot)
+  const getExistingSlotForShift = (slot: (typeof STANDARD_TEMPLATE_SLOTS)[0]): CoachSlot | null => {
+    if (scheduleMode === 'single' && singleDate && existingSlots.length > 0) {
+      const found = existingSlots.find((s) => {
+        if (s.status === 'CANCELLED') return false
+        const sDate = s.startsAt.split('T')[0]
+        if (sDate !== singleDate) return false
+        const sTime = s.startsAt.substring(11, 16)
+        return sTime === slot.startTime
+      })
+      return found || null
+    }
+    return null
+  }
+
+  // Slot bị disable nếu đã qua giờ hoặc đã được tạo trước đó
+  const isSlotDisabled = (slot: (typeof STANDARD_TEMPLATE_SLOTS)[0]) => {
+    return isSlotPast(slot) || !!getExistingSlotForShift(slot)
+  }
+
   // Khởi tạo ngày mặc định khi mở modal
   useEffect(() => {
     if (isOpen) {
@@ -103,37 +127,46 @@ export function QuickSlotGeneratorModal({
       if (approvedOfferings[0]) {
         setSelectedOfferingId(approvedOfferings[0].id)
       }
-      // Tự động chỉ chọn những slot ca tối chưa qua giờ
+
+      // Tự động chỉ chọn những slot ca tối chưa bị trùng và chưa qua giờ
       const eveningValid = [4, 5, 6, 7].filter((idx) => {
         const s = STANDARD_TEMPLATE_SLOTS.find((item) => item.index === idx)
         if (!s) return false
         const [h, min] = s.startTime.split(':').map(Number)
         const slotStart = new Date(y, today.getMonth(), today.getDate(), h, min, 0, 0)
-        return slotStart > new Date()
+        if (slotStart <= new Date()) return false
+        // Kiểm tra xem đã có slot chưa
+        const conflict = existingSlots.find((item) => {
+          if (item.status === 'CANCELLED') return false
+          const iDate = item.startsAt.split('T')[0]
+          return iDate === todayString && item.startsAt.substring(11, 16) === s.startTime
+        })
+        return !conflict
       })
-      setSelectedSlotIndexes(eveningValid.length > 0 ? eveningValid : [1, 2, 3, 4, 5, 6, 7])
+
+      setSelectedSlotIndexes(eveningValid)
       setSelectedDays([1, 2, 3, 4, 5])
       setErrorMessage(null)
     }
-  }, [isOpen, approvedOfferings])
+  }, [isOpen, approvedOfferings, existingSlots])
 
-  // Tự động bỏ chọn các slot đã qua giờ khi đổi ngày hoặc đổi chế độ
+  // Tự động bỏ chọn các slot đã bị trùng hoặc đã qua giờ khi đổi ngày hoặc đổi chế độ
   useEffect(() => {
     if (scheduleMode === 'single' && singleDate) {
       setSelectedSlotIndexes((prev) =>
         prev.filter((idx) => {
           const s = STANDARD_TEMPLATE_SLOTS.find((item) => item.index === idx)
-          return s ? !isSlotPast(s) : true
+          return s ? !isSlotDisabled(s) : true
         })
       )
     }
-  }, [singleDate, scheduleMode, todayStr])
+  }, [singleDate, scheduleMode, todayStr, existingSlots])
 
-  // Presets lựa chọn ca (Tự động lọc bỏ các ca đã qua giờ)
+  // Presets lựa chọn ca (Tự động lọc bỏ các ca đã qua giờ & ca đã tồn tại)
   const selectMorningSlots = () => {
     const valid = [1, 2].filter((idx) => {
       const s = STANDARD_TEMPLATE_SLOTS.find((item) => item.index === idx)
-      return s ? !isSlotPast(s) : false
+      return s ? !isSlotDisabled(s) : false
     })
     setSelectedSlotIndexes(valid)
     setErrorMessage(null)
@@ -142,7 +175,7 @@ export function QuickSlotGeneratorModal({
   const selectEveningSlots = () => {
     const valid = [4, 5, 6, 7].filter((idx) => {
       const s = STANDARD_TEMPLATE_SLOTS.find((item) => item.index === idx)
-      return s ? !isSlotPast(s) : false
+      return s ? !isSlotDisabled(s) : false
     })
     setSelectedSlotIndexes(valid)
     setErrorMessage(null)
@@ -151,7 +184,7 @@ export function QuickSlotGeneratorModal({
   const selectAllSlots = () => {
     const valid = [1, 2, 3, 4, 5, 6, 7].filter((idx) => {
       const s = STANDARD_TEMPLATE_SLOTS.find((item) => item.index === idx)
-      return s ? !isSlotPast(s) : false
+      return s ? !isSlotDisabled(s) : false
     })
     setSelectedSlotIndexes(valid)
     setErrorMessage(null)
@@ -164,7 +197,7 @@ export function QuickSlotGeneratorModal({
 
   const toggleSlotIndex = (index: number) => {
     const slot = STANDARD_TEMPLATE_SLOTS.find((s) => s.index === index)
-    if (slot && isSlotPast(slot)) return // Không cho toggle slot quá khứ
+    if (slot && isSlotDisabled(slot)) return // Không cho toggle slot quá khứ hoặc đã tồn tại
 
     setErrorMessage(null)
     setSelectedSlotIndexes((prev) =>
@@ -218,12 +251,13 @@ export function QuickSlotGeneratorModal({
         setErrorMessage('Không thể mở ca dạy cho ngày trong quá khứ.')
         return
       }
-      const hasPastSlot = selectedSlotIndexes.some((idx) => {
+      // Check if any selected slot is disabled
+      const hasConflictSlot = selectedSlotIndexes.some((idx) => {
         const s = STANDARD_TEMPLATE_SLOTS.find((item) => item.index === idx)
-        return s ? isSlotPast(s) : false
+        return s ? isSlotDisabled(s) : false
       })
-      if (hasPastSlot) {
-        setErrorMessage('Có ca dạy đã qua thời gian hiện tại. Vui lòng bỏ chọn ca này.')
+      if (hasConflictSlot) {
+        setErrorMessage('Có ca dạy đã tồn tại hoặc đã qua thời gian hiện tại. Vui lòng bỏ chọn ca này.')
         return
       }
     } else {
@@ -437,7 +471,7 @@ export function QuickSlotGeneratorModal({
                 Chọn các ca muốn mở ({selectedSlotIndexes.length}/7 ca)
               </span>
               <p className="text-[10px] text-slate-400">
-                Đã bao gồm 15 phút buffer giữa các ca để hồi phục &amp; ghi chép
+                Đã bao gồm 15 phút buffer giữa các ca để hồi phục &amp; ghi chép (Tự động loại bỏ ca trùng &amp; quá khứ)
               </p>
             </div>
 
@@ -488,25 +522,34 @@ export function QuickSlotGeneratorModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[290px] overflow-y-auto pr-1">
             {STANDARD_TEMPLATE_SLOTS.map((slot) => {
               const isPast = isSlotPast(slot)
-              const isChecked = !isPast && selectedSlotIndexes.includes(slot.index)
+              const existingSlot = getExistingSlotForShift(slot)
+              const isAlreadyCreated = !!existingSlot
+              const isDisabled = isPast || isAlreadyCreated
+              const isChecked = !isDisabled && selectedSlotIndexes.includes(slot.index)
 
               return (
                 <div
                   key={slot.index}
                   onClick={() => {
-                    if (!isPast) toggleSlotIndex(slot.index)
+                    if (!isDisabled) toggleSlotIndex(slot.index)
                   }}
                   className={`rounded-xl border p-2.5 transition-all select-none flex items-start gap-2.5 ${
-                    isPast
+                    isDisabled
                       ? 'border-slate-800/60 bg-slate-950/60 opacity-40 cursor-not-allowed'
                       : isChecked
                       ? 'cursor-pointer border-orange-500/80 bg-orange-950/25 ring-1 ring-orange-500/40'
                       : 'cursor-pointer border-slate-800 bg-slate-900/60 hover:border-slate-700 opacity-80 hover:opacity-100'
                   }`}
-                  title={isPast ? 'Ca dạy đã qua thời gian' : undefined}
+                  title={
+                    isAlreadyCreated
+                      ? `Ca này đã được mở (${existingSlot.status}) - Không thể tạo trùng!`
+                      : isPast
+                      ? 'Ca dạy đã qua thời gian'
+                      : undefined
+                  }
                 >
                   <div className="mt-0.5 text-orange-400">
-                    {isPast ? (
+                    {isDisabled ? (
                       <Square className="h-4 w-4 text-slate-600" />
                     ) : isChecked ? (
                       <CheckSquare className="h-4 w-4 text-orange-400" />
@@ -516,10 +559,18 @@ export function QuickSlotGeneratorModal({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <span className={`text-xs font-bold truncate ${isPast ? 'text-slate-500 line-through' : 'text-slate-100'}`}>
+                      <span
+                        className={`text-xs font-bold truncate ${
+                          isDisabled ? 'text-slate-500 line-through' : 'text-slate-100'
+                        }`}
+                      >
                         {slot.name}
                       </span>
-                      {isPast ? (
+                      {isAlreadyCreated ? (
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border shrink-0 border-amber-500/30 bg-amber-950/30 text-amber-300">
+                          Đã có ca ({existingSlot.status})
+                        </span>
+                      ) : isPast ? (
                         <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border shrink-0 border-rose-500/30 bg-rose-950/30 text-rose-400">
                           Đã qua giờ
                         </span>
@@ -534,7 +585,7 @@ export function QuickSlotGeneratorModal({
 
                     {/* Workout time & buffer time */}
                     <div className="flex items-center justify-between text-[11px] font-mono mt-1 text-slate-300">
-                      <span className={`font-semibold ${isPast ? 'text-slate-500' : 'text-emerald-400'}`}>
+                      <span className={`font-semibold ${isDisabled ? 'text-slate-500' : 'text-emerald-400'}`}>
                         {slot.startTime} – {slot.endTime}
                       </span>
                       <span className="text-[10px] text-slate-400 font-sans">

@@ -22,6 +22,7 @@ export type SlotCalendarEventProps = Partial<CalendarEvent>
 
 export interface CreateSlotInput {
   date: string
+  slotIndex?: number
   startTime: string
   endTime: string
   offeringId: string
