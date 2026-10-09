@@ -100,7 +100,7 @@ export function CoachScheduleCalendar({
   }
 
   return (
-    <div className="relative rounded-2xl border border-slate-800 bg-slate-950/80 shadow-2xl backdrop-blur-md overflow-hidden">
+    <div className="relative rounded-2xl border border-slate-800 bg-slate-950/80 shadow-2xl backdrop-blur-md overflow-hidden min-w-0 w-full">
       {/* Loading overlay */}
       {isLoading && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs">
@@ -112,27 +112,35 @@ export function CoachScheduleCalendar({
       )}
 
       {/* Table Matrix Container with horizontal scroll */}
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[1000px] border-collapse text-left select-none">
+      <div className="overflow-x-auto scrollbar-thin">
+        <table className="w-full table-fixed min-w-[900px] border-collapse text-left select-none">
+          {/* Column definitions for proportional scaling */}
+          <colgroup>
+            <col className={view === 'day' ? 'w-20' : 'w-14 sm:w-16'} />
+            {days.map((d) => (
+              <col key={d.dateStr} className="w-auto" />
+            ))}
+          </colgroup>
+
           {/* Table Header */}
           <thead>
             <tr className="border-b border-slate-800 bg-slate-900/90 divide-x divide-slate-800/80 text-center">
-              <th className="w-16 py-3.5 px-2 text-xs font-bold text-slate-200 uppercase tracking-wider sticky left-0 z-10 bg-slate-900 text-center">
+              <th className="w-14 sm:w-16 py-3 px-1 text-xs font-bold text-slate-200 uppercase tracking-wider sticky left-0 z-20 bg-slate-900 text-center shadow-[1px_0_0_0_rgba(51,65,85,0.8)]">
                 Slot
               </th>
               {days.map((d) => (
                 <th
                   key={d.dateStr}
-                  className={`py-3.5 px-3 text-xs font-bold transition-colors ${
+                  className={`py-3 px-2 text-xs font-bold transition-colors ${
                     d.isToday
                       ? 'bg-orange-500/10 text-orange-300 font-extrabold ring-inset ring-1 ring-orange-500/30'
                       : 'text-slate-200'
                   }`}
                 >
-                  <div className="flex items-center justify-center gap-1.5">
+                  <div className="flex items-center justify-center gap-1.5 truncate">
                     <span>{d.formatted}</span>
                     {d.isToday && (
-                      <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" title="Hôm nay" />
+                      <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse shrink-0" title="Hôm nay" />
                     )}
                   </div>
                 </th>
@@ -145,10 +153,15 @@ export function CoachScheduleCalendar({
             {STANDARD_TEMPLATE_SLOTS.map((slot) => (
               <tr key={slot.index} className="divide-x divide-slate-800/60 hover:bg-slate-900/30 transition-colors">
                 {/* Slot Number Column */}
-                <td className="w-16 p-3 text-center align-middle sticky left-0 z-10 bg-slate-950/95 border-r border-slate-800">
-                  <span className="text-base font-bold text-slate-300 font-mono">
-                    {slot.index}
-                  </span>
+                <td className="w-14 sm:w-16 p-2 text-center align-middle sticky left-0 z-10 bg-slate-950/95 shadow-[1px_0_0_0_rgba(51,65,85,0.8)]">
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="text-base font-bold text-slate-200 font-mono">
+                      {slot.index}
+                    </span>
+                    <span className="text-[9px] text-slate-500 font-mono leading-none mt-0.5">
+                      {slot.startTime}
+                    </span>
+                  </div>
                 </td>
 
                 {/* Day Cells */}
@@ -162,7 +175,7 @@ export function CoachScheduleCalendar({
                   return (
                     <td
                       key={`${d.dateStr}-${slot.index}`}
-                      className={`p-2 align-top transition-colors relative min-w-[130px] h-[105px] ${
+                      className={`p-1.5 align-top transition-colors relative min-h-[90px] ${
                         d.isToday ? 'bg-orange-950/10' : isPast ? 'bg-slate-950/60' : ''
                       }`}
                     >
@@ -178,7 +191,7 @@ export function CoachScheduleCalendar({
                               <div
                                 key={ev.id}
                                 onClick={() => onEventClick(ev.id, ev)}
-                                className={`group/card cursor-pointer rounded-xl p-2.5 transition-all shadow-sm hover:shadow-md border ${
+                                className={`group/card cursor-pointer rounded-xl p-2 transition-all shadow-sm hover:shadow-md border min-w-0 overflow-hidden ${
                                   isPast ? 'opacity-70 saturate-50 hover:opacity-100 hover:saturate-100 ' : ''
                                 }${
                                   status === 'OPEN'
@@ -193,10 +206,13 @@ export function CoachScheduleCalendar({
                                 }`}
                               >
                                 {/* Top: Course Name & Status Tag */}
-                                <div className="flex items-start justify-between gap-1.5 mb-1.5">
-                                  <div className="flex items-center gap-1.5 min-w-0">
-                                    <BookOpen className={`h-3.5 w-3.5 shrink-0 ${cfg.textClass}`} />
-                                    <span className="text-xs font-bold text-slate-100 truncate leading-tight group-hover/card:text-white">
+                                <div className="flex items-center justify-between gap-1 mb-1 min-w-0">
+                                  <div className="flex items-center gap-1 min-w-0 flex-1">
+                                    <BookOpen className={`h-3 w-3 shrink-0 ${cfg.textClass}`} />
+                                    <span
+                                      className="text-[11px] font-bold text-slate-100 truncate leading-tight group-hover/card:text-white"
+                                      title={ev.courseName || 'PT 1:1 Cá Nhân'}
+                                    >
                                       {ev.courseName || 'PT 1:1 Cá Nhân'}
                                     </span>
                                   </div>
@@ -208,29 +224,35 @@ export function CoachScheduleCalendar({
                                 </div>
 
                                 {/* Time range */}
-                                <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-300 font-medium mb-1">
+                                <div className="flex items-center gap-1 text-[10.5px] font-mono text-slate-300 font-medium mb-1 min-w-0">
                                   <Clock className="h-3 w-3 text-slate-400 shrink-0" />
-                                  <span>
+                                  <span className="truncate">
                                     {format(ev.start, 'HH:mm')} – {format(ev.end, 'HH:mm')}
                                   </span>
                                 </div>
 
                                 {/* Bottom info: Location & Member/Note */}
-                                <div className="space-y-0.5 text-[11px] text-slate-300">
+                                <div className="space-y-0.5 text-[10.5px] text-slate-300 min-w-0">
                                   {isBooked ? (
-                                    <div className="flex items-center gap-1 font-semibold text-sky-300 truncate">
+                                    <div
+                                      className="flex items-center gap-1 font-semibold text-sky-300 min-w-0"
+                                      title={ev.memberName || 'Hội viên đã đặt'}
+                                    >
                                       <User className="h-3 w-3 shrink-0 text-sky-400" />
                                       <span className="truncate">{ev.memberName || 'Hội viên đã đặt'}</span>
                                     </div>
                                   ) : isBlocked ? (
-                                    <div className="flex items-center gap-1 text-slate-400 truncate">
+                                    <div
+                                      className="flex items-center gap-1 text-slate-400 min-w-0"
+                                      title={ev.note || 'Khóa bận'}
+                                    >
                                       <Lock className="h-3 w-3 shrink-0 text-amber-400" />
                                       <span className="truncate">{ev.note || 'Khóa bận'}</span>
                                     </div>
                                   ) : (
-                                    <div className="flex items-center gap-1 text-slate-400 text-[10px]">
+                                    <div className="flex items-center gap-1 text-slate-400 text-[10px] min-w-0">
                                       <MapPin className="h-3 w-3 shrink-0 text-slate-500" />
-                                      <span>Khu vực PT 1:1</span>
+                                      <span className="truncate">Khu vực PT 1:1</span>
                                     </div>
                                   )}
                                 </div>
@@ -241,7 +263,7 @@ export function CoachScheduleCalendar({
                       ) : isPast ? (
                         /* Past Empty Cell - LOCKED / DISABLED */
                         <div
-                          className="h-full w-full min-h-[75px] rounded-xl flex flex-col items-center justify-center text-slate-700 bg-slate-950/40 cursor-not-allowed select-none opacity-40"
+                          className="h-full w-full min-h-[60px] rounded-xl flex flex-col items-center justify-center text-slate-700 bg-slate-950/40 cursor-not-allowed select-none opacity-40"
                           title="Đã qua thời gian (Quá khứ - Không thể mở slot)"
                         >
                           <span className="text-slate-700 text-sm font-bold">-</span>
@@ -259,13 +281,13 @@ export function CoachScheduleCalendar({
                               })
                             }
                           }}
-                          className="h-full w-full min-h-[75px] rounded-xl flex items-center justify-center text-slate-500 font-semibold cursor-pointer hover:bg-slate-900/60 hover:text-orange-400 transition-all group/empty"
+                          className="h-full w-full min-h-[60px] rounded-xl flex items-center justify-center text-slate-500 font-semibold cursor-pointer hover:bg-slate-900/60 hover:text-orange-400 transition-all group/empty"
                           title={`Click để mở Ca ${slot.index} (${slot.startTime} - ${slot.endTime}) ngày ${d.formatted}`}
                         >
                           <span className="group-hover/empty:hidden text-slate-600 text-sm font-medium">
                             -
                           </span>
-                          <span className="hidden group-hover/empty:inline-flex items-center gap-1 text-[11px] font-semibold text-orange-400 bg-orange-500/10 px-2 py-1 rounded-lg border border-orange-500/20 shadow-xs animate-in fade-in duration-150">
+                          <span className="hidden group-hover/empty:inline-flex items-center gap-1 text-[10px] font-semibold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded-lg border border-orange-500/20 shadow-xs animate-in fade-in duration-150">
                             <Plus className="h-3 w-3" />
                             Mở ca
                           </span>

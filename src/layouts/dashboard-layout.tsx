@@ -36,9 +36,9 @@ export function DashboardLayout() {
       </aside>
 
       {/* Main Container */}
-      <div className="flex flex-1 flex-col pl-64">
+      <div className="flex flex-1 flex-col pl-64 min-w-0 max-w-full">
         <Topbar />
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-6 lg:p-8 min-w-0 overflow-x-hidden">
           <Outlet />
         </main>
       </div>
