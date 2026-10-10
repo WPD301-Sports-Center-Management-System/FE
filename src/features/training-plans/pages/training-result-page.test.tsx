@@ -10,6 +10,7 @@ vi.mock('@/features/pt-bookings-schedule/services/pt-bookings.service', () => ({
   ptBookingsService: {
     getBookings: vi.fn(),
     createTrainingResult: vi.fn(),
+    publishTrainingResult: vi.fn(),
   },
 }))
 
@@ -38,7 +39,8 @@ describe('TrainingResultPage', () => {
   const mockExercise: Exercise = {
     id: 'ex-00000000-0000-0000-0000-000000000001',
     name: 'Bench Press',
-    category: 'CHEST',
+    difficultyLevel: 'INTERMEDIATE',
+    muscleGroups: [],
     isActive: true,
   }
 

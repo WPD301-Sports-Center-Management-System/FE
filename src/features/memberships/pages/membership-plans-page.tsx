@@ -74,8 +74,8 @@ export function MembershipPlansPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Quản lý Bảng Giá Vé Gym (WEB-MAN-04)</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quản lý Bảng Giá Vé Gym (WEB-MAN-04)</h1>
+          <p className="text-xs text-text-muted mt-1">
             Cấu hình gói hội viên tập tự do phòng Gym. Giá thay đổi chỉ áp dụng cho lượt mua mới.
           </p>
         </div>
@@ -86,7 +86,7 @@ export function MembershipPlansPage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 text-sm flex items-center justify-between">
+        <div className="p-4 rounded-xl border border-danger/30 bg-danger/10 text-danger text-sm flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 shrink-0" />
             <span>{error}</span>
@@ -97,7 +97,7 @@ export function MembershipPlansPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center p-16">
-          <RefreshCw className="h-8 w-8 text-orange-400 animate-spin" />
+          <RefreshCw className="h-8 w-8 text-orange-500 animate-spin" />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -109,50 +109,50 @@ export function MembershipPlansPage() {
             return (
               <div
                 key={plan.id}
-                className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl backdrop-blur-md relative overflow-hidden"
+                className="flex flex-col justify-between rounded-2xl border border-border-subtle bg-bg-surface p-6 shadow-md backdrop-blur-md relative overflow-hidden"
               >
                 {bonusMonths > 0 && (
-                  <span className="absolute top-4 right-4 rounded-full bg-orange-500/20 px-3 py-1 text-xs font-bold text-orange-400 border border-orange-500/30">
+                  <span className="absolute top-4 right-4 rounded-full bg-orange-500/15 px-3 py-1 text-xs font-bold text-orange-500 border border-orange-500/30">
                     Ưu đãi: Tặng {bonusMonths} tháng
                   </span>
                 )}
 
                 <div className="space-y-3">
-                  <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500">{plan.code}</span>
-                  <h2 className="text-xl font-bold text-white">{plan.name}</h2>
+                  <span className="text-[10px] uppercase font-mono tracking-wider text-text-muted">{plan.code}</span>
+                  <h2 className="text-xl font-bold text-text-primary">{plan.name}</h2>
 
-                  <div className="space-y-1.5 py-3 text-xs text-slate-300">
-                    <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-                      <span className="text-slate-400">Thời hạn thanh toán:</span>
-                      <span className="font-semibold text-slate-200">{paidMonths} Tháng</span>
+                  <div className="space-y-1.5 py-3 text-xs text-text-primary">
+                    <div className="flex justify-between border-b border-border-subtle pb-1.5">
+                      <span className="text-text-muted">Thời hạn thanh toán:</span>
+                      <span className="font-semibold text-text-primary">{paidMonths} Tháng</span>
                     </div>
                     {bonusMonths > 0 && (
-                      <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-                        <span className="text-slate-400">Tháng tặng kèm:</span>
-                        <span className="font-semibold text-emerald-400">+{bonusMonths} Tháng</span>
+                      <div className="flex justify-between border-b border-border-subtle pb-1.5">
+                        <span className="text-text-muted">Tháng tặng kèm:</span>
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">+{bonusMonths} Tháng</span>
                       </div>
                     )}
-                    <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-                      <span className="text-slate-400">Tổng thời gian sử dụng:</span>
-                      <span className="font-bold text-orange-400">{totalMonths} Tháng</span>
+                    <div className="flex justify-between border-b border-border-subtle pb-1.5">
+                      <span className="text-text-muted">Tổng thời gian sử dụng:</span>
+                      <span className="font-bold text-orange-500">{totalMonths} Tháng</span>
                     </div>
                   </div>
 
                   <div className="pt-2">
-                    <p className="text-[10px] uppercase text-slate-400">Giá niêm yết hiện hành</p>
-                    <p className="text-2xl font-extrabold text-emerald-400">{formatVND(plan.price)}</p>
+                    <p className="text-[10px] uppercase text-text-muted">Giá niêm yết hiện hành</p>
+                    <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{formatVND(plan.price)}</p>
                   </div>
                 </div>
 
-                <div className="mt-6 flex items-center justify-between border-t border-slate-800 pt-4">
+                <div className="mt-6 flex items-center justify-between border-t border-border-subtle pt-4">
                   <button
                     type="button"
                     disabled={updatingStatusId === plan.id}
                     onClick={() => handleToggleActive(plan)}
                     className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
                       plan.isActive
-                        ? 'border-emerald-500/30 bg-emerald-950/30 text-emerald-400'
-                        : 'border-slate-700 bg-slate-800 text-slate-400'
+                        ? 'border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                        : 'border-border-subtle bg-bg-surface-muted text-text-muted'
                     }`}
                   >
                     {updatingStatusId === plan.id

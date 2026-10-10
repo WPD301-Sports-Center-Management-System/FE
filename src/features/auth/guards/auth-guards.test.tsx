@@ -202,5 +202,49 @@ describe('Auth Guards', () => {
       expect(screen.getByText('Manager Dashboard')).toBeInTheDocument()
       expect(screen.queryByText('Login Form')).not.toBeInTheDocument()
     })
+
+    it('redirects authenticated member to /member', () => {
+      vi.mocked(authContext.useAuth).mockReturnValue({
+        isAuthenticated: true,
+        isInitializing: false,
+        user: {
+          id: '2',
+          fullName: 'Member Test',
+          email: 'member@gym.com',
+          phone: '0987654321',
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          createdAt: '',
+        },
+        role: 'MEMBER',
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+        logoutAll: vi.fn(),
+        refreshSession: vi.fn(),
+        updateUserProfile: vi.fn(),
+        switchRoleDemo: vi.fn(),
+        hasRole: vi.fn(),
+      })
+
+      render(
+        <MemoryRouter initialEntries={['/login']}>
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                <GuestRoute>
+                  <div>Login Form</div>
+                </GuestRoute>
+              }
+            />
+            <Route path="/member" element={<div>Member Dashboard</div>} />
+          </Routes>
+        </MemoryRouter>
+      )
+
+      expect(screen.getByText('Member Dashboard')).toBeInTheDocument()
+      expect(screen.queryByText('Login Form')).not.toBeInTheDocument()
+    })
   })
 })

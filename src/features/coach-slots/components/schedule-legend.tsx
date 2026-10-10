@@ -5,8 +5,8 @@ export function ScheduleLegend() {
   const statuses: SlotStatus[] = ['OPEN', 'BOOKED', 'BLOCKED', 'COMPLETED', 'CANCELLED']
 
   return (
-    <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 px-4 py-2.5 backdrop-blur-sm text-xs">
-      <span className="font-semibold text-slate-400 mr-1 text-[11px] uppercase tracking-wider">
+    <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-border-subtle bg-bg-surface px-4 py-2.5 shadow-sm backdrop-blur-sm text-xs">
+      <span className="font-semibold text-text-muted mr-1 text-[11px] uppercase tracking-wider">
         Chú thích:
       </span>
       {statuses.map((st) => {

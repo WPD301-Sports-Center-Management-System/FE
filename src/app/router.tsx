@@ -39,10 +39,20 @@ import { CoachAssessmentsPage } from '@/features/member-assessments/pages/coach-
 import { CoachMealPlanPage } from '@/features/training-plans/pages/coach-meal-plan-page'
 import { CoachAiRecommendationPage } from '@/features/training-plans/pages/coach-ai-recommendation-page'
 
+// Member Pages
+import { MemberDashboardPage } from '@/features/member/pages/member-dashboard-page'
+import { MemberSupportPage } from '@/features/support-reviews-audit/pages/member-support-page'
+
+import { VnPayReturnPage } from '@/features/payments-invoices/pages/vnpay-return-page'
+
 export const router = createBrowserRouter([
+
   // Common & Public
   { path: '/', element: <LandingPage /> },
   { path: '/coaches/:coachId', element: <PublicCoachProfilePage /> },
+  { path: '/payment/vnpay-return', element: <VnPayReturnPage /> },
+  { path: '/payment/vnpay/return', element: <VnPayReturnPage /> },
+  { path: '/payments/vnpay-return', element: <VnPayReturnPage /> },
 
   // Guest Only Routes (Redirect to dashboard if already authenticated)
   {
@@ -107,6 +117,16 @@ export const router = createBrowserRouter([
           { path: '/coach/ai-recommendation', element: <CoachAiRecommendationPage /> },
         ],
       },
+
+      // Member Routes (WEB-MEM-01 -> 09)
+      {
+        element: <ProtectedRoute allowedRoles={['MEMBER']} />,
+        children: [
+          { path: '/member', element: <MemberDashboardPage /> },
+          { path: '/member/support', element: <MemberSupportPage /> },
+        ],
+      },
+
     ],
   },
 

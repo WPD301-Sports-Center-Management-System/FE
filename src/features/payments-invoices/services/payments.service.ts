@@ -64,6 +64,16 @@ export const paymentsService = {
   },
 
   /**
+   * Helper: GET /invoices/{id}/pdf - Download invoice PDF
+   */
+  async downloadInvoicePdf(id: string): Promise<Blob> {
+    const res = await apiClient.get<Blob>(`/invoices/${id}/pdf`, {
+      responseType: 'blob',
+    })
+    return res as unknown as Blob
+  },
+
+  /**
    * Helper: GET /me/payments - Logged-in member's payment transactions
    */
   async getMyPayments(params?: { page?: number; limit?: number }): Promise<ApiSuccess<Payment[]>> {

@@ -253,11 +253,11 @@ export function CoachApprovalPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2">
             <Award className="h-6 w-6 text-orange-500" />
             <span>Phê Duyệt HLV & Gói Tập (WEB-MAN-07)</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-text-muted mt-1">
             Xét duyệt năng lực dạy khóa học và các gói huấn luyện PT 1:1 do Huấn luyện viên đề xuất
           </p>
         </div>
@@ -274,27 +274,27 @@ export function CoachApprovalPage() {
       </div>
 
       {errorMessage && (
-        <div className="flex items-start gap-2.5 rounded-2xl border border-red-500/30 bg-red-950/40 p-4 text-xs text-red-300">
-          <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-2xl border border-danger/30 bg-danger/10 p-4 text-xs text-danger">
+          <AlertCircle className="h-4 w-4 shrink-0 text-danger mt-0.5" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {successMessage && (
-        <div className="flex items-start gap-2.5 rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-4 text-xs text-emerald-300">
-          <Check className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-2xl border border-success/30 bg-success/10 p-4 text-xs text-success">
+          <Check className="h-4 w-4 shrink-0 text-success mt-0.5" />
           <span>{successMessage}</span>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-800">
+      <div className="flex border-b border-border-subtle">
         <button
           onClick={() => setActiveTab('offering')}
           className={`px-5 py-3 text-xs font-semibold border-b-2 transition-colors ${
             activeTab === 'offering'
-              ? 'border-orange-500 text-orange-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-orange-500 text-orange-500'
+              : 'border-transparent text-text-muted hover:text-text-primary'
           }`}
         >
           Khóa đăng ký giảng dạy ({offerings.length})
@@ -303,8 +303,8 @@ export function CoachApprovalPage() {
           onClick={() => setActiveTab('package')}
           className={`px-5 py-3 text-xs font-semibold border-b-2 transition-colors ${
             activeTab === 'package'
-              ? 'border-orange-500 text-orange-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-orange-500 text-orange-500'
+              : 'border-transparent text-text-muted hover:text-text-primary'
           }`}
         >
           Gói PT HLV đề xuất ({packageOptions.length})
@@ -314,28 +314,28 @@ export function CoachApprovalPage() {
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <RefreshCw className="h-8 w-8 animate-spin text-orange-500" />
-          <p className="text-xs text-slate-400">Đang tải danh sách phê duyệt HLV & Gói PT...</p>
+          <p className="text-xs text-text-muted">Đang tải danh sách phê duyệt HLV & Gói PT...</p>
         </div>
       ) : activeTab === 'offering' ? (
         <div className="space-y-4">
           {/* Search & Filter Bar for Offerings */}
-          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800">
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-bg-surface p-3.5 rounded-2xl border border-border-subtle shadow-sm">
             <div className="relative w-full sm:w-80">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
               <input
                 type="text"
                 value={offeringSearch}
                 onChange={(e) => setOfferingSearch(e.target.value)}
                 placeholder="Tìm HLV, khóa đào tạo hoặc ghi chú..."
-                className="w-full pl-9 pr-3.5 py-2 bg-slate-950/60 border border-slate-700/80 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-orange-500"
+                className="w-full pl-9 pr-3.5 py-2 bg-bg-input border border-border-subtle rounded-xl text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary"
               />
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <span className="text-xs text-slate-400">Trạng thái:</span>
+              <span className="text-xs text-text-muted">Trạng thái:</span>
               <select
                 value={offeringStatusFilter}
                 onChange={(e) => setOfferingStatusFilter(e.target.value as any)}
-                className="bg-slate-950/60 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500"
+                className="bg-bg-input border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-primary"
               >
                 <option value="ALL">Tất cả ({offerings.length})</option>
                 <option value="PENDING">Chờ duyệt ({offerings.filter((o) => o.status === 'PENDING').length})</option>
@@ -346,7 +346,7 @@ export function CoachApprovalPage() {
           </div>
 
           {filteredOfferings.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 text-xs rounded-2xl border border-slate-800 bg-slate-900/40">
+            <div className="text-center py-12 text-text-muted text-xs rounded-2xl border border-border-subtle bg-bg-surface">
               {offeringSearch || offeringStatusFilter !== 'ALL'
                 ? 'Không tìm thấy hồ sơ đăng ký dạy phù hợp bộ lọc.'
                 : 'Chưa có đề xuất đăng ký dạy khóa học nào.'}
@@ -361,15 +361,15 @@ export function CoachApprovalPage() {
                 return (
                   <div
                     key={off.id}
-                    className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 space-y-3 hover:border-slate-700 transition-colors flex flex-col justify-between"
+                    className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-3 hover:border-border-strong shadow-sm transition-colors flex flex-col justify-between"
                   >
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="text-base font-bold text-white">{courseTitle}</h3>
-                          <p className="text-xs text-orange-400 font-semibold mt-0.5">HLV: {coachName}</p>
+                          <h3 className="text-base font-bold text-text-primary">{courseTitle}</h3>
+                          <p className="text-xs text-orange-500 font-semibold mt-0.5">HLV: {coachName}</p>
                           {off.course?.difficultyLevel && (
-                            <span className="inline-block mt-1 text-[10px] rounded bg-slate-800 px-2 py-0.5 text-slate-300">
+                            <span className="inline-block mt-1 text-[10px] rounded bg-bg-surface-muted px-2 py-0.5 text-text-muted">
                               Độ khó: {off.course.difficultyLevel}
                             </span>
                           )}
@@ -380,8 +380,8 @@ export function CoachApprovalPage() {
                             <span
                               className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                                 off.isActive
-                                  ? 'bg-emerald-500/15 text-emerald-400'
-                                  : 'bg-rose-500/15 text-rose-400'
+                                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                  : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
                               }`}
                             >
                               {off.isActive ? 'Đang mở nhận lớp' : 'Tạm dừng nhận lớp'}
@@ -390,21 +390,21 @@ export function CoachApprovalPage() {
                         </div>
                       </div>
 
-                      <div className="rounded-xl bg-slate-800/40 p-3 text-xs text-slate-300">
-                        <strong className="text-slate-200">Kinh nghiệm & Năng lực:</strong>
-                        <p className="mt-1 leading-relaxed text-slate-300">
+                      <div className="rounded-xl bg-bg-surface-muted p-3 text-xs text-text-primary border border-border-subtle">
+                        <strong className="text-text-primary">Kinh nghiệm & Năng lực:</strong>
+                        <p className="mt-1 leading-relaxed text-text-muted">
                           {off.experienceNote || off.course?.description || 'HLV đăng ký đảm nhận huấn luyện chuyên sâu cho bộ môn này.'}
                         </p>
                       </div>
 
                       {off.rejectionReason && (
-                        <p className="text-xs text-red-400 italic bg-red-950/20 rounded-lg p-2.5 border border-red-500/20">
+                        <p className="text-xs text-danger italic bg-danger/10 rounded-lg p-2.5 border border-danger/20">
                           Lý do từ chối: {off.rejectionReason}
                         </p>
                       )}
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800/80 mt-2">
+                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-border-subtle mt-2">
                       {off.status === 'PENDING' && (
                         <>
                           <Button
@@ -457,23 +457,23 @@ export function CoachApprovalPage() {
       ) : (
         <div className="space-y-4">
           {/* Search & Filter Bar for Packages */}
-          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800">
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-bg-surface p-3.5 rounded-2xl border border-border-subtle shadow-sm">
             <div className="relative w-full sm:w-80">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
               <input
                 type="text"
                 value={packageSearch}
                 onChange={(e) => setPackageSearch(e.target.value)}
                 placeholder="Tìm tên gói, HLV hoặc khóa học..."
-                className="w-full pl-9 pr-3.5 py-2 bg-slate-950/60 border border-slate-700/80 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-orange-500"
+                className="w-full pl-9 pr-3.5 py-2 bg-bg-input border border-border-subtle rounded-xl text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary"
               />
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <span className="text-xs text-slate-400">Trạng thái:</span>
+              <span className="text-xs text-text-muted">Trạng thái:</span>
               <select
                 value={packageStatusFilter}
                 onChange={(e) => setPackageStatusFilter(e.target.value as any)}
-                className="bg-slate-950/60 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500"
+                className="bg-bg-input border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-primary"
               >
                 <option value="ALL">Tất cả ({packageOptions.length})</option>
                 <option value="PENDING">Chờ duyệt ({packageOptions.filter((p) => p.approvalStatus === 'PENDING').length})</option>
@@ -484,7 +484,7 @@ export function CoachApprovalPage() {
           </div>
 
           {filteredPackages.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 text-xs rounded-2xl border border-slate-800 bg-slate-900/40">
+            <div className="text-center py-12 text-text-muted text-xs rounded-2xl border border-border-subtle bg-bg-surface">
               {packageSearch || packageStatusFilter !== 'ALL'
                 ? 'Không tìm thấy gói tập PT phù hợp với bộ lọc.'
                 : 'Chưa có gói tập PT nào được tạo.'}
@@ -496,42 +496,42 @@ export function CoachApprovalPage() {
                 const courseName = (pkg as any).course?.name || pkg.courseName || 'Khóa đào tạo'
 
                 return (
-                  <div key={pkg.id} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 space-y-4">
+                  <div key={pkg.id} className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-base font-bold text-white">{pkg.name}</h3>
-                        <p className="text-xs text-orange-400 font-medium">HLV: {coachName}</p>
+                        <h3 className="text-base font-bold text-text-primary">{pkg.name}</h3>
+                        <p className="text-xs text-orange-500 font-medium">HLV: {coachName}</p>
                       </div>
                       <StatusBadge status={pkg.approvalStatus} />
                     </div>
 
-                    <div className="space-y-1.5 text-xs text-slate-300 bg-slate-800/40 p-3.5 rounded-xl">
+                    <div className="space-y-1.5 text-xs text-text-primary bg-bg-surface-muted p-3.5 rounded-xl border border-border-subtle">
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Khóa áp dụng:</span>
-                        <span className="font-semibold text-slate-200">{courseName}</span>
+                        <span className="text-text-muted">Khóa áp dụng:</span>
+                        <span className="font-semibold text-text-primary">{courseName}</span>
                       </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Số buổi tập:</span>
-                      <span className="font-semibold text-slate-200">{pkg.sessionCount} Buổi</span>
+                      <span className="text-text-muted">Số buổi tập:</span>
+                      <span className="font-semibold text-text-primary">{pkg.sessionCount} Buổi</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Hạn sử dụng:</span>
-                      <span className="font-semibold text-slate-200">{pkg.validityDays} Ngày</span>
+                      <span className="text-text-muted">Hạn sử dụng:</span>
+                      <span className="font-semibold text-text-primary">{pkg.validityDays} Ngày</span>
                     </div>
-                    <div className="flex justify-between border-t border-slate-700/60 pt-1.5">
-                      <span className="text-slate-400">Giá đề xuất:</span>
-                      <span className="font-bold text-emerald-400">{formatVND(pkg.price)}</span>
+                    <div className="flex justify-between border-t border-border-subtle pt-1.5">
+                      <span className="text-text-muted">Giá đề xuất:</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatVND(pkg.price)}</span>
                     </div>
                   </div>
 
                   {pkg.rejectionReason && (
-                    <p className="text-xs text-red-400 italic bg-red-950/20 rounded-lg p-2.5 border border-red-500/20">
+                    <p className="text-xs text-danger italic bg-danger/10 rounded-lg p-2.5 border border-danger/20">
                       Lý do từ chối: {pkg.rejectionReason}
                     </p>
                   )}
 
                   {pkg.approvalStatus === 'PENDING' && (
-                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-subtle">
                       <Button
                         size="sm"
                         variant="danger"
@@ -555,7 +555,7 @@ export function CoachApprovalPage() {
                   )}
 
                   {pkg.approvalStatus === 'APPROVED' && (
-                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-subtle">
                       <Button
                         size="sm"
                         variant="outline"
@@ -563,8 +563,8 @@ export function CoachApprovalPage() {
                         disabled={processingId === pkg.id}
                         className={`text-xs gap-1.5 ${
                           pkg.isActive
-                            ? 'text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 border-rose-500/20'
-                            : 'text-emerald-400 hover:bg-emerald-950/40 hover:text-emerald-300 border-emerald-500/20'
+                            ? 'text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border-rose-500/20'
+                            : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 border-emerald-500/20'
                         }`}
                       >
                         <Power className={`h-3.5 w-3.5 ${processingId === pkg.id ? 'animate-spin' : ''}`} />
@@ -601,7 +601,7 @@ export function CoachApprovalPage() {
             placeholder="Ví dụ: Cần bổ sung chứng chỉ chuyên môn hoặc điều chỉnh giá đề xuất..."
             disabled={isSubmittingReject}
           />
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"

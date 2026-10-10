@@ -85,4 +85,63 @@ describe('PaymentListPage', () => {
       expect(screen.getByText('SPORTS CENTER MANAGEMENT')).toBeInTheDocument()
     })
   })
+
+  it('shows error message and does not open modal when payment has no invoiceId', async () => {
+    vi.mocked(paymentsService.getPayments).mockResolvedValueOnce({
+      data: [
+        {
+          id: 'pay-002',
+          paymentCode: 'PAY-NO-INV',
+          memberId: 'mem-1',
+          amount: '500000',
+          method: 'CASH',
+          status: 'PENDING',
+          paidAt: null,
+          invoiceId: undefined,
+        } as any,
+      ],
+      total: 1,
+      page: 1,
+      limit: 100,
+    } as any)
+
+    render(
+      <BrowserRouter>
+        <PaymentListPage />
+      </BrowserRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('In Hóa đơn')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByText('In Hóa đơn'))
+
+    await waitFor(() => {
+      expect(screen.getByText(/chưa có hóa đơn được phát hành/i)).toBeInTheDocument()
+      expect(screen.queryByText('Hóa Đơn Thu Phí Dịch Vụ')).not.toBeInTheDocument()
+    })
+  })
+
+  it('shows error message and does not open modal when invoice API fails', async () => {
+    vi.mocked(paymentsService.getInvoiceById).mockRejectedValueOnce(new Error('Invoice service unavailable'))
+
+    render(
+      <BrowserRouter>
+        <PaymentListPage />
+      </BrowserRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('In Hóa đơn')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByText('In Hóa đơn'))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Không thể tải hóa đơn từ máy chủ/i)).toBeInTheDocument()
+      expect(screen.queryByText('Hóa Đơn Thu Phí Dịch Vụ')).not.toBeInTheDocument()
+    })
+  })
 })
+

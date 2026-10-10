@@ -40,8 +40,13 @@ export const coachSlotService = {
     if (params?.limit) cleanParams.limit = params.limit
 
     const res = await apiClient.get<any>('/coach-slots', { params: cleanParams })
-    const items = res?.data?.items || res?.data || (Array.isArray(res) ? res : [])
-    return (Array.isArray(items) ? items : []) as CoachSlot[]
+    const rawItems = res?.data?.items || res?.data || (Array.isArray(res) ? res : [])
+    const items = (Array.isArray(rawItems) ? rawItems : []).map((s: any) => ({
+      ...s,
+      coachName: s.coachName || s.coach?.user?.fullName || 'Huấn luyện viên',
+      courseName: s.courseName || s.offering?.course?.name || 'Khóa Huấn Luyện Cá Nhân',
+    }))
+    return items as CoachSlot[]
   },
 
   /**

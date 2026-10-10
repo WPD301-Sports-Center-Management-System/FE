@@ -251,18 +251,18 @@ export function UserManagementPage() {
                 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80'
               }
               alt={row.fullName}
-              className="h-9 w-9 rounded-full object-cover border border-slate-700 shrink-0"
+              className="h-9 w-9 rounded-full object-cover border border-border-subtle shrink-0"
             />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="font-semibold text-slate-100 text-sm">{row.fullName}</p>
+                <p className="font-semibold text-text-primary text-sm">{row.fullName}</p>
                 {memberCode && (
-                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-orange-500/15 text-orange-400 border border-orange-500/30 tracking-tight">
+                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25 tracking-tight">
                     {memberCode}
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">{row.email}</p>
+              <p className="text-[11px] text-text-muted mt-0.5">{row.email}</p>
             </div>
           </div>
         )
@@ -270,21 +270,21 @@ export function UserManagementPage() {
     },
     {
       header: 'Số điện thoại',
-      accessor: (row) => <span className="font-mono text-xs text-slate-300">{row.phone || '—'}</span>,
+      accessor: (row) => <span className="font-mono text-xs text-text-primary">{row.phone || '—'}</span>,
     },
     {
       header: 'Vai trò',
       accessor: (row) => {
         const badgeColors: Record<UserRole, string> = {
-          MANAGER: 'bg-orange-500/10 text-orange-400 border border-orange-500/20',
-          RECEPTIONIST: 'bg-sky-500/10 text-sky-400 border border-sky-500/20',
-          COACH: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-          MEMBER: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+          MANAGER: 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30',
+          RECEPTIONIST: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30',
+          COACH: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30',
+          MEMBER: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30',
         }
         return (
           <span
             className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-semibold ${
-              badgeColors[row.role] || 'bg-slate-800 text-slate-200'
+              badgeColors[row.role] || 'bg-bg-surface-muted text-text-primary border border-border-subtle'
             }`}
           >
             <Shield className="h-3 w-3 shrink-0" />
@@ -308,10 +308,10 @@ export function UserManagementPage() {
       {/* Top Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">
             Quản lý Tài Khoản & Nhân Sự (WEB-MAN-02)
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-text-muted mt-1">
             Quản lý phân quyền Manager, Lễ tân, Huấn luyện viên và Hội viên qua API
           </p>
         </div>
@@ -347,31 +347,31 @@ export function UserManagementPage() {
 
       {/* Alerts */}
       {errorMessage && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-950/40 p-3.5 text-xs text-red-300">
-          <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-3.5 text-xs text-danger">
+          <AlertCircle className="h-4 w-4 shrink-0 text-danger mt-0.5" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {successMessage && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-3.5 text-xs text-emerald-300">
-          <Check className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-xl border border-success/30 bg-success/10 p-3.5 text-xs text-success">
+          <Check className="h-4 w-4 shrink-0 text-success mt-0.5" />
           <span>{successMessage}</span>
         </div>
       )}
 
       {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-md">
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between rounded-2xl border border-border-subtle bg-bg-surface p-4 backdrop-blur-md">
         <div className="flex flex-wrap items-center gap-3 flex-1">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <Filter className="h-3.5 w-3.5 text-orange-400" />
+          <div className="flex items-center gap-1.5 text-xs text-text-muted">
+            <Filter className="h-3.5 w-3.5 text-primary" />
             <span>Lọc:</span>
           </div>
 
           <select
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value as UserRole | '')}
-            className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-200 focus:border-orange-500 focus:outline-none"
+            className="rounded-xl border border-border-subtle bg-bg-input px-3 py-1.5 text-xs text-text-primary focus:border-primary focus:outline-none"
           >
             <option value="">Tất cả vai trò</option>
             <option value="MANAGER">Quản lý (MANAGER)</option>
@@ -383,7 +383,7 @@ export function UserManagementPage() {
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value as UserStatus | '')}
-            className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-200 focus:border-orange-500 focus:outline-none"
+            className="rounded-xl border border-border-subtle bg-bg-input px-3 py-1.5 text-xs text-text-primary focus:border-primary focus:outline-none"
           >
             <option value="">Tất cả trạng thái</option>
             <option value="ACTIVE">Hoạt động (ACTIVE)</option>
@@ -398,15 +398,15 @@ export function UserManagementPage() {
                 setSelectedStatus('')
                 setSearchTerm('')
               }}
-              className="text-xs text-orange-400 hover:text-orange-300 underline transition-colors"
+              className="text-xs text-primary hover:text-primary-hover underline transition-colors"
             >
               Đặt lại bộ lọc
             </button>
           )}
         </div>
 
-        <div className="text-xs text-slate-400">
-          Tổng số: <strong className="text-slate-200">{users.length}</strong> tài khoản
+        <div className="text-xs text-text-muted">
+          Tổng số: <strong className="text-text-primary">{users.length}</strong> tài khoản
         </div>
       </div>
 
@@ -442,7 +442,7 @@ export function UserManagementPage() {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 px-2 text-xs text-amber-400 hover:text-amber-300 hover:border-amber-500/40"
+                className="h-8 px-2 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:border-amber-500/40"
                 onClick={() => setStatusChangeUser({ user: row, targetStatus: 'INACTIVE' })}
                 title="Tạm khóa tài khoản"
               >
@@ -452,7 +452,7 @@ export function UserManagementPage() {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 px-2 text-xs text-emerald-400 hover:text-emerald-300 hover:border-emerald-500/40"
+                className="h-8 px-2 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:border-emerald-500/40"
                 onClick={() => setStatusChangeUser({ user: row, targetStatus: 'ACTIVE' })}
                 title="Kích hoạt tài khoản"
               >
@@ -463,7 +463,7 @@ export function UserManagementPage() {
             <Button
               size="sm"
               variant="outline"
-              className="h-8 px-2.5 text-xs text-orange-400 hover:text-orange-300 hover:border-orange-500/40"
+              className="h-8 px-2.5 text-xs text-primary hover:text-primary-hover hover:border-primary/40"
               onClick={() => handleResetPassword(row)}
               title="Tạo mật khẩu tạm thời mới"
             >
@@ -530,7 +530,7 @@ export function UserManagementPage() {
             disabled={isSubmitting}
           />
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <div className="flex justify-end gap-2 pt-3 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"
@@ -555,9 +555,9 @@ export function UserManagementPage() {
       >
         <form onSubmit={handleUpdateUser} className="space-y-4">
           {(editingUser?.memberCode || editingUser?.memberProfile?.memberCode) && (
-            <div className="rounded-xl bg-orange-500/10 border border-orange-500/20 p-3 flex items-center justify-between">
-              <span className="text-xs text-orange-300 font-medium">Mã hội viên chính thức:</span>
-              <span className="font-mono text-xs font-bold text-orange-400 bg-slate-900/80 px-2 py-0.5 rounded border border-orange-500/30">
+            <div className="rounded-xl bg-primary/10 border border-primary/20 p-3 flex items-center justify-between">
+              <span className="text-xs text-primary font-medium">Mã hội viên chính thức:</span>
+              <span className="font-mono text-xs font-bold text-primary bg-bg-surface-muted px-2 py-0.5 rounded border border-primary/30">
                 {editingUser.memberCode || editingUser.memberProfile?.memberCode}
               </span>
             </div>
@@ -592,7 +592,7 @@ export function UserManagementPage() {
             disabled={isSubmitting}
           />
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <div className="flex justify-end gap-2 pt-3 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"
@@ -616,16 +616,16 @@ export function UserManagementPage() {
         description={`Thay đổi trạng thái tài khoản cho: ${statusChangeUser?.user.fullName}`}
       >
         <div className="space-y-4">
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className="text-xs text-text-muted leading-relaxed">
             Bạn có chắc chắn muốn đổi trạng thái của tài khoản{' '}
-            <strong className="text-white">{statusChangeUser?.user.email}</strong> sang{' '}
-            <span className="font-semibold text-orange-400">
+            <strong className="text-text-primary">{statusChangeUser?.user.email}</strong> sang{' '}
+            <span className="font-semibold text-primary">
               {statusChangeUser?.targetStatus}
             </span>
             ?
           </p>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <div className="flex justify-end gap-2 pt-3 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"
@@ -659,10 +659,10 @@ export function UserManagementPage() {
         description={`Mật khẩu mới cho tài khoản: ${resetUser?.fullName} (${resetUser?.email})`}
       >
         <div className="space-y-4">
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-4 text-center">
-            <p className="text-xs text-slate-400">Mật khẩu tạm thời mới:</p>
+          <div className="rounded-xl border border-success/30 bg-success/10 p-4 text-center">
+            <p className="text-xs text-text-muted">Mật khẩu tạm thời mới:</p>
             <div className="mt-2 flex items-center justify-center gap-2">
-              <span className="font-mono text-base font-bold text-emerald-400 select-all tracking-wider bg-slate-900/80 px-3 py-1.5 rounded-lg border border-emerald-500/30">
+              <span className="font-mono text-base font-bold text-success select-all tracking-wider bg-bg-surface px-3 py-1.5 rounded-lg border border-success/30">
                 {tempPassword}
               </span>
               <Button
@@ -673,7 +673,7 @@ export function UserManagementPage() {
               >
                 {isCopied ? (
                   <>
-                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    <Check className="h-3.5 w-3.5 text-success" />
                     <span>Đã sao chép</span>
                   </>
                 ) : (
@@ -685,7 +685,7 @@ export function UserManagementPage() {
               </Button>
             </div>
           </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="text-xs text-text-muted leading-relaxed">
             Vui lòng gửi mật khẩu tạm này cho nhân sự hoặc hội viên để họ đăng nhập và thực hiện đổi mật khẩu ngay sau đó.
           </p>
           <div className="flex justify-end pt-2">

@@ -12,6 +12,9 @@ export interface AuditLogQueryParams {
   limit?: number
   action?: string
   entityType?: string
+  actorId?: string
+  from?: string
+  to?: string
 }
 
 export type { CoachReview, AuditLog, SupportRequest, ApiSuccess }

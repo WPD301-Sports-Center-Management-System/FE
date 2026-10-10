@@ -44,13 +44,13 @@ export function SystemErrorPage({ code = '404', title, message }: SystemErrorPag
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#070a11] p-6 text-center text-slate-100">
-      <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/80 shadow-2xl">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-bg-app p-6 text-center text-text-primary">
+      <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-border-subtle bg-bg-surface shadow-xl">
         <Icon className={`h-10 w-10 ${configs.color}`} />
       </div>
 
-      <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-white">{title || configs.defaultTitle}</h1>
-      <p className="mt-2 max-w-md text-sm text-slate-400">{message || configs.defaultMessage}</p>
+      <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-text-primary">{title || configs.defaultTitle}</h1>
+      <p className="mt-2 max-w-md text-sm text-text-muted">{message || configs.defaultMessage}</p>
 
       <div className="mt-8 flex items-center gap-3">
         <Link to={getHomePath()}>

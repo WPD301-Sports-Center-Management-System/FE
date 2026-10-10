@@ -14,3 +14,23 @@ export interface ManagerDashboardData {
   bookingsToday: number
   equipmentIssues: number
 }
+
+export interface ReceptionistDashboardData {
+  checkinsToday: number
+  pendingPayments: number
+  expiringSubscriptions: number
+}
+
+export interface CoachDashboardData {
+  todayBookings: number
+  openSlots: number
+  activeMembers: number
+}
+
+export interface MemberDashboardData {
+  membership: any | null
+  packages: any[]
+  upcomingBookings: any[]
+}
+
+

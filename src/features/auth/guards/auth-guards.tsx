@@ -5,10 +5,10 @@ import { Loader2 } from 'lucide-react'
 
 export function FullPageLoader() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#070a11] text-slate-100">
+    <div className="flex min-h-screen items-center justify-center bg-bg-app text-text-primary">
       <div className="flex flex-col items-center gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-        <p className="text-xs uppercase tracking-widest text-slate-400">Đang khởi tạo phiên làm việc...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-xs uppercase tracking-widest text-text-muted">Đang khởi tạo phiên làm việc...</p>
       </div>
     </div>
   )
@@ -32,7 +32,7 @@ export function isPathAllowedForRole(path: string, role: UserRole | null | undef
     )
   }
   if (role === 'MEMBER') {
-    return path === '/' || path.startsWith('/coaches')
+    return path === '/' || path.startsWith('/coaches') || path.startsWith('/member')
   }
   return false
 }
@@ -75,9 +75,11 @@ export function GuestRoute({ children }: { children?: React.ReactNode }) {
       return <Navigate to={from} replace />
     }
 
+    if (role === 'MANAGER') return <Navigate to="/manager" replace />
     if (role === 'RECEPTIONIST') return <Navigate to="/receptionist" replace />
     if (role === 'COACH') return <Navigate to="/coach" replace />
-    return <Navigate to="/manager" replace />
+    if (role === 'MEMBER') return <Navigate to="/member" replace />
+    return <Navigate to="/" replace />
   }
 
   return children ? <>{children}</> : <Outlet />

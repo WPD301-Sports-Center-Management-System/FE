@@ -55,21 +55,21 @@ export function SlotDetailDrawer({
           role="dialog"
           aria-modal="true"
           aria-labelledby="drawer-title"
-          className="w-screen max-w-md bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col justify-between"
+          className="w-screen max-w-md bg-bg-surface border-l border-border-subtle shadow-2xl flex flex-col justify-between"
         >
           {/* Header */}
-          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+          <div className="p-6 border-b border-border-subtle flex items-center justify-between">
             <div>
-              <span className="text-xs font-mono uppercase text-cyan-400 tracking-wider">
+              <span className="text-xs font-mono uppercase text-primary tracking-wider">
                 WEB-COA-03
               </span>
-              <h2 id="drawer-title" className="text-lg font-bold text-white mt-0.5">
+              <h2 id="drawer-title" className="text-lg font-bold text-text-primary mt-0.5">
                 {isBooked ? 'Chi tiết lịch tập' : 'Chi tiết khung giờ'}
               </h2>
             </div>
             <button
               onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+              className="rounded-lg p-1.5 text-text-muted hover:bg-bg-surface-muted hover:text-text-primary transition-colors"
               aria-label="Đóng bảng chi tiết"
             >
               <X className="h-5 w-5" />
@@ -79,19 +79,19 @@ export function SlotDetailDrawer({
           {/* Body */}
           <div className="p-6 space-y-6 flex-1 overflow-y-auto">
             {/* Status & Time overview */}
-            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
+            <div className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400">Trạng thái</span>
+                <span className="text-xs text-text-muted">Trạng thái</span>
                 <SlotStatusBadge status={slot.status} />
               </div>
 
-              <div className="flex items-center gap-2.5 text-sm text-slate-200">
-                <Calendar className="h-4 w-4 text-cyan-400 shrink-0" />
+              <div className="flex items-center gap-2.5 text-sm text-text-primary">
+                <Calendar className="h-4 w-4 text-primary shrink-0" />
                 <span>{formatDateTime(slot.startsAt)}</span>
               </div>
 
-              <div className="flex items-center gap-2.5 text-xs text-slate-400">
-                <Clock className="h-4 w-4 text-cyan-400/80 shrink-0" />
+              <div className="flex items-center gap-2.5 text-xs text-text-muted">
+                <Clock className="h-4 w-4 text-primary/80 shrink-0" />
                 <span>
                   Kết thúc:{' '}
                   {new Date(slot.endsAt).toLocaleTimeString('vi-VN', {
@@ -105,25 +105,25 @@ export function SlotDetailDrawer({
             {/* Booked details */}
             {isBooked && (
               <div className="space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted">
                   Thông tin học viên
                 </h3>
-                <div className="rounded-xl border border-sky-900/40 bg-sky-950/20 p-4 space-y-3">
+                <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-full bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-300 font-bold">
+                    <div className="h-9 w-9 rounded-full bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-600 dark:text-sky-300 font-bold">
                       <User className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-sm font-semibold text-text-primary">
                         {slot.memberName || 'Hội viên đã đăng ký'}
                       </p>
-                      <p className="text-xs text-sky-400">Mã đặt lịch: {slot.bookingId || slot.id}</p>
+                      <p className="text-xs text-sky-600 dark:text-sky-400">Mã đặt lịch: {slot.bookingId || slot.id}</p>
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-sky-900/40 text-xs text-slate-300 flex items-center justify-between">
-                    <span className="text-slate-400">Hình thức:</span>
-                    <span className="font-semibold text-sky-200">PT 1:1 Kèm riêng</span>
+                  <div className="pt-2 border-t border-sky-500/20 text-xs text-text-primary flex items-center justify-between">
+                    <span className="text-text-muted">Hình thức:</span>
+                    <span className="font-semibold text-sky-700 dark:text-sky-300">PT 1:1 Kèm riêng</span>
                   </div>
                 </div>
               </div>
@@ -131,11 +131,11 @@ export function SlotDetailDrawer({
 
             {/* Course info */}
             <div className="space-y-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted">
                 Khóa đào tạo
               </h3>
-              <div className="flex items-center gap-2 text-sm text-slate-300">
-                <BookOpen className="h-4 w-4 text-cyan-400 shrink-0" />
+              <div className="flex items-center gap-2 text-sm text-text-primary">
+                <BookOpen className="h-4 w-4 text-primary shrink-0" />
                 <span>{slot.courseName || 'Huấn luyện cá nhân'}</span>
               </div>
             </div>
@@ -143,11 +143,11 @@ export function SlotDetailDrawer({
             {/* Note / reason */}
             {slot.note && (
               <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted">
                   {isBlocked ? 'Lý do khóa khung giờ' : 'Ghi chú'}
                 </h3>
-                <div className="rounded-lg bg-slate-800/60 p-3 text-xs text-slate-300 border border-slate-700/50 flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="rounded-lg bg-bg-surface-muted p-3 text-xs text-text-primary border border-border-subtle flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                   <span>{slot.note}</span>
                 </div>
               </div>
@@ -156,14 +156,14 @@ export function SlotDetailDrawer({
             {/* Coach info */}
             {slot.coachName && (
               <div className="space-y-1">
-                <span className="text-xs text-slate-500">Huấn luyện viên phụ trách:</span>
-                <p className="text-xs font-medium text-slate-300">{slot.coachName}</p>
+                <span className="text-xs text-text-muted">Huấn luyện viên phụ trách:</span>
+                <p className="text-xs font-medium text-text-primary">{slot.coachName}</p>
               </div>
             )}
           </div>
 
           {/* Footer Actions */}
-          <div className="p-6 border-t border-slate-800 bg-slate-900/90 flex flex-col sm:flex-row gap-2.5">
+          <div className="p-6 border-t border-border-subtle bg-bg-surface flex flex-col sm:flex-row gap-2.5">
             {isOpenStatus && onBlockSlot && (
               <Button
                 variant="outline"

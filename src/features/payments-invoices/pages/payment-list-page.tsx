@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Printer, FileText, RefreshCw, AlertTriangle, Filter, DollarSign, CreditCard } from 'lucide-react'
+import { Printer, FileText, RefreshCw, AlertTriangle, Filter, DollarSign, CreditCard, Download } from 'lucide-react'
 import { formatVND } from '@/shared/utils/currency'
 import { formatDateTime } from '@/shared/utils/date'
 import { DataTable, type Column } from '@/shared/components/ui/data-table'
@@ -7,13 +7,16 @@ import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { Button } from '@/shared/components/ui/button'
 import { Modal } from '@/shared/components/ui/modal'
 import { paymentsService } from '../services/payments.service'
+import { downloadBlob } from '@/shared/utils/download'
 import { isAppApiError } from '@/shared/api/api-error'
-import type { Payment, Invoice, PaymentMethod, PaymentStatus } from '@/shared/types/api'
+import type { Payment, Invoice } from '@/shared/types/api'
 
 export function PaymentListPage() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [invoiceLoadingId, setInvoiceLoadingId] = useState<string | null>(null)
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // Filters
@@ -47,30 +50,46 @@ export function PaymentListPage() {
   }, [loadPayments])
 
   const handleOpenInvoice = async (p: Payment) => {
-    if (p.invoiceId) {
-      try {
-        const inv = await paymentsService.getInvoiceById(p.invoiceId)
-        if (inv) {
-          setPreviewInvoice(inv)
-          return
-        }
-      } catch {
-        // Fallback below
-      }
+    if (!p.invoiceId) {
+      setErrorMessage(`Giao dịch "${p.paymentCode || p.id}" chưa có hóa đơn được phát hành.`)
+      return
     }
 
-    const fallbackInv: Invoice = {
-      id: p.invoiceId || 'inv-' + p.id,
-      invoiceNumber: 'INV-' + (p.paymentCode || p.id.slice(0, 8)),
-      paymentId: p.id,
-      memberNameSnapshot: p.memberName || 'Hội viên',
-      itemNameSnapshot: p.itemDescription || 'Dịch vụ Gym / PT',
-      subtotal: p.amount,
-      total: p.amount,
-      issuedAt: p.paidAt || new Date().toISOString(),
-      paymentMethod: p.method,
+    setInvoiceLoadingId(p.id)
+    setErrorMessage(null)
+    try {
+      const inv = await paymentsService.getInvoiceById(p.invoiceId)
+      if (inv) {
+        setPreviewInvoice(inv)
+      } else {
+        setErrorMessage('Không tìm thấy thông tin hóa đơn trên máy chủ.')
+      }
+    } catch (err) {
+      if (isAppApiError(err)) {
+        setErrorMessage(err.message || 'Lỗi khi tải hóa đơn.')
+      } else {
+        setErrorMessage('Không thể tải hóa đơn từ máy chủ.')
+      }
+    } finally {
+      setInvoiceLoadingId(null)
     }
-    setPreviewInvoice(fallbackInv)
+  }
+
+  const handleDownloadPdf = async (inv: Invoice) => {
+    setIsDownloadingPdf(true)
+    setErrorMessage(null)
+    try {
+      const blob = await paymentsService.downloadInvoicePdf(inv.id)
+      await downloadBlob(blob, `Invoice-${inv.invoiceNumber}.pdf`)
+    } catch (err: any) {
+      if (isAppApiError(err)) {
+        setErrorMessage(err.message || 'Không thể tải tập tin PDF hóa đơn.')
+      } else {
+        setErrorMessage(err.message || 'Không thể tải tập tin PDF hóa đơn.')
+      }
+    } finally {
+      setIsDownloadingPdf(false)
+    }
   }
 
   const columns: Column<Payment>[] = useMemo(
@@ -78,35 +97,35 @@ export function PaymentListPage() {
       {
         header: 'Mã Thanh Toán',
         accessor: (row) => (
-          <span className="font-mono font-bold text-orange-400">{row.paymentCode || row.id.slice(0, 8)}</span>
+          <span className="font-mono font-bold text-primary">{row.paymentCode || row.id.slice(0, 8)}</span>
         ),
       },
       {
         header: 'Hội viên',
         accessor: (row) => (
           <div>
-            <p className="font-semibold text-slate-200">{row.memberName || 'Hội viên'}</p>
-            {row.memberCode && <p className="text-[11px] text-slate-400 font-mono">{row.memberCode}</p>}
+            <p className="font-semibold text-text-primary">{row.memberName || 'Hội viên'}</p>
+            {row.memberCode && <p className="text-[11px] text-text-muted font-mono">{row.memberCode}</p>}
           </div>
         ),
       },
       {
         header: 'Nội dung giao dịch',
         accessor: (row) => (
-          <span className="text-slate-300">{row.itemDescription || row.description || 'Dịch vụ Gym / PT'}</span>
+          <span className="text-text-muted">{row.itemDescription || row.description || 'Dịch vụ Gym / PT'}</span>
         ),
       },
       {
         header: 'Số tiền (VND)',
-        accessor: (row) => <span className="font-bold text-emerald-400">{formatVND(row.amount)}</span>,
+        accessor: (row) => <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatVND(row.amount)}</span>,
       },
       {
         header: 'Phương thức',
         accessor: (row) => (
-          <span className="inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-cyan-300">
+          <span className="inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5 rounded-full bg-bg-surface-muted border border-border-subtle text-text-primary">
             {row.method === 'CASH' && <DollarSign className="h-3 w-3" />}
             {row.method === 'BANK_TRANSFER' && <CreditCard className="h-3 w-3" />}
-            {row.method === 'VNPAY' && <CreditCard className="h-3 w-3 text-red-400" />}
+            {row.method === 'VNPAY' && <CreditCard className="h-3 w-3 text-danger" />}
             <span>{row.method}</span>
           </span>
         ),
@@ -127,8 +146,8 @@ export function PaymentListPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Sổ Thu Ngân & Hóa Đơn (WEB-REC-08, 09)</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Sổ Thu Ngân & Hóa Đơn (WEB-REC-08, 09)</h1>
+          <p className="text-xs text-text-muted mt-1">
             Ghi nhận các khoản thu vé Gym, hợp đồng PT và phát hành hóa đơn điện tử tự động
           </p>
         </div>
@@ -145,25 +164,25 @@ export function PaymentListPage() {
       </div>
 
       {errorMessage && (
-        <div className="flex items-center gap-2.5 rounded-2xl border border-red-500/30 bg-red-950/40 p-4 text-xs text-red-300">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+        <div className="flex items-center gap-2.5 rounded-2xl border border-danger/30 bg-danger/10 p-4 text-xs text-danger">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-danger" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {/* Filter Toolbar */}
-      <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-xs">
-        <div className="flex items-center gap-2 text-slate-400">
+      <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-border-subtle bg-bg-surface p-4 text-xs shadow-sm">
+        <div className="flex items-center gap-2 text-text-muted">
           <Filter className="h-3.5 w-3.5" />
-          <span className="font-semibold text-slate-200">Lọc dữ liệu:</span>
+          <span className="font-semibold text-text-primary">Lọc dữ liệu:</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-slate-400">Trạng thái:</label>
+          <label className="text-text-muted">Trạng thái:</label>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            className="bg-bg-input border border-border-subtle text-text-primary rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="PAID">Đã thanh toán (PAID)</option>
@@ -174,11 +193,11 @@ export function PaymentListPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-slate-400">Phương thức:</label>
+          <label className="text-text-muted">Phương thức:</label>
           <select
             value={methodFilter}
             onChange={(e) => setMethodFilter(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            className="bg-bg-input border border-border-subtle text-text-primary rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
           >
             <option value="ALL">Tất cả phương thức</option>
             <option value="CASH">Tiền mặt (CASH)</option>
@@ -198,10 +217,11 @@ export function PaymentListPage() {
             size="sm"
             variant="outline"
             className="text-xs"
+            disabled={invoiceLoadingId === row.id}
             onClick={() => handleOpenInvoice(row)}
           >
-            <FileText className="h-3.5 w-3.5 mr-1 text-cyan-400" />
-            In Hóa đơn
+            <FileText className="h-3.5 w-3.5 mr-1 text-primary" />
+            {invoiceLoadingId === row.id ? 'Đang tải...' : 'In Hóa đơn'}
           </Button>
         )}
       />
@@ -215,42 +235,51 @@ export function PaymentListPage() {
       >
         {previewInvoice && (
           <div className="space-y-6 p-2">
-            <div className="border-b border-slate-800 pb-4 flex justify-between items-start">
+            <div className="border-b border-border-subtle pb-4 flex justify-between items-start">
               <div>
-                <h3 className="text-lg font-extrabold text-white">SPORTS CENTER MANAGEMENT</h3>
-                <p className="text-xs text-slate-400">123 Đường Cầu Giấy, Hà Nội • Hotline: 1900 6868</p>
+                <h3 className="text-lg font-extrabold text-text-primary">SPORTS CENTER MANAGEMENT</h3>
+                <p className="text-xs text-text-muted">123 Đường Cầu Giấy, Hà Nội • Hotline: 1900 6868</p>
               </div>
               <div className="text-right">
-                <span className="text-xs font-mono font-bold text-orange-400">
+                <span className="text-xs font-mono font-bold text-primary">
                   {previewInvoice.invoiceNumber}
                 </span>
-                <p className="text-[10px] text-slate-500">{formatDateTime(previewInvoice.issuedAt)}</p>
+                <p className="text-[10px] text-text-muted">{formatDateTime(previewInvoice.issuedAt)}</p>
               </div>
             </div>
 
-            <div className="text-xs text-slate-300 space-y-1">
-              <p>Khách hàng: <strong className="text-white">{previewInvoice.memberNameSnapshot}</strong></p>
-              <p>Hình thức thanh toán: <strong className="text-white">{previewInvoice.paymentMethod}</strong></p>
+            <div className="text-xs text-text-muted space-y-1">
+              <p>Khách hàng: <strong className="text-text-primary">{previewInvoice.memberNameSnapshot}</strong></p>
+              <p>Hình thức thanh toán: <strong className="text-text-primary">{previewInvoice.paymentMethod}</strong></p>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-3">
-              <div className="flex justify-between text-xs border-b border-slate-800 pb-2 font-bold text-slate-400">
+            <div className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 space-y-3">
+              <div className="flex justify-between text-xs border-b border-border-subtle pb-2 font-bold text-text-muted">
                 <span>Dịch vụ</span>
                 <span>Thành tiền</span>
               </div>
-              <div className="flex justify-between text-sm text-slate-200">
+              <div className="flex justify-between text-sm text-text-primary">
                 <span>{previewInvoice.itemNameSnapshot}</span>
-                <span className="font-bold text-emerald-400">{formatVND(previewInvoice.total)}</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatVND(previewInvoice.total)}</span>
               </div>
             </div>
 
-            <div className="rounded-xl bg-slate-800/40 p-3 text-center text-[11px] text-slate-400 italic">
+            <div className="rounded-xl bg-bg-surface-muted p-3 text-center text-[11px] text-text-muted italic border border-border-subtle">
               Lưu ý: Hóa đơn đã thanh toán tuân thủ chính sách không hoàn tiền (Non-refundable).
             </div>
 
-            <div className="flex justify-end gap-2 border-t border-slate-800 pt-3">
+            <div className="flex justify-end gap-2 border-t border-border-subtle pt-3">
               <Button variant="ghost" onClick={() => setPreviewInvoice(null)}>
                 Đóng
+              </Button>
+              <Button
+                variant="outline"
+                className="gap-1.5"
+                disabled={isDownloadingPdf}
+                onClick={() => previewInvoice && handleDownloadPdf(previewInvoice)}
+              >
+                <Download className="h-4 w-4" />
+                <span>{isDownloadingPdf ? 'Đang tải PDF...' : 'Tải PDF'}</span>
               </Button>
               <Button
                 variant="primary"

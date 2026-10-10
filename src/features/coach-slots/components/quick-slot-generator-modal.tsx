@@ -321,14 +321,14 @@ export function QuickSlotGeneratorModal({
 
         {/* 1. Chọn Khóa học đang phụ trách */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-            Khóa học phụ trách (Chỉ các khóa đã được duyệt - APPROVED) <span className="text-rose-400">*</span>
+          <label className="block text-xs font-semibold text-text-primary mb-1.5">
+            Khóa học phụ trách (Chỉ các khóa đã được duyệt - APPROVED) <span className="text-danger">*</span>
           </label>
           <div className="relative">
             <select
               value={selectedOfferingId}
               onChange={(e) => setSelectedOfferingId(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 transition-colors"
+              className="w-full rounded-xl border border-border-subtle bg-bg-input px-3.5 py-2.5 text-xs text-text-primary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
             >
               {approvedOfferings.length === 0 ? (
                 <option value="">-- Chưa có khóa học nào được duyệt --</option>
@@ -344,17 +344,17 @@ export function QuickSlotGeneratorModal({
         </div>
 
         {/* 2. Chọn hình thức ngày áp dụng */}
-        <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-950/50 p-3.5">
+        <div className="space-y-3 rounded-xl border border-border-subtle bg-bg-surface-muted p-3.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-300">Thời gian áp dụng</span>
-            <div className="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
+            <span className="text-xs font-semibold text-text-primary">Thời gian áp dụng</span>
+            <div className="inline-flex rounded-lg bg-bg-surface p-0.5 border border-border-subtle">
               <button
                 type="button"
                 onClick={() => setScheduleMode('single')}
                 className={`px-3 py-1 text-[11px] font-medium rounded-md transition-colors ${
                   scheduleMode === 'single'
                     ? 'bg-orange-500 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-text-muted hover:text-text-primary'
                 }`}
               >
                 1 Ngày duy nhất
@@ -365,7 +365,7 @@ export function QuickSlotGeneratorModal({
                 className={`px-3 py-1 text-[11px] font-medium rounded-md transition-colors ${
                   scheduleMode === 'range'
                     ? 'bg-orange-500 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-text-muted hover:text-text-primary'
                 }`}
               >
                 Lặp lại theo tuần
@@ -375,7 +375,7 @@ export function QuickSlotGeneratorModal({
 
           {scheduleMode === 'single' ? (
             <div>
-              <label className="block text-[11px] font-medium text-slate-400 mb-1">
+              <label className="block text-[11px] font-medium text-text-muted mb-1">
                 Chọn ngày cụ thể
               </label>
               <input
@@ -383,14 +383,14 @@ export function QuickSlotGeneratorModal({
                 min={todayStr}
                 value={singleDate}
                 onChange={(e) => setSingleDate(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-orange-500 focus:outline-none"
+                className="w-full rounded-xl border border-border-subtle bg-bg-input px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none"
               />
             </div>
           ) : (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                  <label className="block text-[11px] font-medium text-text-muted mb-1">
                     Từ ngày
                   </label>
                   <input
@@ -398,11 +398,11 @@ export function QuickSlotGeneratorModal({
                     min={todayStr}
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-orange-500 focus:outline-none"
+                    className="w-full rounded-xl border border-border-subtle bg-bg-input px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                  <label className="block text-[11px] font-medium text-text-muted mb-1">
                     Đến ngày
                   </label>
                   <input
@@ -410,7 +410,7 @@ export function QuickSlotGeneratorModal({
                     min={startDate || todayStr}
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-orange-500 focus:outline-none"
+                    className="w-full rounded-xl border border-border-subtle bg-bg-input px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none"
                   />
                 </div>
               </div>
@@ -418,22 +418,22 @@ export function QuickSlotGeneratorModal({
               {/* Day of week chips */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] font-medium text-slate-400">
+                  <span className="text-[11px] font-medium text-text-muted">
                     Áp dụng cho các ngày trong tuần:
                   </span>
                   <div className="flex gap-2 text-[10px]">
                     <button
                       type="button"
                       onClick={() => setSelectedDays([1, 2, 3, 4, 5])}
-                      className="text-orange-400 hover:underline"
+                      className="text-orange-500 hover:underline"
                     >
                       T2 - T6
                     </button>
-                    <span className="text-slate-600">•</span>
+                    <span className="text-text-muted/60">•</span>
                     <button
                       type="button"
                       onClick={() => setSelectedDays([1, 2, 3, 4, 5, 6, 7])}
-                      className="text-orange-400 hover:underline"
+                      className="text-orange-500 hover:underline"
                     >
                       Cả tuần
                     </button>
@@ -449,8 +449,8 @@ export function QuickSlotGeneratorModal({
                         onClick={() => toggleDay(day.value)}
                         className={`py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                           isSelected
-                            ? 'bg-orange-500/20 border-orange-500 text-orange-300 shadow-xs'
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                            ? 'bg-orange-500/20 border-orange-500 text-orange-600 dark:text-orange-300 shadow-xs'
+                            : 'bg-bg-surface border-border-subtle text-text-muted hover:border-border-strong'
                         }`}
                       >
                         {day.short}
@@ -467,10 +467,10 @@ export function QuickSlotGeneratorModal({
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
             <div>
-              <span className="text-xs font-semibold text-slate-200">
+              <span className="text-xs font-semibold text-text-primary">
                 Chọn các ca muốn mở ({selectedSlotIndexes.length}/7 ca)
               </span>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-text-muted">
                 Đã bao gồm 15 phút buffer giữa các ca để hồi phục &amp; ghi chép (Tự động loại bỏ ca trùng &amp; quá khứ)
               </p>
             </div>
@@ -482,7 +482,7 @@ export function QuickSlotGeneratorModal({
                 variant="outline"
                 size="sm"
                 onClick={selectMorningSlots}
-                className="h-7 text-[11px] px-2.5 gap-1 border-amber-500/40 text-amber-300 hover:bg-amber-950/40"
+                className="h-7 text-[11px] px-2.5 gap-1 border-amber-500/40 text-amber-600 dark:text-amber-300 hover:bg-amber-500/10"
               >
                 <Sun className="h-3 w-3" />
                 Ca sáng (1, 2)
@@ -492,7 +492,7 @@ export function QuickSlotGeneratorModal({
                 variant="outline"
                 size="sm"
                 onClick={selectEveningSlots}
-                className="h-7 text-[11px] px-2.5 gap-1 border-indigo-500/40 text-indigo-300 hover:bg-indigo-950/40"
+                className="h-7 text-[11px] px-2.5 gap-1 border-indigo-500/40 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/10"
               >
                 <Moon className="h-3 w-3" />
                 Ca tối (4, 5, 6, 7)
@@ -502,7 +502,7 @@ export function QuickSlotGeneratorModal({
                 variant="ghost"
                 size="sm"
                 onClick={selectAllSlots}
-                className="h-7 text-[11px] px-2 text-slate-300 hover:text-white"
+                className="h-7 text-[11px] px-2 text-text-muted hover:text-text-primary"
               >
                 Tất cả
               </Button>
@@ -511,7 +511,7 @@ export function QuickSlotGeneratorModal({
                 variant="ghost"
                 size="sm"
                 onClick={clearAllSlots}
-                className="h-7 text-[11px] px-2 text-slate-400 hover:text-rose-300"
+                className="h-7 text-[11px] px-2 text-text-muted hover:text-danger"
               >
                 Bỏ chọn
               </Button>
@@ -535,10 +535,10 @@ export function QuickSlotGeneratorModal({
                   }}
                   className={`rounded-xl border p-2.5 transition-all select-none flex items-start gap-2.5 ${
                     isDisabled
-                      ? 'border-slate-800/60 bg-slate-950/60 opacity-40 cursor-not-allowed'
+                      ? 'border-border-subtle bg-bg-surface-muted/60 opacity-40 cursor-not-allowed'
                       : isChecked
-                      ? 'cursor-pointer border-orange-500/80 bg-orange-950/25 ring-1 ring-orange-500/40'
-                      : 'cursor-pointer border-slate-800 bg-slate-900/60 hover:border-slate-700 opacity-80 hover:opacity-100'
+                      ? 'cursor-pointer border-orange-500/80 bg-orange-500/10 ring-1 ring-orange-500/40'
+                      : 'cursor-pointer border-border-subtle bg-bg-surface hover:border-border-strong opacity-80 hover:opacity-100'
                   }`}
                   title={
                     isAlreadyCreated
@@ -548,30 +548,30 @@ export function QuickSlotGeneratorModal({
                       : undefined
                   }
                 >
-                  <div className="mt-0.5 text-orange-400">
+                  <div className="mt-0.5 text-orange-500">
                     {isDisabled ? (
-                      <Square className="h-4 w-4 text-slate-600" />
+                      <Square className="h-4 w-4 text-text-muted/40" />
                     ) : isChecked ? (
-                      <CheckSquare className="h-4 w-4 text-orange-400" />
+                      <CheckSquare className="h-4 w-4 text-orange-500" />
                     ) : (
-                      <Square className="h-4 w-4 text-slate-500" />
+                      <Square className="h-4 w-4 text-text-muted" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1 mb-0.5">
                       <span
                         className={`text-xs font-bold truncate ${
-                          isDisabled ? 'text-slate-500 line-through' : 'text-slate-100'
+                          isDisabled ? 'text-text-muted line-through' : 'text-text-primary'
                         }`}
                       >
                         {slot.name}
                       </span>
                       {isAlreadyCreated ? (
-                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border shrink-0 border-amber-500/30 bg-amber-950/30 text-amber-300">
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border shrink-0 border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-300">
                           Đã có ca ({existingSlot.status})
                         </span>
                       ) : isPast ? (
-                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border shrink-0 border-rose-500/30 bg-rose-950/30 text-rose-400">
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border shrink-0 border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-400">
                           Đã qua giờ
                         </span>
                       ) : (
@@ -584,11 +584,11 @@ export function QuickSlotGeneratorModal({
                     </div>
 
                     {/* Workout time & buffer time */}
-                    <div className="flex items-center justify-between text-[11px] font-mono mt-1 text-slate-300">
-                      <span className={`font-semibold ${isDisabled ? 'text-slate-500' : 'text-emerald-400'}`}>
+                    <div className="flex items-center justify-between text-[11px] font-mono mt-1 text-text-muted">
+                      <span className={`font-semibold ${isDisabled ? 'text-text-muted' : 'text-emerald-600 dark:text-emerald-400'}`}>
                         {slot.startTime} – {slot.endTime}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-sans">
+                      <span className="text-[10px] text-text-muted font-sans">
                         Buffer: {slot.bufferTime}
                       </span>
                     </div>
@@ -601,7 +601,7 @@ export function QuickSlotGeneratorModal({
 
         {/* Note input */}
         <div>
-          <label className="block text-[11px] font-medium text-slate-400 mb-1">
+          <label className="block text-[11px] font-medium text-text-muted mb-1">
             Ghi chú thêm (Tùy chọn)
           </label>
           <input
@@ -609,17 +609,17 @@ export function QuickSlotGeneratorModal({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Ví dụ: Ưu tiên hội viên mục tiêu tăng cơ, chuẩn bị dụng cụ..."
-            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-orange-500 focus:outline-none"
+            className="w-full rounded-xl border border-border-subtle bg-bg-input px-3 py-2 text-xs text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
           />
         </div>
 
         {/* Footer & Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-800">
-          <div className="flex items-center gap-2 text-xs text-slate-300">
-            <Info className="h-4 w-4 text-orange-400 shrink-0" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border-subtle">
+          <div className="flex items-center gap-2 text-xs text-text-primary">
+            <Info className="h-4 w-4 text-orange-500 shrink-0" />
             <span>
               Tổng số khung giờ dự kiến:{' '}
-              <strong className="text-orange-400 font-bold text-sm">
+              <strong className="text-orange-500 font-bold text-sm">
                 {totalSlotsCount}
               </strong>{' '}
               slot ({selectedSlotIndexes.length} ca × {calculatedDaysCount} ngày)
@@ -633,7 +633,7 @@ export function QuickSlotGeneratorModal({
               size="sm"
               onClick={onClose}
               disabled={isSubmitting}
-              className="text-xs border-slate-700 hover:bg-slate-800"
+              className="text-xs border-border-subtle hover:bg-bg-surface-muted"
             >
               Hủy bỏ
             </Button>

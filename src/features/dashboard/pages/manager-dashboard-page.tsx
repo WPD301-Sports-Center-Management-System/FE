@@ -49,8 +49,8 @@ export function ManagerDashboardPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Bảng điều khiển Quản Lý (Manager)</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Bảng điều khiển Quản Lý (Manager)</h1>
+          <p className="text-xs text-text-muted mt-1">
             Tổng quan doanh thu, chia sẻ doanh thu 60/40, hội viên và hoạt động phòng Gym thời gian thực
           </p>
         </div>
@@ -79,8 +79,8 @@ export function ManagerDashboardPage() {
       </div>
 
       {errorMessage && (
-        <div className="flex items-start gap-2.5 rounded-2xl border border-red-500/30 bg-red-950/40 p-4 text-xs text-red-300">
-          <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-2xl border border-danger/30 bg-danger/10 p-4 text-xs text-danger">
+          <AlertCircle className="h-4 w-4 shrink-0 text-danger mt-0.5" />
           <span>{errorMessage}</span>
         </div>
       )}
@@ -122,23 +122,23 @@ export function ManagerDashboardPage() {
       {/* Grid: Alerts & Top Coaches */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column (2 cols): System Alerts */}
-        <div className="lg:col-span-2 space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-md">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-400" />
+        <div className="lg:col-span-2 space-y-4 rounded-2xl border border-border-subtle bg-bg-surface p-6 backdrop-blur-md">
+          <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-warning" />
             <span>Tình Trạng Vận Hành & Hoạt Động</span>
           </h2>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-950/20 p-4">
+            <div className="flex items-center justify-between rounded-xl border border-success/30 bg-success/10 p-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-emerald-500/20 p-2 text-emerald-400">
+                <div className="rounded-lg bg-success/20 p-2 text-success">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-slate-200">
+                  <p className="text-xs font-semibold text-text-primary">
                     Lịch tập PT 1:1 hôm nay: {stats?.bookingsToday || 0} buổi
                   </p>
-                  <p className="text-[10px] text-slate-400">Được giám sát và cập nhật trực tiếp theo thời gian thực</p>
+                  <p className="text-[10px] text-text-muted">Được giám sát và cập nhật trực tiếp theo thời gian thực</p>
                 </div>
               </div>
               <Link to="/receptionist/calendar">
@@ -148,16 +148,16 @@ export function ManagerDashboardPage() {
               </Link>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-slate-700/40 bg-slate-800/30 p-4">
+            <div className="flex items-center justify-between rounded-xl border border-border-subtle bg-bg-surface-muted p-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-slate-700/50 p-2 text-slate-300">
+                <div className="rounded-lg bg-bg-surface p-2 text-text-muted">
                   <AlertTriangle className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-slate-200">
+                  <p className="text-xs font-semibold text-text-primary">
                     Sự cố thiết bị ghi nhận: {stats?.equipmentIssues || 0} mục
                   </p>
-                  <p className="text-[10px] text-slate-400">Thiết bị & cơ sở vật chất phòng tập</p>
+                  <p className="text-[10px] text-text-muted">Thiết bị & cơ sở vật chất phòng tập</p>
                 </div>
               </div>
               <Link to="/manager/equipment">
@@ -170,29 +170,29 @@ export function ManagerDashboardPage() {
         </div>
 
         {/* Right Column: Top Coaches */}
-        <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-md">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-orange-400" />
+        <div className="space-y-4 rounded-2xl border border-border-subtle bg-bg-surface p-6 backdrop-blur-md">
+          <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-primary" />
             <span>Huấn Luyện Viên ({coaches.length})</span>
           </h2>
 
           <div className="space-y-4 max-h-72 overflow-y-auto pr-1">
             {coaches.map((c) => (
-              <div key={c.id} className="flex items-center justify-between border-b border-slate-800 pb-3 last:border-0">
+              <div key={c.id} className="flex items-center justify-between border-b border-border-subtle pb-3 last:border-0">
                 <div className="flex items-center gap-3">
                   <img
                     src={c.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
                     alt={c.fullName}
-                    className="h-9 w-9 rounded-full object-cover border border-slate-700"
+                    className="h-9 w-9 rounded-full object-cover border border-border-subtle"
                   />
                   <div>
-                    <p className="text-xs font-bold text-slate-200">{c.fullName}</p>
-                    <p className="text-[10px] text-slate-400">{c.specialization || 'HLV Thể hình & PT'}</p>
+                    <p className="text-xs font-bold text-text-primary">{c.fullName}</p>
+                    <p className="text-[10px] text-text-muted">{c.specialization || 'HLV Thể hình & PT'}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-bold text-amber-400">★ {c.averageRating || 5.0}</span>
-                  <p className="text-[10px] text-slate-500">{c.reviewCount || 0} đánh giá</p>
+                  <span className="text-xs font-bold text-warning">★ {c.averageRating || 5.0}</span>
+                  <p className="text-[10px] text-text-muted">{c.reviewCount || 0} đánh giá</p>
                 </div>
               </div>
             ))}

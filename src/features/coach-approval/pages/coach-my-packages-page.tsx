@@ -207,8 +207,8 @@ export function CoachMyPackagesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Khóa Giảng Dạy & Gói Của Tôi (WEB-COA-02)</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Khóa Giảng Dạy & Gói Của Tôi (WEB-COA-02)</h1>
+          <p className="text-xs text-text-muted mt-1">
             Đề xuất gói huấn luyện cá nhân và quản lý các khóa đào tạo đã được duyệt
           </p>
         </div>
@@ -240,62 +240,62 @@ export function CoachMyPackagesPage() {
 
       {loading ? (
         <div className="flex flex-col items-center justify-center p-12 gap-2">
-          <RefreshCw className="h-8 w-8 text-orange-400 animate-spin" />
-          <p className="text-xs text-slate-400">Đang tải danh sách gói tập...</p>
+          <RefreshCw className="h-8 w-8 text-orange-500 animate-spin" />
+          <p className="text-xs text-text-muted">Đang tải danh sách gói tập...</p>
         </div>
       ) : packages.length === 0 ? (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-12 text-center">
-          <Package className="h-12 w-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-white">Chưa có gói tập nào</h3>
-          <p className="text-xs text-slate-400 mt-1">Bấm nút "Đề xuất gói PT mới" để bắt đầu gửi yêu cầu phê duyệt.</p>
+        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-12 text-center">
+          <Package className="h-12 w-12 text-text-muted mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-text-primary">Chưa có gói tập nào</h3>
+          <p className="text-xs text-text-muted mt-1">Bấm nút "Đề xuất gói PT mới" để bắt đầu gửi yêu cầu phê duyệt.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {packages.map((pkg) => (
             <div
               key={pkg.id}
-              className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 space-y-4 relative overflow-hidden flex flex-col justify-between"
+              className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 relative overflow-hidden flex flex-col justify-between shadow-sm"
             >
               <div className="space-y-3">
                 <div className="flex justify-between items-start">
-                  <span className="rounded-full bg-orange-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-orange-400">
+                  <span className="rounded-full bg-orange-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-orange-500">
                     {pkg.sessionCount} Buổi Tập
                   </span>
                   <StatusBadge status={pkg.approvalStatus} />
                 </div>
 
                 <div>
-                  <h3 className="text-base font-bold text-white">{pkg.name}</h3>
-                  <p className="text-xs text-slate-400 mt-1">{pkg.courseName || 'Khóa đào tạo PT'}</p>
+                  <h3 className="text-base font-bold text-text-primary">{pkg.name}</h3>
+                  <p className="text-xs text-text-muted mt-1">{pkg.courseName || 'Khóa đào tạo PT'}</p>
                 </div>
 
-                <div className="rounded-xl bg-slate-800/40 p-3 text-xs text-slate-300 space-y-1">
+                <div className="rounded-xl bg-bg-surface-muted p-3 text-xs text-text-primary space-y-1 border border-border-subtle">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Thời hạn:</span>
-                    <span className="font-semibold text-white">{pkg.validityDays} Ngày</span>
+                    <span className="text-text-muted">Thời hạn:</span>
+                    <span className="font-semibold text-text-primary">{pkg.validityDays} Ngày</span>
                   </div>
-                  <div className="flex justify-between border-t border-slate-700/50 pt-1">
-                    <span className="text-slate-400">Học phí:</span>
-                    <span className="font-bold text-emerald-400">{formatVND(pkg.price)}</span>
+                  <div className="flex justify-between border-t border-border-subtle pt-1">
+                    <span className="text-text-muted">Học phí:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatVND(pkg.price)}</span>
                   </div>
                 </div>
 
                 {pkg.rejectionReason && (
-                  <p className="text-[11px] text-red-400 italic bg-red-950/20 rounded p-2 border border-red-500/20">
+                  <p className="text-[11px] text-danger italic bg-danger/10 rounded p-2 border border-danger/20">
                     Lý do từ chối: {pkg.rejectionReason}
                   </p>
                 )}
 
                 {pkg.approvalStatus === 'APPROVED' && (
-                  <div className="pt-2 border-t border-slate-800 flex justify-end">
+                  <div className="pt-2 border-t border-border-subtle flex justify-end">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleToggleStatus(pkg)}
                       className={`text-xs gap-1.5 ${
                         pkg.isActive
-                          ? 'text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 border-rose-500/20'
-                          : 'text-emerald-400 hover:bg-emerald-950/40 hover:text-emerald-300 border-emerald-500/20'
+                          ? 'text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border-rose-500/20'
+                          : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 border-emerald-500/20'
                       }`}
                     >
                       <span>{pkg.isActive ? 'Tạm dừng bán' : 'Kích hoạt mở bán'}</span>
@@ -304,12 +304,12 @@ export function CoachMyPackagesPage() {
                 )}
 
                 {pkg.approvalStatus === 'REJECTED' && (
-                  <div className="pt-2 border-t border-slate-800 flex justify-end">
+                  <div className="pt-2 border-t border-border-subtle flex justify-end">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleOpenEdit(pkg)}
-                      className="text-xs text-orange-400 border-orange-500/30 hover:bg-orange-950/40"
+                      className="text-xs text-orange-500 border-orange-500/30 hover:bg-orange-500/10"
                     >
                       Sửa & gửi duyệt lại
                     </Button>
@@ -368,7 +368,7 @@ export function CoachMyPackagesPage() {
             onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
             disabled={isEditing}
           />
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
             <Button type="button" variant="ghost" onClick={() => setEditingPkg(null)} disabled={isEditing}>
               Hủy
             </Button>
@@ -435,7 +435,7 @@ export function CoachMyPackagesPage() {
             placeholder="Mô tả quyền lợi học viên, cam kết hiệu quả..."
             disabled={isSubmitting}
           />
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
             <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)} disabled={isSubmitting}>
               Hủy
             </Button>

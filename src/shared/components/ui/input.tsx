@@ -12,22 +12,22 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full space-y-1.5">
         {label && (
-          <label htmlFor={inputId} className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+          <label htmlFor={inputId} className="block text-xs font-semibold uppercase tracking-wider text-text-muted">
             {label}
           </label>
         )}
         <input
           id={inputId}
           ref={ref}
-          className={`w-full rounded-xl border bg-slate-900/80 px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
-            error ? 'border-red-500 focus:border-red-500' : 'border-slate-700/80 focus:border-orange-500'
+          className={`w-full rounded-xl border bg-bg-input px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted/60 transition-colors focus:outline-none focus:ring-2 focus:ring-focus-ring/40 ${
+            error ? 'border-danger focus:border-danger' : 'border-border-subtle focus:border-primary'
           } ${className}`}
           {...props}
         />
         {error ? (
-          <p className="text-xs text-red-400">{error}</p>
+          <p className="text-xs text-danger">{error}</p>
         ) : helperText ? (
-          <p className="text-xs text-slate-400">{helperText}</p>
+          <p className="text-xs text-text-muted">{helperText}</p>
         ) : null}
       </div>
     )
@@ -47,27 +47,27 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full space-y-1.5">
         {label && (
-          <label htmlFor={selectId} className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+          <label htmlFor={selectId} className="block text-xs font-semibold uppercase tracking-wider text-text-muted">
             {label}
           </label>
         )}
         <select
           id={selectId}
           ref={ref}
-          className={`w-full rounded-xl border bg-slate-900/80 px-3.5 py-2.5 text-sm text-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
-            error ? 'border-red-500' : 'border-slate-700/80 focus:border-orange-500'
+          className={`w-full rounded-xl border bg-bg-input px-3.5 py-2.5 text-sm text-text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-focus-ring/40 ${
+            error ? 'border-danger focus:border-danger' : 'border-border-subtle focus:border-primary'
           } ${className}`}
           {...props}
         >
           {options.length > 0
             ? options.map((opt) => (
-                <option key={opt.value} value={opt.value} className="bg-slate-900 text-slate-100">
+                <option key={opt.value} value={opt.value} className="bg-bg-surface text-text-primary">
                   {opt.label}
                 </option>
               ))
             : children}
         </select>
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p className="text-xs text-danger">{error}</p>}
       </div>
     )
   }
@@ -85,20 +85,20 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="w-full space-y-1.5">
         {label && (
-          <label htmlFor={textId} className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+          <label htmlFor={textId} className="block text-xs font-semibold uppercase tracking-wider text-text-muted">
             {label}
           </label>
         )}
         <textarea
           id={textId}
           ref={ref}
-          className={`w-full rounded-xl border bg-slate-900/80 px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
-            error ? 'border-red-500' : 'border-slate-700/80 focus:border-orange-500'
+          className={`w-full rounded-xl border bg-bg-input px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted/60 transition-colors focus:outline-none focus:ring-2 focus:ring-focus-ring/40 ${
+            error ? 'border-danger focus:border-danger' : 'border-border-subtle focus:border-primary'
           } ${className}`}
           rows={3}
           {...props}
         />
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p className="text-xs text-danger">{error}</p>}
       </div>
     )
   }

@@ -120,8 +120,8 @@ export function CoachBookingDetailPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Quản Lý Lịch Hẹn PT 1:1 (WEB-COA-04)</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quản Lý Lịch Hẹn PT 1:1 (WEB-COA-04)</h1>
+          <p className="text-xs text-text-muted mt-1">
             Điểm danh hội viên, xác nhận hoàn tất buổi dạy hoặc xử lý hủy lịch đột xuất
           </p>
         </div>
@@ -147,13 +147,13 @@ export function CoachBookingDetailPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center p-16">
-          <RefreshCw className="h-8 w-8 text-orange-400 animate-spin" />
+          <RefreshCw className="h-8 w-8 text-orange-500 animate-spin" />
         </div>
       ) : bookings.length === 0 ? (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-12 text-center">
-          <Calendar className="h-12 w-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-white">Chưa có lịch hẹn nào</h3>
-          <p className="text-xs text-slate-400 mt-1">Các buổi tập PT 1:1 đã được hội viên đặt sẽ hiển thị tại đây.</p>
+        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-12 text-center">
+          <Calendar className="h-12 w-12 text-text-muted mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-text-primary">Chưa có lịch hẹn nào</h3>
+          <p className="text-xs text-text-muted mt-1">Các buổi tập PT 1:1 đã được hội viên đặt sẽ hiển thị tại đây.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -166,19 +166,19 @@ export function CoachBookingDetailPage() {
             return (
               <div
                 key={b.id}
-                className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6"
+                className="rounded-2xl border border-border-subtle bg-bg-surface p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm"
               >
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-base font-bold text-white">{memberName}</h3>
+                    <h3 className="text-base font-bold text-text-primary">{memberName}</h3>
                     <StatusBadge status={b.status} />
                   </div>
-                  <p className="text-xs text-slate-400">{courseName}</p>
-                  <div className="flex items-center gap-2 flex-wrap text-xs font-mono text-cyan-300">
+                  <p className="text-xs text-text-muted">{courseName}</p>
+                  <div className="flex items-center gap-2 flex-wrap text-xs font-mono text-primary">
                     <Clock className="h-3.5 w-3.5" />
                     <span>{startTime ? formatDateTime(startTime) : 'Chưa xếp thời gian'}</span>
                     {startTime && new Date(startTime) > new Date() && (
-                      <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-sans">
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-sans">
                         Chưa đến giờ hẹn
                       </span>
                     )}
@@ -190,7 +190,7 @@ export function CoachBookingDetailPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-xs text-red-400 border-red-500/30 hover:bg-red-950/40"
+                      className="text-xs text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
                       onClick={() => setCancelModalBooking(b)}
                       disabled={isProcessing}
                     >
@@ -200,7 +200,7 @@ export function CoachBookingDetailPage() {
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="text-xs text-amber-400 border-amber-500/30 hover:bg-amber-950/40"
+                      className="text-xs text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
                       onClick={() => handleMarkNoShow(b)}
                       disabled={isProcessing}
                     >
@@ -223,7 +223,7 @@ export function CoachBookingDetailPage() {
 
                 {b.status === 'COMPLETED' && (
                   <Link to="/coach/training-results">
-                    <Button size="sm" variant="outline" className="text-xs gap-1.5 border-teal-500/30 text-teal-300 hover:bg-teal-950/40">
+                    <Button size="sm" variant="outline" className="text-xs gap-1.5 border-teal-500/30 text-teal-600 dark:text-teal-300 hover:bg-teal-500/10">
                       <span>Ghi Training Result</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Button>
@@ -256,7 +256,7 @@ export function CoachBookingDetailPage() {
             placeholder="Ví dụ: Lịch thi đấu hoặc việc cá nhân đột xuất..."
             disabled={isSubmittingCancel}
           />
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"

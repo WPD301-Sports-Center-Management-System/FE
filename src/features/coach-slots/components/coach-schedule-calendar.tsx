@@ -100,13 +100,13 @@ export function CoachScheduleCalendar({
   }
 
   return (
-    <div className="relative rounded-2xl border border-slate-800 bg-slate-950/80 shadow-2xl backdrop-blur-md overflow-hidden min-w-0 w-full">
+    <div className="relative rounded-2xl border border-border-subtle bg-bg-surface shadow-md backdrop-blur-md overflow-hidden min-w-0 w-full">
       {/* Loading overlay */}
       {isLoading && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs">
-          <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 shadow-lg">
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-bg-app/60 backdrop-blur-xs">
+          <div className="flex items-center gap-3 rounded-xl border border-border-subtle bg-bg-surface px-4 py-2.5 shadow-lg">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-400 border-t-transparent" />
-            <span className="text-xs font-medium text-slate-200">Đang đồng bộ dữ liệu thời khóa biểu...</span>
+            <span className="text-xs font-medium text-text-primary">Đang đồng bộ dữ liệu thời khóa biểu...</span>
           </div>
         </div>
       )}
@@ -124,8 +124,8 @@ export function CoachScheduleCalendar({
 
           {/* Table Header */}
           <thead>
-            <tr className="border-b border-slate-800 bg-slate-900/90 divide-x divide-slate-800/80 text-center">
-              <th className="w-14 sm:w-16 py-3 px-1 text-xs font-bold text-slate-200 uppercase tracking-wider sticky left-0 z-20 bg-slate-900 text-center shadow-[1px_0_0_0_rgba(51,65,85,0.8)]">
+            <tr className="border-b border-border-subtle bg-bg-surface-muted divide-x divide-border-subtle text-center">
+              <th className="w-14 sm:w-16 py-3 px-1 text-xs font-bold text-text-primary uppercase tracking-wider sticky left-0 z-20 bg-bg-surface-muted text-center shadow-xs">
                 Slot
               </th>
               {days.map((d) => (
@@ -133,8 +133,8 @@ export function CoachScheduleCalendar({
                   key={d.dateStr}
                   className={`py-3 px-2 text-xs font-bold transition-colors ${
                     d.isToday
-                      ? 'bg-orange-500/10 text-orange-300 font-extrabold ring-inset ring-1 ring-orange-500/30'
-                      : 'text-slate-200'
+                      ? 'bg-orange-500/10 text-orange-400 font-extrabold ring-inset ring-1 ring-orange-500/30'
+                      : 'text-text-primary'
                   }`}
                 >
                   <div className="flex items-center justify-center gap-1.5 truncate">
@@ -149,16 +149,16 @@ export function CoachScheduleCalendar({
           </thead>
 
           {/* Table Body - 7 Standard Template Slots */}
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-border-subtle">
             {STANDARD_TEMPLATE_SLOTS.map((slot) => (
-              <tr key={slot.index} className="divide-x divide-slate-800/60 hover:bg-slate-900/30 transition-colors">
+              <tr key={slot.index} className="divide-x divide-border-subtle hover:bg-bg-surface-muted/40 transition-colors">
                 {/* Slot Number Column */}
-                <td className="w-14 sm:w-16 p-2 text-center align-middle sticky left-0 z-10 bg-slate-950/95 shadow-[1px_0_0_0_rgba(51,65,85,0.8)]">
+                <td className="w-14 sm:w-16 p-2 text-center align-middle sticky left-0 z-10 bg-bg-surface shadow-xs">
                   <div className="flex flex-col items-center justify-center">
-                    <span className="text-base font-bold text-slate-200 font-mono">
+                    <span className="text-base font-bold text-text-primary font-mono">
                       {slot.index}
                     </span>
-                    <span className="text-[9px] text-slate-500 font-mono leading-none mt-0.5">
+                    <span className="text-[9px] text-text-muted font-mono leading-none mt-0.5">
                       {slot.startTime}
                     </span>
                   </div>
@@ -176,7 +176,7 @@ export function CoachScheduleCalendar({
                     <td
                       key={`${d.dateStr}-${slot.index}`}
                       className={`p-1.5 align-top transition-colors relative min-h-[90px] ${
-                        d.isToday ? 'bg-orange-950/10' : isPast ? 'bg-slate-950/60' : ''
+                        d.isToday ? 'bg-orange-500/5' : isPast ? 'bg-bg-surface-muted/40' : ''
                       }`}
                     >
                       {cellEvents.length > 0 ? (
@@ -191,18 +191,18 @@ export function CoachScheduleCalendar({
                               <div
                                 key={ev.id}
                                 onClick={() => onEventClick(ev.id, ev)}
-                                className={`group/card cursor-pointer rounded-xl p-2 transition-all shadow-sm hover:shadow-md border min-w-0 overflow-hidden ${
+                                className={`group/card cursor-pointer rounded-xl p-2 transition-all shadow-xs hover:shadow-md border min-w-0 overflow-hidden ${
                                   isPast ? 'opacity-70 saturate-50 hover:opacity-100 hover:saturate-100 ' : ''
                                 }${
                                   status === 'OPEN'
-                                    ? 'bg-emerald-950/40 border-emerald-500/30 hover:border-emerald-500/60 hover:bg-emerald-950/60'
+                                    ? 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/60 hover:bg-emerald-500/20'
                                     : status === 'BOOKED'
-                                    ? 'bg-sky-950/40 border-sky-500/30 hover:border-sky-500/60 hover:bg-sky-950/60'
+                                    ? 'bg-sky-500/10 border-sky-500/30 hover:border-sky-500/60 hover:bg-sky-500/20'
                                     : status === 'BLOCKED'
-                                    ? 'bg-slate-900 border-slate-700/60 hover:border-slate-600'
+                                    ? 'bg-bg-surface-muted border-border-subtle hover:border-border-strong'
                                     : status === 'COMPLETED'
-                                    ? 'bg-teal-950/40 border-teal-500/30 hover:border-teal-500/60'
-                                    : 'bg-rose-950/40 border-rose-500/30 hover:border-rose-500/60'
+                                    ? 'bg-teal-500/10 border-teal-500/30 hover:border-teal-500/60'
+                                    : 'bg-rose-500/10 border-rose-500/30 hover:border-rose-500/60'
                                 }`}
                               >
                                 {/* Top: Course Name & Status Tag */}
@@ -210,7 +210,7 @@ export function CoachScheduleCalendar({
                                   <div className="flex items-center gap-1 min-w-0 flex-1">
                                     <BookOpen className={`h-3 w-3 shrink-0 ${cfg.textClass}`} />
                                     <span
-                                      className="text-[11px] font-bold text-slate-100 truncate leading-tight group-hover/card:text-white"
+                                      className="text-[11px] font-bold text-text-primary truncate leading-tight"
                                       title={ev.courseName || 'PT 1:1 Cá Nhân'}
                                     >
                                       {ev.courseName || 'PT 1:1 Cá Nhân'}
@@ -224,34 +224,34 @@ export function CoachScheduleCalendar({
                                 </div>
 
                                 {/* Time range */}
-                                <div className="flex items-center gap-1 text-[10.5px] font-mono text-slate-300 font-medium mb-1 min-w-0">
-                                  <Clock className="h-3 w-3 text-slate-400 shrink-0" />
+                                <div className="flex items-center gap-1 text-[10.5px] font-mono text-text-muted font-medium mb-1 min-w-0">
+                                  <Clock className="h-3 w-3 text-text-muted shrink-0" />
                                   <span className="truncate">
                                     {format(ev.start, 'HH:mm')} – {format(ev.end, 'HH:mm')}
                                   </span>
                                 </div>
 
                                 {/* Bottom info: Location & Member/Note */}
-                                <div className="space-y-0.5 text-[10.5px] text-slate-300 min-w-0">
+                                <div className="space-y-0.5 text-[10.5px] text-text-muted min-w-0">
                                   {isBooked ? (
                                     <div
-                                      className="flex items-center gap-1 font-semibold text-sky-300 min-w-0"
+                                      className="flex items-center gap-1 font-semibold text-sky-600 dark:text-sky-300 min-w-0"
                                       title={ev.memberName || 'Hội viên đã đặt'}
                                     >
-                                      <User className="h-3 w-3 shrink-0 text-sky-400" />
+                                      <User className="h-3 w-3 shrink-0 text-sky-500" />
                                       <span className="truncate">{ev.memberName || 'Hội viên đã đặt'}</span>
                                     </div>
                                   ) : isBlocked ? (
                                     <div
-                                      className="flex items-center gap-1 text-slate-400 min-w-0"
+                                      className="flex items-center gap-1 text-text-muted min-w-0"
                                       title={ev.note || 'Khóa bận'}
                                     >
-                                      <Lock className="h-3 w-3 shrink-0 text-amber-400" />
+                                      <Lock className="h-3 w-3 shrink-0 text-amber-500" />
                                       <span className="truncate">{ev.note || 'Khóa bận'}</span>
                                     </div>
                                   ) : (
-                                    <div className="flex items-center gap-1 text-slate-400 text-[10px] min-w-0">
-                                      <MapPin className="h-3 w-3 shrink-0 text-slate-500" />
+                                    <div className="flex items-center gap-1 text-text-muted text-[10px] min-w-0">
+                                      <MapPin className="h-3 w-3 shrink-0 text-text-muted" />
                                       <span className="truncate">Khu vực PT 1:1</span>
                                     </div>
                                   )}
@@ -263,10 +263,10 @@ export function CoachScheduleCalendar({
                       ) : isPast ? (
                         /* Past Empty Cell - LOCKED / DISABLED */
                         <div
-                          className="h-full w-full min-h-[60px] rounded-xl flex flex-col items-center justify-center text-slate-700 bg-slate-950/40 cursor-not-allowed select-none opacity-40"
+                          className="h-full w-full min-h-[60px] rounded-xl flex flex-col items-center justify-center text-text-muted/40 bg-bg-surface-muted/30 cursor-not-allowed select-none opacity-40"
                           title="Đã qua thời gian (Quá khứ - Không thể mở slot)"
                         >
-                          <span className="text-slate-700 text-sm font-bold">-</span>
+                          <span className="text-text-muted/40 text-sm font-bold">-</span>
                         </div>
                       ) : (
                         /* Future Empty Cell - Clickable to Open Slot */
@@ -281,10 +281,10 @@ export function CoachScheduleCalendar({
                               })
                             }
                           }}
-                          className="h-full w-full min-h-[60px] rounded-xl flex items-center justify-center text-slate-500 font-semibold cursor-pointer hover:bg-slate-900/60 hover:text-orange-400 transition-all group/empty"
+                          className="h-full w-full min-h-[60px] rounded-xl flex items-center justify-center text-text-muted font-semibold cursor-pointer hover:bg-bg-surface-muted hover:text-orange-400 transition-all group/empty"
                           title={`Click để mở Ca ${slot.index} (${slot.startTime} - ${slot.endTime}) ngày ${d.formatted}`}
                         >
-                          <span className="group-hover/empty:hidden text-slate-600 text-sm font-medium">
+                          <span className="group-hover/empty:hidden text-text-muted/60 text-sm font-medium">
                             -
                           </span>
                           <span className="hidden group-hover/empty:inline-flex items-center gap-1 text-[10px] font-semibold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded-lg border border-orange-500/20 shadow-xs animate-in fade-in duration-150">

@@ -112,36 +112,36 @@ export function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2 bg-[#070a11] text-slate-100">
+    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2 bg-bg-app text-text-primary">
       {/* Left Column: Hero Banner */}
-      <div className="relative hidden flex-col justify-between p-12 lg:flex overflow-hidden bg-slate-950 border-r border-slate-800">
+      <div className="relative hidden flex-col justify-between p-12 lg:flex overflow-hidden bg-bg-surface border-r border-border-subtle">
         <div className="absolute inset-0 bg-radial-gradient pointer-events-none" />
         <div className="absolute inset-0 bg-radial-blue pointer-events-none" />
 
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-600 shadow-lg shadow-orange-600/40">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/40">
             <Dumbbell className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-white">SPORTS CENTER</h2>
-            <p className="text-xs uppercase tracking-widest text-slate-400">Hệ Thống Quản Lý Phòng Gym & PT 1:1</p>
+            <h2 className="text-xl font-bold tracking-tight text-text-primary">SPORTS CENTER</h2>
+            <p className="text-xs uppercase tracking-widest text-text-muted">Hệ Thống Quản Lý Phòng Gym & PT 1:1</p>
           </div>
         </div>
 
         <div className="relative z-10 max-w-lg space-y-4">
-          <span className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-semibold text-orange-400">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             Hợp Đồng API v1.1 BE • FE • Mobile
           </span>
-          <h1 className="text-4xl font-extrabold tracking-tight text-white">
+          <h1 className="text-4xl font-extrabold tracking-tight text-text-primary">
             Nền tảng vận hành tập luyện <span className="text-gradient-orange">Chuẩn Chuyên Nghiệp</span>
           </h1>
-          <p className="text-sm text-slate-400 leading-relaxed">
+          <p className="text-sm text-text-muted leading-relaxed">
             Hỗ trợ quản lý thẻ tập Gym, điều phối lịch hẹn PT 1:1 theo thời gian thực với quy tắc cắt giờ 4 tiếng,
             soạn giáo án điện tử và quyết toán hoa hồng HLV tự động.
           </p>
         </div>
 
-        <div className="relative z-10 text-xs text-slate-500">
+        <div className="relative z-10 text-xs text-text-muted">
           © 2026 Sports Center Management System. All rights reserved.
         </div>
       </div>
@@ -150,8 +150,8 @@ export function LoginPage() {
       <div className="flex items-center justify-center p-8 sm:p-12">
         <div className="w-full max-w-md space-y-6">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-white">Đăng nhập tài khoản</h2>
-            <p className="mt-1 text-xs text-slate-400">
+            <h2 className="text-2xl font-bold tracking-tight text-text-primary">Đăng nhập tài khoản</h2>
+            <p className="mt-1 text-xs text-text-muted">
               Nhập thông tin xác thực để truy cập bảng điều khiển nội bộ
             </p>
           </div>
@@ -192,16 +192,16 @@ export function LoginPage() {
             />
 
             <div className="flex items-center justify-between text-xs">
-              <label className="flex items-center gap-2 cursor-pointer text-slate-400 hover:text-slate-300 select-none">
+              <label className="flex items-center gap-2 cursor-pointer text-text-muted hover:text-text-primary select-none">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-slate-700 bg-slate-900 text-orange-600 focus:ring-orange-500 focus:ring-offset-slate-900"
+                  className="rounded border-border-subtle bg-bg-input text-primary focus:ring-focus-ring"
                 />
                 Ghi nhớ đăng nhập
               </label>
-              <Link to="/forgot-password" className="text-orange-400 hover:text-orange-300 transition-colors font-medium">
+              <Link to="/forgot-password" className="text-primary hover:text-primary-hover transition-colors font-medium">
                 Quên mật khẩu?
               </Link>
             </div>
@@ -212,39 +212,39 @@ export function LoginPage() {
           </form>
 
           {/* Quick Demo Switcher Section */}
-          <div className="pt-4 border-t border-slate-800">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 text-center">
+          <div className="pt-4 border-t border-border-subtle">
+            <p className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-3 text-center">
               Truy cập nhanh (Tài khoản mẫu):
             </p>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => handleQuickDemo('MANAGER', '/manager')}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/80 p-3 text-center hover:border-orange-500/40 hover:bg-slate-850 transition-colors"
+                className="flex flex-col items-center gap-1.5 rounded-xl border border-border-subtle bg-bg-surface-muted/60 p-3 text-center hover:border-primary/40 hover:bg-bg-surface transition-colors cursor-pointer"
               >
-                <Shield className="h-4 w-4 text-orange-400" />
-                <span className="text-xs font-semibold text-slate-200">Quản lý</span>
-                <span className="text-[10px] text-slate-500">manager@gym.local</span>
+                <Shield className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold text-text-primary">Quản lý</span>
+                <span className="text-[10px] text-text-muted">manager@gym.local</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickDemo('RECEPTIONIST', '/receptionist')}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/80 p-3 text-center hover:border-sky-500/40 hover:bg-slate-850 transition-colors"
+                className="flex flex-col items-center gap-1.5 rounded-xl border border-border-subtle bg-bg-surface-muted/60 p-3 text-center hover:border-sky-500/40 hover:bg-bg-surface transition-colors cursor-pointer"
               >
-                <UserCheck className="h-4 w-4 text-sky-400" />
-                <span className="text-xs font-semibold text-slate-200">Lễ tân</span>
-                <span className="text-[10px] text-slate-500">receptionist@gym.local</span>
+                <UserCheck className="h-4 w-4 text-sky-500" />
+                <span className="text-xs font-semibold text-text-primary">Lễ tân</span>
+                <span className="text-[10px] text-text-muted">receptionist@gym.local</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickDemo('COACH', '/coach')}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/80 p-3 text-center hover:border-emerald-500/40 hover:bg-slate-850 transition-colors"
+                className="flex flex-col items-center gap-1.5 rounded-xl border border-border-subtle bg-bg-surface-muted/60 p-3 text-center hover:border-emerald-500/40 hover:bg-bg-surface transition-colors cursor-pointer"
               >
-                <Award className="h-4 w-4 text-emerald-400" />
-                <span className="text-xs font-semibold text-slate-200">HLV</span>
-                <span className="text-[10px] text-slate-500">coach1@gym.local</span>
+                <Award className="h-4 w-4 text-emerald-500" />
+                <span className="text-xs font-semibold text-text-primary">HLV</span>
+                <span className="text-[10px] text-text-muted">coach1@gym.local</span>
               </button>
             </div>
           </div>

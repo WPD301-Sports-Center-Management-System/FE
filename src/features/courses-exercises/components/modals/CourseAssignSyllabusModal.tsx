@@ -61,16 +61,16 @@ export function CourseAssignSyllabusModal({
           {items.map((item, idx) => (
             <div
               key={idx}
-              className="rounded-xl border border-slate-800 bg-slate-900/80 p-3 space-y-2.5"
+              className="rounded-xl border border-border-subtle bg-bg-surface-muted p-3 space-y-2.5"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-orange-400 text-xs">Bài tập #{idx + 1}</span>
+                <span className="font-bold text-primary text-xs">Bài tập #{idx + 1}</span>
                 <button
                   type="button"
                   onClick={() => {
                     setItems((prev) => prev.filter((_, i) => i !== idx))
                   }}
-                  className="text-rose-400 hover:text-rose-300 text-[11px]"
+                  className="text-danger hover:underline text-[11px] cursor-pointer"
                 >
                   Xóa
                 </button>
@@ -85,11 +85,11 @@ export function CourseAssignSyllabusModal({
                       prev.map((it, i) => (i === idx ? { ...it, exerciseId: val } : it))
                     )
                   }}
-                  className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500"
+                  className="w-full bg-bg-input border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer"
                 >
-                  <option value="">-- Chọn bài tập --</option>
+                  <option value="" className="bg-bg-surface text-text-primary">-- Chọn bài tập --</option>
                   {exercises.map((ex) => (
-                    <option key={ex.id} value={ex.id}>
+                    <option key={ex.id} value={ex.id} className="bg-bg-surface text-text-primary">
                       {ex.name} ({ex.difficultyLevel || 'N/A'})
                     </option>
                   ))}
@@ -105,7 +105,7 @@ export function CourseAssignSyllabusModal({
                     )
                   }}
                   placeholder="Ghi chú kỹ thuật HLV (vd: 4 sets x 12 reps)"
-                  className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-orange-500"
+                  className="w-full bg-bg-input border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
             </div>
@@ -128,7 +128,7 @@ export function CourseAssignSyllabusModal({
           <span>Thêm bài tập vào giáo án</span>
         </Button>
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Hủy
           </Button>

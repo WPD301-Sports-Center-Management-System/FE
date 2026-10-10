@@ -42,23 +42,23 @@ export function MuscleGroupsTab({
   return (
     <div className="space-y-4">
       {/* Search & Filter Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800">
+      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-bg-surface p-3.5 rounded-2xl border border-border-subtle shadow-sm">
         <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
           <input
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Tìm kiếm nhóm cơ..."
-            className="w-full pl-9 pr-3.5 py-2 bg-slate-950/60 border border-slate-700/80 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-orange-500"
+            className="w-full pl-9 pr-3.5 py-2 bg-bg-input border border-border-subtle rounded-xl text-xs text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-primary transition-colors"
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <span className="text-xs text-slate-400">Trạng thái:</span>
+          <span className="text-xs text-text-muted">Trạng thái:</span>
           <select
             value={statusFilter}
             onChange={(e) => onStatusFilterChange(e.target.value as any)}
-            className="bg-slate-950/60 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500"
+            className="bg-bg-input border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer"
           >
             <option value="ALL">Tất cả ({muscleGroups.length})</option>
             <option value="ACTIVE">
@@ -72,7 +72,7 @@ export function MuscleGroupsTab({
       </div>
 
       {filteredMuscleGroups.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-800 p-12 text-center text-slate-400 text-xs">
+        <div className="rounded-2xl border border-dashed border-border-subtle p-12 text-center text-text-muted text-xs">
           {search || statusFilter !== 'ALL'
             ? 'Không tìm thấy nhóm cơ phù hợp với bộ lọc.'
             : 'Chưa có nhóm cơ nào được tạo trong hệ thống.'}
@@ -82,19 +82,19 @@ export function MuscleGroupsTab({
           {filteredMuscleGroups.map((mg) => (
             <div
               key={mg.id}
-              className="group relative rounded-2xl border border-slate-800 bg-slate-900/80 p-5 space-y-3 transition-all hover:border-slate-700 hover:shadow-lg hover:shadow-black/40 flex flex-col justify-between"
+              className="group relative rounded-2xl border border-border-subtle bg-bg-surface p-5 space-y-3 transition-all hover:border-border-strong hover:shadow-md flex flex-col justify-between"
             >
               <div>
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400 shrink-0">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0 border border-primary/20">
                       <Layers className="h-4 w-4" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-white group-hover:text-orange-400 transition-colors">
+                      <h4 className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">
                         {mg.name}
                       </h4>
-                      <p className="text-[10px] text-slate-500 font-mono">
+                      <p className="text-[10px] text-text-muted font-mono">
                         ID: {mg.id.slice(0, 8)}...
                       </p>
                     </div>
@@ -103,7 +103,7 @@ export function MuscleGroupsTab({
                 </div>
 
                 {mg.imageUrl && (
-                  <div className="mt-2.5 overflow-hidden rounded-xl border border-slate-800 bg-slate-950 max-h-32">
+                  <div className="mt-2.5 overflow-hidden rounded-xl border border-border-subtle bg-bg-surface-muted max-h-32">
                     <img
                       src={mg.imageUrl}
                       alt={mg.name}
@@ -115,20 +115,20 @@ export function MuscleGroupsTab({
                   </div>
                 )}
 
-                <p className="text-xs text-slate-300 leading-relaxed mt-2.5">
+                <p className="text-xs text-text-muted leading-relaxed mt-2.5">
                   {mg.description || 'Nhóm cơ rèn luyện theo chuẩn giải phẫu thể hình.'}
                 </p>
               </div>
 
               {/* Card Actions */}
-              <div className="flex items-center justify-between border-t border-slate-800/80 pt-3 mt-2">
+              <div className="flex items-center justify-between border-t border-border-subtle pt-3 mt-2">
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => onOpenEdit(mg)}
-                  className="text-[11px] h-7 px-2.5 gap-1.5 text-slate-300 hover:text-white"
+                  className="text-[11px] h-7 px-2.5 gap-1.5"
                 >
-                  <Edit2 className="h-3 w-3 text-orange-400" />
+                  <Edit2 className="h-3 w-3 text-primary" />
                   <span>Chỉnh sửa</span>
                 </Button>
 
@@ -139,8 +139,8 @@ export function MuscleGroupsTab({
                   disabled={togglingMuscleId === mg.id}
                   className={`text-[11px] h-7 px-2.5 gap-1.5 ${
                     mg.isActive
-                      ? 'text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 border-rose-500/20'
-                      : 'text-emerald-400 hover:bg-emerald-950/40 hover:text-emerald-300 border-emerald-500/20'
+                      ? 'text-danger hover:bg-danger/10 hover:text-danger border-danger/30'
+                      : 'text-success hover:bg-success/10 hover:text-success border-success/30'
                   }`}
                 >
                   <Power

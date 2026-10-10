@@ -143,8 +143,8 @@ export function MembershipSalePage() {
   if (isLoadingData) {
     return (
       <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20 gap-4">
-        <RefreshCw className="h-10 w-10 animate-spin text-orange-500" />
-        <p className="text-sm text-slate-400">Đang tải danh mục gói tập và danh sách hội viên...</p>
+        <RefreshCw className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-sm text-text-muted">Đang tải danh mục gói tập và danh sách hội viên...</p>
       </div>
     )
   }
@@ -153,51 +153,51 @@ export function MembershipSalePage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-            <CreditCard className="h-6 w-6 text-orange-500" />
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2.5">
+            <CreditCard className="h-6 w-6 text-primary" />
             <span>Đăng Ký & Bán Vé Gym (WEB-REC-05)</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-text-muted mt-1">
             Kích hoạt thẻ tập Gym không giới hạn khung giờ, kết nối API hệ thống và ghi nhận doanh thu
           </p>
         </div>
       </div>
 
       {errorMessage && (
-        <div className="flex items-start gap-2.5 rounded-2xl border border-red-500/30 bg-red-950/40 p-4 text-xs text-red-300">
-          <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-2xl border border-danger/30 bg-danger/10 p-4 text-xs text-danger">
+          <AlertCircle className="h-4 w-4 shrink-0 text-danger mt-0.5" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {createdSubscription ? (
-        <div className="rounded-3xl border border-emerald-500/30 bg-emerald-950/30 p-8 text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400">
+        <div className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
             <Check className="h-8 w-8" />
           </div>
-          <h2 className="text-xl font-bold text-white">Giao Dịch Đăng Ký Gói Tập Đã Tạo Thành Công!</h2>
-          <div className="max-w-md mx-auto rounded-2xl bg-slate-900/80 border border-slate-800 p-4 text-left text-xs space-y-2 text-slate-300">
-            <div className="flex justify-between border-b border-slate-800 pb-2">
-              <span className="text-slate-400">Hội viên:</span>
-              <span className="font-bold text-white">{selectedMember?.fullName} ({selectedMember?.memberCode})</span>
+          <h2 className="text-xl font-bold text-text-primary">Giao Dịch Đăng Ký Gói Tập Đã Tạo Thành Công!</h2>
+          <div className="max-w-md mx-auto rounded-2xl bg-bg-surface border border-border-subtle p-4 text-left text-xs space-y-2 text-text-muted shadow-sm">
+            <div className="flex justify-between border-b border-border-subtle pb-2">
+              <span className="text-text-muted">Hội viên:</span>
+              <span className="font-bold text-text-primary">{selectedMember?.fullName} ({selectedMember?.memberCode})</span>
             </div>
-            <div className="flex justify-between border-b border-slate-800 pb-2">
-              <span className="text-slate-400">Gói đăng ký:</span>
-              <span className="font-bold text-orange-400">{createdSubscription.planNameSnapshot}</span>
+            <div className="flex justify-between border-b border-border-subtle pb-2">
+              <span className="text-text-muted">Gói đăng ký:</span>
+              <span className="font-bold text-primary">{createdSubscription.planNameSnapshot}</span>
             </div>
-            <div className="flex justify-between border-b border-slate-800 pb-2">
-              <span className="text-slate-400">Thời hạn sử dụng:</span>
-              <span className="font-semibold text-slate-200">
+            <div className="flex justify-between border-b border-border-subtle pb-2">
+              <span className="text-text-muted">Thời hạn sử dụng:</span>
+              <span className="font-semibold text-text-primary">
                 {formatDate(createdSubscription.startDate)} → {formatDate(createdSubscription.endDate)}
               </span>
             </div>
-            <div className="flex justify-between border-b border-slate-800 pb-2">
-              <span className="text-slate-400">Học phí:</span>
-              <span className="font-extrabold text-emerald-400">{formatVND(createdSubscription.priceSnapshot)}</span>
+            <div className="flex justify-between border-b border-border-subtle pb-2">
+              <span className="text-text-muted">Học phí:</span>
+              <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatVND(createdSubscription.priceSnapshot)}</span>
             </div>
             <div className="flex justify-between items-center pt-1">
-              <span className="text-slate-400">Trạng thái gói:</span>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400">
+              <span className="text-text-muted">Trạng thái gói:</span>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                 {createdSubscription.status}
               </span>
             </div>
@@ -218,10 +218,10 @@ export function MembershipSalePage() {
       ) : (
         <form onSubmit={handleCheckout} className="space-y-6">
           {/* Step 1: Chọn Hội viên */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
+          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <User className="h-4 w-4 text-orange-400" />
+              <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" />
                 <span>1. Chọn Hội Viên Đăng Ký</span>
               </h3>
               <Button
@@ -229,19 +229,19 @@ export function MembershipSalePage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('/receptionist/members')}
-                className="text-xs text-orange-400 hover:text-orange-300 h-7"
+                className="text-xs text-primary hover:underline h-7"
               >
                 + Thêm hội viên mới
               </Button>
             </div>
 
             {members.length === 0 ? (
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 text-center">
+              <div className="p-4 rounded-xl bg-bg-surface-muted border border-border-subtle text-xs text-text-muted text-center">
                 Chưa có hội viên nào trong hệ thống.{' '}
                 <button
                   type="button"
                   onClick={() => navigate('/receptionist/members')}
-                  className="text-orange-400 underline font-semibold"
+                  className="text-primary underline font-semibold cursor-pointer"
                 >
                   Tạo hồ sơ hội viên ngay
                 </button>
@@ -260,14 +260,14 @@ export function MembershipSalePage() {
           </div>
 
           {/* Step 2: Chọn Gói tập */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-orange-400" />
+          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
+            <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-primary" />
               <span>2. Chọn Gói Thẻ Gym</span>
             </h3>
 
             {plans.length === 0 ? (
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 text-center">
+              <div className="p-4 rounded-xl bg-bg-surface-muted border border-border-subtle text-xs text-text-muted text-center">
                 Không tìm thấy gói thẻ Gym đang hoạt động.
               </div>
             ) : (
@@ -280,27 +280,27 @@ export function MembershipSalePage() {
                       onClick={() => setSelectedPlanId(p.id)}
                       className={`cursor-pointer rounded-2xl border p-5 transition-all duration-200 ${
                         isSelected
-                          ? 'border-orange-500 bg-orange-950/25 shadow-lg shadow-orange-500/10 ring-1 ring-orange-500/50'
-                          : 'border-slate-800 bg-slate-900/80 hover:border-slate-700 hover:bg-slate-850'
+                          ? 'border-primary bg-primary/10 shadow-md ring-1 ring-primary/40'
+                          : 'border-border-subtle bg-bg-surface hover:border-border-strong hover:bg-bg-surface-muted/60'
                       }`}
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-bold text-white text-sm">{p.name}</h4>
-                          <p className="text-xs text-slate-400 mt-1">
+                          <h4 className="font-bold text-text-primary text-sm">{p.name}</h4>
+                          <p className="text-xs text-text-muted mt-1">
                             Thời hạn: {p.totalMonths} tháng ({p.paidMonths} tháng trả phí
                             {p.bonusMonths > 0 ? ` + ${p.bonusMonths} tháng ưu đãi` : ''})
                           </p>
                         </div>
                         {p.bonusMonths > 0 && (
-                          <span className="rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-[10px] font-bold text-orange-400">
+                          <span className="rounded-full bg-primary/15 border border-primary/30 px-2 py-0.5 text-[10px] font-bold text-primary">
                             Tặng +{p.bonusMonths}T
                           </span>
                         )}
                       </div>
-                      <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
-                        <span className="text-xs text-slate-400">Học phí niêm yết:</span>
-                        <span className="text-lg font-extrabold text-emerald-400">{formatVND(p.price)}</span>
+                      <div className="mt-4 pt-3 border-t border-border-subtle flex justify-between items-center">
+                        <span className="text-xs text-text-muted">Học phí niêm yết:</span>
+                        <span className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">{formatVND(p.price)}</span>
                       </div>
                     </div>
                   )
@@ -320,9 +320,9 @@ export function MembershipSalePage() {
           </div>
 
           {/* Step 3: Phương thức & Xác nhận */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-orange-400" />
+          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
+            <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-primary" />
               <span>3. Phương Thức Thanh Toán & Xác Nhận</span>
             </h3>
             <div className="grid grid-cols-3 gap-3">
@@ -331,10 +331,10 @@ export function MembershipSalePage() {
                   type="button"
                   key={m}
                   onClick={() => setPaymentMethod(m)}
-                  className={`rounded-xl border p-3 text-xs font-bold transition-all ${
+                  className={`rounded-xl border p-3 text-xs font-bold transition-all cursor-pointer ${
                     paymentMethod === m
-                      ? 'border-orange-500 bg-orange-950/30 text-white shadow-sm'
-                      : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+                      ? 'border-primary bg-primary/15 text-text-primary shadow-sm'
+                      : 'border-border-subtle bg-bg-surface-muted text-text-muted hover:text-text-primary hover:bg-border-subtle'
                   }`}
                 >
                   {m === 'CASH' ? 'Tiền mặt' : m === 'BANK_TRANSFER' ? 'Chuyển khoản' : 'Cổng VNPay'}
@@ -342,14 +342,14 @@ export function MembershipSalePage() {
               ))}
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-xs text-slate-400 space-y-2">
-              <div className="flex justify-between items-center text-slate-200 font-bold">
+            <div className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 text-xs text-text-muted space-y-2">
+              <div className="flex justify-between items-center text-text-primary font-bold">
                 <span>Tổng tiền thanh toán:</span>
-                <span className="text-emerald-400 text-lg">
+                <span className="text-emerald-600 dark:text-emerald-400 text-lg">
                   {selectedPlan ? formatVND(selectedPlan.price) : '0 ₫'}
                 </span>
               </div>
-              <p className="text-[11px] text-amber-400 flex items-center gap-1.5 pt-1">
+              <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 pt-1">
                 <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
                 <span>Thẻ tập gym áp dụng chính sách tập luyện không giới hạn, kích hoạt tức thì sau khi xác nhận.</span>
               </p>

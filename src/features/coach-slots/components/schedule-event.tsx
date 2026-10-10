@@ -15,15 +15,15 @@ export function ScheduleEvent({ event }: EventProps<CalendarEvent>) {
       case 'OPEN':
         return <span className={`h-2 w-2 rounded-full ${config.dotClass} shrink-0 animate-pulse`} />
       case 'BOOKED':
-        return <User className="h-3.5 w-3.5 text-sky-300 shrink-0" />
+        return <User className="h-3.5 w-3.5 text-primary shrink-0" />
       case 'BLOCKED':
-        return <Lock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+        return <Lock className="h-3.5 w-3.5 text-text-muted shrink-0" />
       case 'COMPLETED':
-        return <CheckCircle2 className="h-3.5 w-3.5 text-teal-300 shrink-0" />
+        return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
       case 'CANCELLED':
-        return <XCircle className="h-3.5 w-3.5 text-rose-300 shrink-0" />
+        return <XCircle className="h-3.5 w-3.5 text-danger shrink-0" />
       default:
-        return <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+        return <Clock className="h-3.5 w-3.5 text-text-muted shrink-0" />
     }
   }
 
@@ -59,7 +59,7 @@ export function ScheduleEvent({ event }: EventProps<CalendarEvent>) {
       <div className="flex items-center justify-between gap-1.5 min-w-0">
         <div className="flex items-center gap-1.5 min-w-0">
           {renderIcon()}
-          <span className="text-xs font-bold truncate leading-tight tracking-tight text-white">
+          <span className="text-xs font-bold truncate leading-tight tracking-tight text-text-primary">
             {primaryTitle()}
           </span>
         </div>
@@ -72,13 +72,13 @@ export function ScheduleEvent({ event }: EventProps<CalendarEvent>) {
 
       {/* Bottom row: Time + Course */}
       <div className="flex items-center justify-between gap-2 text-[11px] mt-0.5 min-w-0">
-        <div className="flex items-center gap-1 font-mono text-slate-200 font-medium shrink-0">
-          <Clock className="h-3 w-3 text-slate-400 shrink-0" />
+        <div className="flex items-center gap-1 font-mono text-text-muted font-medium shrink-0">
+          <Clock className="h-3 w-3 text-text-muted shrink-0" />
           <span>{timeText}</span>
         </div>
 
         {courseOrNote() && (
-          <span className="text-[10px] text-slate-300 truncate text-right font-medium">
+          <span className="text-[10px] text-text-muted truncate text-right font-medium">
             {courseOrNote()}
           </span>
         )}

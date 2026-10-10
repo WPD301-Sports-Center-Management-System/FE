@@ -40,8 +40,10 @@ export function PublicCoachProfilePage() {
             setPackages(detailRes.value.availablePackageOptions || [])
           }
           if (reviewsRes.status === 'fulfilled') {
-            setReviews(reviewsRes.value.data || [])
+            const list = (reviewsRes.value.data || []).filter((r: any) => r.moderationStatus !== 'HIDDEN')
+            setReviews(list)
           }
+
         }
       } catch {
         setErrorMessage('Không thể tải thông tin hồ sơ HLV.')
@@ -55,10 +57,10 @@ export function PublicCoachProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#070a11] text-slate-100">
+      <div className="flex min-h-screen items-center justify-center bg-bg-app text-text-primary">
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="h-8 w-8 animate-spin text-orange-500" />
-          <p className="text-xs text-slate-400">Đang tải hồ sơ Huấn luyện viên...</p>
+          <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-xs text-text-muted">Đang tải hồ sơ Huấn luyện viên...</p>
         </div>
       </div>
     )
@@ -66,10 +68,10 @@ export function PublicCoachProfilePage() {
 
   if (errorMessage || !coach) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#070a11] p-6 text-center text-slate-100">
-        <AlertCircle className="h-10 w-10 text-red-400 mb-3" />
-        <h2 className="text-xl font-bold text-white">Hồ sơ HLV không tìm thấy</h2>
-        <p className="text-xs text-slate-400 mt-1 max-w-sm">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-bg-app p-6 text-center text-text-primary">
+        <AlertCircle className="h-10 w-10 text-danger mb-3" />
+        <h2 className="text-xl font-bold text-text-primary">Hồ sơ HLV không tìm thấy</h2>
+        <p className="text-xs text-text-muted mt-1 max-w-sm">
           {errorMessage || 'Huấn luyện viên bạn tìm kiếm hiện không khả dụng.'}
         </p>
         <Link to="/" className="mt-6">
@@ -80,11 +82,11 @@ export function PublicCoachProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070a11] text-slate-100">
+    <div className="min-h-screen bg-bg-app text-text-primary">
       {/* Top Navbar */}
-      <header className="border-b border-slate-800 bg-slate-900/80 px-6 py-4 backdrop-blur-md">
+      <header className="border-b border-border-subtle bg-bg-surface/90 px-6 py-4 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-xs text-slate-400 hover:text-white transition-colors">
+          <Link to="/" className="flex items-center gap-2 text-xs text-text-muted hover:text-text-primary transition-colors">
             <ArrowLeft className="h-4 w-4" />
             <span>Về trang chủ</span>
           </Link>
@@ -101,44 +103,44 @@ export function PublicCoachProfilePage() {
 
       <main className="mx-auto max-w-6xl p-6 lg:p-10 space-y-10">
         {/* Coach Header Card */}
-        <div className="flex flex-col md:flex-row gap-8 items-start rounded-3xl border border-slate-800 bg-slate-900/60 p-8 backdrop-blur-xl">
+        <div className="flex flex-col md:flex-row gap-8 items-start rounded-3xl border border-border-subtle bg-bg-surface p-8 shadow-sm backdrop-blur-xl">
           <img
             src={
               coach.avatarUrl ||
               'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
             }
             alt={coach.fullName}
-            className="h-36 w-36 rounded-2xl border-2 border-orange-500/40 object-cover shadow-2xl shadow-orange-500/20"
+            className="h-36 w-36 rounded-2xl border-2 border-primary/40 object-cover shadow-lg"
           />
           <div className="flex-1 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-extrabold text-white">{coach.fullName}</h1>
-                <p className="text-sm font-medium text-orange-400 mt-0.5">
+                <h1 className="text-3xl font-extrabold text-text-primary">{coach.fullName}</h1>
+                <p className="text-sm font-medium text-primary mt-0.5">
                   {coach.specialization || 'Chuyên gia Huấn luyện Cá nhân (PT 1:1)'}
                 </p>
               </div>
               <div className="flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2">
                 <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
-                <span className="text-lg font-bold text-amber-300">
+                <span className="text-lg font-bold text-amber-600 dark:text-amber-300">
                   {coach.averageRating ? Number(coach.averageRating).toFixed(1) : '5.0'}
                 </span>
-                <span className="text-xs text-slate-400">({coach.reviewCount || reviews.length} đánh giá)</span>
+                <span className="text-xs text-text-muted">({coach.reviewCount || reviews.length} đánh giá)</span>
               </div>
             </div>
 
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-sm text-text-muted leading-relaxed">
               {coach.bio || 'Huấn luyện viên giàu kinh nghiệm chuyên sâu về tập luyện thể hình, cải thiện vóc dáng và phục hồi chức năng vận động.'}
             </p>
 
-            <div className="flex flex-wrap gap-4 pt-2 text-xs text-slate-400">
+            <div className="flex flex-wrap gap-4 pt-2 text-xs text-text-muted">
               <div className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4 text-orange-400" />
-                <span>Kinh nghiệm: <strong>{coach.yearsOfExperience || 3} năm</strong></span>
+                <Clock className="h-4 w-4 text-primary" />
+                <span>Kinh nghiệm: <strong className="text-text-primary">{coach.yearsOfExperience || 3} năm</strong></span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Award className="h-4 w-4 text-sky-400" />
-                <span>Chứng chỉ: <strong>{coach.certification || 'NASM / ISSA Certified Personal Trainer'}</strong></span>
+                <Award className="h-4 w-4 text-sky-500" />
+                <span>Chứng chỉ: <strong className="text-text-primary">{coach.certification || 'NASM / ISSA Certified Personal Trainer'}</strong></span>
               </div>
             </div>
           </div>
@@ -146,8 +148,8 @@ export function PublicCoachProfilePage() {
 
         {/* Section: Courses & Packages */}
         <div className="space-y-6">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-emerald-400" />
+          <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             <span>Khóa học & Gói Huấn Luyện 1:1 Đang Giảng Dạy</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -155,20 +157,20 @@ export function PublicCoachProfilePage() {
               packages.map((pkg) => (
                 <div
                   key={pkg.id}
-                  className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-lg hover:border-orange-500/40 transition-all"
+                  className="flex flex-col justify-between rounded-2xl border border-border-subtle bg-bg-surface p-6 shadow-sm hover:border-primary/40 transition-all"
                 >
                   <div className="space-y-2">
-                    <span className="rounded-full bg-orange-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-orange-400">
+                    <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-semibold text-primary">
                       {pkg.sessionCount} Buổi Tập
                     </span>
-                    <h3 className="text-base font-bold text-white">{pkg.name}</h3>
-                    <p className="text-xs text-slate-400">{pkg.courseName || 'Khóa tập thể hình chuyên sâu'}</p>
+                    <h3 className="text-base font-bold text-text-primary">{pkg.name}</h3>
+                    <p className="text-xs text-text-muted">{pkg.courseName || 'Khóa tập thể hình chuyên sâu'}</p>
                   </div>
 
-                  <div className="mt-6 border-t border-slate-800 pt-4 flex items-center justify-between">
+                  <div className="mt-6 border-t border-border-subtle pt-4 flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] uppercase text-slate-400">Học phí trọn gói</p>
-                      <p className="text-lg font-bold text-emerald-400">{formatVND(pkg.price)}</p>
+                      <p className="text-[10px] uppercase text-text-muted">Học phí trọn gói</p>
+                      <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{formatVND(pkg.price)}</p>
                     </div>
                     <Link to="/login">
                       <Button size="sm" variant="primary">
@@ -179,7 +181,7 @@ export function PublicCoachProfilePage() {
                 </div>
               ))
             ) : (
-              <p className="text-xs text-slate-400 col-span-full">
+              <p className="text-xs text-text-muted col-span-full">
                 Hiện tại HLV đang cập nhật các gói huấn luyện mới.
               </p>
             )}
@@ -188,20 +190,20 @@ export function PublicCoachProfilePage() {
 
         {/* Section: Public Reviews */}
         <div className="space-y-6">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
             <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
             <span>Nhận Xét Từ Hội Viên ({reviews.length})</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {reviews.length > 0 ? (
               reviews.map((rev) => (
-                <div key={rev.id} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3">
+                <div key={rev.id} className="rounded-2xl border border-border-subtle bg-bg-surface p-5 space-y-3 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-bold text-slate-200">
+                      <p className="text-xs font-bold text-text-primary">
                         {rev.memberDisplayName || (rev as any).memberName || 'Hội viên'}
                       </p>
-                      <p className="text-[10px] text-slate-400">
+                      <p className="text-[10px] text-text-muted">
                         {rev.courseNameSnapshot || (rev as any).courseName || 'Khóa PT 1:1'}
                       </p>
                     </div>
@@ -211,15 +213,15 @@ export function PublicCoachProfilePage() {
                       ))}
                     </div>
                   </div>
-                  <p className="text-xs text-slate-300 leading-relaxed italic">"{rev.comment}"</p>
-                  <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                  <p className="text-xs text-text-muted leading-relaxed italic">"{rev.comment}"</p>
+                  <div className="flex items-center gap-1 text-[10px] text-text-muted/80">
                     <Calendar className="h-3 w-3" />
                     <span>{formatDate(rev.createdAt)}</span>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-xs text-slate-400 col-span-full">
+              <p className="text-xs text-text-muted col-span-full">
                 Chưa có đánh giá nào được gửi cho Huấn luyện viên.
               </p>
             )}

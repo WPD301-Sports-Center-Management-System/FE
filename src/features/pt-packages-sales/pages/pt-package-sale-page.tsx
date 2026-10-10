@@ -179,11 +179,11 @@ export function PtPackageSalePage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-orange-500" />
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2">
+            <Sparkles className="h-6 w-6 text-primary" />
             <span>Bán Gói Tập PT 1:1 Tại Quầy (WEB-REC-06)</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-text-muted mt-1">
             Ký hợp đồng huấn luyện viên cá nhân PT 1:1. Tự động phân bổ doanh thu: Gym 40% • HLV 60%.
           </p>
         </div>
@@ -194,29 +194,29 @@ export function PtPackageSalePage() {
       </div>
 
       {errorMessage && (
-        <div className="flex items-center gap-2.5 rounded-2xl border border-red-500/30 bg-red-950/40 p-4 text-xs text-red-300">
-          <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+        <div className="flex items-center gap-2.5 rounded-2xl border border-danger/30 bg-danger/10 p-4 text-xs text-danger">
+          <AlertCircle className="h-4 w-4 shrink-0 text-danger" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <RefreshCw className="h-8 w-8 animate-spin text-orange-500" />
-          <p className="text-xs text-slate-400">Đang tải danh mục hội viên, khóa học và gói PT mở bán...</p>
+          <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-xs text-text-muted">Đang tải danh mục hội viên, khóa học và gói PT mở bán...</p>
         </div>
       ) : createdPurchase ? (
-        <div className="rounded-3xl border border-emerald-500/30 bg-emerald-950/30 p-8 text-center space-y-4">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400">
+        <div className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center space-y-4">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
             <Check className="h-8 w-8" />
           </div>
-          <h2 className="text-xl font-bold text-white">Đã Tạo Hợp Đồng & Kích Hoạt Gói PT Thành Công!</h2>
-          <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-            Hội viên <strong>{selectedMember?.fullName || 'Hội viên'}</strong> ({selectedMember?.memberCode}) đã sở hữu{' '}
-            <strong>{createdPurchase.totalCredits || selectedPkg?.sessionCount} buổi tập</strong> với HLV{' '}
-            <strong>{selectedCoach?.fullName || (selectedCoach as any)?.user?.fullName || 'HLV'}</strong>.
+          <h2 className="text-xl font-bold text-text-primary">Đã Tạo Hợp Đồng & Kích Hoạt Gói PT Thành Công!</h2>
+          <p className="text-xs text-text-muted max-w-md mx-auto leading-relaxed">
+            Hội viên <strong className="text-text-primary">{selectedMember?.fullName || 'Hội viên'}</strong> ({selectedMember?.memberCode}) đã sở hữu{' '}
+            <strong className="text-text-primary">{createdPurchase.totalCredits || selectedPkg?.sessionCount} buổi tập</strong> với HLV{' '}
+            <strong className="text-text-primary">{selectedCoach?.fullName || (selectedCoach as any)?.user?.fullName || 'HLV'}</strong>.
             <br />
-            Mã hợp đồng: <span className="font-mono text-orange-400 font-bold">{createdPurchase.purchaseCode || createdPurchase.id}</span>
+            Mã hợp đồng: <span className="font-mono text-primary font-bold">{createdPurchase.purchaseCode || createdPurchase.id}</span>
           </p>
           <div className="pt-4 flex flex-wrap justify-center gap-3">
             <Button variant="outline" onClick={() => navigate('/receptionist/calendar')}>
@@ -238,9 +238,9 @@ export function PtPackageSalePage() {
         </div>
       ) : (
         <form onSubmit={handleCheckout} className="space-y-6">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <User className="h-4 w-4 text-orange-400" />
+          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
+            <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" />
               <span>Thông Tin Khóa Học & Huấn Luyện Viên</span>
             </h3>
 
@@ -298,9 +298,9 @@ export function PtPackageSalePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-orange-400" />
+          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
+            <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" />
               <span>Phương Thức Thanh Toán & Quyết Toán HLV</span>
             </h3>
 
@@ -310,10 +310,10 @@ export function PtPackageSalePage() {
                   type="button"
                   key={m}
                   onClick={() => setPaymentMethod(m)}
-                  className={`rounded-xl border p-3 text-xs font-bold transition-all ${
+                  className={`rounded-xl border p-3 text-xs font-bold transition-all cursor-pointer ${
                     paymentMethod === m
-                      ? 'border-orange-500 bg-orange-950/30 text-white ring-1 ring-orange-500'
-                      : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+                      ? 'border-primary bg-primary/15 text-text-primary ring-1 ring-primary/40'
+                      : 'border-border-subtle bg-bg-surface-muted text-text-muted hover:text-text-primary hover:bg-border-subtle'
                   }`}
                 >
                   {m === 'BANK_TRANSFER' ? 'Chuyển khoản' : m === 'CASH' ? 'Tiền mặt tại quầy' : 'VNPay QR'}
@@ -321,20 +321,20 @@ export function PtPackageSalePage() {
               ))}
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-xs text-slate-300 space-y-2.5">
-              <div className="flex justify-between font-bold text-slate-100 text-sm">
+            <div className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 text-xs text-text-muted space-y-2.5">
+              <div className="flex justify-between font-bold text-text-primary text-sm">
                 <span>Tổng học phí thu ngân:</span>
-                <span className="text-emerald-400 text-base">{formatVND(priceNum)}</span>
+                <span className="text-emerald-600 dark:text-emerald-400 text-base">{formatVND(priceNum)}</span>
               </div>
-              <div className="flex justify-between text-slate-400 text-xs">
+              <div className="flex justify-between text-text-muted text-xs">
                 <span>Phân bổ Doanh thu Trung tâm (40%):</span>
-                <span className="font-semibold text-slate-300">{formatVND(gymShare)}</span>
+                <span className="font-semibold text-text-primary">{formatVND(gymShare)}</span>
               </div>
-              <div className="flex justify-between text-slate-400 text-xs">
+              <div className="flex justify-between text-text-muted text-xs">
                 <span>Thù lao Huấn luyện viên (60%):</span>
-                <span className="font-semibold text-orange-400">{formatVND(coachShare)}</span>
+                <span className="font-semibold text-primary">{formatVND(coachShare)}</span>
               </div>
-              <p className="text-[11px] text-amber-400 flex items-center gap-1.5 pt-2 border-t border-slate-800/80">
+              <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 pt-2 border-t border-border-subtle">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 <span>Chính sách không hoàn tiền (Non-refundable). Bắt buộc có thẻ Gym hợp lệ để đặt lịch tập.</span>
               </p>

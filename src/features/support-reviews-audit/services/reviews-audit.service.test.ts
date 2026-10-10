@@ -5,6 +5,7 @@ import { apiClient } from '@/shared/api/client'
 vi.mock('@/shared/api/client', () => ({
   apiClient: {
     get: vi.fn(),
+    patch: vi.fn(),
   },
 }))
 
@@ -35,5 +36,18 @@ describe('reviewsAuditService', () => {
     const res = await reviewsAuditService.getAuditLogs({ limit: 20 })
     expect(apiClient.get).toHaveBeenCalledWith('/audit-logs', { params: { limit: 20 } })
     expect(res.data).toEqual(mockLogs)
+  })
+
+  it('[4] calls PATCH /coach-reviews/:id/moderation', async () => {
+    vi.mocked(apiClient.patch).mockResolvedValueOnce({
+      success: true,
+      data: { id: 'rev-1', moderationStatus: 'HIDDEN' },
+    } as any)
+
+    await reviewsAuditService.moderateReview('rev-1', { moderationStatus: 'HIDDEN', reason: 'Spam' })
+    expect(apiClient.patch).toHaveBeenCalledWith('/coach-reviews/rev-1/moderation', {
+      moderationStatus: 'HIDDEN',
+      reason: 'Spam',
+    })
   })
 })

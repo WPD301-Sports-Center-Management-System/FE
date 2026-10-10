@@ -97,12 +97,7 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
   } else if (url.startsWith('check-ins') && method === 'get') {
     const list = db.checkIns.map((item) => ({
       ...item,
-      member: item.member || db.members.find((m) => m.id === item.memberId) || {
-        id: item.memberId,
-        memberCode: 'MEM-???',
-        fullName: 'Hội viên',
-        membershipStatus: 'ACTIVE' as const,
-      },
+      member: item.member || db.members.find((m) => m.id === item.memberId) || db.members[0],
     }))
     resData = mockPaginate(list)
   }

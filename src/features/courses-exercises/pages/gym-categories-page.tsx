@@ -395,10 +395,10 @@ export function GymCategoriesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2.5">
             <span>Danh Mục & Thư Viện Bài Tập (WEB-MAN-05)</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-text-muted mt-1">
             Quản lý nhóm cơ giải phẫu, bài tập chuẩn hóa và các khóa đào tạo PT 1:1
           </p>
         </div>
@@ -460,47 +460,47 @@ export function GymCategoriesPage() {
 
       {/* Alert Banners */}
       {errorMessage && (
-        <div className="flex items-start gap-2.5 rounded-2xl border border-red-500/30 bg-red-950/40 p-4 text-xs text-red-300">
-          <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-2xl border border-danger/30 bg-danger/10 p-4 text-xs text-danger">
+          <AlertCircle className="h-4 w-4 shrink-0 text-danger mt-0.5" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {successMessage && (
-        <div className="flex items-start gap-2.5 rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-4 text-xs text-emerald-300">
-          <Check className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-2xl border border-success/30 bg-success/10 p-4 text-xs text-success">
+          <Check className="h-4 w-4 shrink-0 text-success mt-0.5" />
           <span>{successMessage}</span>
         </div>
       )}
 
       {/* Tabs Switcher */}
-      <div className="flex border-b border-slate-800">
+      <div className="flex border-b border-border-subtle">
         <button
           onClick={() => setActiveTab('course')}
-          className={`px-5 py-3 text-xs font-semibold border-b-2 transition-colors ${
+          className={`px-5 py-3 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
             activeTab === 'course'
-              ? 'border-orange-500 text-orange-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-text-muted hover:text-text-primary'
           }`}
         >
           Khóa tập PT ({courses.length})
         </button>
         <button
           onClick={() => setActiveTab('exercise')}
-          className={`px-5 py-3 text-xs font-semibold border-b-2 transition-colors ${
+          className={`px-5 py-3 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
             activeTab === 'exercise'
-              ? 'border-orange-500 text-orange-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-text-muted hover:text-text-primary'
           }`}
         >
           Thư viện Bài tập ({exercises.length})
         </button>
         <button
           onClick={() => setActiveTab('muscle')}
-          className={`px-5 py-3 text-xs font-semibold border-b-2 transition-colors ${
+          className={`px-5 py-3 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
             activeTab === 'muscle'
-              ? 'border-orange-500 text-orange-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-text-muted hover:text-text-primary'
           }`}
         >
           Nhóm cơ ({muscleGroups.length})
@@ -509,8 +509,8 @@ export function GymCategoriesPage() {
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <RefreshCw className="h-8 w-8 animate-spin text-orange-500" />
-          <p className="text-xs text-slate-400">Đang tải danh mục từ máy chủ...</p>
+          <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-xs text-text-muted">Đang tải danh mục từ máy chủ...</p>
         </div>
       ) : (
         <>

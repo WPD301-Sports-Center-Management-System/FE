@@ -38,11 +38,11 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#070a11] p-6 text-slate-100">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/90 p-8 shadow-2xl backdrop-blur-xl">
+    <div className="flex min-h-screen items-center justify-center bg-bg-app p-6 text-text-primary">
+      <div className="w-full max-w-md rounded-2xl border border-border-subtle bg-bg-surface p-8 shadow-2xl backdrop-blur-xl">
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition-colors mb-6"
+          className="inline-flex items-center gap-2 text-xs font-medium text-text-muted hover:text-text-primary transition-colors mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Quay lại đăng nhập</span>
@@ -50,11 +50,11 @@ export function ForgotPasswordPage() {
 
         {isSent ? (
           <div className="space-y-4 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="h-8 w-8" />
             </div>
-            <h2 className="text-xl font-bold text-white">Đã gửi hướng dẫn</h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <h2 className="text-xl font-bold text-text-primary">Đã gửi hướng dẫn</h2>
+            <p className="text-xs text-text-muted leading-relaxed">
               Chúng tôi đã gửi đường dẫn đặt lại mật khẩu đến email <strong>{email}</strong>. Vui lòng kiểm tra hộp thư.
             </p>
             <Button variant="outline" className="w-full mt-4" onClick={() => setIsSent(false)}>
@@ -64,15 +64,15 @@ export function ForgotPasswordPage() {
         ) : (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-white">Quên mật khẩu?</h2>
-              <p className="mt-1 text-xs text-slate-400">
+              <h2 className="text-2xl font-bold tracking-tight text-text-primary">Quên mật khẩu?</h2>
+              <p className="mt-1 text-xs text-text-muted">
                 Nhập email liên kết với tài khoản của bạn để nhận mã khôi phục
               </p>
             </div>
 
             {errorMessage && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-950/40 p-3 text-xs text-red-300">
-                <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+              <div className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-3 text-xs text-danger">
+                <AlertCircle className="h-4 w-4 shrink-0 text-danger mt-0.5" />
                 <span>{errorMessage}</span>
               </div>
             )}

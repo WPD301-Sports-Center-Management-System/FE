@@ -64,13 +64,13 @@ export function CourseAssignMusclesModal({
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
         {error && (
-          <div className="rounded-lg bg-red-950/40 border border-red-500/30 p-2.5 text-red-300">
+          <div className="rounded-lg bg-danger/10 border border-danger/30 p-2.5 text-danger">
             {error}
           </div>
         )}
 
         <div className="space-y-2">
-          <label className="font-semibold text-slate-200">
+          <label className="font-semibold text-text-primary">
             Chọn các nhóm cơ mục tiêu (Phải chọn ít nhất 1):
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
@@ -95,14 +95,14 @@ export function CourseAssignMusclesModal({
                       }
                     }
                   }}
-                  className={`flex items-center justify-between p-2.5 rounded-xl border transition-all text-left ${
+                  className={`flex items-center justify-between p-2.5 rounded-xl border transition-all text-left cursor-pointer ${
                     isSelected
-                      ? 'bg-orange-500/15 border-orange-500/50 text-white'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-primary/10 border-primary/50 text-text-primary font-medium'
+                      : 'bg-bg-surface-muted border-border-subtle text-text-muted hover:text-text-primary'
                   }`}
                 >
                   <span>{mg.name}</span>
-                  {isSelected && <Check className="h-4 w-4 text-orange-400" />}
+                  {isSelected && <Check className="h-4 w-4 text-primary" />}
                 </button>
               )
             })}
@@ -111,18 +111,18 @@ export function CourseAssignMusclesModal({
 
         {selectedMuscleIds.length > 0 && (
           <div className="space-y-2">
-            <label className="font-semibold text-slate-200">
+            <label className="font-semibold text-text-primary">
               Chỉ định nhóm cơ chính (Bắt buộc đúng 1 nhóm cơ chính):
             </label>
             <select
               value={primaryMuscleId}
               onChange={(e) => setPrimaryMuscleId(e.target.value)}
-              className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500"
+              className="w-full bg-bg-input border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer"
             >
               {selectedMuscleIds.map((id) => {
                 const mg = muscleGroups.find((m) => m.id === id)
                 return (
-                  <option key={id} value={id}>
+                  <option key={id} value={id} className="bg-bg-surface text-text-primary">
                     {mg?.name || id}
                   </option>
                 )
@@ -131,7 +131,7 @@ export function CourseAssignMusclesModal({
           </div>
         )}
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Hủy
           </Button>

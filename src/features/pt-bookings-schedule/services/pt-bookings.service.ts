@@ -79,6 +79,14 @@ export const ptBookingsService = {
   },
 
   /**
+   * [9] POST /training-results/{id}/publish - Coach publishes training result
+   */
+  async publishTrainingResult(id: string): Promise<any> {
+    const res = await apiClient.post(`/training-results/${id}/publish`, {})
+    return res?.data ?? res
+  },
+
+  /**
    * Helper: GET /coaches/me/pt-bookings - List bookings for logged-in coach
    */
   async getMyCoachBookings(params?: { status?: string; page?: number; limit?: number }): Promise<ApiSuccess<Booking[]>> {

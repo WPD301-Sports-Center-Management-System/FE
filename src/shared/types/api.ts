@@ -16,10 +16,11 @@ export type TrainingPlanStatus = 'DRAFT' | 'ASSIGNED' | 'COMPLETED' | 'ARCHIVED'
 export type TrainingResultStatus = 'DRAFT' | 'PUBLISHED'
 export type FitnessGoalStatus = 'ACTIVE' | 'ACHIEVED' | 'CANCELLED'
 export type MealPlanStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED'
-export type EquipmentStatus = 'OPERATIONAL' | 'UNDER_MAINTENANCE' | 'OUT_OF_ORDER' | 'DECOMMISSIONED'
+export type EquipmentStatus = 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'OUT_OF_SERVICE' | 'OPERATIONAL' | 'UNDER_MAINTENANCE' | 'OUT_OF_ORDER' | 'DECOMMISSIONED'
 export type MaintenanceStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
-export type SupportStatus = 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
-export type NotificationType = 'SYSTEM' | 'BOOKING' | 'PAYMENT' | 'MEMBERSHIP' | 'REMINDER'
+export type SupportStatus = 'OPEN' | 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
+export type NotificationType = 'SYSTEM' | 'SLOT' | 'BOOKING' | 'MEMBERSHIP' | 'PAYMENT' | 'TRAINING' | 'MAINTENANCE' | 'SUPPORT' | 'REMINDER'
+
 
 export type ApiSuccess<T> = {
   success: true
@@ -164,7 +165,7 @@ export type Exercise = {
   equipmentRequired?: string
   difficultyLevel?: string
   isActive?: boolean
-  muscleGroups: Array<{ id: string; name?: string; isPrimary: boolean }>
+  muscleGroups?: Array<{ id: string; name?: string; isPrimary: boolean }>
 }
 
 export type TrainingCourse = {
@@ -246,6 +247,7 @@ export type Purchase = {
 
 export type Booking = {
   id: string
+  bookingCode?: string
   purchaseId: string
   slotId: string
   memberId: string
@@ -288,7 +290,9 @@ export type Payment = {
   paidAt?: string
   paymentUrl?: string
   invoiceId?: string
+  memberCode?: string
   memberName?: string
+  description?: string
   itemDescription?: string
 }
 
@@ -447,6 +451,7 @@ export type Equipment = {
   brand?: string
   model?: string
   status: EquipmentStatus
+  purchaseDate?: string
   lastMaintenanceAt?: string
   nextMaintenanceAt?: string
 }
@@ -477,6 +482,7 @@ export type CoachReview = {
   createdAt: string
   moderationStatus?: 'VISIBLE' | 'HIDDEN'
   moderationReason?: string
+  hiddenReason?: string
 }
 
 export type SupportRequest = {

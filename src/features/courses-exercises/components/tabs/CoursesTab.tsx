@@ -75,15 +75,15 @@ export function CoursesTab({
   return (
     <div className="space-y-4">
       {/* Search & Filter Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-bg-surface p-3.5 rounded-2xl border border-border-subtle shadow-sm">
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
           <input
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Tìm kiếm khóa tập..."
-            className="w-full pl-9 pr-3.5 py-2 bg-slate-950/60 border border-slate-700/80 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-orange-500"
+            className="w-full pl-9 pr-3.5 py-2 bg-bg-input border border-border-subtle rounded-xl text-xs text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-primary transition-colors"
           />
         </div>
 
@@ -91,11 +91,11 @@ export function CoursesTab({
           <select
             value={muscleFilter}
             onChange={(e) => onMuscleFilterChange(e.target.value)}
-            className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500"
+            className="w-full bg-bg-input border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer"
           >
             <option value="ALL">Tất cả nhóm cơ</option>
             {muscleGroups.map((mg) => (
-              <option key={mg.id} value={mg.id}>
+              <option key={mg.id} value={mg.id} className="bg-bg-surface text-text-primary">
                 {mg.name}
               </option>
             ))}
@@ -106,7 +106,7 @@ export function CoursesTab({
           <select
             value={difficultyFilter}
             onChange={(e) => onDifficultyFilterChange(e.target.value)}
-            className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500"
+            className="w-full bg-bg-input border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer"
           >
             <option value="ALL">Mọi độ khó</option>
             <option value="BEGINNER">Cơ bản (Beginner)</option>
@@ -119,7 +119,7 @@ export function CoursesTab({
           <select
             value={statusFilter}
             onChange={(e) => onStatusFilterChange(e.target.value as any)}
-            className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500"
+            className="w-full bg-bg-input border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="ACTIVE">Đang hoạt động</option>
@@ -129,7 +129,7 @@ export function CoursesTab({
       </div>
 
       {filteredCourses.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-800 p-12 text-center text-slate-400 text-xs">
+        <div className="rounded-2xl border border-dashed border-border-subtle p-12 text-center text-text-muted text-xs">
           {search || muscleFilter !== 'ALL' || difficultyFilter !== 'ALL' || statusFilter !== 'ALL'
             ? 'Không tìm thấy khóa tập phù hợp với bộ lọc.'
             : 'Chưa có khóa tập PT nào trong hệ thống.'}
@@ -149,26 +149,26 @@ export function CoursesTab({
             return (
               <div
                 key={c.id}
-                className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 space-y-4 flex flex-col justify-between transition-all hover:border-slate-700 hover:shadow-lg hover:shadow-black/40"
+                className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 flex flex-col justify-between transition-all hover:border-border-strong hover:shadow-md"
               >
                 <div className="space-y-3.5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-400 shrink-0">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0 border border-primary/20">
                         <BookOpen className="h-5 w-5" />
                       </div>
                       <div>
-                        <span className="rounded-full bg-orange-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-orange-400">
+                        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary border border-primary/20">
                           {c.difficultyLevel || 'Mọi cấp độ'}
                         </span>
-                        <h3 className="text-base font-bold text-white mt-1">{c.name}</h3>
+                        <h3 className="text-base font-bold text-text-primary mt-1">{c.name}</h3>
                       </div>
                     </div>
                     <StatusBadge status={isAct ? 'ACTIVE' : 'INACTIVE'} />
                   </div>
 
                   {c.imageUrl && (
-                    <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 max-h-36">
+                    <div className="overflow-hidden rounded-xl border border-border-subtle bg-bg-surface-muted max-h-36">
                       <img
                         src={c.imageUrl}
                         alt={c.name}
@@ -180,16 +180,16 @@ export function CoursesTab({
                     </div>
                   )}
 
-                  <p className="text-xs text-slate-300 leading-relaxed line-clamp-2">
+                  <p className="text-xs text-text-muted leading-relaxed line-clamp-2">
                     {c.description || 'Khóa huấn luyện chuyên sâu 1 kèm 1 cùng HLV chuyên trách.'}
                   </p>
 
                   {c.objective && (
-                    <div className="rounded-xl bg-slate-800/60 p-3 text-xs text-slate-300 border border-slate-700/50">
-                      <span className="font-semibold text-orange-400 flex items-center gap-1 mb-1">
+                    <div className="rounded-xl bg-bg-surface-muted p-3 text-xs text-text-primary border border-border-subtle">
+                      <span className="font-semibold text-primary flex items-center gap-1 mb-1">
                         <Target className="h-3.5 w-3.5" /> Mục tiêu khóa:
                       </span>
-                      <span>{c.objective}</span>
+                      <span className="text-text-muted">{c.objective}</span>
                     </div>
                   )}
 
@@ -200,8 +200,8 @@ export function CoursesTab({
                           key={idx}
                           className={`rounded-lg px-2 py-0.5 text-[10px] font-medium border ${
                             mg.isPrimary
-                              ? 'bg-orange-500/20 text-orange-300 border-orange-500/40 font-semibold'
-                              : 'bg-slate-800/80 text-slate-300 border-slate-700'
+                              ? 'bg-primary/15 text-primary border-primary/30 font-semibold'
+                              : 'bg-bg-surface-muted text-text-muted border-border-subtle'
                           }`}
                         >
                           {mg.name} {mg.isPrimary && '(Chính)'}
@@ -212,15 +212,15 @@ export function CoursesTab({
                 </div>
 
                 {/* Course Action Toolbar */}
-                <div className="border-t border-slate-800/80 pt-4 mt-2 flex flex-wrap items-center justify-between gap-2">
+                <div className="border-t border-border-subtle pt-4 mt-2 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => onOpenDetail(c)}
-                      className="text-[11px] h-7 px-2.5 gap-1 text-slate-300 hover:text-white"
+                      className="text-[11px] h-7 px-2.5 gap-1"
                     >
-                      <Eye className="h-3 w-3 text-sky-400" />
+                      <Eye className="h-3 w-3 text-sky-500" />
                       <span>Chi tiết</span>
                     </Button>
 
@@ -228,9 +228,9 @@ export function CoursesTab({
                       size="sm"
                       variant="ghost"
                       onClick={() => onOpenEdit(c)}
-                      className="text-[11px] h-7 px-2.5 gap-1 text-slate-300 hover:text-white"
+                      className="text-[11px] h-7 px-2.5 gap-1"
                     >
-                      <Edit2 className="h-3 w-3 text-orange-400" />
+                      <Edit2 className="h-3 w-3 text-primary" />
                       <span>Sửa</span>
                     </Button>
 
@@ -238,9 +238,9 @@ export function CoursesTab({
                       size="sm"
                       variant="outline"
                       onClick={() => onOpenAssignMuscles(c)}
-                      className="text-[11px] h-7 px-2.5 gap-1 text-slate-300 hover:text-white"
+                      className="text-[11px] h-7 px-2.5 gap-1"
                     >
-                      <Layers className="h-3 w-3 text-emerald-400" />
+                      <Layers className="h-3 w-3 text-emerald-500" />
                       <span>Gán cơ</span>
                     </Button>
 
@@ -248,9 +248,9 @@ export function CoursesTab({
                       size="sm"
                       variant="outline"
                       onClick={() => onOpenAssignSyllabus(c)}
-                      className="text-[11px] h-7 px-2.5 gap-1 text-slate-300 hover:text-white"
+                      className="text-[11px] h-7 px-2.5 gap-1"
                     >
-                      <ListOrdered className="h-3 w-3 text-purple-400" />
+                      <ListOrdered className="h-3 w-3 text-purple-500" />
                       <span>Giáo án</span>
                     </Button>
                   </div>
@@ -262,8 +262,8 @@ export function CoursesTab({
                     disabled={togglingCourseId === c.id}
                     className={`text-[11px] h-7 px-2.5 gap-1.5 ${
                       isAct
-                        ? 'text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 border-rose-500/20'
-                        : 'text-emerald-400 hover:bg-emerald-950/40 hover:text-emerald-300 border-emerald-500/20'
+                        ? 'text-danger hover:bg-danger/10 hover:text-danger border-danger/30'
+                        : 'text-success hover:bg-success/10 hover:text-success border-success/30'
                     }`}
                   >
                     <Power className={`h-3 w-3 ${togglingCourseId === c.id ? 'animate-spin' : ''}`} />

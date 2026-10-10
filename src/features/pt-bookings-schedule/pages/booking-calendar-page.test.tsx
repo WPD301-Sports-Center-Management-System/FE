@@ -80,7 +80,7 @@ describe('BookingCalendarPage', () => {
   const mockBooking: Booking = {
     id: 'b-1',
     purchaseId: 'pur-1',
-    slotId: 'slot-1',
+    slotId: 'slot-existing',
     memberId: 'm-1',
     coachId: 'coa-1',
     courseId: 'c-1',

@@ -114,7 +114,7 @@ export function BulkCreateSlotDialog({
         />
 
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-text-primary">
             Các ngày áp dụng trong tuần
           </label>
           <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
@@ -127,8 +127,8 @@ export function BulkCreateSlotDialog({
                   onClick={() => toggleDay(w.value)}
                   className={`py-2 px-2.5 rounded-xl border text-xs font-semibold transition-all ${
                     isChecked
-                      ? 'border-cyan-500 bg-cyan-950/40 text-cyan-200 shadow-sm'
-                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700'
+                      ? 'border-primary bg-primary/20 text-primary shadow-xs'
+                      : 'border-border-subtle bg-bg-surface-muted text-text-muted hover:border-border-strong'
                   }`}
                 >
                   {w.label}
@@ -137,7 +137,7 @@ export function BulkCreateSlotDialog({
             })}
           </div>
           {errors.daysOfWeek && (
-            <p className="text-xs text-red-400">{errors.daysOfWeek.message}</p>
+            <p className="text-xs text-danger">{errors.daysOfWeek.message}</p>
           )}
         </div>
 
@@ -165,7 +165,7 @@ export function BulkCreateSlotDialog({
           {...register('note')}
         />
 
-        <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800">
+        <div className="flex justify-end gap-2.5 pt-3 border-t border-border-subtle">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Hủy
           </Button>

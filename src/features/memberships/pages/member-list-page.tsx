@@ -378,7 +378,7 @@ export function MemberListPage() {
     {
       header: 'Mã HV',
       accessor: (row) => (
-        <span className="font-mono text-xs font-bold text-orange-400">{row.memberCode}</span>
+        <span className="font-mono text-xs font-bold text-primary">{row.memberCode}</span>
       ),
     },
     {
@@ -392,11 +392,11 @@ export function MemberListPage() {
               'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'
             }
             alt={row.fullName || row.user?.fullName}
-            className="h-9 w-9 rounded-xl object-cover border border-slate-700/60"
+            className="h-9 w-9 rounded-xl object-cover border border-border-subtle"
           />
           <div>
-            <p className="font-bold text-white text-xs">{row.fullName || row.user?.fullName}</p>
-            <p className="text-[11px] text-slate-400">
+            <p className="font-bold text-text-primary text-xs">{row.fullName || row.user?.fullName}</p>
+            <p className="text-[11px] text-text-muted">
               {row.phone || row.user?.phone || row.user?.email || '—'}
             </p>
           </div>
@@ -413,10 +413,10 @@ export function MemberListPage() {
       header: 'Gói PT 1:1',
       accessor: (row) => (
         <div className="flex items-center gap-1 text-xs">
-          <span className="font-semibold text-slate-200">
+          <span className="font-semibold text-text-primary">
             {row.activePackageCount !== undefined ? row.activePackageCount : 0}
           </span>
-          <span className="text-slate-500 text-[11px]">gói</span>
+          <span className="text-text-muted text-[11px]">gói</span>
         </div>
       ),
     },
@@ -431,10 +431,10 @@ export function MemberListPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">
             Danh Sách Hội Viên (WEB-REC-02, 03)
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-text-muted mt-1">
             Quản lý hồ sơ hội viên phòng Gym, theo dõi thể trạng InBody, gói thẻ tập và lịch sử rèn luyện
           </p>
         </div>
@@ -464,15 +464,15 @@ export function MemberListPage() {
 
       {/* Alerts */}
       {errorMessage && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-950/40 p-3.5 text-xs text-red-300">
-          <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-3.5 text-xs text-danger">
+          <AlertCircle className="h-4 w-4 shrink-0 text-danger mt-0.5" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {successMessage && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-3.5 text-xs text-emerald-300">
-          <Check className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-xl border border-success/30 bg-success/10 p-3.5 text-xs text-success">
+          <Check className="h-4 w-4 shrink-0 text-success mt-0.5" />
           <span>{successMessage}</span>
         </div>
       )}
@@ -508,13 +508,13 @@ export function MemberListPage() {
       >
         {isDetailLoading ? (
           <div className="flex flex-col items-center justify-center p-8 gap-3">
-            <RefreshCw className="h-8 w-8 animate-spin text-orange-500" />
-            <p className="text-xs text-slate-400">Đang tải hồ sơ từ máy chủ...</p>
+            <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-xs text-text-muted">Đang tải hồ sơ từ máy chủ...</p>
           </div>
         ) : selectedMember ? (
           <div className="space-y-5">
             {/* Header Badge Card */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl bg-slate-800/50 p-4 border border-slate-700/60">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl bg-bg-surface-muted p-4 border border-border-subtle">
               <div className="flex items-center gap-3.5">
                 <img
                   src={
@@ -523,16 +523,16 @@ export function MemberListPage() {
                     'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'
                   }
                   alt={selectedMember.fullName}
-                  className="h-14 w-14 rounded-2xl object-cover border border-orange-500/30"
+                  className="h-14 w-14 rounded-2xl object-cover border border-primary/30"
                 />
                 <div>
-                  <h3 className="text-base font-bold text-white">
+                  <h3 className="text-base font-bold text-text-primary">
                     {selectedMember.fullName || (selectedMember as any).user?.fullName}
                   </h3>
-                  <p className="text-xs font-mono text-orange-400 font-semibold">
+                  <p className="text-xs font-mono text-primary font-semibold">
                     {selectedMember.memberCode}
                   </p>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-text-muted">
                     Gia nhập: {formatDate(selectedMember.createdAt || new Date().toISOString())}
                   </p>
                 </div>
@@ -551,13 +551,13 @@ export function MemberListPage() {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex border-b border-slate-800 overflow-x-auto">
+            <div className="flex border-b border-border-subtle overflow-x-auto">
               <button
                 onClick={() => setActiveTab('profile')}
                 className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === 'profile'
-                    ? 'border-orange-500 text-orange-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-muted hover:text-text-primary'
                 }`}
               >
                 <User className="h-3.5 w-3.5" />
@@ -567,8 +567,8 @@ export function MemberListPage() {
                 onClick={() => setActiveTab('subscriptions')}
                 className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === 'subscriptions'
-                    ? 'border-orange-500 text-orange-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-muted hover:text-text-primary'
                 }`}
               >
                 <CreditCard className="h-3.5 w-3.5" />
@@ -578,8 +578,8 @@ export function MemberListPage() {
                 onClick={() => setActiveTab('ptPackages')}
                 className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === 'ptPackages'
-                    ? 'border-orange-500 text-orange-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-muted hover:text-text-primary'
                 }`}
               >
                 <Dumbbell className="h-3.5 w-3.5" />
@@ -589,8 +589,8 @@ export function MemberListPage() {
                 onClick={() => setActiveTab('history')}
                 className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === 'history'
-                    ? 'border-orange-500 text-orange-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-muted hover:text-text-primary'
                 }`}
               >
                 <History className="h-3.5 w-3.5" />
@@ -600,8 +600,8 @@ export function MemberListPage() {
                 onClick={() => setActiveTab('progress')}
                 className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === 'progress'
-                    ? 'border-orange-500 text-orange-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-muted hover:text-text-primary'
                 }`}
               >
                 <Activity className="h-3.5 w-3.5" />
@@ -612,28 +612,28 @@ export function MemberListPage() {
             {/* Tab Contents: Profile */}
             {activeTab === 'profile' && (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3 text-xs text-slate-300">
-                  <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">Số điện thoại:</span>
-                    <p className="font-semibold text-slate-200 mt-0.5">
+                <div className="grid grid-cols-2 gap-3 text-xs text-text-primary">
+                  <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle">
+                    <span className="text-text-muted block text-[11px]">Số điện thoại:</span>
+                    <p className="font-semibold text-text-primary mt-0.5">
                       {selectedMember.phone || (selectedMember as any).user?.phone || '—'}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">Email liên kết:</span>
-                    <p className="font-semibold text-slate-200 mt-0.5">
+                  <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle">
+                    <span className="text-text-muted block text-[11px]">Email liên kết:</span>
+                    <p className="font-semibold text-text-primary mt-0.5">
                       {selectedMember.email || (selectedMember as any).user?.email || '—'}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">Ngày sinh:</span>
-                    <p className="font-semibold text-slate-200 mt-0.5">
+                  <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle">
+                    <span className="text-text-muted block text-[11px]">Ngày sinh:</span>
+                    <p className="font-semibold text-text-primary mt-0.5">
                       {formatDate(selectedMember.dateOfBirth)}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">Giới tính:</span>
-                    <p className="font-semibold text-slate-200 mt-0.5">
+                  <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle">
+                    <span className="text-text-muted block text-[11px]">Giới tính:</span>
+                    <p className="font-semibold text-text-primary mt-0.5">
                       {selectedMember.gender === 'MALE'
                         ? 'Nam'
                         : selectedMember.gender === 'FEMALE'
@@ -641,29 +641,29 @@ export function MemberListPage() {
                         : selectedMember.gender || '—'}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">SĐT khẩn cấp:</span>
-                    <p className="font-semibold text-slate-200 mt-0.5">
+                  <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle">
+                    <span className="text-text-muted block text-[11px]">SĐT khẩn cấp:</span>
+                    <p className="font-semibold text-text-primary mt-0.5">
                       {selectedMember.emergencyPhone || '—'}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">Trình độ thể lực:</span>
-                    <p className="font-semibold text-orange-400 mt-0.5">
+                  <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle">
+                    <span className="text-text-muted block text-[11px]">Trình độ thể lực:</span>
+                    <p className="font-semibold text-primary mt-0.5">
                       {selectedMember.fitnessLevel || 'Chưa đánh giá'}
                     </p>
                   </div>
                 </div>
 
-                <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800 text-xs">
-                  <span className="text-slate-500 block text-[11px]">Địa chỉ liên lạc:</span>
-                  <p className="font-medium text-slate-200 mt-0.5">
+                <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle text-xs">
+                  <span className="text-text-muted block text-[11px]">Địa chỉ liên lạc:</span>
+                  <p className="font-medium text-text-primary mt-0.5">
                     {selectedMember.address || 'Chưa có thông tin'}
                   </p>
                 </div>
 
                 {selectedMember.medicalNotes && (
-                  <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 text-xs text-amber-300">
+                  <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs text-warning">
                     <span className="font-bold">Lưu ý sức khỏe / Chấn thương:</span>{' '}
                     {selectedMember.medicalNotes}
                   </div>
@@ -675,11 +675,11 @@ export function MemberListPage() {
             {activeTab === 'subscriptions' && (
               <div className="space-y-3 text-xs">
                 <div className="flex justify-between items-center pb-1">
-                  <span className="font-semibold text-slate-300">
+                  <span className="font-semibold text-text-primary">
                     Danh sách các thẻ tập đã đăng ký:
                   </span>
                   <Link to={`/receptionist/membership-sale?memberId=${selectedMember.id}`}>
-                    <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1 border-orange-500/40 text-orange-400">
+                    <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1 border-primary/40 text-primary">
                       <Plus className="h-3 w-3" />
                       <span>Mua gói mới</span>
                     </Button>
@@ -689,29 +689,26 @@ export function MemberListPage() {
                 {memberSubscriptions.length > 0 ? (
                   <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
                     {memberSubscriptions.map((sub) => {
-                      const isActionable = sub.status === 'ACTIVE' || sub.status === 'PENDING'
-                      const isRenewing = renewingSubId === sub.id
-
                       return (
                         <div
                           key={sub.id}
-                          className="rounded-xl bg-slate-900/80 border border-slate-800 p-3.5 space-y-2.5 hover:border-slate-700 transition-colors"
+                          className="rounded-xl bg-bg-surface border border-border-subtle p-3.5 space-y-2.5 hover:border-primary/40 transition-colors"
                         >
                           <div className="flex justify-between items-start">
                             <div>
-                              <p className="font-bold text-white text-sm">
+                              <p className="font-bold text-text-primary text-sm">
                                 {sub.planNameSnapshot || 'Gói thẻ tập'}
                               </p>
-                              <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5 text-slate-500" />
+                              <p className="text-[11px] text-text-muted mt-0.5 flex items-center gap-1.5">
+                                <Calendar className="h-3.5 w-3.5 text-text-muted" />
                                 <span>{formatDate(sub.startDate)} → {formatDate(sub.endDate)}</span>
                               </p>
                             </div>
                             <StatusBadge status={sub.status} />
                           </div>
 
-                          <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px]">
-                            <span className="text-emerald-400 font-bold text-xs">
+                          <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-[11px]">
+                            <span className="text-success font-bold text-xs">
                               {formatVND(sub.priceSnapshot)}
                             </span>
 
@@ -723,7 +720,7 @@ export function MemberListPage() {
                                   disabled={payingSubId === sub.id}
                                   isLoading={payingSubId === sub.id}
                                   onClick={() => handlePayCounter(sub)}
-                                  className="h-7 px-2.5 text-[11px] gap-1 bg-emerald-600 hover:bg-emerald-500 text-white"
+                                  className="h-7 px-2.5 text-[11px] gap-1 bg-success hover:bg-success/90 text-white"
                                 >
                                   <Check className="h-3 w-3" />
                                   <span>Thu tiền & Kích hoạt</span>
@@ -736,7 +733,7 @@ export function MemberListPage() {
                                     setCancellingSub(sub)
                                     setCancelReason('')
                                   }}
-                                  className="h-7 px-2 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-950/30 gap-1"
+                                  className="h-7 px-2 text-[11px] text-danger hover:text-danger hover:bg-danger/10 gap-1"
                                 >
                                   <Ban className="h-3 w-3" />
                                   <span>Hủy gói</span>
@@ -750,7 +747,7 @@ export function MemberListPage() {
                                     variant="ghost"
                                     disabled={renewingSubId === sub.id}
                                     onClick={() => handleRenewSubscription(sub)}
-                                    className="h-7 px-2 text-[11px] text-sky-400 hover:text-sky-300 hover:bg-sky-950/30 gap-1"
+                                    className="h-7 px-2 text-[11px] text-info hover:text-info hover:bg-info/10 gap-1"
                                   >
                                     <RotateCcw className={`h-3 w-3 ${renewingSubId === sub.id ? 'animate-spin' : ''}`} />
                                     <span>Gia hạn</span>
@@ -764,9 +761,9 @@ export function MemberListPage() {
                     })}
                   </div>
                 ) : (
-                  <div className="p-6 text-center rounded-xl bg-slate-900/40 border border-slate-800/80 space-y-2">
-                    <CreditCard className="h-8 w-8 text-slate-600 mx-auto" />
-                    <p className="text-xs text-slate-400">
+                  <div className="p-6 text-center rounded-xl bg-bg-surface-muted border border-border-subtle space-y-2">
+                    <CreditCard className="h-8 w-8 text-text-muted mx-auto" />
+                    <p className="text-xs text-text-muted">
                       Hội viên này hiện chưa có gói thẻ Gym nào.
                     </p>
                     <Link to={`/receptionist/membership-sale?memberId=${selectedMember.id}`}>
@@ -783,11 +780,11 @@ export function MemberListPage() {
             {activeTab === 'ptPackages' && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center pb-1">
-                  <span className="font-semibold text-slate-300">
+                  <span className="font-semibold text-text-primary">
                     Danh sách các gói huấn luyện viên 1:1 đã đăng ký:
                   </span>
                   <Link to={`/receptionist/pt-sale?memberId=${selectedMember.id}`}>
-                    <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1 border-orange-500/40 text-orange-400">
+                    <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1 border-primary/40 text-primary">
                       <Plus className="h-3 w-3" />
                       <span>Mua gói PT mới</span>
                     </Button>
@@ -797,7 +794,7 @@ export function MemberListPage() {
                 {memberPtPackages.length > 0 ? (
                   <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
                     {memberPtPackages.map((pkg) => {
-                      const total = pkg.totalCredits || pkg.sessionCountSnapshot || 0
+                      const total = pkg.totalCredits || 0
                       const consumed = pkg.consumedCredits || 0
                       const reserved = pkg.reservedCredits || 0
                       const remaining = Math.max(0, total - consumed - reserved)
@@ -805,27 +802,27 @@ export function MemberListPage() {
                       return (
                         <div
                           key={pkg.id}
-                          className="rounded-xl bg-slate-900/80 border border-slate-800 p-3.5 space-y-2.5 hover:border-slate-700 transition-colors"
+                          className="rounded-xl bg-bg-surface border border-border-subtle p-3.5 space-y-2.5 hover:border-primary/40 transition-colors"
                         >
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="font-bold text-white text-sm">
-                                  {pkg.packageNameSnapshot || 'Gói PT 1:1'}
+                                <p className="font-bold text-text-primary text-sm">
+                                  {pkg.courseNameSnapshot || 'Gói PT 1:1'}
                                 </p>
-                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-bg-surface-muted text-text-muted border border-border-subtle">
                                   {pkg.purchaseCode}
                                 </span>
                               </div>
-                              <p className="text-[11px] text-slate-400 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                                <span className="text-orange-400 font-medium">
+                              <p className="text-[11px] text-text-muted mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <span className="text-primary font-medium">
                                   Khóa: {pkg.courseNameSnapshot || 'PT 1:1'}
                                 </span>
-                                <span className="text-slate-300">
+                                <span className="text-text-primary">
                                   HLV: {pkg.coachNameSnapshot || 'Huấn luyện viên'}
                                 </span>
                                 {pkg.expiresAt && (
-                                  <span className="flex items-center gap-1 text-slate-500">
+                                  <span className="flex items-center gap-1 text-text-muted">
                                     <Calendar className="h-3 w-3" />
                                     <span>Hạn đến: {formatDate(pkg.expiresAt)}</span>
                                   </span>
@@ -835,27 +832,27 @@ export function MemberListPage() {
                             <StatusBadge status={pkg.status} />
                           </div>
 
-                          <div className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-slate-950/60 border border-slate-800/60 text-center text-[11px]">
+                          <div className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-bg-surface-muted border border-border-subtle text-center text-[11px]">
                             <div>
-                              <span className="text-slate-500 block text-[10px]">Đã tập</span>
-                              <span className="font-bold text-slate-200">{consumed} buổi</span>
+                              <span className="text-text-muted block text-[10px]">Đã tập</span>
+                              <span className="font-bold text-text-primary">{consumed} buổi</span>
                             </div>
                             <div>
-                              <span className="text-slate-500 block text-[10px]">Đang giữ chỗ</span>
-                              <span className="font-bold text-amber-400">{reserved} buổi</span>
+                              <span className="text-text-muted block text-[10px]">Đang giữ chỗ</span>
+                              <span className="font-bold text-warning">{reserved} buổi</span>
                             </div>
                             <div>
-                              <span className="text-slate-500 block text-[10px]">Còn lại</span>
-                              <span className="font-bold text-emerald-400">{remaining} buổi</span>
+                              <span className="text-text-muted block text-[10px]">Còn lại</span>
+                              <span className="font-bold text-success">{remaining} buổi</span>
                             </div>
                           </div>
 
                           <div className="flex items-center justify-between pt-1 text-[11px]">
-                            <span className="text-emerald-400 font-bold text-xs">
+                            <span className="text-success font-bold text-xs">
                               {formatVND(pkg.priceSnapshot)}
                             </span>
-                            <span className="text-slate-500 text-[10px]">
-                              Tổng số: {total} buổi • {pkg.validityDaysSnapshot || 0} ngày
+                            <span className="text-text-muted text-[10px]">
+                              Tổng số: {total} buổi
                             </span>
                           </div>
                         </div>
@@ -863,9 +860,9 @@ export function MemberListPage() {
                     })}
                   </div>
                 ) : (
-                  <div className="p-6 text-center rounded-xl bg-slate-900/40 border border-slate-800/80 space-y-2">
-                    <Dumbbell className="h-8 w-8 text-slate-600 mx-auto" />
-                    <p className="text-xs text-slate-400">
+                  <div className="p-6 text-center rounded-xl bg-bg-surface-muted border border-border-subtle space-y-2">
+                    <Dumbbell className="h-8 w-8 text-text-muted mx-auto" />
+                    <p className="text-xs text-text-muted">
                       Hội viên này hiện chưa mua gói tập Huấn luyện viên cá nhân PT nào.
                     </p>
                     <Link to={`/receptionist/pt-sale?memberId=${selectedMember.id}`}>
@@ -886,11 +883,11 @@ export function MemberListPage() {
                     {memberHistory.bookings.map((b) => (
                       <div
                         key={b.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-slate-900/70 border border-slate-800"
+                        className="flex items-center justify-between p-3 rounded-lg bg-bg-surface border border-border-subtle"
                       >
                         <div>
-                          <p className="font-semibold text-slate-200">{b.courseName || 'Buổi tập PT 1:1'}</p>
-                          <p className="text-[11px] text-slate-400">
+                          <p className="font-semibold text-text-primary">{b.courseName || 'Buổi tập PT 1:1'}</p>
+                          <p className="text-[11px] text-text-muted">
                             HLV: {b.coachName || 'HLV chuyên trách'} • {formatDate(b.startsAt)}
                           </p>
                         </div>
@@ -899,7 +896,7 @@ export function MemberListPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400 text-center py-6">
+                  <p className="text-xs text-text-muted text-center py-6">
                     Chưa có lịch sử buổi tập nào được ghi nhận.
                   </p>
                 )}
@@ -914,24 +911,24 @@ export function MemberListPage() {
                     {memberProgress.assessments.map((a) => (
                       <div
                         key={a.id}
-                        className="p-3 rounded-lg bg-slate-900/70 border border-slate-800 space-y-1.5"
+                        className="p-3 rounded-lg bg-bg-surface border border-border-subtle space-y-1.5"
                       >
                         <div className="flex justify-between items-center">
-                          <span className="font-semibold text-orange-400">
+                          <span className="font-semibold text-primary">
                             Đo InBody ngày {formatDate(a.assessedAt)}
                           </span>
                         </div>
-                        <div className="grid grid-cols-4 gap-2 text-[11px] text-slate-300 pt-1">
-                          <span>Cân nặng: <strong>{a.weightKg || '—'} kg</strong></span>
-                          <span>Chiều cao: <strong>{a.heightCm || '—'} cm</strong></span>
-                          <span>Mỡ: <strong>{a.bodyFatPercent || '—'} %</strong></span>
-                          <span>Cơ: <strong>{a.muscleMassKg || '—'} kg</strong></span>
+                        <div className="grid grid-cols-4 gap-2 text-[11px] text-text-muted pt-1">
+                          <span>Cân nặng: <strong className="text-text-primary">{a.weightKg || '—'} kg</strong></span>
+                          <span>Chiều cao: <strong className="text-text-primary">{a.heightCm || '—'} cm</strong></span>
+                          <span>Mỡ: <strong className="text-text-primary">{a.bodyFatPercent || '—'} %</strong></span>
+                          <span>Cơ: <strong className="text-text-primary">{a.muscleMassKg || '—'} kg</strong></span>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400 text-center py-6">
+                  <p className="text-xs text-text-muted text-center py-6">
                     Chưa có số đo chỉ số thể hình InBody.
                   </p>
                 )}
@@ -939,8 +936,8 @@ export function MemberListPage() {
             )}
 
             {/* Quick Actions Footer */}
-            <div className="flex justify-between items-center border-t border-slate-800 pt-4">
-              <span className="text-[11px] text-slate-500">
+            <div className="flex justify-between items-center border-t border-border-subtle pt-4">
+              <span className="text-[11px] text-text-muted">
                 Thao tác nhanh cho nhân viên quầy:
               </span>
               <div className="flex gap-2">
@@ -976,12 +973,12 @@ export function MemberListPage() {
       >
         <form onSubmit={handleConfirmCancelSubscription} className="space-y-4">
           {cancelError && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-950/40 p-3.5 text-xs text-red-300">
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+            <div className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-3.5 text-xs text-danger">
+              <AlertCircle className="h-4 w-4 shrink-0 text-danger mt-0.5" />
               <span>{cancelError}</span>
             </div>
           )}
-          <div className="p-3 rounded-xl bg-red-950/30 border border-red-500/30 text-xs text-red-300">
+          <div className="p-3 rounded-xl bg-danger/10 border border-danger/30 text-xs text-danger">
             Cảnh báo: Sau khi hủy, gói thẻ tập sẽ ngừng kích hoạt ngay lập tức và không thể hoàn tác.
           </div>
           <Input
@@ -993,7 +990,7 @@ export function MemberListPage() {
             disabled={isCancelling}
           />
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <div className="flex justify-end gap-2 pt-3 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"
@@ -1031,8 +1028,8 @@ export function MemberListPage() {
       >
         <form onSubmit={handleCreateMember} className="space-y-4">
           {createError && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-950/40 p-3.5 text-xs text-red-300">
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+            <div className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-3.5 text-xs text-danger">
+              <AlertCircle className="h-4 w-4 shrink-0 text-danger mt-0.5" />
               <span>{createError}</span>
             </div>
           )}
@@ -1098,7 +1095,7 @@ export function MemberListPage() {
             disabled={isSubmitting}
           />
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <div className="flex justify-end gap-2 pt-3 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"
@@ -1158,7 +1155,7 @@ export function MemberListPage() {
             disabled={isSubmitting}
           />
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <div className="flex justify-end gap-2 pt-3 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"
@@ -1182,25 +1179,25 @@ export function MemberListPage() {
         description={`Hội viên ${createdResult?.fullName} đã được tạo thành công trên hệ thống.`}
       >
         <div className="space-y-4">
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-4 space-y-3">
+          <div className="rounded-xl border border-success/30 bg-success/10 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-400">Mã thẻ hội viên:</span>
-              <span className="font-mono font-bold text-orange-400 bg-slate-900 px-2.5 py-1 rounded border border-slate-700">
+              <span className="text-xs text-text-muted">Mã thẻ hội viên:</span>
+              <span className="font-mono font-bold text-primary bg-bg-surface px-2.5 py-1 rounded border border-border-subtle">
                 {createdResult?.memberCode}
               </span>
             </div>
 
             {createdResult?.temporaryPassword && (
               <div>
-                <span className="text-xs text-slate-400 block mb-1">Mật khẩu đăng nhập tạm thời:</span>
+                <span className="text-xs text-text-muted block mb-1">Mật khẩu đăng nhập tạm thời:</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm font-bold text-emerald-400 bg-slate-900 px-3 py-1.5 rounded border border-slate-700 flex-1 select-all">
+                  <span className="font-mono text-sm font-bold text-success bg-bg-surface px-3 py-1.5 rounded border border-border-subtle flex-1 select-all">
                     {createdResult.temporaryPassword}
                   </span>
                   <Button size="sm" variant="outline" onClick={handleCopyPassword} className="h-8 gap-1 text-xs">
                     {isCopied ? (
                       <>
-                        <Check className="h-3.5 w-3.5 text-emerald-400" />
+                        <Check className="h-3.5 w-3.5 text-success" />
                         <span>Đã chép</span>
                       </>
                     ) : (
@@ -1215,7 +1212,7 @@ export function MemberListPage() {
             )}
           </div>
 
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="text-xs text-text-muted leading-relaxed">
             Vui lòng bàn giao mã hội viên và hướng dẫn hội viên đăng nhập vào ứng dụng di động để theo dõi lịch tập.
           </p>
 

@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Sparkles
 } from 'lucide-react';
+import { ThemeSelector } from '@/components/ThemeSelector';
 
 interface NavbarProps {
   onOpenTrialModal: () => void;
@@ -80,8 +81,8 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled 
-          ? 'bg-[#070a11]/95 backdrop-blur-md border-b border-white/10 shadow-2xl py-2.5' 
-          : 'bg-gradient-to-b from-[#070a11]/95 via-[#070a11]/60 to-transparent py-4'
+          ? 'bg-bg-surface/90 backdrop-blur-md border-b border-border-subtle shadow-md py-2.5' 
+          : 'bg-bg-surface/75 backdrop-blur-sm border-b border-border-subtle/50 py-4'
       }`}
     >
       {/* Top Scroll Progress Indicator Bar */}
@@ -100,21 +101,21 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
-                <span className="text-lg font-black tracking-tight font-heading text-white whitespace-nowrap">
-                  APEX<span className="text-orange-500">FIT</span>
+                <span className="text-lg font-black tracking-tight font-heading text-text-primary whitespace-nowrap">
+                  APEX<span className="text-primary">FIT</span>
                 </span>
                 <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 whitespace-nowrap">
                   1:1 PT
                 </span>
               </div>
-              <span className="text-[9px] text-slate-400 tracking-wider whitespace-nowrap hidden sm:inline-block">
+              <span className="text-[9px] text-text-muted tracking-wider whitespace-nowrap hidden sm:inline-block">
                 CHUYÊN GIA THỂ HÌNH CÁ NHÂN
               </span>
             </div>
           </a>
 
           {/* Desktop Nav Links with Real-time Scroll Glow */}
-          <nav className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0 p-1 rounded-full bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+          <nav className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0 p-1 rounded-full bg-bg-surface-muted/90 border border-border-subtle backdrop-blur-sm">
             {navLinks.map((link) => {
               const isActive = activeSection === link.id;
               return (
@@ -124,7 +125,7 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
                   className={`relative px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-300 flex items-center gap-1.5 ${
                     isActive
                       ? 'text-white bg-gradient-to-r from-orange-600 to-amber-500 shadow-[0_0_16px_rgba(255,87,34,0.45)] border border-orange-400/40 scale-105'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                      : 'text-text-muted hover:text-text-primary hover:bg-bg-surface/60'
                   }`}
                 >
                   {isActive && (
@@ -138,22 +139,25 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
 
           {/* Action CTAs */}
           <div className="hidden lg:flex items-center gap-2.5 shrink-0">
+            {/* Theme Selector */}
+            <ThemeSelector />
+
             {/* Link to Web Portal Login */}
             <Link
               to="/login"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/90 hover:bg-slate-700 border border-slate-700 transition-all whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-text-muted hover:text-text-primary bg-bg-surface-muted hover:bg-border-subtle border border-border-subtle transition-all whitespace-nowrap"
               title="Dành cho Quản lý, Lễ tân & Huấn luyện viên"
             >
-              <LogIn className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+              <LogIn className="w-3.5 h-3.5 text-primary shrink-0" />
               <span>Cổng Nội Bộ</span>
             </Link>
 
             {/* Mobile App Download Button */}
             <button
               onClick={onOpenDownloadModal}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-sky-300 hover:text-white bg-sky-950/50 hover:bg-sky-900/70 border border-sky-500/30 transition-all cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-sky-500 hover:text-sky-600 dark:text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 transition-all cursor-pointer whitespace-nowrap"
             >
-              <Smartphone className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+              <Smartphone className="w-3.5 h-3.5 text-sky-500 shrink-0" />
               <span>Tải App</span>
             </button>
 
@@ -169,6 +173,7 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
 
           {/* Tablet/Mobile Actions & Hamburger */}
           <div className="flex lg:hidden items-center gap-2">
+            <ThemeSelector />
             <button
               onClick={onOpenTrialModal}
               className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-orange-600 to-amber-500 shadow-md shadow-orange-600/30 whitespace-nowrap cursor-pointer"
@@ -177,20 +182,19 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
             </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-slate-400 hover:text-white bg-slate-900 border border-slate-800 focus:outline-none cursor-pointer"
+              className="p-2 rounded-lg text-text-muted hover:text-text-primary bg-bg-surface border border-border-subtle focus:outline-none cursor-pointer"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
-
         </div>
       </div>
 
-      {/* Mobile & Tablet Menu Dropdown */}
+      {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#0a0f1d]/98 backdrop-blur-xl border-b border-white/10 px-4 pt-3 pb-6 space-y-3 mt-2 shadow-2xl animate-in slide-in-from-top duration-200">
-          <div className="grid grid-cols-1 gap-1.5 pt-2 border-t border-slate-800">
+        <div className="lg:hidden mt-2 mx-4 p-4 rounded-2xl bg-bg-surface/95 border border-border-subtle backdrop-blur-xl shadow-2xl space-y-3">
+          <div className="flex flex-col space-y-1">
             {navLinks.map((link) => {
               const isActive = activeSection === link.id;
               return (
@@ -200,33 +204,33 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center justify-between py-2 px-3 rounded-xl text-sm font-medium transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-orange-600/20 to-amber-500/20 border border-orange-500/40 text-orange-400 font-bold'
-                      : 'text-slate-200 hover:bg-slate-800/80 hover:text-orange-400'
+                      ? 'bg-gradient-to-r from-orange-600/20 to-amber-500/20 border border-orange-500/40 text-primary font-bold'
+                      : 'text-text-muted hover:bg-bg-surface-muted hover:text-text-primary'
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    {isActive && <Sparkles className="w-3.5 h-3.5 text-orange-400" />}
+                    {isActive && <Sparkles className="w-3.5 h-3.5 text-primary" />}
                     <span>{link.label}</span>
                   </div>
                   {isActive ? (
-                    <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded bg-orange-500 text-white shadow-sm">
+                    <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded bg-primary text-primary-foreground shadow-sm">
                       Đang Xem
                     </span>
                   ) : (
-                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                    <ChevronRight className="w-4 h-4 text-text-muted" />
                   )}
                 </a>
               );
             })}
           </div>
 
-          <div className="pt-3 border-t border-slate-800 grid grid-cols-2 gap-2">
+          <div className="pt-3 border-t border-border-subtle grid grid-cols-2 gap-2">
             <Link
               to="/login"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700"
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-xs font-semibold bg-bg-surface-muted text-text-primary border border-border-subtle"
             >
-              <LogIn className="w-4 h-4 text-orange-400" />
+              <LogIn className="w-4 h-4 text-primary" />
               <span>Cổng Nội Bộ</span>
             </Link>
             <button
@@ -234,9 +238,9 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
                 setMobileMenuOpen(false);
                 onOpenDownloadModal();
               }}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-xs font-semibold bg-sky-950/60 text-sky-300 border border-sky-600/40 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-xs font-semibold bg-sky-500/10 text-sky-600 dark:text-sky-300 border border-sky-500/30 cursor-pointer"
             >
-              <Smartphone className="w-4 h-4 text-sky-400" />
+              <Smartphone className="w-4 h-4 text-sky-500" />
               <span>Tải App Hội Viên</span>
             </button>
           </div>

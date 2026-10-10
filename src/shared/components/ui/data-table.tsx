@@ -51,7 +51,7 @@ export function DataTable<T extends Record<string, unknown>>({
       {(searchKey || searchFn) && (
         <div className="flex items-center justify-between gap-4">
           <div className="relative w-72">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
             <input
               type="text"
               placeholder={searchPlaceholder}
@@ -60,16 +60,16 @@ export function DataTable<T extends Record<string, unknown>>({
                 setSearchTerm(e.target.value)
                 setCurrentPage(1)
               }}
-              className="w-full rounded-xl border border-slate-700/80 bg-slate-900/80 py-2 pl-10 pr-4 text-xs text-slate-100 placeholder-slate-500 transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="w-full rounded-xl border border-border-subtle bg-bg-input py-2 pl-10 pr-4 text-xs text-text-primary placeholder:text-text-muted/60 transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-focus-ring"
             />
           </div>
-          <span className="text-xs text-slate-400">Tổng cộng: {filteredData.length} mục</span>
+          <span className="text-xs text-text-muted">Tổng cộng: {filteredData.length} mục</span>
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-md">
-        <table className="w-full text-left text-sm text-slate-300">
-          <thead className="border-b border-slate-800 bg-slate-900/90 text-xs font-semibold uppercase tracking-wider text-slate-400">
+      <div className="overflow-x-auto rounded-2xl border border-border-subtle bg-bg-surface backdrop-blur-md">
+        <table className="w-full text-left text-sm text-text-muted">
+          <thead className="border-b border-border-subtle bg-bg-surface-muted text-xs font-semibold uppercase tracking-wider text-text-muted">
             <tr>
               {columns.map((col, idx) => (
                 <th key={idx} className={`px-4 py-3.5 ${col.className || ''}`}>
@@ -79,18 +79,18 @@ export function DataTable<T extends Record<string, unknown>>({
               {actions && <th className="px-4 py-3.5 text-right">Thao tác</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-border-subtle">
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <tr key={i} className="animate-pulse">
                   {columns.map((_, cIdx) => (
                     <td key={cIdx} className="px-4 py-4">
-                      <div className="h-4 rounded bg-slate-800" />
+                      <div className="h-4 rounded bg-border-subtle" />
                     </td>
                   ))}
                   {actions && (
                     <td className="px-4 py-4">
-                      <div className="h-4 rounded bg-slate-800" />
+                      <div className="h-4 rounded bg-border-subtle" />
                     </td>
                   )}
                 </tr>
@@ -103,9 +103,9 @@ export function DataTable<T extends Record<string, unknown>>({
               </tr>
             ) : (
               paginatedData.map((row, rIdx) => (
-                <tr key={rIdx} className="transition-colors hover:bg-slate-800/40">
+                <tr key={rIdx} className="transition-colors hover:bg-bg-surface-muted/60">
                   {columns.map((col, cIdx) => (
-                    <td key={cIdx} className={`px-4 py-3.5 text-xs text-slate-200 ${col.className || ''}`}>
+                    <td key={cIdx} className={`px-4 py-3.5 text-xs text-text-primary ${col.className || ''}`}>
                       {typeof col.accessor === 'function'
                         ? col.accessor(row)
                         : col.accessor
@@ -122,7 +122,7 @@ export function DataTable<T extends Record<string, unknown>>({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+        <div className="flex items-center justify-between text-xs text-text-muted px-1">
           <span>
             Trang {currentPage} / {totalPages}
           </span>
@@ -130,14 +130,14 @@ export function DataTable<T extends Record<string, unknown>>({
             <button
               disabled={currentPage <= 1}
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-              className="rounded-lg border border-slate-700 bg-slate-800 p-1.5 hover:bg-slate-700 disabled:opacity-40 transition-colors"
+              className="rounded-lg border border-border-subtle bg-bg-surface-muted p-1.5 text-text-primary hover:bg-border-subtle disabled:opacity-40 transition-colors cursor-pointer"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-              className="rounded-lg border border-slate-700 bg-slate-800 p-1.5 hover:bg-slate-700 disabled:opacity-40 transition-colors"
+              className="rounded-lg border border-border-subtle bg-bg-surface-muted p-1.5 text-text-primary hover:bg-border-subtle disabled:opacity-40 transition-colors cursor-pointer"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

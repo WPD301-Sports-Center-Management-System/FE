@@ -43,14 +43,14 @@ export function BlockSlotDialog({
       description="Chặn khung giờ này để hội viên và Lễ tân không thể xếp lịch"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 space-y-1.5 text-xs text-slate-300">
+        <div className="rounded-xl border border-border-subtle bg-bg-surface-muted p-3.5 space-y-1.5 text-xs text-text-primary">
           <div className="flex justify-between">
-            <span className="text-slate-400">Thời gian:</span>
-            <span className="font-semibold text-white">{formatDateTime(slot.startsAt)}</span>
+            <span className="text-text-muted">Thời gian:</span>
+            <span className="font-semibold text-text-primary">{formatDateTime(slot.startsAt)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">Khóa học:</span>
-            <span className="text-slate-200">{slot.courseName || 'PT 1:1'}</span>
+            <span className="text-text-muted">Khóa học:</span>
+            <span className="text-text-primary">{slot.courseName || 'PT 1:1'}</span>
           </div>
         </div>
 
@@ -62,14 +62,14 @@ export function BlockSlotDialog({
           autoFocus
         />
 
-        <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800">
+        <div className="flex justify-end gap-2.5 pt-3 border-t border-border-subtle">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Hủy
           </Button>
           <Button
             type="submit"
             variant="outline"
-            className="text-amber-400 border-amber-500/40 hover:bg-amber-950/40"
+            className="text-amber-500 border-amber-500/40 hover:bg-amber-500/10"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Đang khóa...' : 'Xác nhận khóa slot'}

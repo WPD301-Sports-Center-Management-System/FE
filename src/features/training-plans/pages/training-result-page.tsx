@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { CheckCircle2, Activity, Dumbbell, AlertTriangle, RefreshCw, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
-import { Input, Textarea, Select } from '@/shared/components/ui/input'
+import { Input, Textarea } from '@/shared/components/ui/input'
 import { ptBookingsService } from '@/features/pt-bookings-schedule/services/pt-bookings.service'
 import { coursesExercisesService } from '@/features/courses-exercises/services/courses-exercises.service'
 import { isAppApiError } from '@/shared/api/api-error'
@@ -38,23 +38,25 @@ export function TrainingResultPage() {
     setErrorMessage(null)
     try {
       const [bookingsRes, exercisesRes] = await Promise.all([
-        ptBookingsService.getBookings({ limit: 100 }).catch(() => ({ data: [] })),
-        coursesExercisesService.getExercises({ limit: 100 }).catch(() => ({ data: [] })),
+        ptBookingsService.getBookings({ limit: 100 }),
+        coursesExercisesService.getExercises({ limit: 100 }),
       ])
 
       const allBookings = (bookingsRes as any)?.data || (Array.isArray(bookingsRes) ? bookingsRes : [])
       const exList = (exercisesRes as any)?.data || (Array.isArray(exercisesRes) ? exercisesRes : [])
 
-      // Filter bookings that are COMPLETED (or allow CONFIRMED for testing ease if none completed)
+      // ONLY allow bookings that are COMPLETED
       const finished = allBookings.filter((b: Booking) => b.status === 'COMPLETED')
-      const targetBookings = finished.length > 0 ? finished : allBookings
 
-      setCompletedBookings(targetBookings)
+      setCompletedBookings(finished)
       setExercises(exList)
 
-      if (targetBookings.length > 0 && !selectedBookingId) {
-        setSelectedBookingId(targetBookings[0].id)
+      if (finished.length > 0 && !selectedBookingId) {
+        setSelectedBookingId(finished[0].id)
+      } else if (finished.length === 0) {
+        setSelectedBookingId('')
       }
+
       if (exList.length > 0 && !selectedExerciseId) {
         setSelectedExerciseId(exList[0].id)
       }
@@ -120,7 +122,11 @@ export function TrainingResultPage() {
     }
 
     try {
-      await ptBookingsService.createTrainingResult(selectedBookingId, payload)
+      const res = await ptBookingsService.createTrainingResult(selectedBookingId, payload)
+      const resId = res?.id || res?.data?.id
+      if (resId) {
+        await ptBookingsService.publishTrainingResult(resId)
+      }
       setIsSaved(true)
       setTimeout(() => setIsSaved(false), 4000)
     } catch (err) {
@@ -138,8 +144,8 @@ export function TrainingResultPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Ghi Nhận Kết Quả Buổi Tập (WEB-COA-08)</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Ghi Nhận Kết Quả Buổi Tập (WEB-COA-08)</h1>
+          <p className="text-xs text-text-muted mt-1">
             Ghi log số hiệp thực tế, tải trọng tạ, chỉ số gắng sức (RPE 1-10) và nhận xét của HLV cho buổi tập đã hoàn thành
           </p>
         </div>
@@ -156,43 +162,42 @@ export function TrainingResultPage() {
       </div>
 
       {errorMessage && (
-        <div className="rounded-2xl border border-red-500/30 bg-red-950/40 p-4 text-xs text-red-300 flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+        <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 text-xs text-danger flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-danger" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {isSaved && (
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-4 text-xs text-emerald-300 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
           <span>Đã ghi nhận và xuất bản kết quả buổi tập lên hệ thống thành công!</span>
         </div>
       )}
 
       <form onSubmit={handleSaveResult} className="space-y-6">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Activity className="h-4 w-4 text-orange-400" />
+        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
+          <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
+            <Activity className="h-4 w-4 text-primary" />
             <span>Thông Tin Buổi Dạy</span>
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-semibold text-slate-300 mb-1.5 block">Chọn Buổi Tập PT</label>
+              <label className="text-xs font-semibold text-text-muted mb-1.5 block">Chọn Buổi Tập PT</label>
               {completedBookings.length === 0 ? (
-                <div className="text-xs text-amber-400 p-2.5 rounded-xl bg-amber-950/30 border border-amber-800/40">
-                  Chưa có buổi tập nào trên hệ thống.
+                <div className="text-xs text-amber-600 dark:text-amber-400 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                  Chưa có buổi tập nào đã hoàn thành (COMPLETED) để ghi nhận kết quả.
                 </div>
               ) : (
                 <select
                   value={selectedBookingId}
                   onChange={(e) => setSelectedBookingId(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full bg-bg-input border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {completedBookings.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.memberName || 'Hội viên'} – {b.courseName || 'Khóa PT'} (
-                      {b.status === 'COMPLETED' ? 'Đã hoàn thành' : b.status}) – {formatDateTime(b.startsAt)}
+                    <option key={b.id} value={b.id} className="bg-bg-surface text-text-primary">
+                      {b.memberName || 'Hội viên'} – {b.courseName || 'Khóa PT'} (Đã hoàn thành) – {formatDateTime(b.startsAt)}
                     </option>
                   ))}
                 </select>
@@ -200,20 +205,20 @@ export function TrainingResultPage() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-300 mb-1.5 block">Bài Tập Trong Thư Viện</label>
+              <label className="text-xs font-semibold text-text-muted mb-1.5 block">Bài Tập Trong Thư Viện</label>
               {exercises.length === 0 ? (
-                <div className="text-xs text-slate-400 p-2.5 rounded-xl bg-slate-800/40">
+                <div className="text-xs text-text-muted p-2.5 rounded-xl bg-bg-surface-muted">
                   Đang tải thư viện bài tập...
                 </div>
               ) : (
                 <select
                   value={selectedExerciseId}
                   onChange={(e) => setSelectedExerciseId(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full bg-bg-input border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {exercises.map((ex) => (
-                    <option key={ex.id} value={ex.id}>
-                      {ex.name} ({ex.category || 'Tập lực'})
+                    <option key={ex.id} value={ex.id} className="bg-bg-surface text-text-primary">
+                      {ex.name} {ex.difficultyLevel ? `(${ex.difficultyLevel})` : ''}
                     </option>
                   ))}
                 </select>
@@ -223,10 +228,10 @@ export function TrainingResultPage() {
         </div>
 
         {/* Sets logging */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
+        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Dumbbell className="h-4 w-4 text-cyan-400" />
+            <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
+              <Dumbbell className="h-4 w-4 text-primary" />
               <span>Chi Tiết Hiệp Tập & Mức Gắng Sức (RPE 1-10)</span>
             </h2>
             <Button
@@ -245,9 +250,9 @@ export function TrainingResultPage() {
             {setsData.map((s, idx) => (
               <div
                 key={idx}
-                className="grid grid-cols-1 sm:grid-cols-5 gap-3 rounded-xl border border-slate-800 bg-slate-950/60 p-4 items-center text-xs"
+                className="grid grid-cols-1 sm:grid-cols-5 gap-3 rounded-xl border border-border-subtle bg-bg-surface-muted p-4 items-center text-xs"
               >
-                <span className="font-bold text-white sm:col-span-1">Hiệp {idx + 1}</span>
+                <span className="font-bold text-text-primary sm:col-span-1">Hiệp {idx + 1}</span>
                 <Input
                   label="Số Reps"
                   type="number"
@@ -290,7 +295,7 @@ export function TrainingResultPage() {
                     variant="ghost"
                     onClick={() => handleRemoveSet(idx)}
                     disabled={setsData.length <= 1}
-                    className="text-slate-500 hover:text-red-400"
+                    className="text-text-muted hover:text-danger cursor-pointer"
                     title="Xóa hiệp"
                   >
                     <Trash2 className="h-4 w-4" />

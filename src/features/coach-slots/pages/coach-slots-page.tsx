@@ -211,10 +211,10 @@ export function CoachSlotsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">
             Quản lý khung giờ làm việc
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-text-muted mt-1">
             Đăng ký các slot trống để học viên hoặc Lễ tân có thể xếp lịch tập PT 1:1
           </p>
         </div>
@@ -228,7 +228,7 @@ export function CoachSlotsPage() {
           </Button>
           <Button
             variant="outline"
-            className="gap-2 text-xs border-slate-700 hover:border-slate-600"
+            className="gap-2 text-xs border-border-subtle hover:border-border-strong"
             onClick={() => setIsBulkCreateOpen(true)}
           >
             <Layers className="h-4 w-4 text-orange-400" />
@@ -262,9 +262,9 @@ export function CoachSlotsPage() {
 
       {/* Error State */}
       {isError && (
-        <div className="flex items-center justify-between rounded-xl border border-red-800/80 bg-red-950/40 p-4 text-sm text-red-200">
+        <div className="flex items-center justify-between rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
           <div className="flex items-center gap-2.5">
-            <AlertTriangle className="h-5 w-5 text-red-400 shrink-0" />
+            <AlertTriangle className="h-5 w-5 text-danger shrink-0" />
             <span>Không thể tải lịch làm việc của huấn luyện viên.</span>
           </div>
           <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => refetch()}>

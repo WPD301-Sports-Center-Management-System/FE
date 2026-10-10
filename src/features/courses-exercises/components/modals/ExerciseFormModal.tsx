@@ -143,7 +143,7 @@ export function ExerciseFormModal({
             disabled={isSubmitting}
           />
         </div>
-        <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Hủy
           </Button>

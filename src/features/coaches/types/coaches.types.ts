@@ -24,6 +24,7 @@ export interface CoachQueryParams {
   limit?: number
   search?: string
   specialization?: string
+  courseId?: string
 }
 
 export interface CoachAvailabilitySlot {
@@ -48,7 +49,6 @@ export interface CoachStudentData {
   coachId: string
   courseId: string
   courseNameSnapshot: string
-  packageNameSnapshot?: string
   totalCredits: number
   reservedCredits: number
   consumedCredits: number
@@ -58,6 +58,7 @@ export interface CoachStudentData {
   expiresAt?: string
   member?: MemberSummary
 }
+
 
 export type {
   CoachDetail,
