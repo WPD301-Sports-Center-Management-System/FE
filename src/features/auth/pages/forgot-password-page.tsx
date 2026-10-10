@@ -1,21 +1,40 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
+import { authService } from '@/features/auth/services/auth.service'
+import { isAppApiError } from '@/shared/api/api-error'
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [isSent, setIsSent] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail) {
+      setErrorMessage('Vui lòng nhập địa chỉ email.')
+      return
+    }
+
     setIsLoading(true)
-    setTimeout(() => {
-      setIsLoading(false)
+    setErrorMessage(null)
+
+    try {
+      await authService.forgotPassword({ email: trimmedEmail })
       setIsSent(true)
-    }, 600)
+    } catch (err) {
+      if (isAppApiError(err)) {
+        setErrorMessage(err.message || 'Không tìm thấy tài khoản với email này.')
+      } else {
+        setErrorMessage('Không thể gửi yêu cầu. Vui lòng kiểm tra lại kết nối mạng.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -51,17 +70,28 @@ export function ForgotPasswordPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {errorMessage && (
+              <div className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-950/40 p-3 text-xs text-red-300">
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <Input
                 label="Email đăng ký"
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (errorMessage) setErrorMessage(null)
+                }}
                 placeholder="name@sports.local"
+                disabled={isLoading}
               />
 
-              <Button type="submit" className="w-full" isLoading={isLoading}>
+              <Button type="submit" className="w-full" isLoading={isLoading} disabled={isLoading}>
                 Gửi liên kết khôi phục
               </Button>
             </form>

@@ -1,8 +1,8 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { Views, type View } from 'react-big-calendar'
 import { addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek } from 'date-fns'
 import { Plus, Layers, AlertTriangle, RefreshCw, Sparkles } from 'lucide-react'
-import { db } from '@/mocks/mock-server'
+import { coachesService } from '@/features/coaches/services/coaches.service'
 import { Button } from '@/shared/components/ui/button'
 import { CoachScheduleCalendar, type SelectedTimeRange } from '../components/coach-schedule-calendar'
 import { ScheduleToolbar } from '../components/schedule-toolbar'
@@ -18,7 +18,6 @@ import {
   useBulkCreateSlots,
   useBulkCreateTemplateSlots,
   useBlockSlot,
-  useUnblockSlot,
   useDeleteSlot,
 } from '../hooks/use-coach-slots'
 import { mapSlotsToCalendarEvents } from '../utils/calendar-event-mapper'
@@ -32,12 +31,37 @@ import type {
 import type { CoachSlot } from '@/shared/types/api'
 
 export function CoachSlotsPage() {
-  const coach = db.coaches[0]
-
   // Controlled Calendar Date & View
-  const [date, setDate] = useState<Date>(new Date('2026-10-08T00:00:00'))
+  const [date, setDate] = useState<Date>(new Date())
   const [view, setView] = useState<View>(Views.WEEK)
   const [statusFilter, setStatusFilter] = useState<SlotStatusFilter>('ALL')
+
+  // Dynamic offerings list
+  const [offerings, setOfferings] = useState<
+    Array<{ id: string; name: string; courseName?: string; status: string }>
+  >([])
+
+  useEffect(() => {
+    async function loadOfferings() {
+      try {
+        const res = await coachesService.getMyOfferings()
+        const items = res?.data || []
+        if (items.length > 0) {
+          setOfferings(
+            items.map((o) => ({
+              id: o.id,
+              name: (o as any).course?.name || o.courseName || 'Khóa đào tạo PT',
+              courseName: (o as any).course?.name || o.courseName,
+              status: o.status,
+            }))
+          )
+        }
+      } catch {
+        setOfferings([])
+      }
+    }
+    loadOfferings()
+  }, [])
 
   // Dialog & Drawer states
   const [isQuickModalOpen, setIsQuickModalOpen] = useState(false)
@@ -62,18 +86,6 @@ export function CoachSlotsPage() {
     return { from: date.toISOString(), to: date.toISOString() }
   }, [date, view])
 
-  // Offerings list for the coach (bao gồm trạng thái APPROVED)
-  const offerings = useMemo(() => {
-    return db.offerings
-      .filter((o) => o.coachId === coach.id)
-      .map((o) => ({
-        id: o.id,
-        name: o.courseName || 'Khóa đào tạo PT',
-        courseName: o.courseName,
-        status: o.status,
-      }))
-  }, [coach.id])
-
   // Queries & Mutations
   const {
     data: slots = [],
@@ -81,7 +93,6 @@ export function CoachSlotsPage() {
     isError,
     refetch,
   } = useCoachSlots({
-    coachId: coach.id,
     from: visibleRange.from,
     to: visibleRange.to,
   })
@@ -90,12 +101,11 @@ export function CoachSlotsPage() {
   const bulkCreateMutation = useBulkCreateSlots()
   const bulkCreateTemplateMutation = useBulkCreateTemplateSlots()
   const blockSlotMutation = useBlockSlot()
-  const unblockSlotMutation = useUnblockSlot()
   const deleteSlotMutation = useDeleteSlot()
 
   // Map slots to CalendarEvents (with JS Date objects)
   const calendarEvents = useMemo(() => {
-    return mapSlotsToCalendarEvents(slots, db.bookings, statusFilter)
+    return mapSlotsToCalendarEvents(slots, [], statusFilter)
   }, [slots, statusFilter])
 
   // Navigation handlers
@@ -149,10 +159,10 @@ export function CoachSlotsPage() {
 
   const handleUnblock = useCallback(
     async (slotId: string) => {
-      await unblockSlotMutation.mutateAsync(slotId)
+      await deleteSlotMutation.mutateAsync({ slotId })
       setIsDetailOpen(false)
     },
-    [unblockSlotMutation]
+    [deleteSlotMutation]
   )
 
   const handleConfirmBlock = useCallback(
@@ -190,7 +200,7 @@ export function CoachSlotsPage() {
 
   const handleDeleteSlot = useCallback(
     async (slotId: string) => {
-      await deleteSlotMutation.mutateAsync(slotId)
+      await deleteSlotMutation.mutateAsync({ slotId })
       setIsDetailOpen(false)
     },
     [deleteSlotMutation]
@@ -329,7 +339,7 @@ export function CoachSlotsPage() {
         onBlockSlot={handleOpenBlockFromDrawer}
         onUnblockSlot={handleUnblock}
         onDeleteSlot={handleDeleteSlot}
-        isUnblocking={unblockSlotMutation.isPending}
+        isUnblocking={deleteSlotMutation.isPending}
         isDeleting={deleteSlotMutation.isPending}
       />
     </div>

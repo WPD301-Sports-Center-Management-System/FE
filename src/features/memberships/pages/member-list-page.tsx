@@ -1,106 +1,499 @@
-import { useState } from 'react'
-import { Eye, Plus, CreditCard, Dumbbell } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import {
+  Eye,
+  Plus,
+  CreditCard,
+  Dumbbell,
+  RefreshCw,
+  AlertCircle,
+  Check,
+  Copy,
+  Edit2,
+  Activity,
+  History,
+  User,
+  RotateCcw,
+  Ban,
+  Calendar,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { db } from '@/mocks/mock-server'
 import { DataTable, type Column } from '@/shared/components/ui/data-table'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { Button } from '@/shared/components/ui/button'
 import { Modal } from '@/shared/components/ui/modal'
 import { Input, Select } from '@/shared/components/ui/input'
 import { formatDate } from '@/shared/utils/date'
-import type { MemberDetail } from '@/shared/types/api'
+import { formatVND } from '@/shared/utils/currency'
+import { membersService } from '@/features/memberships/services/members.service'
+import { subscriptionsService } from '@/features/memberships/services/subscriptions.service'
+import { ptPurchasesService } from '@/features/pt-packages-sales/services/pt-purchases.service'
+import { paymentsService } from '@/features/payments-invoices/services/payments.service'
+import { isAppApiError } from '@/shared/api/api-error'
+import type { MemberDetail, MemberSummary, Subscription, Purchase } from '@/shared/types/api'
+import type {
+  MemberHistoryResponseData,
+  MemberProgressResponseData,
+} from '@/features/memberships/types/members.types'
+
+type MemberWithUser = MemberSummary & {
+  fitnessLevel?: string | null
+  createdAt?: string
+  updatedAt?: string
+  user?: {
+    id: string
+    email: string
+    phone: string
+    fullName: string
+    avatarUrl?: string | null
+    role: string
+    status: string
+  }
+}
 
 export function MemberListPage() {
-  const [members, setMembers] = useState<MemberDetail[]>([...db.members])
-  const [selectedMember, setSelectedMember] = useState<MemberDetail | null>(null)
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [members, setMembers] = useState<MemberWithUser[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  // Form State
-  const [form, setForm] = useState({
+  // Modals & Drawers
+  const [selectedMember, setSelectedMember] = useState<(MemberDetail & { createdAt?: string }) | null>(null)
+  const [isDetailLoading, setIsDetailLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'profile' | 'subscriptions' | 'ptPackages' | 'history' | 'progress'>('profile')
+  const [memberSubscriptions, setMemberSubscriptions] = useState<Subscription[]>([])
+  const [memberPtPackages, setMemberPtPackages] = useState<Purchase[]>([])
+  const [memberHistory, setMemberHistory] = useState<MemberHistoryResponseData | null>(null)
+  const [memberProgress, setMemberProgress] = useState<MemberProgressResponseData | null>(null)
+
+  // Subscription Actions State
+  const [renewingSubId, setRenewingSubId] = useState<string | null>(null)
+  const [payingSubId, setPayingSubId] = useState<string | null>(null)
+  const [cancellingSub, setCancellingSub] = useState<Subscription | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelError, setCancelError] = useState<string | null>(null)
+  const [isCancelling, setIsCancelling] = useState(false)
+
+  // Create Modal
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
+  const [createdResult, setCreatedResult] = useState<{
+    memberCode: string
+    fullName: string
+    temporaryPassword?: string
+  } | null>(null)
+  const [isCopied, setIsCopied] = useState(false)
+
+  // Edit Modal
+  const [editingMember, setEditingMember] = useState<MemberDetail | null>(null)
+  const [editForm, setEditForm] = useState({
+    address: '',
+    emergencyPhone: '',
+    fitnessLevel: 'BEGINNER',
+    medicalNotes: '',
+  })
+
+  // Create Form State
+  const [createForm, setCreateForm] = useState({
     fullName: '',
     phone: '',
     email: '',
-    gender: 'Nam',
+    gender: 'MALE',
     dateOfBirth: '1995-01-01',
     address: '',
+    emergencyPhone: '',
   })
 
-  const handleCreateMember = (e: React.FormEvent) => {
-    e.preventDefault()
-    const newMem: MemberDetail = {
-      id: 'mem-' + Date.now(),
-      userId: 'usr-' + Date.now(),
-      memberCode: 'MEM-' + Math.floor(Math.random() * 90000 + 10000),
-      fullName: form.fullName,
-      phone: form.phone,
-      email: form.email,
-      gender: form.gender,
-      dateOfBirth: form.dateOfBirth,
-      address: form.address,
-      membershipStatus: 'PENDING',
-      activePackageCount: 0,
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100',
+  // Fetch Members List
+  const fetchMembers = useCallback(async () => {
+    setIsLoading(true)
+    setErrorMessage(null)
+    try {
+      const res = await membersService.getMembers({
+        limit: 50,
+      })
+      setMembers((res.data as MemberWithUser[]) || [])
+    } catch (err) {
+      if (isAppApiError(err)) {
+        setErrorMessage(err.message || 'Không thể tải danh sách hội viên.')
+      } else {
+        setErrorMessage('Không thể kết nối đến máy chủ.')
+      }
+    } finally {
+      setIsLoading(false)
     }
-    db.members.unshift(newMem)
-    setMembers([...db.members])
-    setIsCreateModalOpen(false)
+  }, [])
+
+  useEffect(() => {
+    fetchMembers()
+  }, [fetchMembers])
+
+  const showSuccess = (msg: string) => {
+    setSuccessMessage(msg)
+    setTimeout(() => setSuccessMessage(null), 4000)
   }
 
-  const columns: Column<MemberDetail>[] = [
+  // View Member Detail
+  const handleOpenDetail = async (memberSummary: MemberWithUser) => {
+    setIsDetailLoading(true)
+    setActiveTab('profile')
+    setSelectedMember(null)
+    setMemberSubscriptions([])
+    setMemberPtPackages([])
+    setMemberHistory(null)
+    setMemberProgress(null)
+    try {
+      const detail = await membersService.getMemberById(memberSummary.id)
+      setSelectedMember(detail as MemberDetail & { createdAt?: string })
+
+      // Fetch subscriptions, ptPackages, history & progress in parallel
+      const [subsRes, ptRes, histRes, progRes] = await Promise.allSettled([
+        subscriptionsService.getSubscriptions({ memberId: memberSummary.id }),
+        ptPurchasesService.getPurchases({ memberId: memberSummary.id, limit: 50 }),
+        membersService.getMemberHistory(memberSummary.id),
+        membersService.getMemberProgress(memberSummary.id),
+      ])
+
+      if (subsRes.status === 'fulfilled') {
+        setMemberSubscriptions(subsRes.value.data || [])
+      }
+      if (ptRes.status === 'fulfilled') {
+        setMemberPtPackages(ptRes.value.data || [])
+      }
+      if (histRes.status === 'fulfilled') {
+        setMemberHistory(histRes.value)
+      }
+      if (progRes.status === 'fulfilled') {
+        setMemberProgress(progRes.value)
+      }
+    } catch (err) {
+      if (isAppApiError(err)) {
+        setErrorMessage(err.message || 'Không thể tải chi tiết hội viên.')
+      }
+    } finally {
+      setIsDetailLoading(false)
+    }
+  }
+
+  // Handle Renew Subscription
+  const handleRenewSubscription = async (sub: Subscription) => {
+    if (!selectedMember) return
+    setRenewingSubId(sub.id)
+    try {
+      await subscriptionsService.renewSubscription(sub.id)
+      showSuccess(`Đã gia hạn thành công gói ${sub.planNameSnapshot}!`)
+      // Refresh member subscriptions
+      const updatedSubs = await subscriptionsService.getSubscriptions({ memberId: selectedMember.id })
+      setMemberSubscriptions(updatedSubs.data || [])
+    } catch (err) {
+      if (isAppApiError(err)) {
+        setErrorMessage(err.message || 'Gia hạn gói tập thất bại.')
+      } else {
+        setErrorMessage('Lỗi hệ thống khi gia hạn gói.')
+      }
+    } finally {
+      setRenewingSubId(null)
+    }
+  }
+
+  // Handle Cancel Subscription
+  const handleConfirmCancelSubscription = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!cancellingSub || !selectedMember) return
+    if (!cancelReason.trim()) {
+      setErrorMessage('Vui lòng nhập lý do hủy gói.')
+      return
+    }
+
+    setIsCancelling(true)
+    setCancelError(null)
+    setErrorMessage(null)
+    try {
+      await subscriptionsService.cancelSubscription(cancellingSub.id, {
+        reason: cancelReason.trim(),
+      })
+      showSuccess(`Đã hủy gói tập ${cancellingSub.planNameSnapshot} thành công.`)
+      setCancellingSub(null)
+      setCancelReason('')
+      setCancelError(null)
+      // Refresh subscriptions
+      const updatedSubs = await subscriptionsService.getSubscriptions({ memberId: selectedMember.id })
+      setMemberSubscriptions(updatedSubs.data || [])
+      fetchMembers()
+    } catch (err) {
+      if (isAppApiError(err)) {
+        const msg = err.message || 'Hủy gói tập thất bại.'
+        setCancelError(msg)
+        setErrorMessage(msg)
+      } else {
+        setCancelError('Lỗi hệ thống khi hủy gói tập.')
+        setErrorMessage('Lỗi hệ thống khi hủy gói tập.')
+      }
+    } finally {
+      setIsCancelling(false)
+    }
+  }
+
+  // Handle Settle Counter Payment for Pending Subscription
+  const handlePayCounter = async (sub: Subscription) => {
+    if (!selectedMember) return
+    setPayingSubId(sub.id)
+    setErrorMessage(null)
+    try {
+      await paymentsService.payCounter({
+        subscriptionId: sub.id,
+        method: 'CASH',
+        receivedAmount: Number(sub.priceSnapshot),
+      })
+      showSuccess(`Đã thu tiền và kích hoạt thẻ tập ${sub.planNameSnapshot}!`)
+      const updatedSubs = await subscriptionsService.getSubscriptions({ memberId: selectedMember.id })
+      setMemberSubscriptions(updatedSubs.data || [])
+      fetchMembers()
+    } catch (err) {
+      if (isAppApiError(err)) {
+        setErrorMessage(err.message || 'Thanh toán kích hoạt thất bại.')
+      } else {
+        setErrorMessage('Lỗi hệ thống khi thanh toán.')
+      }
+    } finally {
+      setPayingSubId(null)
+    }
+  }
+
+  // Handle Create Member
+  const handleCreateMember = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCreateError(null)
+    setErrorMessage(null)
+
+    const cleanPhone = createForm.phone.trim().replace(/[\s.-]/g, '')
+    if (!cleanPhone || cleanPhone.length < 9 || cleanPhone.length > 15) {
+      setCreateError('Số điện thoại phải từ 9 đến 15 chữ số.')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const emailValue = createForm.email.trim() ? createForm.email.trim().toLowerCase() : undefined
+      const res = await membersService.createMember({
+        fullName: createForm.fullName.trim(),
+        phone: cleanPhone,
+        email: emailValue,
+        gender: createForm.gender,
+        dateOfBirth: createForm.dateOfBirth ? createForm.dateOfBirth : undefined,
+        address: createForm.address.trim() || undefined,
+        emergencyPhone: createForm.emergencyPhone.trim().replace(/[\s.-]/g, '') || undefined,
+      })
+
+      setIsCreateModalOpen(false)
+      setCreatedResult({
+        memberCode: res.member.memberCode,
+        fullName: res.user.fullName,
+        temporaryPassword: res.temporaryPassword,
+      })
+      setCreateForm({
+        fullName: '',
+        phone: '',
+        email: '',
+        gender: 'MALE',
+        dateOfBirth: '1995-01-01',
+        address: '',
+        emergencyPhone: '',
+      })
+      setCreateError(null)
+      fetchMembers()
+      showSuccess(`Đã đăng ký thành công hội viên ${res.user.fullName}`)
+    } catch (err) {
+      if (isAppApiError(err)) {
+        const detail = err.errors && err.errors.length > 0
+          ? ` (${err.errors.map((e) => e.message).join(', ')})`
+          : ''
+        const msg = `${err.message || 'Đăng ký hội viên thất bại.'}${detail}`
+        setCreateError(msg)
+        setErrorMessage(msg)
+      } else {
+        setCreateError('Lỗi hệ thống khi tạo hội viên.')
+        setErrorMessage('Lỗi hệ thống khi tạo hội viên.')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Handle Edit Member
+  const handleOpenEdit = (member: MemberDetail) => {
+    setEditingMember(member)
+    setEditForm({
+      address: member.address || '',
+      emergencyPhone: member.emergencyPhone || '',
+      fitnessLevel: member.fitnessLevel || 'BEGINNER',
+      medicalNotes: member.medicalNotes || '',
+    })
+  }
+
+  const handleUpdateMember = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingMember) return
+
+    setIsSubmitting(true)
+    setErrorMessage(null)
+    try {
+      await membersService.updateMember(editingMember.id, {
+        address: editForm.address.trim() || undefined,
+        emergencyPhone: editForm.emergencyPhone.trim() || undefined,
+        fitnessLevel: editForm.fitnessLevel,
+        medicalNotes: editForm.medicalNotes.trim() || undefined,
+      })
+
+      setEditingMember(null)
+      fetchMembers()
+      if (selectedMember && selectedMember.id === editingMember.id) {
+        setSelectedMember({
+          ...selectedMember,
+          ...editForm,
+        })
+      }
+      showSuccess('Cập nhật hồ sơ hội viên thành công!')
+    } catch (err) {
+      if (isAppApiError(err)) {
+        setErrorMessage(err.message || 'Không thể cập nhật thông tin.')
+      } else {
+        setErrorMessage('Lỗi hệ thống khi cập nhật hội viên.')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleCopyPassword = () => {
+    if (createdResult?.temporaryPassword) {
+      navigator.clipboard.writeText(createdResult.temporaryPassword)
+      setIsCopied(true)
+      setTimeout(() => setIsCopied(false), 2500)
+    }
+  }
+
+  // Data Table Columns
+  const columns: Column<MemberWithUser>[] = [
     {
-      header: 'Mã & Họ Tên Hội Viên',
+      header: 'Mã HV',
+      accessor: (row) => (
+        <span className="font-mono text-xs font-bold text-orange-400">{row.memberCode}</span>
+      ),
+    },
+    {
+      header: 'Hội viên',
       accessor: (row) => (
         <div className="flex items-center gap-3">
           <img
-            src={row.avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80'}
-            alt={row.fullName}
-            className="h-8 w-8 rounded-full object-cover"
+            src={
+              row.avatarUrl ||
+              row.user?.avatarUrl ||
+              'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'
+            }
+            alt={row.fullName || row.user?.fullName}
+            className="h-9 w-9 rounded-xl object-cover border border-slate-700/60"
           />
           <div>
-            <p className="font-bold text-white">{row.fullName}</p>
-            <p className="text-[10px] font-mono text-orange-400">{row.memberCode}</p>
+            <p className="font-bold text-white text-xs">{row.fullName || row.user?.fullName}</p>
+            <p className="text-[11px] text-slate-400">
+              {row.phone || row.user?.phone || row.user?.email || '—'}
+            </p>
           </div>
         </div>
       ),
     },
-    { header: 'Số điện thoại', accessor: 'phone' },
     {
-      header: 'Trạng thái Thẻ Gym',
-      accessor: (row) => <StatusBadge status={row.membershipStatus} />,
+      header: 'Gói Thẻ Gym',
+      accessor: (row) => (
+        <StatusBadge status={row.membershipStatus || 'PENDING'} />
+      ),
     },
     {
-      header: 'Gói PT 1:1 Đang Có',
+      header: 'Gói PT 1:1',
       accessor: (row) => (
-        <span className="font-semibold text-slate-200">
-          {row.activePackageCount || 0} Gói
-        </span>
+        <div className="flex items-center gap-1 text-xs">
+          <span className="font-semibold text-slate-200">
+            {row.activePackageCount !== undefined ? row.activePackageCount : 0}
+          </span>
+          <span className="text-slate-500 text-[11px]">gói</span>
+        </div>
       ),
+    },
+    {
+      header: 'Trạng thái TK',
+      accessor: (row) => <StatusBadge status={row.user?.status || 'ACTIVE'} />,
     },
   ]
 
   return (
     <div className="space-y-6">
+      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Danh Sách Hội Viên (WEB-REC-02, 03)</h1>
-          <p className="text-xs text-slate-400 mt-1">Quản lý hồ sơ hội viên phòng Gym và các gói tập thể hình cá nhân</p>
+          <h1 className="text-2xl font-bold tracking-tight text-white">
+            Danh Sách Hội Viên (WEB-REC-02, 03)
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Quản lý hồ sơ hội viên phòng Gym, theo dõi thể trạng InBody, gói thẻ tập và lịch sử rèn luyện
+          </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          <span>Đăng ký hội viên mới</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={fetchMembers}
+            disabled={isLoading}
+            className="gap-1.5 text-xs"
+            title="Tải lại danh sách"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Làm mới</span>
+          </Button>
+          <Button
+            onClick={() => {
+              setCreateError(null)
+              setIsCreateModalOpen(true)
+            }}
+            className="gap-2 text-xs"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Đăng ký hội viên mới</span>
+          </Button>
+        </div>
       </div>
 
+      {/* Alerts */}
+      {errorMessage && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-950/40 p-3.5 text-xs text-red-300">
+          <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-3.5 text-xs text-emerald-300">
+          <Check className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+          <span>{successMessage}</span>
+        </div>
+      )}
+
+      {/* Data Table */}
       <DataTable
         columns={columns}
         data={members}
+        isLoading={isLoading}
         searchKey="fullName"
         searchPlaceholder="Tìm theo tên hoặc số điện thoại..."
         actions={(row) => (
           <div className="flex items-center justify-end gap-2">
-            <Button size="sm" variant="outline" className="text-xs" onClick={() => setSelectedMember(row)}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs h-8 px-2.5"
+              onClick={() => handleOpenDetail(row)}
+            >
               <Eye className="h-3.5 w-3.5 mr-1" />
-              Chi tiết
+              <span>Hồ sơ</span>
             </Button>
           </div>
         )}
@@ -108,127 +501,728 @@ export function MemberListPage() {
 
       {/* Member Detail Modal */}
       <Modal
-        isOpen={!!selectedMember}
+        isOpen={!!selectedMember || isDetailLoading}
         onClose={() => setSelectedMember(null)}
-        title="Hồ Sơ Hội Viên Chi Tiết"
-        maxWidth="lg"
+        title={selectedMember ? `Hồ Sơ Hội Viên: ${selectedMember.fullName || (selectedMember as any).user?.fullName}` : 'Đang tải thông tin...'}
+        maxWidth="2xl"
       >
-        {selectedMember && (
+        {isDetailLoading ? (
+          <div className="flex flex-col items-center justify-center p-8 gap-3">
+            <RefreshCw className="h-8 w-8 animate-spin text-orange-500" />
+            <p className="text-xs text-slate-400">Đang tải hồ sơ từ máy chủ...</p>
+          </div>
+        ) : selectedMember ? (
           <div className="space-y-5">
-            <div className="flex items-center gap-4 rounded-xl bg-slate-800/50 p-4">
-              <img
-                src={selectedMember.avatarUrl}
-                alt={selectedMember.fullName}
-                className="h-16 w-16 rounded-2xl object-cover border border-orange-500/30"
-              />
-              <div className="space-y-1">
-                <h3 className="text-lg font-bold text-white">{selectedMember.fullName}</h3>
-                <p className="text-xs font-mono text-orange-400">Mã: {selectedMember.memberCode}</p>
-                <div className="flex gap-2">
-                  <StatusBadge status={selectedMember.membershipStatus} />
+            {/* Header Badge Card */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl bg-slate-800/50 p-4 border border-slate-700/60">
+              <div className="flex items-center gap-3.5">
+                <img
+                  src={
+                    selectedMember.avatarUrl ||
+                    (selectedMember as any).user?.avatarUrl ||
+                    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'
+                  }
+                  alt={selectedMember.fullName}
+                  className="h-14 w-14 rounded-2xl object-cover border border-orange-500/30"
+                />
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    {selectedMember.fullName || (selectedMember as any).user?.fullName}
+                  </h3>
+                  <p className="text-xs font-mono text-orange-400 font-semibold">
+                    {selectedMember.memberCode}
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    Gia nhập: {formatDate(selectedMember.createdAt || new Date().toISOString())}
+                  </p>
                 </div>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 text-xs text-slate-300">
-              <div>
-                <span className="text-slate-500">Số điện thoại:</span>
-                <p className="font-semibold text-slate-200">{selectedMember.phone || '—'}</p>
-              </div>
-              <div>
-                <span className="text-slate-500">Email:</span>
-                <p className="font-semibold text-slate-200">{selectedMember.email || '—'}</p>
-              </div>
-              <div>
-                <span className="text-slate-500">Ngày sinh:</span>
-                <p className="font-semibold text-slate-200">{formatDate(selectedMember.dateOfBirth)}</p>
-              </div>
-              <div>
-                <span className="text-slate-500">Địa chỉ:</span>
-                <p className="font-semibold text-slate-200">{selectedMember.address || '—'}</p>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs h-8"
+                  onClick={() => handleOpenEdit(selectedMember)}
+                >
+                  <Edit2 className="h-3.5 w-3.5 mr-1" />
+                  <span>Sửa hồ sơ</span>
+                </Button>
               </div>
             </div>
 
-            {selectedMember.medicalNotes && (
-              <div className="rounded-xl border border-amber-500/20 bg-amber-950/20 p-3 text-xs text-amber-300">
-                <span className="font-bold">Lưu ý sức khỏe / chấn thương:</span> {selectedMember.medicalNotes}
+            {/* Navigation Tabs */}
+            <div className="flex border-b border-slate-800 overflow-x-auto">
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === 'profile'
+                    ? 'border-orange-500 text-orange-400'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <User className="h-3.5 w-3.5" />
+                <span>Thông tin cá nhân</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('subscriptions')}
+                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === 'subscriptions'
+                    ? 'border-orange-500 text-orange-400'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <CreditCard className="h-3.5 w-3.5" />
+                <span>Gói Thẻ Gym ({memberSubscriptions.length})</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('ptPackages')}
+                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === 'ptPackages'
+                    ? 'border-orange-500 text-orange-400'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Dumbbell className="h-3.5 w-3.5" />
+                <span>Gói PT 1:1 ({memberPtPackages.length})</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('history')}
+                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === 'history'
+                    ? 'border-orange-500 text-orange-400'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <History className="h-3.5 w-3.5" />
+                <span>Lịch sử tập luyện</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('progress')}
+                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === 'progress'
+                    ? 'border-orange-500 text-orange-400'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Activity className="h-3.5 w-3.5" />
+                <span>Tiến độ & Mục tiêu</span>
+              </button>
+            </div>
+
+            {/* Tab Contents: Profile */}
+            {activeTab === 'profile' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 text-xs text-slate-300">
+                  <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
+                    <span className="text-slate-500 block text-[11px]">Số điện thoại:</span>
+                    <p className="font-semibold text-slate-200 mt-0.5">
+                      {selectedMember.phone || (selectedMember as any).user?.phone || '—'}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
+                    <span className="text-slate-500 block text-[11px]">Email liên kết:</span>
+                    <p className="font-semibold text-slate-200 mt-0.5">
+                      {selectedMember.email || (selectedMember as any).user?.email || '—'}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
+                    <span className="text-slate-500 block text-[11px]">Ngày sinh:</span>
+                    <p className="font-semibold text-slate-200 mt-0.5">
+                      {formatDate(selectedMember.dateOfBirth)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
+                    <span className="text-slate-500 block text-[11px]">Giới tính:</span>
+                    <p className="font-semibold text-slate-200 mt-0.5">
+                      {selectedMember.gender === 'MALE'
+                        ? 'Nam'
+                        : selectedMember.gender === 'FEMALE'
+                        ? 'Nữ'
+                        : selectedMember.gender || '—'}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
+                    <span className="text-slate-500 block text-[11px]">SĐT khẩn cấp:</span>
+                    <p className="font-semibold text-slate-200 mt-0.5">
+                      {selectedMember.emergencyPhone || '—'}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
+                    <span className="text-slate-500 block text-[11px]">Trình độ thể lực:</span>
+                    <p className="font-semibold text-orange-400 mt-0.5">
+                      {selectedMember.fitnessLevel || 'Chưa đánh giá'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800 text-xs">
+                  <span className="text-slate-500 block text-[11px]">Địa chỉ liên lạc:</span>
+                  <p className="font-medium text-slate-200 mt-0.5">
+                    {selectedMember.address || 'Chưa có thông tin'}
+                  </p>
+                </div>
+
+                {selectedMember.medicalNotes && (
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 text-xs text-amber-300">
+                    <span className="font-bold">Lưu ý sức khỏe / Chấn thương:</span>{' '}
+                    {selectedMember.medicalNotes}
+                  </div>
+                )}
               </div>
             )}
 
-            <div className="flex justify-end gap-2 border-t border-slate-800 pt-3">
-              <Link to="/receptionist/membership-sale">
-                <Button size="sm" variant="outline" className="gap-1.5 text-xs">
-                  <CreditCard className="h-3.5 w-3.5" />
-                  Gia hạn vé Gym
-                </Button>
-              </Link>
-              <Link to="/receptionist/pt-sale">
-                <Button size="sm" variant="primary" className="gap-1.5 text-xs">
-                  <Dumbbell className="h-3.5 w-3.5" />
-                  Mua gói PT 1:1
-                </Button>
-              </Link>
+            {/* Tab Contents: Subscriptions */}
+            {activeTab === 'subscriptions' && (
+              <div className="space-y-3 text-xs">
+                <div className="flex justify-between items-center pb-1">
+                  <span className="font-semibold text-slate-300">
+                    Danh sách các thẻ tập đã đăng ký:
+                  </span>
+                  <Link to={`/receptionist/membership-sale?memberId=${selectedMember.id}`}>
+                    <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1 border-orange-500/40 text-orange-400">
+                      <Plus className="h-3 w-3" />
+                      <span>Mua gói mới</span>
+                    </Button>
+                  </Link>
+                </div>
+
+                {memberSubscriptions.length > 0 ? (
+                  <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                    {memberSubscriptions.map((sub) => {
+                      const isActionable = sub.status === 'ACTIVE' || sub.status === 'PENDING'
+                      const isRenewing = renewingSubId === sub.id
+
+                      return (
+                        <div
+                          key={sub.id}
+                          className="rounded-xl bg-slate-900/80 border border-slate-800 p-3.5 space-y-2.5 hover:border-slate-700 transition-colors"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-bold text-white text-sm">
+                                {sub.planNameSnapshot || 'Gói thẻ tập'}
+                              </p>
+                              <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5">
+                                <Calendar className="h-3.5 w-3.5 text-slate-500" />
+                                <span>{formatDate(sub.startDate)} → {formatDate(sub.endDate)}</span>
+                              </p>
+                            </div>
+                            <StatusBadge status={sub.status} />
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px]">
+                            <span className="text-emerald-400 font-bold text-xs">
+                              {formatVND(sub.priceSnapshot)}
+                            </span>
+
+                            {sub.status === 'PENDING' ? (
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="primary"
+                                  disabled={payingSubId === sub.id}
+                                  isLoading={payingSubId === sub.id}
+                                  onClick={() => handlePayCounter(sub)}
+                                  className="h-7 px-2.5 text-[11px] gap-1 bg-emerald-600 hover:bg-emerald-500 text-white"
+                                >
+                                  <Check className="h-3 w-3" />
+                                  <span>Thu tiền & Kích hoạt</span>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setCancelError(null)
+                                    setCancellingSub(sub)
+                                    setCancelReason('')
+                                  }}
+                                  className="h-7 px-2 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-950/30 gap-1"
+                                >
+                                  <Ban className="h-3 w-3" />
+                                  <span>Hủy gói</span>
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                {(sub.status === 'ACTIVE' || sub.status === 'EXPIRED') && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    disabled={renewingSubId === sub.id}
+                                    onClick={() => handleRenewSubscription(sub)}
+                                    className="h-7 px-2 text-[11px] text-sky-400 hover:text-sky-300 hover:bg-sky-950/30 gap-1"
+                                  >
+                                    <RotateCcw className={`h-3 w-3 ${renewingSubId === sub.id ? 'animate-spin' : ''}`} />
+                                    <span>Gia hạn</span>
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center rounded-xl bg-slate-900/40 border border-slate-800/80 space-y-2">
+                    <CreditCard className="h-8 w-8 text-slate-600 mx-auto" />
+                    <p className="text-xs text-slate-400">
+                      Hội viên này hiện chưa có gói thẻ Gym nào.
+                    </p>
+                    <Link to={`/receptionist/membership-sale?memberId=${selectedMember.id}`}>
+                      <Button size="sm" variant="primary" className="text-xs mt-2">
+                        Đăng ký gói thẻ Gym ngay
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab Contents: PT Packages */}
+            {activeTab === 'ptPackages' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-1">
+                  <span className="font-semibold text-slate-300">
+                    Danh sách các gói huấn luyện viên 1:1 đã đăng ký:
+                  </span>
+                  <Link to={`/receptionist/pt-sale?memberId=${selectedMember.id}`}>
+                    <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1 border-orange-500/40 text-orange-400">
+                      <Plus className="h-3 w-3" />
+                      <span>Mua gói PT mới</span>
+                    </Button>
+                  </Link>
+                </div>
+
+                {memberPtPackages.length > 0 ? (
+                  <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                    {memberPtPackages.map((pkg) => {
+                      const total = pkg.totalCredits || pkg.sessionCountSnapshot || 0
+                      const consumed = pkg.consumedCredits || 0
+                      const reserved = pkg.reservedCredits || 0
+                      const remaining = Math.max(0, total - consumed - reserved)
+
+                      return (
+                        <div
+                          key={pkg.id}
+                          className="rounded-xl bg-slate-900/80 border border-slate-800 p-3.5 space-y-2.5 hover:border-slate-700 transition-colors"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-white text-sm">
+                                  {pkg.packageNameSnapshot || 'Gói PT 1:1'}
+                                </p>
+                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                                  {pkg.purchaseCode}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-400 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <span className="text-orange-400 font-medium">
+                                  Khóa: {pkg.courseNameSnapshot || 'PT 1:1'}
+                                </span>
+                                <span className="text-slate-300">
+                                  HLV: {pkg.coachNameSnapshot || 'Huấn luyện viên'}
+                                </span>
+                                {pkg.expiresAt && (
+                                  <span className="flex items-center gap-1 text-slate-500">
+                                    <Calendar className="h-3 w-3" />
+                                    <span>Hạn đến: {formatDate(pkg.expiresAt)}</span>
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            <StatusBadge status={pkg.status} />
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-slate-950/60 border border-slate-800/60 text-center text-[11px]">
+                            <div>
+                              <span className="text-slate-500 block text-[10px]">Đã tập</span>
+                              <span className="font-bold text-slate-200">{consumed} buổi</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 block text-[10px]">Đang giữ chỗ</span>
+                              <span className="font-bold text-amber-400">{reserved} buổi</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 block text-[10px]">Còn lại</span>
+                              <span className="font-bold text-emerald-400">{remaining} buổi</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1 text-[11px]">
+                            <span className="text-emerald-400 font-bold text-xs">
+                              {formatVND(pkg.priceSnapshot)}
+                            </span>
+                            <span className="text-slate-500 text-[10px]">
+                              Tổng số: {total} buổi • {pkg.validityDaysSnapshot || 0} ngày
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center rounded-xl bg-slate-900/40 border border-slate-800/80 space-y-2">
+                    <Dumbbell className="h-8 w-8 text-slate-600 mx-auto" />
+                    <p className="text-xs text-slate-400">
+                      Hội viên này hiện chưa mua gói tập Huấn luyện viên cá nhân PT nào.
+                    </p>
+                    <Link to={`/receptionist/pt-sale?memberId=${selectedMember.id}`}>
+                      <Button size="sm" variant="primary" className="text-xs mt-2">
+                        Đăng ký gói PT ngay
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab Contents: History */}
+            {activeTab === 'history' && (
+              <div className="space-y-3 text-xs">
+                {memberHistory && memberHistory.bookings.length > 0 ? (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {memberHistory.bookings.map((b) => (
+                      <div
+                        key={b.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-slate-900/70 border border-slate-800"
+                      >
+                        <div>
+                          <p className="font-semibold text-slate-200">{b.courseName || 'Buổi tập PT 1:1'}</p>
+                          <p className="text-[11px] text-slate-400">
+                            HLV: {b.coachName || 'HLV chuyên trách'} • {formatDate(b.startsAt)}
+                          </p>
+                        </div>
+                        <StatusBadge status={b.status} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 text-center py-6">
+                    Chưa có lịch sử buổi tập nào được ghi nhận.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Tab Contents: Progress */}
+            {activeTab === 'progress' && (
+              <div className="space-y-3 text-xs">
+                {memberProgress && memberProgress.assessments.length > 0 ? (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {memberProgress.assessments.map((a) => (
+                      <div
+                        key={a.id}
+                        className="p-3 rounded-lg bg-slate-900/70 border border-slate-800 space-y-1.5"
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold text-orange-400">
+                            Đo InBody ngày {formatDate(a.assessedAt)}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 text-[11px] text-slate-300 pt-1">
+                          <span>Cân nặng: <strong>{a.weightKg || '—'} kg</strong></span>
+                          <span>Chiều cao: <strong>{a.heightCm || '—'} cm</strong></span>
+                          <span>Mỡ: <strong>{a.bodyFatPercent || '—'} %</strong></span>
+                          <span>Cơ: <strong>{a.muscleMassKg || '—'} kg</strong></span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 text-center py-6">
+                    Chưa có số đo chỉ số thể hình InBody.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Quick Actions Footer */}
+            <div className="flex justify-between items-center border-t border-slate-800 pt-4">
+              <span className="text-[11px] text-slate-500">
+                Thao tác nhanh cho nhân viên quầy:
+              </span>
+              <div className="flex gap-2">
+                <Link to={`/receptionist/membership-sale?memberId=${selectedMember.id}`}>
+                  <Button size="sm" variant="outline" className="gap-1.5 text-xs">
+                    <CreditCard className="h-3.5 w-3.5" />
+                    <span>Mua thẻ Gym</span>
+                  </Button>
+                </Link>
+                <Link to={`/receptionist/pt-sale?memberId=${selectedMember.id}`}>
+                  <Button size="sm" variant="primary" className="gap-1.5 text-xs">
+                    <Dumbbell className="h-3.5 w-3.5" />
+                    <span>Mua gói PT</span>
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
-        )}
+        ) : null}
+      </Modal>
+
+      {/* Cancel Subscription Modal */}
+      <Modal
+        isOpen={!!cancellingSub}
+        onClose={() => {
+          if (!isCancelling) {
+            setCancelError(null)
+            setCancellingSub(null)
+          }
+        }}
+        title="Xác Nhận Hủy Gói Thẻ Gym"
+        description={`Bạn đang thực hiện hủy gói: ${cancellingSub?.planNameSnapshot}`}
+      >
+        <form onSubmit={handleConfirmCancelSubscription} className="space-y-4">
+          {cancelError && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-950/40 p-3.5 text-xs text-red-300">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+              <span>{cancelError}</span>
+            </div>
+          )}
+          <div className="p-3 rounded-xl bg-red-950/30 border border-red-500/30 text-xs text-red-300">
+            Cảnh báo: Sau khi hủy, gói thẻ tập sẽ ngừng kích hoạt ngay lập tức và không thể hoàn tác.
+          </div>
+          <Input
+            label="Lý do hủy gói"
+            required
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            placeholder="Ví dụ: Hội viên chuyển nơi cư trú, lý do sức khỏe..."
+            disabled={isCancelling}
+          />
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setCancelError(null)
+                setCancellingSub(null)
+              }}
+              disabled={isCancelling}
+            >
+              Quay lại
+            </Button>
+            <Button
+              type="submit"
+              variant="danger"
+              isLoading={isCancelling}
+              disabled={isCancelling || !cancelReason.trim()}
+            >
+              Xác nhận hủy gói
+            </Button>
+          </div>
+        </form>
       </Modal>
 
       {/* Create Member Modal */}
       <Modal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        title="Đăng Ký Hội Viên Mới"
-        description="Nhập thông tin cơ bản để tạo mã thẻ hội viên tại quầy"
+        onClose={() => {
+          if (!isSubmitting) {
+            setCreateError(null)
+            setIsCreateModalOpen(false)
+          }
+        }}
+        title="Đăng Ký Hồ Sơ Hội Viên Mới"
+        description="Nhập thông tin cá nhân của hội viên để tạo mã định danh và cấp tài khoản"
       >
         <form onSubmit={handleCreateMember} className="space-y-4">
+          {createError && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-950/40 p-3.5 text-xs text-red-300">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+              <span>{createError}</span>
+            </div>
+          )}
           <Input
-            label="Họ và tên"
+            label="Họ và tên hội viên"
             required
-            value={form.fullName}
-            onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+            value={createForm.fullName}
+            onChange={(e) => setCreateForm({ ...createForm, fullName: e.target.value })}
             placeholder="Ví dụ: Nguyễn Văn An"
+            disabled={isSubmitting}
           />
           <Input
             label="Số điện thoại"
             required
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            value={createForm.phone}
+            onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
             placeholder="0987654321"
+            disabled={isSubmitting}
           />
           <Input
-            label="Email"
+            label="Email liên hệ (tùy chọn)"
             type="email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            value={createForm.email}
+            onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
             placeholder="an.nguyen@gmail.com"
+            disabled={isSubmitting}
           />
+
           <div className="grid grid-cols-2 gap-3">
             <Select
               label="Giới tính"
-              value={form.gender}
-              onChange={(e) => setForm({ ...form, gender: e.target.value })}
+              value={createForm.gender}
+              onChange={(e) => setCreateForm({ ...createForm, gender: e.target.value })}
               options={[
-                { value: 'Nam', label: 'Nam' },
-                { value: 'Nữ', label: 'Nữ' },
-                { value: 'Khác', label: 'Khác' },
+                { value: 'MALE', label: 'Nam' },
+                { value: 'FEMALE', label: 'Nữ' },
+                { value: 'OTHER', label: 'Khác' },
               ]}
+              disabled={isSubmitting}
             />
             <Input
               label="Ngày sinh"
               type="date"
-              value={form.dateOfBirth}
-              onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
+              value={createForm.dateOfBirth}
+              onChange={(e) => setCreateForm({ ...createForm, dateOfBirth: e.target.value })}
+              disabled={isSubmitting}
             />
           </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={() => setIsCreateModalOpen(false)}>
+
+          <Input
+            label="Số điện thoại khẩn cấp"
+            value={createForm.emergencyPhone}
+            onChange={(e) => setCreateForm({ ...createForm, emergencyPhone: e.target.value })}
+            placeholder="0911223344"
+            disabled={isSubmitting}
+          />
+
+          <Input
+            label="Địa chỉ thường trú"
+            value={createForm.address}
+            onChange={(e) => setCreateForm({ ...createForm, address: e.target.value })}
+            placeholder="Số nhà, phố, quận/huyện..."
+            disabled={isSubmitting}
+          />
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setCreateError(null)
+                setIsCreateModalOpen(false)
+              }}
+              disabled={isSubmitting}
+            >
               Hủy
             </Button>
-            <Button type="submit" variant="primary">
-              Tạo hồ sơ
+            <Button type="submit" variant="primary" isLoading={isSubmitting} disabled={isSubmitting}>
+              Đăng ký ngay
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Edit Member Modal */}
+      <Modal
+        isOpen={!!editingMember}
+        onClose={() => !isSubmitting && setEditingMember(null)}
+        title="Chỉnh sửa hồ sơ hội viên"
+        description={`Cập nhật thông tin cho: ${editingMember?.fullName}`}
+      >
+        <form onSubmit={handleUpdateMember} className="space-y-4">
+          <Input
+            label="Địa chỉ"
+            value={editForm.address}
+            onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+            placeholder="Số nhà, đường, quận/huyện"
+            disabled={isSubmitting}
+          />
+          <Input
+            label="Số điện thoại khẩn cấp"
+            value={editForm.emergencyPhone}
+            onChange={(e) => setEditForm({ ...editForm, emergencyPhone: e.target.value })}
+            placeholder="0988776655"
+            disabled={isSubmitting}
+          />
+          <Select
+            label="Trình độ thể lực"
+            value={editForm.fitnessLevel}
+            onChange={(e) => setEditForm({ ...editForm, fitnessLevel: e.target.value })}
+            options={[
+              { value: 'BEGINNER', label: 'Mới bắt đầu (Beginner)' },
+              { value: 'INTERMEDIATE', label: 'Trung cấp (Intermediate)' },
+              { value: 'ADVANCED', label: 'Nâng cao (Advanced)' },
+            ]}
+            disabled={isSubmitting}
+          />
+          <Input
+            label="Lưu ý sức khỏe / Chấn thương"
+            value={editForm.medicalNotes}
+            onChange={(e) => setEditForm({ ...editForm, medicalNotes: e.target.value })}
+            placeholder="Tiền sử thoát vị đĩa đệm, tim mạch..."
+            disabled={isSubmitting}
+          />
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setEditingMember(null)}
+              disabled={isSubmitting}
+            >
+              Hủy
+            </Button>
+            <Button type="submit" variant="primary" isLoading={isSubmitting} disabled={isSubmitting}>
+              Lưu thay đổi
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Result after Member Creation */}
+      <Modal
+        isOpen={!!createdResult}
+        onClose={() => setCreatedResult(null)}
+        title="Đăng Ký Hội Viên Thành Công"
+        description={`Hội viên ${createdResult?.fullName} đã được tạo thành công trên hệ thống.`}
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-400">Mã thẻ hội viên:</span>
+              <span className="font-mono font-bold text-orange-400 bg-slate-900 px-2.5 py-1 rounded border border-slate-700">
+                {createdResult?.memberCode}
+              </span>
+            </div>
+
+            {createdResult?.temporaryPassword && (
+              <div>
+                <span className="text-xs text-slate-400 block mb-1">Mật khẩu đăng nhập tạm thời:</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-sm font-bold text-emerald-400 bg-slate-900 px-3 py-1.5 rounded border border-slate-700 flex-1 select-all">
+                    {createdResult.temporaryPassword}
+                  </span>
+                  <Button size="sm" variant="outline" onClick={handleCopyPassword} className="h-8 gap-1 text-xs">
+                    {isCopied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-400" />
+                        <span>Đã chép</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Sao chép</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Vui lòng bàn giao mã hội viên và hướng dẫn hội viên đăng nhập vào ứng dụng di động để theo dõi lịch tập.
+          </p>
+
+          <div className="flex justify-end pt-2">
+            <Button onClick={() => setCreatedResult(null)}>Đóng</Button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

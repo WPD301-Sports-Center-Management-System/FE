@@ -1,23 +1,87 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Trash2, Dumbbell, Check, FileText } from 'lucide-react'
+import { coachesService } from '@/features/coaches/services/coaches.service'
+import { coursesExercisesService } from '@/features/courses-exercises/services/courses-exercises.service'
 import { db } from '@/mocks/mock-server'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Select } from '@/shared/components/ui/input'
-import type { TrainingPlan } from '@/shared/types/api'
+import type { TrainingPlan, MemberSummary, Exercise } from '@/shared/types/api'
+
+interface ExerciseRow {
+  exerciseId: string
+  name: string
+  sets: number
+  reps: number
+  weight: string
+  rest: number
+}
 
 export function TrainingPlanBuilderPage() {
-  const coach = db.coaches[0]
+  const [members, setMembers] = useState<MemberSummary[]>([])
+  const [availableExercises, setAvailableExercises] = useState<Exercise[]>([])
   const [title, setTitle] = useState('Giáo án Siết Cơ & Tăng Sức Mạnh Tuần 2')
   const [goal, setGoal] = useState('Tối ưu hóa phom tạ Barbell và kiểm soát nhịp hạ tạ 3 giây')
-  const [memberId, setMemberId] = useState(db.members[0].id)
-  const [exercises, setExercises] = useState([
+  const [memberId, setMemberId] = useState('')
+  const [exercises, setExercises] = useState<ExerciseRow[]>([
     { exerciseId: 'ex-01', name: 'Barbell Bench Press', sets: 4, reps: 10, weight: '65.00', rest: 90 },
     { exerciseId: 'ex-03', name: 'Lat Pulldown', sets: 3, reps: 12, weight: '55.00', rest: 60 },
   ])
   const [isSaved, setIsSaved] = useState(false)
 
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [membersRes, exercisesRes] = await Promise.all([
+          coachesService.getMyMembers().catch(() => ({ data: [] })),
+          coursesExercisesService.getExercises({ limit: 100 }).catch(() => ({ data: [] })),
+        ])
+
+        const items = (membersRes?.data || []) as MemberSummary[]
+        const exList = (exercisesRes?.data || []) as Exercise[]
+
+        if (items.length > 0) {
+          setMembers(items)
+          setMemberId(items[0].id)
+        } else {
+          setMembers(db.members as any)
+          setMemberId(db.members[0].id)
+        }
+
+        if (exList.length > 0) {
+          setAvailableExercises(exList)
+          // Pre-populate with first real exercise if mock id
+          setExercises([
+            {
+              exerciseId: exList[0].id,
+              name: exList[0].name,
+              sets: 4,
+              reps: 10,
+              weight: '65.00',
+              rest: 90,
+            },
+            {
+              exerciseId: exList[1]?.id || exList[0].id,
+              name: exList[1]?.name || exList[0].name,
+              sets: 3,
+              reps: 12,
+              weight: '55.00',
+              rest: 60,
+            },
+          ])
+        } else {
+          setAvailableExercises(db.exercises as any)
+        }
+      } catch {
+        setMembers(db.members as any)
+        setMemberId(db.members[0].id)
+        setAvailableExercises(db.exercises as any)
+      }
+    }
+    loadData()
+  }, [])
+
   const handleAddExerciseRow = () => {
-    const ex = db.exercises[0]
+    const ex = availableExercises[0] || db.exercises[0]
     setExercises([
       ...exercises,
       { exerciseId: ex.id, name: ex.name, sets: 3, reps: 10, weight: '40.00', rest: 60 },
@@ -25,15 +89,18 @@ export function TrainingPlanBuilderPage() {
   }
 
   const handleRemoveExerciseRow = (index: number) => {
+    if (exercises.length <= 1) return
     setExercises(exercises.filter((_, i) => i !== index))
   }
 
   const handleSavePlan = (e: React.FormEvent) => {
     e.preventDefault()
-    const student = db.members.find((m) => m.id === memberId)
+    const student = members.find((m) => m.id === memberId) || db.members.find((m) => m.id === memberId)
+    const studentName = student?.fullName || (student as any)?.user?.fullName || 'Học viên'
+
     const newPlan: TrainingPlan = {
       id: 'tp-' + Date.now(),
-      coachId: coach.id,
+      coachId: 'coach-me',
       memberId,
       ptPurchaseId: 'pur-01',
       title,
@@ -41,7 +108,7 @@ export function TrainingPlanBuilderPage() {
       startDate: new Date().toISOString().split('T')[0],
       status: 'ASSIGNED',
       assignedAt: new Date().toISOString(),
-      memberName: student?.fullName,
+      memberName: studentName,
       exercises: exercises.map((item, idx) => ({
         id: 'pe-' + Date.now() + idx,
         exerciseId: item.exerciseId,
@@ -58,6 +125,10 @@ export function TrainingPlanBuilderPage() {
     setIsSaved(true)
     setTimeout(() => setIsSaved(false), 3000)
   }
+
+  const exerciseOptions = availableExercises.length > 0
+    ? availableExercises.map((ex) => ({ value: ex.id, label: ex.name }))
+    : db.exercises.map((ex) => ({ value: ex.id, label: ex.name }))
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -93,7 +164,10 @@ export function TrainingPlanBuilderPage() {
               label="Giao cho Học viên"
               value={memberId}
               onChange={(e) => setMemberId(e.target.value)}
-              options={db.members.map((m) => ({ value: m.id, label: m.fullName }))}
+              options={members.map((m: any) => ({
+                value: m.id,
+                label: `${m.fullName || m.user?.fullName || 'Hội viên'} (${m.memberCode || 'HV'})`,
+              }))}
             />
           </div>
 
@@ -128,13 +202,14 @@ export function TrainingPlanBuilderPage() {
                     label="Bài tập"
                     value={item.exerciseId}
                     onChange={(e) => {
-                      const found = db.exercises.find((ex) => ex.id === e.target.value)
+                      const found = availableExercises.find((ex) => ex.id === e.target.value) ||
+                        db.exercises.find((ex) => ex.id === e.target.value)
                       const copy = [...exercises]
                       copy[idx].exerciseId = e.target.value
                       copy[idx].name = found?.name || 'Bài tập'
                       setExercises(copy)
                     }}
-                    options={db.exercises.map((ex) => ({ value: ex.id, label: ex.name }))}
+                    options={exerciseOptions}
                   />
                 </div>
 
@@ -142,6 +217,7 @@ export function TrainingPlanBuilderPage() {
                   <Input
                     label="Số Sets"
                     type="number"
+                    min={1}
                     value={item.sets}
                     onChange={(e) => {
                       const copy = [...exercises]
@@ -155,6 +231,7 @@ export function TrainingPlanBuilderPage() {
                   <Input
                     label="Số Reps"
                     type="number"
+                    min={1}
                     value={item.reps}
                     onChange={(e) => {
                       const copy = [...exercises]
@@ -168,6 +245,8 @@ export function TrainingPlanBuilderPage() {
                   <Input
                     label="Tạ (Kg)"
                     type="number"
+                    min={0}
+                    step={0.5}
                     value={item.weight}
                     onChange={(e) => {
                       const copy = [...exercises]
@@ -181,7 +260,9 @@ export function TrainingPlanBuilderPage() {
                   <button
                     type="button"
                     onClick={() => handleRemoveExerciseRow(idx)}
-                    className="p-2.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-950/30 transition-colors"
+                    disabled={exercises.length <= 1}
+                    className="p-2.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-950/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    title="Xóa hiệp"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

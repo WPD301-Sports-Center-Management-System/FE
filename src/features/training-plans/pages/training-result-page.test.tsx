@@ -1,0 +1,109 @@
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { BrowserRouter } from 'react-router-dom'
+import { TrainingResultPage } from './training-result-page'
+import { ptBookingsService } from '@/features/pt-bookings-schedule/services/pt-bookings.service'
+import { coursesExercisesService } from '@/features/courses-exercises/services/courses-exercises.service'
+import type { Booking, Exercise } from '@/shared/types/api'
+
+vi.mock('@/features/pt-bookings-schedule/services/pt-bookings.service', () => ({
+  ptBookingsService: {
+    getBookings: vi.fn(),
+    createTrainingResult: vi.fn(),
+  },
+}))
+
+vi.mock('@/features/courses-exercises/services/courses-exercises.service', () => ({
+  coursesExercisesService: {
+    getExercises: vi.fn(),
+  },
+}))
+
+describe('TrainingResultPage', () => {
+  const mockBooking: Booking = {
+    id: 'b-completed-1',
+    purchaseId: 'pur-1',
+    slotId: 'slot-1',
+    memberId: 'm-1',
+    coachId: 'c-1',
+    courseId: 'crs-1',
+    status: 'COMPLETED',
+    startsAt: '2026-10-10T08:00:00Z',
+    endsAt: '2026-10-10T09:00:00Z',
+    creditReturned: false,
+    memberName: 'Hoi Vien Test',
+    courseName: 'Gói Thể Hình Nâng Cao',
+  }
+
+  const mockExercise: Exercise = {
+    id: 'ex-00000000-0000-0000-0000-000000000001',
+    name: 'Bench Press',
+    category: 'CHEST',
+    isActive: true,
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(ptBookingsService.getBookings).mockResolvedValue({
+      data: [mockBooking],
+      total: 1,
+      page: 1,
+      limit: 100,
+    } as any)
+    vi.mocked(coursesExercisesService.getExercises).mockResolvedValue({
+      data: [mockExercise],
+      total: 1,
+      page: 1,
+      limit: 100,
+    } as any)
+  })
+
+  it('renders training result page and loads completed bookings and exercises', async () => {
+    render(
+      <BrowserRouter>
+        <TrainingResultPage />
+      </BrowserRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Ghi Nhận Kết Quả Buổi Tập (WEB-COA-08)')).toBeInTheDocument()
+      expect(screen.getByText(/Hoi Vien Test/)).toBeInTheDocument()
+      expect(screen.getByText(/Bench Press/)).toBeInTheDocument()
+    })
+  })
+
+  it('submits workout training result successfully', async () => {
+    vi.mocked(ptBookingsService.createTrainingResult).mockResolvedValueOnce({
+      id: 'tr-new-1',
+      status: 'PUBLISHED',
+    } as any)
+
+    render(
+      <BrowserRouter>
+        <TrainingResultPage />
+      </BrowserRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Xuất Bản Kết Quả (Publish)')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByText('Xuất Bản Kết Quả (Publish)'))
+
+    await waitFor(() => {
+      expect(ptBookingsService.createTrainingResult).toHaveBeenCalledWith(
+        'b-completed-1',
+        expect.objectContaining({
+          coachComment: expect.any(String),
+          progressScore: 90,
+          result: expect.arrayContaining([
+            expect.objectContaining({
+              exerciseId: 'ex-00000000-0000-0000-0000-000000000001',
+              completed: true,
+            }),
+          ]),
+        })
+      )
+    })
+  })
+})

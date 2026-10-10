@@ -4,20 +4,33 @@ import { Link, useNavigate } from 'react-router-dom'
 import type { UserRole } from '@/shared/types/api'
 
 export function Topbar() {
-  const { user, role, logout, switchRoleDemo } = useAuth()
+  const { user, role, login, logout, switchRoleDemo } = useAuth()
   const navigate = useNavigate()
 
-  const handleRoleSwitch = (newRole: UserRole) => {
-    switchRoleDemo(newRole)
-    if (newRole === 'MANAGER') navigate('/manager')
-    if (newRole === 'RECEPTIONIST') navigate('/receptionist')
-    if (newRole === 'COACH') navigate('/coach')
+  const handleRoleSwitch = async (newRole: UserRole) => {
+    const demoCredentials: Record<UserRole, { identifier: string; password: string; path: string }> = {
+      MANAGER: { identifier: 'manager@gym.local', password: 'password123', path: '/manager' },
+      RECEPTIONIST: { identifier: 'receptionist@gym.local', password: 'password123', path: '/receptionist' },
+      COACH: { identifier: 'coach1@gym.local', password: 'password123', path: '/coach' },
+      MEMBER: { identifier: 'member4@gym.local', password: 'password123', path: '/' },
+    }
+
+    const target = demoCredentials[newRole]
+    if (target) {
+      try {
+        await login({ identifier: target.identifier, password: target.password })
+        navigate(target.path, { replace: true })
+      } catch {
+        switchRoleDemo(newRole)
+        navigate(target.path, { replace: true })
+      }
+    }
   }
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-800 bg-slate-900/80 px-6 backdrop-blur-md">
       <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Chế độ Demo:</span>
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Chuyển vai trò:</span>
         <div className="flex rounded-xl bg-slate-800/80 p-1 border border-slate-700/60">
           {(['MANAGER', 'RECEPTIONIST', 'COACH'] as UserRole[]).map((r) => (
             <button
@@ -70,8 +83,8 @@ export function Topbar() {
             </p>
           </div>
           <button
-            onClick={() => {
-              logout()
+            onClick={async () => {
+              await logout()
               navigate('/login')
             }}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-red-400 transition-colors"

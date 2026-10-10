@@ -48,11 +48,19 @@ export type UserSummary = {
   avatarUrl?: string
   role: UserRole
   status: UserStatus
+  memberCode?: string | null
 }
 
 export type UserDetail = UserSummary & {
   lastLoginAt?: string
   createdAt: string
+  memberCode?: string | null
+  memberProfile?: {
+    id?: string
+    memberCode?: string
+    gender?: string
+    fitnessLevel?: string
+  } | null
   profile?: MemberDetail | CoachDetail
 }
 
@@ -155,6 +163,7 @@ export type Exercise = {
   videoUrl?: string
   equipmentRequired?: string
   difficultyLevel?: string
+  isActive?: boolean
   muscleGroups: Array<{ id: string; name?: string; isPrimary: boolean }>
 }
 
@@ -201,6 +210,7 @@ export type PackageOption = {
   courseId: string
   coachId?: string
   name: string
+  description?: string
   sessionCount: number
   validityDays: number
   price: string
@@ -229,6 +239,7 @@ export type Purchase = {
   status: PtPurchaseStatus
   expiresAt?: string
   pendingMakeupCount: number
+  purchaseCode?: string
   memberCode?: string
   memberName?: string
 }

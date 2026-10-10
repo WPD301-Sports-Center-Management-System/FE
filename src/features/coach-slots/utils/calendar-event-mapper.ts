@@ -16,8 +16,24 @@ export function mapSlotsToCalendarEvents(
         (b) => b.slotId === slot.id && b.status !== 'CANCELLED_EARLY' && b.status !== 'CANCELLED_LATE'
       )
 
-      const memberName = relatedBooking?.memberName
-      const courseName = slot.courseName || relatedBooking?.courseName || 'PT 1:1'
+      const memberName =
+        (relatedBooking as any)?.member?.user?.fullName ||
+        relatedBooking?.memberName ||
+        (slot as any).booking?.member?.user?.fullName
+
+      const courseName =
+        (slot as any).offering?.course?.name ||
+        slot.courseName ||
+        (relatedBooking as any)?.course?.name ||
+        relatedBooking?.courseName ||
+        'PT 1:1'
+
+      const coachName =
+        (slot as any).coach?.user?.fullName ||
+        slot.coachName ||
+        (relatedBooking as any)?.coach?.user?.fullName ||
+        relatedBooking?.coachName
+
       const title =
         memberName ||
         (slot.status === 'OPEN'
@@ -32,12 +48,12 @@ export function mapSlotsToCalendarEvents(
         start: new Date(slot.startsAt),
         end: new Date(slot.endsAt),
         status: slot.status,
-        bookingId: relatedBooking?.id,
+        bookingId: relatedBooking?.id || (slot as any).booking?.id,
         memberName,
         courseName,
-        coachName: slot.coachName,
+        coachName,
         note: slot.note,
-        bookingStatus: relatedBooking?.status,
+        bookingStatus: relatedBooking?.status || (slot as any).booking?.status,
       }
     })
 }

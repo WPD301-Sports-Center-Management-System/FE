@@ -54,3 +54,18 @@ export interface QuickBulkCreateSlotsInput {
   note?: string
 }
 
+export interface BookSlotPayload {
+  purchaseId: string
+  memberId?: string
+}
+
+export interface UpdateSlotPayload {
+  startsAt?: string
+  endsAt?: string
+  note?: string
+}
+
+export interface DeleteSlotPayload {
+  cancellationReason?: string
+}
+

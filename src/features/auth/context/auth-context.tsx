@@ -1,65 +1,207 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
-import type { UserDetail, UserRole, AuthSession } from '@/shared/types/api'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from 'react'
+import type { UserDetail, UserRole } from '@/shared/types/api'
+import type {
+  LoginCredentials,
+  AuthResponseData,
+  UpdateProfilePayload,
+  CurrentUserResponseData,
+} from '@/features/auth/types/auth.types'
 import { authStorage } from '@/shared/utils/storage'
-import { apiClient } from '@/shared/api/client'
+import { authService } from '@/features/auth/services/auth.service'
+import { queryClient } from '@/shared/api/query-client'
 import { mockUsers } from '@/mocks/fixtures-base'
 
-type AuthContextType = {
+interface AuthContextType {
   user: UserDetail | null
   role: UserRole | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (credentials: { email?: string; phone?: string; password: string }) => Promise<void>
-  logout: () => void
+  isInitializing: boolean
+  login: (credentials: LoginCredentials) => Promise<AuthResponseData>
+  logout: () => Promise<void>
+  logoutAll: () => Promise<void>
+  refreshSession: () => Promise<void>
+  updateUserProfile: (payload: UpdateProfilePayload) => Promise<void>
   switchRoleDemo: (role: UserRole) => void
   hasRole: (roles: UserRole | UserRole[]) => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+function mapCurrentUserToUserDetail(data: CurrentUserResponseData): UserDetail {
+  return {
+    id: data.id,
+    fullName: data.fullName,
+    email: data.email,
+    phone: data.phone,
+    avatarUrl: data.avatarUrl || undefined,
+    role: data.role,
+    status: data.status,
+    createdAt: data.createdAt || new Date().toISOString(),
+    lastLoginAt: data.lastLoginAt,
+    profile: (data.memberProfilesUserId || data.coachProfilesUserId || undefined) as
+      | UserDetail['profile']
+      | undefined,
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserDetail | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isInitializing, setIsInitializing] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    // Restore session from localStorage or seed initial default demo user
-    const savedUser = authStorage.getUser()
-    if (savedUser) {
-      setUser(savedUser)
-    } else {
-      // Default initial user for mock convenience
-      const defaultUser = mockUsers[0]
-      setUser(defaultUser)
-      authStorage.setSession({
-        accessToken: 'mock-initial-token',
-        refreshToken: 'mock-initial-refresh',
-        tokenType: 'Bearer',
-        expiresIn: 3600,
-        user: defaultUser,
-      })
+  // Initialize authentication on app mount
+  const initializeAuth = useCallback(async () => {
+    const token = authStorage.getAccessToken()
+    const refreshToken = authStorage.getRefreshToken()
+
+    if (!token && !refreshToken) {
+      setUser(null)
+      setIsInitializing(false)
+      return
     }
-    setIsLoading(false)
+
+    try {
+      if (token) {
+        try {
+          const userData = await authService.getCurrentUser()
+          const mapped = mapCurrentUserToUserDetail(userData)
+          setUser(mapped)
+          authStorage.setUser(mapped)
+          setIsInitializing(false)
+          return
+        } catch {
+          // Token might be expired, proceed to attempt refresh
+        }
+      }
+
+      if (refreshToken) {
+        const refreshRes = await authService.refreshToken(refreshToken)
+        authStorage.setTokens({
+          accessToken: refreshRes.accessToken,
+          refreshToken: refreshRes.refreshToken || refreshToken,
+        })
+        const userData = await authService.getCurrentUser()
+        const mapped = mapCurrentUserToUserDetail(userData)
+        setUser(mapped)
+        authStorage.setUser(mapped)
+      } else {
+        authStorage.clearSession()
+        setUser(null)
+      }
+    } catch {
+      authStorage.clearSession()
+      setUser(null)
+    } finally {
+      setIsInitializing(false)
+    }
   }, [])
 
-  const login = async (credentials: { email?: string; phone?: string; password: string }) => {
-    const res = await apiClient.post<{ data: AuthSession }>('/auth/login', credentials)
-    const session = (res as unknown as { data: AuthSession }).data
-    authStorage.setSession(session)
-    setUser(session.user)
+  useEffect(() => {
+    initializeAuth()
+
+    const handleUnauthorized = () => {
+      authStorage.clearSession()
+      setUser(null)
+      queryClient.clear()
+    }
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized)
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized)
+    }
+  }, [initializeAuth])
+
+  const login = async (credentials: LoginCredentials): Promise<AuthResponseData> => {
+    setIsLoading(true)
+    try {
+      const data = await authService.login(credentials)
+      const userDetail: UserDetail = {
+        ...data.user,
+        createdAt: data.user.createdAt || new Date().toISOString(),
+      }
+      authStorage.setSession({
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        user: userDetail,
+      })
+      queryClient.clear()
+      setUser(userDetail)
+      return data
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const logout = () => {
-    authStorage.clearSession()
-    setUser(null)
+  const logout = async (): Promise<void> => {
+    setIsLoading(true)
+    const refreshToken = authStorage.getRefreshToken() || undefined
+    try {
+      await authService.logout(refreshToken)
+    } catch {
+      // Ignore network errors on logout to allow clean client-side exit
+    } finally {
+      authStorage.clearSession()
+      queryClient.clear()
+      setUser(null)
+      setIsLoading(false)
+    }
+  }
+
+  const logoutAll = async (): Promise<void> => {
+    setIsLoading(true)
+    try {
+      await authService.logoutAll()
+    } catch {
+      // Allow clean client-side exit
+    } finally {
+      authStorage.clearSession()
+      queryClient.clear()
+      setUser(null)
+      setIsLoading(false)
+    }
+  }
+
+  const refreshSession = async (): Promise<void> => {
+    const refreshToken = authStorage.getRefreshToken()
+    if (!refreshToken) {
+      throw new Error('Không có refresh token')
+    }
+    const res = await authService.refreshToken(refreshToken)
+    authStorage.setTokens({
+      accessToken: res.accessToken,
+      refreshToken: res.refreshToken || refreshToken,
+    })
+    const userData = await authService.getCurrentUser()
+    const mapped = mapCurrentUserToUserDetail(userData)
+    setUser(mapped)
+    authStorage.setUser(mapped)
+  }
+
+  const updateUserProfile = async (payload: UpdateProfilePayload): Promise<void> => {
+    setIsLoading(true)
+    try {
+      const res = await authService.updateProfile(payload)
+      const mapped = mapCurrentUserToUserDetail(res)
+      setUser(mapped)
+      authStorage.setUser(mapped)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const switchRoleDemo = (targetRole: UserRole) => {
     const matched = mockUsers.find((u) => u.role === targetRole) || mockUsers[0]
     authStorage.setSession({
-      accessToken: 'mock-demo-token-' + targetRole,
-      refreshToken: 'mock-demo-refresh-' + targetRole,
-      tokenType: 'Bearer',
-      expiresIn: 3600,
+      accessToken: 'demo-token-' + targetRole,
+      refreshToken: 'demo-refresh-' + targetRole,
       user: matched,
     })
     setUser(matched)
@@ -78,8 +220,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: user?.role || null,
         isAuthenticated: !!user,
         isLoading,
+        isInitializing,
         login,
         logout,
+        logoutAll,
+        refreshSession,
+        updateUserProfile,
         switchRoleDemo,
         hasRole,
       }}

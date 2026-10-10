@@ -1,15 +1,48 @@
-import { DollarSign, Users, Calendar, AlertTriangle, TrendingUp, CheckCircle2 } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { DollarSign, Users, Calendar, AlertTriangle, TrendingUp, CheckCircle2, RefreshCw, AlertCircle } from 'lucide-react'
 import { StatCard } from '@/shared/components/ui/stat-card'
 import { formatVND } from '@/shared/utils/currency'
-import { mockCoaches, mockMembers } from '@/mocks/fixtures-base'
-import { mockBookings, mockEquipment } from '@/mocks/fixtures-training'
 import { Link } from 'react-router-dom'
 import { Button } from '@/shared/components/ui/button'
+import { dashboardService } from '@/features/dashboard/services/dashboard.service'
+import { coachesService } from '@/features/coaches/services/coaches.service'
+import { isAppApiError } from '@/shared/api/api-error'
+import type { ManagerDashboardData } from '@/features/dashboard/types/dashboard.types'
+import type { CoachSummary } from '@/shared/types/api'
 
 export function ManagerDashboardPage() {
-  const activeMembersCount = mockMembers.filter((m) => m.membershipStatus === 'ACTIVE').length
-  const todayBookingsCount = mockBookings.length
-  const underMaintenanceCount = mockEquipment.filter((e) => e.status === 'UNDER_MAINTENANCE').length
+  const [stats, setStats] = useState<ManagerDashboardData | null>(null)
+  const [coaches, setCoaches] = useState<CoachSummary[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const loadDashboard = useCallback(async () => {
+    setIsLoading(true)
+    setErrorMessage(null)
+    try {
+      const [statsData, coachesRes] = await Promise.all([
+        dashboardService.getManagerDashboardStats(),
+        coachesService.getCoaches({ limit: 5 }),
+      ])
+      setStats(statsData)
+      setCoaches(coachesRes.data || [])
+    } catch (err) {
+      if (isAppApiError(err)) {
+        setErrorMessage(err.message || 'Không thể tải số liệu bảng điều khiển.')
+      } else {
+        setErrorMessage('Lỗi kết nối máy chủ.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadDashboard()
+  }, [loadDashboard])
+
+  const totalGross = (stats?.revenue.membershipRevenue || 0) + (stats?.revenue.ptGross || 0)
+  const gymTotalShare = (stats?.revenue.membershipRevenue || 0) + (stats?.revenue.ptGymShare || 0)
 
   return (
     <div className="space-y-8">
@@ -18,10 +51,20 @@ export function ManagerDashboardPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Bảng điều khiển Quản Lý (Manager)</h1>
           <p className="text-xs text-slate-400 mt-1">
-            Tổng quan doanh thu, chia sẻ doanh thu 60/40, hội viên và hoạt động phòng Gym
+            Tổng quan doanh thu, chia sẻ doanh thu 60/40, hội viên và hoạt động phòng Gym thời gian thực
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={loadDashboard}
+            disabled={isLoading}
+            className="gap-1.5 text-xs"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Làm mới</span>
+          </Button>
           <Link to="/manager/reports">
             <Button size="sm" variant="outline">
               Báo cáo tài chính
@@ -35,34 +78,41 @@ export function ManagerDashboardPage() {
         </div>
       </div>
 
+      {errorMessage && (
+        <div className="flex items-start gap-2.5 rounded-2xl border border-red-500/30 bg-red-950/40 p-4 text-xs text-red-300">
+          <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
-          title="Tổng Doanh Thu Tháng"
-          value={formatVND(5490000)}
-          change="+18.5% so với tháng trước"
+          title="Tổng Doanh Thu"
+          value={isLoading ? '...' : formatVND(totalGross)}
+          change={`${stats?.revenue.paymentCount || 0} đơn thanh toán`}
           isPositive={true}
           icon={<DollarSign className="h-5 w-5" />}
           accentColor="orange"
         />
         <StatCard
           title="Phần Hưởng Gym (40%)"
-          value={formatVND(2790000)}
+          value={isLoading ? '...' : formatVND(gymTotalShare)}
           description="Vé Gym 100% + 40% Gói PT"
           icon={<TrendingUp className="h-5 w-5" />}
           accentColor="cyan"
         />
         <StatCard
-          title="Khoản HLV Chờ Nhận (60%)"
-          value={formatVND(2700000)}
-          description="1 khoản cần quyết toán"
+          title="Khoản HLV Cần Nhận (60%)"
+          value={isLoading ? '...' : formatVND(stats?.revenue.coachPayable || 0)}
+          description={`Chờ chuyển: ${formatVND(stats?.revenue.coachPending || 0)}`}
           icon={<DollarSign className="h-5 w-5" />}
           accentColor="emerald"
         />
         <StatCard
-          title="Hội Viên Hoạt Động"
-          value={activeMembersCount}
-          description={`Có ${todayBookingsCount} lịch PT hôm nay`}
+          title="Hội Viên Hệ Thống"
+          value={isLoading ? '...' : stats?.members || 0}
+          description={`Có ${stats?.coaches || 0} HLV chuyên trách`}
           isPositive={true}
           icon={<Users className="h-5 w-5" />}
           accentColor="purple"
@@ -75,37 +125,39 @@ export function ManagerDashboardPage() {
         <div className="lg:col-span-2 space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-md">
           <h2 className="text-base font-bold text-white flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-400" />
-            <span>Cảnh Báo Vận Hành & Chờ Xử Lý</span>
+            <span>Tình Trạng Vận Hành & Hoạt Động</span>
           </h2>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-950/20 p-4">
+            <div className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-950/20 p-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-amber-500/20 p-2 text-amber-400">
+                <div className="rounded-lg bg-emerald-500/20 p-2 text-emerald-400">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-slate-200">1 Gói tập PT HLV đề xuất đang chờ duyệt</p>
-                  <p className="text-[10px] text-slate-400">Đỗ Thùy Trang • 12 Buổi Pilates Cải Thiện Vóc Dáng</p>
+                  <p className="text-xs font-semibold text-slate-200">
+                    Lịch tập PT 1:1 hôm nay: {stats?.bookingsToday || 0} buổi
+                  </p>
+                  <p className="text-[10px] text-slate-400">Được giám sát và cập nhật trực tiếp theo thời gian thực</p>
                 </div>
               </div>
-              <Link to="/manager/approvals">
+              <Link to="/receptionist/calendar">
                 <Button size="sm" variant="outline" className="text-xs">
-                  Xem & Duyệt
+                  Xem lịch
                 </Button>
               </Link>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-950/20 p-4">
+            <div className="flex items-center justify-between rounded-xl border border-slate-700/40 bg-slate-800/30 p-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-red-500/20 p-2 text-red-400">
+                <div className="rounded-lg bg-slate-700/50 p-2 text-slate-300">
                   <AlertTriangle className="h-4 w-4" />
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-slate-200">
-                    {underMaintenanceCount} Thiết bị đang trong trạng thái cần bảo trì
+                    Sự cố thiết bị ghi nhận: {stats?.equipmentIssues || 0} mục
                   </p>
-                  <p className="text-[10px] text-slate-400">Reformer Pilates Allegro 2 • Studio Pilates & Yoga</p>
+                  <p className="text-[10px] text-slate-400">Thiết bị & cơ sở vật chất phòng tập</p>
                 </div>
               </div>
               <Link to="/manager/equipment">
@@ -121,22 +173,26 @@ export function ManagerDashboardPage() {
         <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-md">
           <h2 className="text-base font-bold text-white flex items-center gap-2">
             <Calendar className="h-4 w-4 text-orange-400" />
-            <span>Top Huấn Luyện Viên</span>
+            <span>Huấn Luyện Viên ({coaches.length})</span>
           </h2>
 
-          <div className="space-y-4">
-            {mockCoaches.map((c) => (
+          <div className="space-y-4 max-h-72 overflow-y-auto pr-1">
+            {coaches.map((c) => (
               <div key={c.id} className="flex items-center justify-between border-b border-slate-800 pb-3 last:border-0">
                 <div className="flex items-center gap-3">
-                  <img src={c.avatarUrl} alt={c.fullName} className="h-9 w-9 rounded-full object-cover" />
+                  <img
+                    src={c.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                    alt={c.fullName}
+                    className="h-9 w-9 rounded-full object-cover border border-slate-700"
+                  />
                   <div>
                     <p className="text-xs font-bold text-slate-200">{c.fullName}</p>
-                    <p className="text-[10px] text-slate-400">{c.specialization}</p>
+                    <p className="text-[10px] text-slate-400">{c.specialization || 'HLV Thể hình & PT'}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-bold text-amber-400">★ {c.averageRating}</span>
-                  <p className="text-[10px] text-slate-500">{c.reviewCount} đánh giá</p>
+                  <span className="text-xs font-bold text-amber-400">★ {c.averageRating || 5.0}</span>
+                  <p className="text-[10px] text-slate-500">{c.reviewCount || 0} đánh giá</p>
                 </div>
               </div>
             ))}

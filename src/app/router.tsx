@@ -5,6 +5,7 @@ import { LoginPage } from '@/features/auth/pages/login-page'
 import { ForgotPasswordPage } from '@/features/auth/pages/forgot-password-page'
 import { PublicCoachProfilePage } from '@/features/coach-public/pages/public-coach-profile-page'
 import { SystemErrorPage } from '@/pages/system-error-page'
+import { ProtectedRoute, GuestRoute } from '@/features/auth/guards/auth-guards'
 
 // Manager Pages
 import { ManagerDashboardPage } from '@/features/dashboard/pages/manager-dashboard-page'
@@ -41,45 +42,71 @@ import { CoachAiRecommendationPage } from '@/features/training-plans/pages/coach
 export const router = createBrowserRouter([
   // Common & Public
   { path: '/', element: <LandingPage /> },
-  { path: '/login', element: <LoginPage /> },
-  { path: '/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/coaches/:coachId', element: <PublicCoachProfilePage /> },
+
+  // Guest Only Routes (Redirect to dashboard if already authenticated)
+  {
+    element: <GuestRoute />,
+    children: [
+      { path: '/login', element: <LoginPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+    ],
+  },
 
   // Role Protected Dashboards
   {
-    element: <DashboardLayout />,
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
     children: [
       // Manager Routes (WEB-MAN-01 -> 12)
-      { path: '/manager', element: <ManagerDashboardPage /> },
-      { path: '/manager/users', element: <UserManagementPage /> },
-      { path: '/manager/membership-plans', element: <MembershipPlansPage /> },
-      { path: '/manager/categories', element: <GymCategoriesPage /> },
-      { path: '/manager/approvals', element: <CoachApprovalPage /> },
-      { path: '/manager/equipment', element: <EquipmentPage /> },
-      { path: '/manager/reports', element: <ReportsPage /> },
-      { path: '/manager/reviews-audit', element: <ReviewsAuditPage /> },
+      {
+        element: <ProtectedRoute allowedRoles={['MANAGER']} />,
+        children: [
+          { path: '/manager', element: <ManagerDashboardPage /> },
+          { path: '/manager/users', element: <UserManagementPage /> },
+          { path: '/manager/membership-plans', element: <MembershipPlansPage /> },
+          { path: '/manager/categories', element: <GymCategoriesPage /> },
+          { path: '/manager/approvals', element: <CoachApprovalPage /> },
+          { path: '/manager/equipment', element: <EquipmentPage /> },
+          { path: '/manager/reports', element: <ReportsPage /> },
+          { path: '/manager/reviews-audit', element: <ReviewsAuditPage /> },
+        ],
+      },
 
       // Receptionist Routes (WEB-REC-01 -> 10)
-      { path: '/receptionist', element: <ReceptionistDashboardPage /> },
-      { path: '/receptionist/check-in', element: <CheckInCounterPage /> },
-      { path: '/receptionist/members', element: <MemberListPage /> },
-      { path: '/receptionist/membership-sale', element: <MembershipSalePage /> },
-      { path: '/receptionist/pt-sale', element: <PtPackageSalePage /> },
-      { path: '/receptionist/calendar', element: <BookingCalendarPage /> },
-      { path: '/receptionist/payments', element: <PaymentListPage /> },
-      { path: '/receptionist/support', element: <SupportTicketsPage /> },
+      {
+        element: <ProtectedRoute allowedRoles={['RECEPTIONIST', 'MANAGER']} />,
+        children: [
+          { path: '/receptionist', element: <ReceptionistDashboardPage /> },
+          { path: '/receptionist/check-in', element: <CheckInCounterPage /> },
+          { path: '/receptionist/members', element: <MemberListPage /> },
+          { path: '/receptionist/membership-sale', element: <MembershipSalePage /> },
+          { path: '/receptionist/pt-sale', element: <PtPackageSalePage /> },
+          { path: '/receptionist/calendar', element: <BookingCalendarPage /> },
+          { path: '/receptionist/payments', element: <PaymentListPage /> },
+          { path: '/receptionist/support', element: <SupportTicketsPage /> },
+        ],
+      },
 
       // Coach Routes (WEB-COA-01 -> 11)
-      { path: '/coach', element: <CoachDashboardPage /> },
-      { path: '/coach/packages', element: <CoachMyPackagesPage /> },
-      { path: '/coach/slots', element: <CoachSlotsPage /> },
-      { path: '/coach/bookings', element: <CoachBookingDetailPage /> },
-      { path: '/coach/students', element: <CoachStudentsPage /> },
-      { path: '/coach/training-plans', element: <TrainingPlanBuilderPage /> },
-      { path: '/coach/training-results', element: <TrainingResultPage /> },
-      { path: '/coach/assessments', element: <CoachAssessmentsPage /> },
-      { path: '/coach/meal-plans', element: <CoachMealPlanPage /> },
-      { path: '/coach/ai-recommendation', element: <CoachAiRecommendationPage /> },
+      {
+        element: <ProtectedRoute allowedRoles={['COACH', 'MANAGER']} />,
+        children: [
+          { path: '/coach', element: <CoachDashboardPage /> },
+          { path: '/coach/packages', element: <CoachMyPackagesPage /> },
+          { path: '/coach/slots', element: <CoachSlotsPage /> },
+          { path: '/coach/bookings', element: <CoachBookingDetailPage /> },
+          { path: '/coach/students', element: <CoachStudentsPage /> },
+          { path: '/coach/training-plans', element: <TrainingPlanBuilderPage /> },
+          { path: '/coach/training-results', element: <TrainingResultPage /> },
+          { path: '/coach/assessments', element: <CoachAssessmentsPage /> },
+          { path: '/coach/meal-plans', element: <CoachMealPlanPage /> },
+          { path: '/coach/ai-recommendation', element: <CoachAiRecommendationPage /> },
+        ],
+      },
     ],
   },
 

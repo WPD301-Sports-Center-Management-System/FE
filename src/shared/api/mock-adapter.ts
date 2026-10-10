@@ -33,6 +33,31 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
     resData = db.users[0]
   }
 
+  // 1b. Current Authenticated User (Me) Endpoints
+  else if (url === 'me/subscriptions' && method === 'get') {
+    resData = db.subscriptions
+  } else if (url === 'me/pt-packages' && method === 'get') {
+    resData = db.purchases
+  } else if (url === 'me/pt-bookings' && method === 'get') {
+    resData = db.bookings
+  } else if (url === 'me/payments' && method === 'get') {
+    resData = db.payments
+  } else if (url === 'me/invoices' && method === 'get') {
+    resData = db.invoices
+  } else if (url === 'me/training-plans' && method === 'get') {
+    resData = db.trainingPlans
+  } else if (url === 'me/progress' && method === 'get') {
+    resData = {
+      assessments: db.assessments,
+      results: db.trainingResults,
+      goals: [],
+    }
+  } else if (url === 'me/meal-plans' && method === 'get') {
+    resData = (db as any).mealPlans || []
+  } else if (url === 'me/support-requests' && method === 'get') {
+    resData = db.support
+  }
+
   // 2. Members & Check-in
   else if (url.startsWith('members') && method === 'get') {
     const parts = url.split('/')
@@ -40,7 +65,22 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
       const mem = db.members.find((m) => m.id === parts[1]) || db.members[0]
       resData = mem
     } else {
-      resData = mockPaginate(db.members)
+      let list = [...db.members]
+      const memberCode = config.params?.memberCode
+      const search = config.params?.search
+      if (memberCode) {
+        list = list.filter((m) => m.memberCode.toLowerCase().includes(memberCode.toLowerCase()))
+      } else if (search) {
+        const s = search.toLowerCase()
+        list = list.filter(
+          (m) =>
+            m.fullName.toLowerCase().includes(s) ||
+            m.memberCode.toLowerCase().includes(s) ||
+            (m.phone && m.phone.includes(s)) ||
+            (m.email && m.email.toLowerCase().includes(s))
+        )
+      }
+      resData = mockPaginate(list)
     }
   } else if (url === 'check-ins' && method === 'post') {
     const member = db.members.find((m) => m.id === data.memberId || m.memberCode === data.memberCode) || db.members[0]
@@ -55,7 +95,16 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
     db.checkIns.unshift(newCheckIn)
     resData = newCheckIn
   } else if (url.startsWith('check-ins') && method === 'get') {
-    resData = mockPaginate(db.checkIns)
+    const list = db.checkIns.map((item) => ({
+      ...item,
+      member: item.member || db.members.find((m) => m.id === item.memberId) || {
+        id: item.memberId,
+        memberCode: 'MEM-???',
+        fullName: 'Hội viên',
+        membershipStatus: 'ACTIVE' as const,
+      },
+    }))
+    resData = mockPaginate(list)
   }
 
   // 3. Plans & Subscriptions
@@ -66,18 +115,67 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
     const plan = db.plans.find((p) => p.id === id)
     if (plan && data.price) plan.price = data.price
     resData = plan
+  } else if (url === 'subscriptions' && method === 'get') {
+    const searchParams = new URLSearchParams(url.includes('?') ? url.split('?')[1] : '')
+    const memberId = searchParams.get('memberId') || config.params?.memberId
+    const status = searchParams.get('status') || config.params?.status
+    let list = [...db.subscriptions]
+    if (memberId) {
+      list = list.filter((s) => s.memberId === memberId)
+    }
+    if (status) {
+      list = list.filter((s) => s.status === status)
+    }
+    resData = mockPaginate(list, Number(config.params?.page || 1), Number(config.params?.limit || 20))
+  } else if (url.startsWith('subscriptions/') && url.endsWith('/renew') && method === 'post') {
+    const id = url.split('/')[1]
+    const currentSub = db.subscriptions.find((s) => s.id === id)
+    const plan = db.plans.find((p) => p.id === (data.planId || currentSub?.planId)) || db.plans[0]
+    const renewedSub = {
+      id: 'sub-' + Date.now(),
+      memberId: currentSub?.memberId || db.members[0].id,
+      planId: plan.id,
+      previousSubscriptionId: id,
+      planNameSnapshot: plan.name,
+      paidMonthsSnapshot: plan.paidMonths,
+      bonusMonthsSnapshot: plan.bonusMonths,
+      priceSnapshot: plan.price,
+      startDate: data.startDate || new Date().toISOString().split('T')[0],
+      endDate: '2027-12-31',
+      status: 'PENDING' as const,
+    }
+    db.subscriptions.unshift(renewedSub)
+    resData = renewedSub
+  } else if (url.startsWith('subscriptions/') && url.endsWith('/cancel') && method === 'patch') {
+    const id = url.split('/')[1]
+    const sub = db.subscriptions.find((s) => s.id === id)
+    if (sub) {
+      sub.status = 'CANCELLED'
+      ;(sub as any).cancelledAt = new Date().toISOString()
+      ;(sub as any).cancellationReason = data.reason || 'Hủy theo yêu cầu'
+    }
+    resData = sub || { message: 'Đã hủy gói tập' }
+  } else if (url.startsWith('subscriptions/') && method === 'get') {
+    const id = url.split('/')[1]
+    const sub = db.subscriptions.find((s) => s.id === id) || db.subscriptions[0]
+    const plan = db.plans.find((p) => p.id === sub?.planId) || db.plans[0]
+    resData = {
+      ...sub,
+      plan,
+    }
   } else if (url === 'subscriptions' && method === 'post') {
+    const plan = db.plans.find((p) => p.id === data.planId) || db.plans[0]
     const newSub = {
       id: 'sub-' + Date.now(),
       memberId: data.memberId,
-      planId: data.planId,
-      planNameSnapshot: data.planName || 'Gói Hội Viên',
-      paidMonthsSnapshot: 1,
-      bonusMonthsSnapshot: 0,
-      priceSnapshot: data.price || '330000.00',
+      planId: plan.id,
+      planNameSnapshot: plan.name,
+      paidMonthsSnapshot: plan.paidMonths,
+      bonusMonthsSnapshot: plan.bonusMonths,
+      priceSnapshot: plan.price,
       startDate: data.startDate || new Date().toISOString().split('T')[0],
       endDate: '2026-12-31',
-      status: 'ACTIVE' as const,
+      status: 'PENDING' as const,
     }
     db.subscriptions.unshift(newSub)
     resData = newSub
@@ -96,8 +194,87 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
     resData = mockPaginate(db.courses)
   } else if (url === 'exercises' && method === 'get') {
     resData = mockPaginate(db.exercises)
+  } else if (url === 'exercises' && method === 'post') {
+    const mgList = (data.muscleGroups || []).map((mgItem: any) => {
+      const found = db.muscleGroups.find((m) => m.id === mgItem.id)
+      return { id: mgItem.id, name: found?.name || 'Nhóm cơ', isPrimary: mgItem.isPrimary ?? true }
+    })
+    const newEx = {
+      id: 'ex-' + Date.now(),
+      name: data.name,
+      description: data.description || '',
+      instructions: data.instructions || '',
+      imageUrl: data.imageUrl || undefined,
+      videoUrl: data.videoUrl || undefined,
+      equipmentRequired: data.equipmentRequired || '',
+      difficultyLevel: data.difficultyLevel || 'INTERMEDIATE',
+      isActive: true,
+      muscleGroups: mgList,
+    }
+    db.exercises.push(newEx)
+    resData = newEx
+  } else if (url.startsWith('exercises/') && url.endsWith('/status') && method === 'patch') {
+    const id = url.split('/')[1]
+    const ex = db.exercises.find((e) => e.id === id)
+    if (ex) {
+      ex.isActive = data.isActive
+    }
+    resData = ex
+  } else if (url.startsWith('exercises/') && method === 'patch') {
+    const id = url.split('/')[1]
+    const ex = db.exercises.find((e) => e.id === id)
+    if (ex) {
+      if (data.name !== undefined) ex.name = data.name
+      if (data.description !== undefined) ex.description = data.description
+      if (data.instructions !== undefined) ex.instructions = data.instructions
+      if (data.imageUrl !== undefined) ex.imageUrl = data.imageUrl
+      if (data.videoUrl !== undefined) ex.videoUrl = data.videoUrl
+      if (data.equipmentRequired !== undefined) ex.equipmentRequired = data.equipmentRequired
+      if (data.difficultyLevel !== undefined) ex.difficultyLevel = data.difficultyLevel
+      if (data.muscleGroups !== undefined) {
+        ex.muscleGroups = data.muscleGroups.map((mgItem: any) => {
+          const found = db.muscleGroups.find((m) => m.id === mgItem.id)
+          return { id: mgItem.id, name: found?.name || 'Nhóm cơ', isPrimary: mgItem.isPrimary ?? true }
+        })
+      }
+    }
+    resData = ex
+  } else if (url.startsWith('exercises/') && method === 'get') {
+    const id = url.split('/')[1]
+    const ex = db.exercises.find((e) => e.id === id) || db.exercises[0]
+    resData = ex
   } else if (url === 'muscle-groups' && method === 'get') {
     resData = db.muscleGroups
+  } else if (url === 'muscle-groups' && method === 'post') {
+    const newMg = {
+      id: 'mg-' + Date.now(),
+      name: data.name,
+      description: data.description || '',
+      imageUrl: data.imageUrl || undefined,
+      isActive: true,
+    }
+    db.muscleGroups.push(newMg)
+    resData = newMg
+  } else if (url.startsWith('muscle-groups/') && url.endsWith('/status') && method === 'patch') {
+    const id = url.split('/')[1]
+    const mg = db.muscleGroups.find((m) => m.id === id)
+    if (mg) {
+      mg.isActive = data.isActive
+    }
+    resData = mg
+  } else if (url.startsWith('muscle-groups/') && method === 'patch') {
+    const id = url.split('/')[1]
+    const mg = db.muscleGroups.find((m) => m.id === id)
+    if (mg) {
+      if (data.name !== undefined) mg.name = data.name
+      if (data.description !== undefined) mg.description = data.description
+      if (data.imageUrl !== undefined) mg.imageUrl = data.imageUrl
+    }
+    resData = mg
+  } else if (url.startsWith('muscle-groups/') && method === 'get') {
+    const id = url.split('/')[1]
+    const mg = db.muscleGroups.find((m) => m.id === id) || db.muscleGroups[0]
+    resData = mg
   } else if (url === 'offerings' && method === 'get') {
     resData = db.offerings
   } else if (url.startsWith('offerings/') && method === 'patch') {
@@ -455,6 +632,46 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
   // 9. Equipment & Maintenance
   else if (url === 'equipment' && method === 'get') {
     resData = mockPaginate(db.equipment)
+  } else if (url === 'equipment' && method === 'post') {
+    const newEq = {
+      id: 'eq-' + Date.now(),
+      ...data,
+      status: 'OPERATIONAL',
+      createdAt: new Date().toISOString(),
+    }
+    db.equipment.unshift(newEq)
+    resData = newEq
+  } else if (url === 'gym-areas' && method === 'get') {
+    resData = db.gymAreas || [
+      { id: 'area-1', name: 'Khu vực Tạ tự do Free Weights', location: 'Tầng 1', isActive: true },
+      { id: 'area-2', name: 'Khu vực Máy Cardio & Chạy bộ', location: 'Tầng 2', isActive: true },
+    ]
+  } else if (url === 'training-courses' && method === 'get') {
+    resData = mockPaginate(db.courses)
+  } else if (url === 'reports/revenue' && method === 'get') {
+    resData = {
+      membershipRevenue: 990000,
+      ptGross: 3600000,
+      ptGymShare: 1440000,
+      coachPayable: 2160000,
+      coachPending: 1080000,
+      paymentCount: db.payments.length || 3,
+    }
+  } else if (url === 'dashboard/manager' && method === 'get') {
+    resData = {
+      members: db.members.length,
+      coaches: db.coaches.length,
+      revenue: {
+        membershipRevenue: 990000,
+        ptGross: 3600000,
+        ptGymShare: 1440000,
+        coachPayable: 2160000,
+        coachPending: 1080000,
+        paymentCount: db.payments.length || 3,
+      },
+      bookingsToday: db.bookings.length,
+      equipmentIssues: 0,
+    }
   } else if (url === 'maintenance' && method === 'get') {
     resData = mockPaginate(db.maintenance)
   } else if (url === 'reviews' && method === 'get') {

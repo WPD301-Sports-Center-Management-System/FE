@@ -9,14 +9,21 @@ export const apiClient = axios.create({
   baseURL: appConfig.apiBaseUrl,
   timeout: 15_000,
   withCredentials: true,
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  },
 })
 
-// Mock request adapter interceptor
+// Optional mock adapter interceptor for non-auth local prototyping
 if (appConfig.useMock) {
   apiClient.interceptors.request.use(async (config) => {
-    // Override the adapter to route locally via mock handler
-    config.adapter = async (cfg) => handleMockRequest(cfg)
+    // Only mock non-auth endpoints if mock is explicitly enabled
+    const url = config.url || ''
+    const isAuthRoute = url.includes('/auth/') || url.startsWith('auth/')
+    if (!isAuthRoute) {
+      config.adapter = async (cfg) => handleMockRequest(cfg)
+    }
     return config
   })
 }
@@ -24,13 +31,13 @@ if (appConfig.useMock) {
 // Request Interceptor: Attach Access Token
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = authStorage.getAccessToken()
-  if (token && config.headers) {
+  if (token && config.headers && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
 
-// Refresh Token Queue state
+// Refresh Token Queue state for concurrency / single-flight refresh
 let isRefreshing = false
 let failedQueue: Array<{
   resolve: (token: string) => void
@@ -48,15 +55,27 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = []
 }
 
-// Response Interceptor: Unwrap data & Refresh Token rotation
+// Response Interceptor: Unwrap data & Auto-refresh Token on 401
 apiClient.interceptors.response.use(
   (response) => {
     return response.data
   },
   async (error: AxiosError<ApiErrorPayload>) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+    const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (!originalRequest) {
+      return Promise.reject(normalizeError(error))
+    }
+
+    const requestUrl = originalRequest.url || ''
+    const isAuthEndpoint =
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/refresh') ||
+      requestUrl.includes('/auth/logout') ||
+      requestUrl.includes('/auth/register')
+
+    // Handle 401 Unauthenticated for protected resources
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({
@@ -77,39 +96,64 @@ apiClient.interceptors.response.use(
       const refreshToken = authStorage.getRefreshToken()
       if (!refreshToken) {
         authStorage.clearSession()
-        window.location.href = '/login'
-        return Promise.reject(error)
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'))
+        isRefreshing = false
+        return Promise.reject(normalizeError(error))
       }
 
       try {
-        const refreshResponse = await axios.post(`${appConfig.apiBaseUrl}/auth/refresh-token`, {
+        const refreshResponse = await axios.post<{
+          success: boolean
+          data: { accessToken: string; refreshToken: string; tokenType: string; expiresIn: string | number }
+        }>(`${appConfig.apiBaseUrl}/auth/refresh`, {
           refreshToken,
         })
-        const newSession = refreshResponse.data?.data
-        authStorage.setSession(newSession)
-        processQueue(null, newSession.accessToken)
 
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${newSession.accessToken}`
+        const refreshedData = refreshResponse.data?.data
+        if (refreshedData?.accessToken) {
+          authStorage.setTokens({
+            accessToken: refreshedData.accessToken,
+            refreshToken: refreshedData.refreshToken || refreshToken,
+          })
+
+          processQueue(null, refreshedData.accessToken)
+
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${refreshedData.accessToken}`
+          }
+          return apiClient(originalRequest)
+        } else {
+          throw new Error('Malformed refresh token response')
         }
-        return apiClient(originalRequest)
       } catch (refreshErr) {
         processQueue(refreshErr, null)
         authStorage.clearSession()
-        window.location.href = '/login'
-        return Promise.reject(refreshErr)
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'))
+        return Promise.reject(normalizeError(refreshErr))
       } finally {
         isRefreshing = false
       }
     }
 
-    const status = error.response?.status || 500
-    const errorPayload: ApiErrorPayload = error.response?.data || {
-      success: false,
-      code: 'NETWORK_ERROR',
-      message: error.message || 'Không thể kết nối đến máy chủ',
-    }
-
-    return Promise.reject(new AppApiError(status, errorPayload))
+    return Promise.reject(normalizeError(error))
   }
 )
+
+function normalizeError(error: unknown): AppApiError {
+  if (error instanceof AppApiError) {
+    return error
+  }
+
+  const axiosErr = error as AxiosError<ApiErrorPayload>
+  const status = axiosErr.response?.status || (axiosErr.code === 'ECONNABORTED' ? 408 : 500)
+  const responseData = axiosErr.response?.data
+
+  const payload: ApiErrorPayload = {
+    success: false,
+    code: responseData?.code || (axiosErr.code === 'ECONNABORTED' ? 'TIMEOUT' : 'NETWORK_ERROR'),
+    message: responseData?.message || axiosErr.message || 'Không thể kết nối đến máy chủ',
+    errors: responseData?.errors,
+  }
+
+  return new AppApiError(status, payload)
+}

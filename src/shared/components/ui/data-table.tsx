@@ -14,6 +14,7 @@ export interface DataTableProps<T> {
   isLoading?: boolean
   searchPlaceholder?: string
   searchKey?: keyof T
+  searchFn?: (item: T, term: string) => boolean
   actions?: (row: T) => ReactNode
   itemsPerPage?: number
 }
@@ -24,6 +25,7 @@ export function DataTable<T extends Record<string, unknown>>({
   isLoading = false,
   searchPlaceholder = 'Tìm kiếm...',
   searchKey,
+  searchFn,
   actions,
   itemsPerPage = 10,
 }: DataTableProps<T>) {
@@ -31,7 +33,9 @@ export function DataTable<T extends Record<string, unknown>>({
   const [currentPage, setCurrentPage] = useState(1)
 
   const filteredData = data.filter((item) => {
-    if (!searchTerm || !searchKey) return true
+    if (!searchTerm) return true
+    if (searchFn) return searchFn(item, searchTerm)
+    if (!searchKey) return true
     const val = item[searchKey]
     if (typeof val === 'string') {
       return val.toLowerCase().includes(searchTerm.toLowerCase())
@@ -44,7 +48,7 @@ export function DataTable<T extends Record<string, unknown>>({
 
   return (
     <div className="w-full space-y-4">
-      {searchKey && (
+      {(searchKey || searchFn) && (
         <div className="flex items-center justify-between gap-4">
           <div className="relative w-72">
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />

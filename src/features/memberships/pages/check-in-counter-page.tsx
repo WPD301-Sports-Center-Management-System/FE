@@ -1,42 +1,161 @@
-import { useState } from 'react'
-import { Search, CheckCircle2, AlertOctagon, User, Clock, ArrowRight } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Search, CheckCircle2, AlertOctagon, User, Clock, ArrowRight, Loader2, QrCode } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { db } from '@/mocks/mock-server'
-import { formatTime } from '@/shared/utils/date'
+import { formatTime, formatDate } from '@/shared/utils/date'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { Button } from '@/shared/components/ui/button'
-import type { MemberDetail, CheckIn } from '@/shared/types/api'
+import { membersService } from '@/features/memberships/services/members.service'
+import { subscriptionsService } from '@/features/memberships/services/subscriptions.service'
+import { checkInsService } from '@/features/memberships/services/check-ins.service'
+import type { MemberSummary, CheckIn, Subscription } from '@/shared/types/api'
 
 export function CheckInCounterPage() {
-  const [searchCode, setSearchCode] = useState('MEM-00109')
-  const [searchedMember, setSearchedMember] = useState<MemberDetail | null>(db.members[0])
-  const [recentCheckIns, setRecentCheckIns] = useState<CheckIn[]>([...db.checkIns])
+  const [searchCode, setSearchCode] = useState('')
+  const [searchedMember, setSearchedMember] = useState<MemberSummary | null>(null)
+  const [hasSearched, setHasSearched] = useState(false)
+  const [activeSubscription, setActiveSubscription] = useState<Subscription | null>(null)
+  const [recentCheckIns, setRecentCheckIns] = useState<CheckIn[]>([])
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
+  const [isSubmittingCheckIn, setIsSubmittingCheckIn] = useState(false)
+
+  // Fetch recent check-ins
+  const fetchRecentCheckIns = useCallback(async () => {
+    try {
+      setIsLoadingHistory(true)
+      const res = await checkInsService.getCheckIns({ limit: 20 })
+      setRecentCheckIns(res.data || [])
+    } catch (err) {
+      console.error('Failed to load check-in history:', err)
+    } finally {
+      setIsLoadingHistory(false)
+    }
+  }, [])
+
+  // Robust search function
+  const searchMemberByCode = useCallback(async (query: string) => {
+    const trimmed = query.trim()
+    if (!trimmed) return
+    setIsSearching(true)
+    setHasSearched(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    setActiveSubscription(null)
+    try {
+      let foundMember: MemberSummary | null = null
+
+      // Step 1: Try memberCode search
+      try {
+        const byCode = await membersService.getMembers({ memberCode: trimmed })
+        if (byCode.data && byCode.data.length > 0) {
+          foundMember = byCode.data[0]
+        }
+      } catch {
+        // continue
+      }
+
+      // Step 2: Try search query (matches fullName / email)
+      if (!foundMember) {
+        try {
+          const bySearch = await membersService.getMembers({ search: trimmed })
+          if (bySearch.data && bySearch.data.length > 0) {
+            foundMember = bySearch.data[0]
+          }
+        } catch {
+          // continue
+        }
+      }
+
+      // Step 3: Fallback fetch general list & search phone or partial member code
+      if (!foundMember) {
+        try {
+          const allMembers = await membersService.getMembers({ limit: 50 })
+          const s = trimmed.toLowerCase()
+          const matched = (allMembers.data || []).find(
+            (m) =>
+              m.memberCode.toLowerCase().includes(s) ||
+              m.fullName.toLowerCase().includes(s) ||
+              (m.phone && m.phone.includes(s)) ||
+              (m.email && m.email.toLowerCase().includes(s))
+          )
+          if (matched) {
+            foundMember = matched
+          }
+        } catch {
+          // continue
+        }
+      }
+
+      if (foundMember) {
+        // Verify active gym subscription
+        try {
+          const subsRes = await subscriptionsService.getSubscriptions({
+            memberId: foundMember.id,
+            status: 'ACTIVE',
+          })
+          const activeSub = (subsRes.data || []).find((s) => s.status === 'ACTIVE')
+          setActiveSubscription(activeSub || null)
+          setSearchedMember({
+            ...foundMember,
+            membershipStatus: activeSub ? 'ACTIVE' : 'EXPIRED',
+          })
+        } catch {
+          setActiveSubscription(null)
+          setSearchedMember(foundMember)
+        }
+      } else {
+        setSearchedMember(null)
+        setActiveSubscription(null)
+        setErrorMessage(`Không tìm thấy hội viên nào khớp với "${query}".`)
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Có lỗi khi tra cứu hội viên.'
+      setErrorMessage(msg)
+      setSearchedMember(null)
+      setActiveSubscription(null)
+    } finally {
+      setIsSearching(false)
+    }
+  }, [])
+
+  // On mount, only fetch recent check-ins history (do not auto-search any member)
+  useEffect(() => {
+    fetchRecentCheckIns()
+  }, [fetchRecentCheckIns])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    setSuccessMessage(null)
-    const code = searchCode.trim().toLowerCase()
-    const found = db.members.find(
-      (m) => m.memberCode.toLowerCase().includes(code) || (m.phone && m.phone.includes(code))
-    )
-    setSearchedMember(found || null)
+    searchMemberByCode(searchCode)
   }
 
-  const handleConfirmCheckIn = () => {
+  const handleConfirmCheckIn = async () => {
     if (!searchedMember) return
-    const newRecord: CheckIn = {
-      id: 'chk-' + Date.now(),
-      memberId: searchedMember.id,
-      checkedInBy: 'usr-rec-01',
-      checkedInAt: new Date().toISOString(),
-      note: 'Vào phòng tập tại quầy',
-      member: searchedMember,
+    setIsSubmittingCheckIn(true)
+    setSuccessMessage(null)
+    setErrorMessage(null)
+    try {
+      const created = await checkInsService.createCheckIn({
+        memberId: searchedMember.id,
+        note: 'Vào phòng tập tại quầy',
+      })
+      setSuccessMessage(`Check-in thành công cho hội viên ${searchedMember.fullName}!`)
+      // Refresh check-in list or prepend
+      const recordWithMember: CheckIn = {
+        ...created,
+        member: created.member || searchedMember,
+      }
+      setRecentCheckIns((prev) => [recordWithMember, ...prev.filter((c) => c.id !== created.id)])
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Check-in thất bại. Vui lòng kiểm tra lại trạng thái thẻ.'
+      setErrorMessage(msg)
+    } finally {
+      setIsSubmittingCheckIn(false)
     }
-    db.checkIns.unshift(newRecord)
-    setRecentCheckIns([...db.checkIns])
-    setSuccessMessage(`Check-in thành công cho hội viên ${searchedMember.fullName}!`)
   }
+
+  const isMemberActive = searchedMember?.membershipStatus === 'ACTIVE'
 
   return (
     <div className="space-y-6">
@@ -58,18 +177,27 @@ export function CheckInCounterPage() {
                 value={searchCode}
                 onChange={(e) => setSearchCode(e.target.value)}
                 placeholder="Nhập mã thẻ (vd: MEM-00109) hoặc số điện thoại..."
+                autoFocus
                 className="w-full rounded-2xl border border-slate-700 bg-slate-900/90 py-3 pl-11 pr-4 text-sm text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
               />
             </div>
-            <Button type="submit" variant="primary" className="px-6 rounded-2xl">
+            <Button type="submit" variant="primary" className="px-6 rounded-2xl" disabled={isSearching || !searchCode.trim()}>
+              {isSearching ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Tìm kiếm
             </Button>
           </form>
 
           {successMessage && (
-            <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-4 text-sm text-emerald-300">
+            <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-4 text-sm text-emerald-300 animate-in fade-in">
               <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
               <span>{successMessage}</span>
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-950/40 p-4 text-sm text-red-300 animate-in fade-in">
+              <AlertOctagon className="h-5 w-5 shrink-0 text-red-400" />
+              <span>{errorMessage}</span>
             </div>
           )}
 
@@ -92,24 +220,37 @@ export function CheckInCounterPage() {
               </div>
 
               {/* Status Decision Box */}
-              {searchedMember.membershipStatus === 'ACTIVE' ? (
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-5 flex items-center justify-between">
+              {isMemberActive ? (
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="rounded-xl bg-emerald-500/20 p-2 text-emerald-400">
                       <CheckCircle2 className="h-6 w-6" />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-emerald-300">Thẻ Gym Hợp Lệ (Cho phép vào)</p>
-                      <p className="text-xs text-slate-400">Gói tập còn hạn đến hết 31/12/2026</p>
+                      <p className="text-xs text-slate-400">
+                        {activeSubscription
+                          ? `Gói ${activeSubscription.planNameSnapshot || 'tập'} · Hạn đến ${formatDate(activeSubscription.endDate)}`
+                          : 'Gói tập còn hạn hiệu lực'}
+                      </p>
                     </div>
                   </div>
-                  <Button variant="primary" onClick={handleConfirmCheckIn} className="gap-2">
-                    <CheckCircle2 className="h-4 w-4" />
+                  <Button
+                    variant="primary"
+                    onClick={handleConfirmCheckIn}
+                    disabled={isSubmittingCheckIn}
+                    className="gap-2 shrink-0"
+                  >
+                    {isSubmittingCheckIn ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4" />
+                    )}
                     <span>Xác nhận Check-in</span>
                   </Button>
                 </div>
               ) : (
-                <div className="rounded-2xl border border-red-500/30 bg-red-950/20 p-5 flex items-center justify-between">
+                <div className="rounded-2xl border border-red-500/30 bg-red-950/20 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="rounded-xl bg-red-500/20 p-2 text-red-400">
                       <AlertOctagon className="h-6 w-6" />
@@ -120,7 +261,7 @@ export function CheckInCounterPage() {
                     </div>
                   </div>
                   <Link to="/receptionist/membership-sale">
-                    <Button variant="danger" className="gap-2 text-xs">
+                    <Button variant="danger" className="gap-2 text-xs shrink-0">
                       <span>Gia hạn vé ngay</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Button>
@@ -128,9 +269,23 @@ export function CheckInCounterPage() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : isSearching ? (
+            <div className="rounded-2xl border border-slate-800 p-12 flex justify-center items-center text-slate-400">
+              <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+            </div>
+          ) : hasSearched ? (
             <div className="rounded-2xl border border-dashed border-slate-800 p-12 text-center text-slate-500">
               Không tìm thấy hội viên nào khớp với mã vừa nhập.
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-800/80 p-12 text-center space-y-3">
+              <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-400">
+                <QrCode className="h-6 w-6 text-orange-400" />
+              </div>
+              <p className="text-sm font-medium text-slate-300">Sẵn sàng điểm danh</p>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Quét mã thẻ barcode/QR hoặc nhập mã thẻ, số điện thoại của hội viên vào ô bên trên để kiểm tra quyền hạn ra vào.
+              </p>
             </div>
           )}
         </div>
@@ -142,28 +297,33 @@ export function CheckInCounterPage() {
               <Clock className="h-4 w-4 text-orange-400" />
               <span>Lịch Sử Vào Phòng ({recentCheckIns.length})</span>
             </h3>
+            {isLoadingHistory && <Loader2 className="h-4 w-4 animate-spin text-orange-400" />}
           </div>
 
           <div className="divide-y divide-slate-800/80 max-h-[500px] overflow-y-auto pr-1">
-            {recentCheckIns.map((item) => (
-              <div key={item.id} className="py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
-                    <User className="h-4 w-4" />
+            {recentCheckIns.length === 0 && !isLoadingHistory ? (
+              <p className="text-xs text-slate-500 py-6 text-center">Chưa có lượt check-in nào</p>
+            ) : (
+              recentCheckIns.map((item) => (
+                <div key={item.id} className="py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
+                      <User className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white">{item.member?.fullName || 'Hội viên'}</p>
+                      <p className="text-[10px] font-mono text-slate-400">{item.member?.memberCode}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-white">{item.member?.fullName || 'Hội viên'}</p>
-                    <p className="text-[10px] font-mono text-slate-400">{item.member?.memberCode}</p>
+                  <div className="text-right">
+                    <span className="text-xs font-mono font-bold text-emerald-400">
+                      {formatTime(item.checkedInAt)}
+                    </span>
+                    <p className="text-[10px] text-slate-500">{item.note}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-mono font-bold text-emerald-400">
-                    {formatTime(item.checkedInAt)}
-                  </span>
-                  <p className="text-[10px] text-slate-500">{item.note}</p>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
