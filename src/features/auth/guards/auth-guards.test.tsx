@@ -26,7 +26,6 @@ describe('Auth Guards', () => {
         logoutAll: vi.fn(),
         refreshSession: vi.fn(),
         updateUserProfile: vi.fn(),
-        switchRoleDemo: vi.fn(),
         hasRole: vi.fn(),
       })
 
@@ -54,7 +53,6 @@ describe('Auth Guards', () => {
         logoutAll: vi.fn(),
         refreshSession: vi.fn(),
         updateUserProfile: vi.fn(),
-        switchRoleDemo: vi.fn(),
         hasRole: vi.fn(),
       })
 
@@ -98,7 +96,6 @@ describe('Auth Guards', () => {
         logoutAll: vi.fn(),
         refreshSession: vi.fn(),
         updateUserProfile: vi.fn(),
-        switchRoleDemo: vi.fn(),
         hasRole: vi.fn().mockReturnValue(true),
       })
 
@@ -133,7 +130,6 @@ describe('Auth Guards', () => {
         logoutAll: vi.fn(),
         refreshSession: vi.fn(),
         updateUserProfile: vi.fn(),
-        switchRoleDemo: vi.fn(),
         hasRole: vi.fn().mockReturnValue(false),
       })
 
@@ -179,7 +175,6 @@ describe('Auth Guards', () => {
         logoutAll: vi.fn(),
         refreshSession: vi.fn(),
         updateUserProfile: vi.fn(),
-        switchRoleDemo: vi.fn(),
         hasRole: vi.fn(),
       })
 
@@ -223,7 +218,6 @@ describe('Auth Guards', () => {
         logoutAll: vi.fn(),
         refreshSession: vi.fn(),
         updateUserProfile: vi.fn(),
-        switchRoleDemo: vi.fn(),
         hasRole: vi.fn(),
       })
 

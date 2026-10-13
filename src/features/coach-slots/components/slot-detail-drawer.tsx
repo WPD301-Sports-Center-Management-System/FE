@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { X, Calendar, Clock, User, BookOpen, AlertCircle, Lock, Unlock, Trash2 } from 'lucide-react'
+import { X, Calendar, Clock, User, BookOpen, AlertCircle, Lock, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { SlotStatusBadge } from './slot-status-badge'
 import { formatDateTime } from '@/shared/utils/date'
@@ -11,9 +11,7 @@ interface SlotDetailDrawerProps {
   onClose: () => void
   slot: (CoachSlot & Partial<SlotCalendarEventProps>) | null
   onBlockSlot?: (slot: CoachSlot) => void
-  onUnblockSlot?: (slotId: string) => void
   onDeleteSlot?: (slotId: string) => void
-  isUnblocking?: boolean
   isDeleting?: boolean
 }
 
@@ -22,9 +20,7 @@ export function SlotDetailDrawer({
   onClose,
   slot,
   onBlockSlot,
-  onUnblockSlot,
   onDeleteSlot,
-  isUnblocking = false,
   isDeleting = false,
 }: SlotDetailDrawerProps) {
   useEffect(() => {
@@ -178,12 +174,12 @@ export function SlotDetailDrawer({
               </Button>
             )}
 
-            {isOpenStatus && onDeleteSlot && (
+            {(isOpenStatus || isBlocked) && onDeleteSlot && (
               <Button
                 variant="outline"
                 className="w-full text-rose-400 border-rose-500/30 hover:bg-rose-950/40 gap-2"
                 onClick={() => {
-                  if (window.confirm('Bạn có chắc chắn muốn xóa khung giờ trống này không?')) {
+                  if (window.confirm('Bạn có chắc chắn muốn hủy khung giờ này không?')) {
                     onDeleteSlot(slot.id)
                     onClose()
                   }
@@ -191,22 +187,7 @@ export function SlotDetailDrawer({
                 disabled={isDeleting}
               >
                 <Trash2 className="h-4 w-4" />
-                <span>{isDeleting ? 'Đang xóa...' : 'Xóa khung giờ'}</span>
-              </Button>
-            )}
-
-            {isBlocked && onUnblockSlot && (
-              <Button
-                variant="outline"
-                className="w-full text-emerald-400 border-emerald-500/30 hover:bg-emerald-950/40 gap-2"
-                onClick={() => {
-                  onUnblockSlot(slot.id)
-                  onClose()
-                }}
-                disabled={isUnblocking}
-              >
-                <Unlock className="h-4 w-4" />
-                <span>{isUnblocking ? 'Đang mở lại...' : 'Mở lại khung giờ'}</span>
+                <span>{isDeleting ? 'Đang hủy...' : 'Hủy khung giờ'}</span>
               </Button>
             )}
 

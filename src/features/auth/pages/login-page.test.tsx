@@ -21,7 +21,6 @@ vi.mock('@/features/auth/context/auth-context', () => ({
 
 describe('LoginPage', () => {
   const mockLogin = vi.fn()
-  const mockSwitchRoleDemo = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -36,7 +35,6 @@ describe('LoginPage', () => {
       logoutAll: vi.fn(),
       refreshSession: vi.fn(),
       updateUserProfile: vi.fn(),
-      switchRoleDemo: mockSwitchRoleDemo,
       hasRole: vi.fn(),
     })
   })
@@ -121,9 +119,16 @@ describe('LoginPage', () => {
       </MemoryRouter>
     )
 
+    fireEvent.change(screen.getByLabelText(/Email hoặc Số điện thoại/i), {
+      target: { value: 'manager@sports.local' },
+    })
+    fireEvent.change(screen.getByLabelText(/Mật khẩu/i), {
+      target: { value: 'incorrect-password' },
+    })
     const submitBtn = screen.getByRole('button', { name: /Đăng nhập ngay/i })
     fireEvent.click(submitBtn)
 
     expect(await screen.findByText(/Tài khoản hoặc mật khẩu không chính xác/i)).toBeInTheDocument()
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 })

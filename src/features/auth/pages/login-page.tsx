@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { Dumbbell, Shield, UserCheck, Award, AlertCircle } from 'lucide-react'
+import { Dumbbell, AlertCircle } from 'lucide-react'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
@@ -9,12 +9,12 @@ import { isPathAllowedForRole } from '@/features/auth/guards/auth-guards'
 import type { UserRole } from '@/shared/types/api'
 
 export function LoginPage() {
-  const { login, switchRoleDemo } = useAuth()
+  const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [identifier, setIdentifier] = useState('receptionist@gym.local')
-  const [password, setPassword] = useState('password123')
+  const [identifier, setIdentifier] = useState('')
+  const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -84,30 +84,6 @@ export function LoginPage() {
       }
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleQuickDemo = async (role: UserRole, targetPath: string) => {
-    const demoCredentials: Record<UserRole, { identifier: string; password: string }> = {
-      MANAGER: { identifier: 'manager@gym.local', password: 'password123' },
-      RECEPTIONIST: { identifier: 'receptionist@gym.local', password: 'password123' },
-      COACH: { identifier: 'coach1@gym.local', password: 'password123' },
-      MEMBER: { identifier: 'member4@gym.local', password: 'password123' },
-    }
-
-    const creds = demoCredentials[role]
-    if (creds) {
-      setIsLoading(true)
-      setErrorMessage(null)
-      try {
-        await login(creds)
-        navigate(targetPath, { replace: true })
-      } catch {
-        switchRoleDemo(role)
-        navigate(targetPath, { replace: true })
-      } finally {
-        setIsLoading(false)
-      }
     }
   }
 
@@ -211,43 +187,6 @@ export function LoginPage() {
             </Button>
           </form>
 
-          {/* Quick Demo Switcher Section */}
-          <div className="pt-4 border-t border-border-subtle">
-            <p className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-3 text-center">
-              Truy cập nhanh (Tài khoản mẫu):
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('MANAGER', '/manager')}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-border-subtle bg-bg-surface-muted/60 p-3 text-center hover:border-primary/40 hover:bg-bg-surface transition-colors cursor-pointer"
-              >
-                <Shield className="h-4 w-4 text-primary" />
-                <span className="text-xs font-semibold text-text-primary">Quản lý</span>
-                <span className="text-[10px] text-text-muted">manager@gym.local</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('RECEPTIONIST', '/receptionist')}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-border-subtle bg-bg-surface-muted/60 p-3 text-center hover:border-sky-500/40 hover:bg-bg-surface transition-colors cursor-pointer"
-              >
-                <UserCheck className="h-4 w-4 text-sky-500" />
-                <span className="text-xs font-semibold text-text-primary">Lễ tân</span>
-                <span className="text-[10px] text-text-muted">receptionist@gym.local</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('COACH', '/coach')}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-border-subtle bg-bg-surface-muted/60 p-3 text-center hover:border-emerald-500/40 hover:bg-bg-surface transition-colors cursor-pointer"
-              >
-                <Award className="h-4 w-4 text-emerald-500" />
-                <span className="text-xs font-semibold text-text-primary">HLV</span>
-                <span className="text-[10px] text-text-muted">coach1@gym.local</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

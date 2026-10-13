@@ -9,6 +9,7 @@ import { coursesExercisesService } from '@/features/courses-exercises/services/c
 import { coachesService } from '@/features/coaches/services/coaches.service'
 import { coachApprovalService } from '@/features/coach-approval/services/coach-approval.service'
 import { ptPurchasesService } from '../services/pt-purchases.service'
+import { paymentsService } from '@/features/payments-invoices/services/payments.service'
 import { isAppApiError } from '@/shared/api/api-error'
 import type { PaymentMethod, MemberSummary, TrainingCourse, CoachSummary, PackageOption, Purchase } from '@/shared/types/api'
 
@@ -33,6 +34,7 @@ export function PtPackageSalePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [createdPurchase, setCreatedPurchase] = useState<Purchase | null>(null)
+  const [pendingPurchase, setPendingPurchase] = useState<Purchase | null>(null)
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
@@ -115,9 +117,9 @@ export function PtPackageSalePage() {
   // Selected entities for price display
   const selectedMember = members.find((m) => m.id === memberId)
   const selectedCoach = (availableCoaches.length > 0 ? availableCoaches : coaches).find((c) => c.id === coachId)
-  const selectedPkg = packageOptions.find((p) => p.id === packageOptionId) || filteredPackageOptions[0]
+  const selectedPkg = filteredPackageOptions.find((p) => p.id === packageOptionId) || filteredPackageOptions[0]
 
-  const priceNum = selectedPkg ? parseFloat(selectedPkg.price) : 0
+  const priceNum = pendingPurchase ? Number(pendingPurchase.priceSnapshot) : selectedPkg ? Number(selectedPkg.price) : 0
   const gymShare = priceNum * 0.4
   const coachShare = priceNum * 0.6
 
@@ -135,7 +137,7 @@ export function PtPackageSalePage() {
       setErrorMessage('Vui lòng chọn huấn luyện viên phụ trách.')
       return
     }
-    if (!selectedPkg) {
+    if (!selectedPkg && !pendingPurchase) {
       setErrorMessage('Vui lòng chọn gói số lượng buổi tập.')
       return
     }
@@ -144,31 +146,53 @@ export function PtPackageSalePage() {
     setErrorMessage(null)
 
     try {
-      // 1. Create PT Purchase (POST /pt-package-purchases)
-      const purchase = await ptPurchasesService.createPurchase({
+      const purchase = pendingPurchase ?? await ptPurchasesService.createPurchase({
         memberId,
         courseId,
         coachId,
-        packageOptionId: selectedPkg.id,
+        packageOptionId: selectedPkg!.id,
       })
+      setPendingPurchase(purchase)
 
-      // 2. Settle payment at counter (POST /payments/counter)
-      try {
-        await ptPurchasesService.payCounter({
-          ptPurchaseId: purchase.id,
-          method: paymentMethod === 'VNPAY' ? 'BANK_TRANSFER' : paymentMethod,
-          receivedAmount: priceNum,
-        })
-      } catch (payErr) {
-        console.warn('Payment settlement notice:', payErr)
+      // A previous payment can have succeeded even if its response was lost.
+      if (pendingPurchase) {
+        const current = await ptPurchasesService.getPurchaseById(purchase.id)
+        if (current.status === 'ACTIVE') {
+          setCreatedPurchase(current)
+          setPendingPurchase(null)
+          return
+        }
+        if (current.status !== 'PENDING_PAYMENT') {
+          throw new Error('Đơn này không còn chờ thanh toán.')
+        }
       }
 
-      setCreatedPurchase(purchase)
+      if (paymentMethod === 'VNPAY') {
+        const payment = await paymentsService.createVNPay({
+          ptPurchaseId: purchase.id,
+          returnTarget: 'web',
+        })
+        if (!payment.paymentUrl) throw new Error('VNPay chưa trả về đường dẫn thanh toán.')
+        window.location.assign(payment.paymentUrl)
+        return
+      }
+
+      await paymentsService.payCounter({
+          ptPurchaseId: purchase.id,
+          method: paymentMethod,
+          receivedAmount: Number(purchase.priceSnapshot),
+      })
+      const activePurchase = await ptPurchasesService.getPurchaseById(purchase.id)
+      if (activePurchase.status !== 'ACTIVE') {
+        throw new Error('Thanh toán chưa được xác nhận. Gói PT vẫn đang chờ kích hoạt.')
+      }
+      setCreatedPurchase(activePurchase)
+      setPendingPurchase(null)
     } catch (err) {
       if (isAppApiError(err)) {
         setErrorMessage(err.message || 'Đăng ký bán gói PT thất bại. Vui lòng kiểm tra lại thông tin.')
       } else {
-        setErrorMessage('Lỗi hệ thống khi kích hoạt gói tập PT.')
+        setErrorMessage(err instanceof Error ? err.message : 'Không thể hoàn tất thanh toán gói PT.')
       }
     } finally {
       setIsSubmitting(false)
@@ -194,7 +218,7 @@ export function PtPackageSalePage() {
       </div>
 
       {errorMessage && (
-        <div className="flex items-center gap-2.5 rounded-2xl border border-danger/30 bg-danger/10 p-4 text-xs text-danger">
+        <div role="alert" className="flex items-center gap-2.5 rounded-2xl border border-danger/30 bg-danger/10 p-4 text-xs text-danger">
           <AlertCircle className="h-4 w-4 shrink-0 text-danger" />
           <span>{errorMessage}</span>
         </div>
@@ -210,7 +234,7 @@ export function PtPackageSalePage() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
             <Check className="h-8 w-8" />
           </div>
-          <h2 className="text-xl font-bold text-text-primary">Đã Tạo Hợp Đồng & Kích Hoạt Gói PT Thành Công!</h2>
+            <h2 className="text-xl font-bold text-text-primary">Đã thanh toán và kích hoạt gói PT</h2>
           <p className="text-xs text-text-muted max-w-md mx-auto leading-relaxed">
             Hội viên <strong className="text-text-primary">{selectedMember?.fullName || 'Hội viên'}</strong> ({selectedMember?.memberCode}) đã sở hữu{' '}
             <strong className="text-text-primary">{createdPurchase.totalCredits || selectedPkg?.sessionCount} buổi tập</strong> với HLV{' '}
@@ -238,6 +262,11 @@ export function PtPackageSalePage() {
         </div>
       ) : (
         <form onSubmit={handleCheckout} className="space-y-6">
+          {pendingPurchase && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-text-primary">
+              Đơn {pendingPurchase.purchaseCode || pendingPurchase.id} đang chờ thanh toán. Chọn phương thức và thử lại; hệ thống sẽ dùng chính đơn này.
+            </div>
+          )}
           <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
             <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
               <User className="h-4 w-4 text-primary" />
@@ -248,6 +277,7 @@ export function PtPackageSalePage() {
               <Select
                 label="Hội viên đăng ký mua gói"
                 value={memberId}
+                disabled={Boolean(pendingPurchase)}
                 onChange={(e) => setMemberId(e.target.value)}
                 options={members.map((m: any) => ({
                   value: m.id,
@@ -258,6 +288,7 @@ export function PtPackageSalePage() {
               <Select
                 label="Khóa đào tạo PT"
                 value={courseId}
+                disabled={Boolean(pendingPurchase)}
                 onChange={(e) => {
                   setCourseId(e.target.value)
                   const matchingPkgs = packageOptions.filter((p) => p.courseId === e.target.value)
@@ -272,6 +303,7 @@ export function PtPackageSalePage() {
               <Select
                 label="Huấn luyện viên phụ trách"
                 value={coachId}
+                disabled={Boolean(pendingPurchase)}
                 onChange={(e) => setCoachId(e.target.value)}
                 options={
                   availableCoaches.length > 0
@@ -288,6 +320,7 @@ export function PtPackageSalePage() {
               <Select
                 label="Gói số lượng buổi tập"
                 value={selectedPkg?.id || packageOptionId}
+                disabled={Boolean(pendingPurchase)}
                 onChange={(e) => setPackageOptionId(e.target.value)}
                 options={(filteredPackageOptions.length > 0 ? filteredPackageOptions : packageOptions).map((p) => ({
                   value: p.id,
@@ -347,7 +380,7 @@ export function PtPackageSalePage() {
               isLoading={isSubmitting}
               disabled={isSubmitting || !selectedPkg}
             >
-              Xác nhận thu tiền & Kích hoạt gói PT
+              {pendingPurchase ? 'Thử lại thanh toán' : paymentMethod === 'VNPAY' ? 'Thanh toán qua VNPay' : 'Xác nhận thu tiền & Kích hoạt gói PT'}
             </Button>
           </div>
         </form>

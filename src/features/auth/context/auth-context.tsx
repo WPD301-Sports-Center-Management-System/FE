@@ -16,7 +16,6 @@ import type {
 import { authStorage } from '@/shared/utils/storage'
 import { authService } from '@/features/auth/services/auth.service'
 import { queryClient } from '@/shared/api/query-client'
-import { mockUsers } from '@/mocks/fixtures-base'
 
 interface AuthContextType {
   user: UserDetail | null
@@ -29,7 +28,6 @@ interface AuthContextType {
   logoutAll: () => Promise<void>
   refreshSession: () => Promise<void>
   updateUserProfile: (payload: UpdateProfilePayload) => Promise<void>
-  switchRoleDemo: (role: UserRole) => void
   hasRole: (roles: UserRole | UserRole[]) => boolean
 }
 
@@ -197,16 +195,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const switchRoleDemo = (targetRole: UserRole) => {
-    const matched = mockUsers.find((u) => u.role === targetRole) || mockUsers[0]
-    authStorage.setSession({
-      accessToken: 'demo-token-' + targetRole,
-      refreshToken: 'demo-refresh-' + targetRole,
-      user: matched,
-    })
-    setUser(matched)
-  }
-
   const hasRole = (roles: UserRole | UserRole[]): boolean => {
     if (!user) return false
     const allowed = Array.isArray(roles) ? roles : [roles]
@@ -226,7 +214,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logoutAll,
         refreshSession,
         updateUserProfile,
-        switchRoleDemo,
         hasRole,
       }}
     >

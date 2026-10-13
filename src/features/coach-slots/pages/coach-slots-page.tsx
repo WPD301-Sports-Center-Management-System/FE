@@ -157,14 +157,6 @@ export function CoachSlotsPage() {
     setIsBlockOpen(true)
   }, [])
 
-  const handleUnblock = useCallback(
-    async (slotId: string) => {
-      await deleteSlotMutation.mutateAsync({ slotId })
-      setIsDetailOpen(false)
-    },
-    [deleteSlotMutation]
-  )
-
   const handleConfirmBlock = useCallback(
     async (slotId: string, reason: string) => {
       await blockSlotMutation.mutateAsync({ slotId, reason })
@@ -337,9 +329,7 @@ export function CoachSlotsPage() {
         onClose={() => setIsDetailOpen(false)}
         slot={selectedSlot}
         onBlockSlot={handleOpenBlockFromDrawer}
-        onUnblockSlot={handleUnblock}
         onDeleteSlot={handleDeleteSlot}
-        isUnblocking={deleteSlotMutation.isPending}
         isDeleting={deleteSlotMutation.isPending}
       />
     </div>

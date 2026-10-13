@@ -3,6 +3,7 @@ import { DashboardLayout } from '@/layouts/dashboard-layout'
 import { LandingPage } from '@/pages/landing-page'
 import { LoginPage } from '@/features/auth/pages/login-page'
 import { ForgotPasswordPage } from '@/features/auth/pages/forgot-password-page'
+import { ResetPasswordPage } from '@/features/auth/pages/reset-password-page'
 import { PublicCoachProfilePage } from '@/features/coach-public/pages/public-coach-profile-page'
 import { SystemErrorPage } from '@/pages/system-error-page'
 import { ProtectedRoute, GuestRoute } from '@/features/auth/guards/auth-guards'
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
   // Common & Public
   { path: '/', element: <LandingPage /> },
   { path: '/coaches/:coachId', element: <PublicCoachProfilePage /> },
+  { path: '/reset-password', element: <ResetPasswordPage /> },
   { path: '/payment/vnpay-return', element: <VnPayReturnPage /> },
   { path: '/payment/vnpay/return', element: <VnPayReturnPage /> },
   { path: '/payments/vnpay-return', element: <VnPayReturnPage /> },
