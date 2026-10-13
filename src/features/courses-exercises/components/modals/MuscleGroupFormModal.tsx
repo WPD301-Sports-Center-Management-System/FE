@@ -23,16 +23,19 @@ export function MuscleGroupFormModal({
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [imageUrl, setImageUrl] = useState('')
+  const [recoveryDays, setRecoveryDays] = useState(2)
 
   useEffect(() => {
     if (editingMuscleGroup) {
       setName(editingMuscleGroup.name || '')
       setDescription(editingMuscleGroup.description || '')
       setImageUrl(editingMuscleGroup.imageUrl || '')
+      setRecoveryDays(editingMuscleGroup.recoveryDays ?? 2)
     } else {
       setName('')
       setDescription('')
       setImageUrl('')
+      setRecoveryDays(2)
     }
   }, [editingMuscleGroup, isOpen])
 
@@ -44,6 +47,7 @@ export function MuscleGroupFormModal({
       name: name.trim(),
       description: description.trim() || undefined,
       imageUrl: imageUrl.trim() || undefined,
+      recoveryDays,
     })
   }
 
@@ -76,6 +80,16 @@ export function MuscleGroupFormModal({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Mô tả các bó cơ, nhóm cơ phụ trợ và đặc tính chuyển động..."
+          disabled={isSubmitting}
+        />
+        <Input
+          label="Số ngày hồi phục"
+          type="number"
+          min={1}
+          max={30}
+          required
+          value={recoveryDays}
+          onChange={(e) => setRecoveryDays(Number(e.target.value))}
           disabled={isSubmitting}
         />
         <Input

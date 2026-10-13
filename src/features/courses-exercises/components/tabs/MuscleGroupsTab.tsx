@@ -97,6 +97,9 @@ export function MuscleGroupsTab({
                       <p className="text-[10px] text-text-muted font-mono">
                         ID: {mg.id.slice(0, 8)}...
                       </p>
+                      <p className="text-[10px] text-text-muted">
+                        Hồi phục: {mg.recoveryDays ?? 2} ngày
+                      </p>
                     </div>
                   </div>
                   <StatusBadge status={mg.isActive ? 'ACTIVE' : 'INACTIVE'} />

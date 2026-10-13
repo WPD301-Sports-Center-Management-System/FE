@@ -11,6 +11,7 @@ import type { MemberSummary, Exercise, Purchase } from '@/shared/types/api'
 interface ExerciseRow {
   exerciseId: string
   name: string
+  scheduledDate: string
   sets: number
   reps: number
   weight: string
@@ -73,6 +74,7 @@ export function TrainingPlanBuilderPage() {
           {
             exerciseId: exList[0].id,
             name: exList[0].name,
+            scheduledDate: new Date().toISOString().split('T')[0],
             sets: 4,
             reps: 10,
             weight: '50.00',
@@ -110,10 +112,12 @@ export function TrainingPlanBuilderPage() {
 
   const handleAddExerciseRow = () => {
     if (availableExercises.length === 0) return
-    const ex = availableExercises[0]
+    const ex = availableExercises.find((candidate) =>
+      !exercises.some((row) => row.exerciseId === candidate.id && row.scheduledDate === startDate)
+    ) ?? availableExercises[0]
     setExercises([
       ...exercises,
-      { exerciseId: ex.id, name: ex.name, sets: 3, reps: 10, weight: '40.00', rest: 60 },
+      { exerciseId: ex.id, name: ex.name, scheduledDate: startDate, sets: 3, reps: 10, weight: '40.00', rest: 60 },
     ])
   }
 
@@ -140,9 +144,15 @@ export function TrainingPlanBuilderPage() {
       return
     }
 
+    if (exercises.some((item) => !item.scheduledDate || item.scheduledDate < startDate || (endDate && item.scheduledDate > endDate))) {
+      setErrorMessage('Ngày của mỗi bài tập phải nằm trong thời gian giáo án.')
+      return
+    }
+
     setIsSubmitting(true)
     setErrorMessage(null)
 
+    let draftId: string | null = null
     try {
       // Step 1: Create plan in DRAFT state
       const draftPlan = await trainingPlansService.createTrainingPlan({
@@ -153,12 +163,14 @@ export function TrainingPlanBuilderPage() {
         startDate,
         endDate: endDate ? endDate : undefined,
       })
+      draftId = draftPlan.id
 
       // Step 2: Add all exercises to the draft plan
       for (let i = 0; i < exercises.length; i++) {
         const item = exercises[i]
         await trainingPlansService.addExercise(draftPlan.id, {
           exerciseId: item.exerciseId,
+          scheduledDate: item.scheduledDate,
           sets: Number(item.sets),
           reps: Number(item.reps),
           targetWeight: Number(item.weight) || 0,
@@ -169,10 +181,14 @@ export function TrainingPlanBuilderPage() {
 
       // Step 3: Assign the plan
       await trainingPlansService.assignTrainingPlan(draftPlan.id)
+      draftId = null
 
       setIsSaved(true)
       setTimeout(() => setIsSaved(false), 4000)
     } catch (err) {
+      if (draftId) {
+        try { await trainingPlansService.deleteTrainingPlan(draftId) } catch { /* Keep the original error visible. */ }
+      }
       if (isAppApiError(err)) {
         setErrorMessage(err.message || 'Lỗi khi lưu và giao giáo án.')
       } else {
@@ -185,7 +201,7 @@ export function TrainingPlanBuilderPage() {
 
   const exerciseOptions = availableExercises.map((ex) => ({
     value: ex.id,
-    label: ex.name,
+    label: `${ex.name} · ${ex.muscleGroups?.find((group) => group.isPrimary)?.name ?? 'Chưa có nhóm cơ chính'}`,
   }))
 
   const eligiblePackagesForMember = packages.filter(
@@ -328,7 +344,7 @@ export function TrainingPlanBuilderPage() {
               {exercises.map((item, idx) => (
                 <div
                   key={idx}
-                  className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 flex flex-col sm:flex-row items-center gap-3"
+                  className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 flex flex-col sm:flex-row sm:flex-wrap items-center gap-3"
                 >
                   <div className="w-full sm:w-1/3">
                     <Select
@@ -342,6 +358,30 @@ export function TrainingPlanBuilderPage() {
                         setExercises(copy)
                       }}
                       options={exerciseOptions}
+                    />
+                    <p className="mt-1 text-[11px] text-text-muted">
+                      {(() => {
+                        const groups = availableExercises.find((ex) => ex.id === item.exerciseId)?.muscleGroups ?? []
+                        const primary = groups.find((group) => group.isPrimary)
+                        const secondary = groups.filter((group) => !group.isPrimary).map((group) => group.name).join(', ')
+                        return `Chính: ${primary?.name ?? 'chưa gán'}${secondary ? ` · Phụ: ${secondary}` : ''}${primary?.recoveryDays ? ` · Hồi phục: ${primary.recoveryDays} ngày` : ''}`
+                      })()}
+                    </p>
+                  </div>
+
+                  <div className="w-full sm:w-1/4">
+                    <Input
+                      label="Ngày tập"
+                      type="date"
+                      required
+                      min={startDate}
+                      max={endDate || undefined}
+                      value={item.scheduledDate}
+                      onChange={(e) => {
+                        const copy = [...exercises]
+                        copy[idx].scheduledDate = e.target.value
+                        setExercises(copy)
+                      }}
                     />
                   </div>
 

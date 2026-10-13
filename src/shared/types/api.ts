@@ -150,6 +150,7 @@ export type CheckIn = {
 export type MuscleGroup = {
   id: string
   name: string
+  recoveryDays?: number
   description?: string
   imageUrl?: string
   isActive: boolean
@@ -165,7 +166,7 @@ export type Exercise = {
   equipmentRequired?: string
   difficultyLevel?: string
   isActive?: boolean
-  muscleGroups?: Array<{ id: string; name?: string; isPrimary: boolean }>
+  muscleGroups?: Array<{ id: string; name?: string; isPrimary: boolean; recoveryDays?: number }>
 }
 
 export type TrainingCourse = {
@@ -337,6 +338,7 @@ export type TrainingPlan = {
     id: string
     exerciseId: string
     exerciseName?: string
+    scheduledDate?: string | null
     sets?: number
     reps?: number
     durationMinutes?: number

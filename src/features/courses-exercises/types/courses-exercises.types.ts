@@ -42,12 +42,14 @@ export interface ExerciseQueryParams {
 
 export interface CreateMuscleGroupPayload {
   name: string
+  recoveryDays?: number
   description?: string
   imageUrl?: string
 }
 
 export interface UpdateMuscleGroupPayload {
   name?: string
+  recoveryDays?: number
   description?: string
   imageUrl?: string
 }

@@ -21,6 +21,7 @@ export interface UpdateTrainingPlanPayload {
 
 export interface PlanExercisePayload {
   exerciseId: string
+  scheduledDate: string
   sets?: number
   reps?: number
   durationMinutes?: number

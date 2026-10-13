@@ -417,6 +417,7 @@ describe('GymCategoriesPage', () => {
 
     const nameInput = screen.getByPlaceholderText('Ví dụ: Cơ ngực (Pectoralis), Cơ lưng xô (Latissimus)...')
     fireEvent.change(nameInput, { target: { value: 'Cơ vai (Deltoids)' } })
+    fireEvent.change(screen.getByLabelText('Số ngày hồi phục'), { target: { value: '3' } })
 
     vi.mocked(coursesExercisesService.createMuscleGroup).mockResolvedValueOnce({
       id: 'mg-2',
@@ -438,6 +439,7 @@ describe('GymCategoriesPage', () => {
     await waitFor(() => {
       expect(coursesExercisesService.createMuscleGroup).toHaveBeenCalledWith({
         name: 'Cơ vai (Deltoids)',
+        recoveryDays: 3,
         description: undefined,
         imageUrl: undefined,
       })

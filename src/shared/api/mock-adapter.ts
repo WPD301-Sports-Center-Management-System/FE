@@ -200,6 +200,7 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
       description: data.description || '',
       instructions: data.instructions || '',
       imageUrl: data.imageUrl || undefined,
+      recoveryDays: data.recoveryDays ?? 2,
       videoUrl: data.videoUrl || undefined,
       equipmentRequired: data.equipmentRequired || '',
       difficultyLevel: data.difficultyLevel || 'INTERMEDIATE',
@@ -264,6 +265,7 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
       if (data.name !== undefined) mg.name = data.name
       if (data.description !== undefined) mg.description = data.description
       if (data.imageUrl !== undefined) mg.imageUrl = data.imageUrl
+      if (data.recoveryDays !== undefined) mg.recoveryDays = data.recoveryDays
     }
     resData = mg
   } else if (url.startsWith('muscle-groups/') && method === 'get') {
