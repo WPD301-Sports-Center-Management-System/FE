@@ -9,7 +9,7 @@ import type {
   QuickBulkCreateSlotsInput,
 } from '../types/coach-slot-types'
 
-export function useCoachSlots(params: { coachId?: string; from?: string; to?: string }) {
+export function useCoachSlots(params: { coachId?: string; from?: string; to?: string; limit?: number }) {
   const { user } = useAuth()
   return useQuery({
     queryKey: [...coachSlotKeys.list(params), user?.id || 'anonymous'],

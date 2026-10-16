@@ -26,6 +26,7 @@ import { trainingPlansService } from '../services/training-plans.service'
 import {
   WORKOUT_PRESETS,
   findMatchingExercise,
+  getPresetIdForCourseName,
   type MemberLevel,
 } from '../utils/training-presets'
 import { Button } from '@/shared/components/ui/button'
@@ -49,7 +50,6 @@ interface ExerciseRow {
 }
 
 export function TrainingPlanBuilderPage() {
-  const preselectedMemberId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('memberId') : null
   const [members, setMembers] = useState<MemberSummary[]>([])
   const [packages, setPackages] = useState<Purchase[]>([])
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([])
@@ -77,6 +77,7 @@ export function TrainingPlanBuilderPage() {
     title: string
     memberName: string
     exerciseCount: number
+    isDraft?: boolean
   } | null>(null)
 
   const handleResetForm = () => {
@@ -102,33 +103,31 @@ export function TrainingPlanBuilderPage() {
       const usedIds = new Set<string>()
 
       preset.exercises.forEach((item) => {
-        let matched = findMatchingExercise(
-          item.candidateNames,
-          exList.filter((e) => !usedIds.has(e.id))
-        )
+        const availableCandidates = exList.filter((e) => !usedIds.has(e.id))
+        if (availableCandidates.length === 0) return
+
+        let matched = findMatchingExercise(item.candidateNames, availableCandidates)
         if (!matched) {
-          matched = exList.find((e) => !usedIds.has(e.id)) || exList[0]
+          matched = availableCandidates[0]
         }
         if (matched) {
           usedIds.add(matched.id)
+          const config = item.byLevel[level]
+          newRows.push({
+            exerciseId: matched.id,
+            name: matched.name,
+            scheduledDate: targetDate,
+            sets: config.sets,
+            reps: config.reps,
+            weight: config.weight,
+            rest: config.restSeconds,
+            roleName: item.roleName,
+            phase: item.phase,
+            rpe: config.rpe,
+            targetMuscle: item.targetMuscle,
+            instructions: config.instructions,
+          })
         }
-        const exerciseToUse = matched || exList[0]
-        const config = item.byLevel[level]
-
-        newRows.push({
-          exerciseId: exerciseToUse.id,
-          name: exerciseToUse.name,
-          scheduledDate: targetDate,
-          sets: config.sets,
-          reps: config.reps,
-          weight: config.weight,
-          rest: config.restSeconds,
-          roleName: item.roleName,
-          phase: item.phase,
-          rpe: config.rpe,
-          targetMuscle: item.targetMuscle,
-          instructions: config.instructions,
-        })
       })
 
       setExercises(newRows)
@@ -146,6 +145,91 @@ export function TrainingPlanBuilderPage() {
       }
     },
     []
+  )
+
+  // Nạp giáo án chuẩn từ Khóa học hoặc Mẫu tương ứng với gói tập PT
+  const handlePackageSelect = useCallback(
+    async (
+      packageId: string,
+      level: MemberLevel = memberLevel,
+      date: string = startDate,
+      pkgList: Purchase[] = packages,
+      exList: Exercise[] = availableExercises
+    ) => {
+      setSelectedPurchaseId(packageId)
+      if (!packageId) return
+
+      const pkg = pkgList.find((p) => p.id === packageId)
+      if (!pkg) return
+
+      const matchedPresetId = getPresetIdForCourseName(pkg.courseNameSnapshot)
+      setSelectedPresetId(matchedPresetId)
+
+      const levelLabel =
+        level === 'BEGINNER' ? 'Mới tập' : level === 'INTERMEDIATE' ? 'Tiêu chuẩn' : 'Nâng cao'
+
+      if (!pkg.courseId) {
+        applyPreset(matchedPresetId, level, exList, date, false)
+        setTitle(`Giáo án ${pkg.courseNameSnapshot || 'Huấn Luyện'} (${levelLabel})`)
+        return
+      }
+
+      setIsLoadingManagerSyllabus(true)
+      setErrorMessage(null)
+      try {
+        const course = await coursesExercisesService.getTrainingCourseById(pkg.courseId)
+        const syllabusList = course.courseExercisesCourseId || []
+
+        if (syllabusList.length > 0) {
+          const levelConfig = {
+            BEGINNER: { sets: 3, reps: 12, weight: '20.00', rest: 75, rpe: 'RPE 6.5 (An toàn)' },
+            INTERMEDIATE: { sets: 4, reps: 10, weight: '40.00', rest: 60, rpe: 'RPE 8 (Chừa 2 rep)' },
+            ADVANCED: { sets: 4, reps: 8, weight: '60.00', rest: 90, rpe: 'RPE 8.5 (Tạ nặng)' },
+          }[level]
+
+          const newRows: ExerciseRow[] = syllabusList.map((item, idx) => {
+            const ex = item.exercise
+            return {
+              exerciseId: item.exerciseId || ex?.id || '',
+              name: ex?.name || `Động tác #${idx + 1}`,
+              scheduledDate: date,
+              sets: levelConfig.sets,
+              reps: levelConfig.reps,
+              weight: levelConfig.weight,
+              rest: levelConfig.rest,
+              roleName: `0${idx + 1}. Bài tập chuẩn ${pkg.courseNameSnapshot || course.name}`,
+              rpe: levelConfig.rpe,
+              targetMuscle: ex?.muscleGroups?.find((g) => g.isPrimary)?.name || undefined,
+              instructions:
+                item.coachNote ||
+                ex?.instructions ||
+                'Thực hiện động tác có kiểm soát nhịp thở và góc chuyển động.',
+            }
+          })
+
+          setExercises(newRows)
+          setTitle(`Giáo án ${course.name || pkg.courseNameSnapshot} (${levelLabel})`)
+          if (course.objective) setGoal(course.objective)
+
+          setPresetNotice(
+            `👑 Đã tự động nạp giáo án chuẩn của gói "${pkg.courseNameSnapshot}" (${newRows.length} bài tập)!`
+          )
+          setTimeout(() => setPresetNotice(null), 4000)
+        } else {
+          // Fallback sang mẫu tương ứng nếu chưa có bài tập trong cơ sở dữ liệu
+          applyPreset(matchedPresetId, level, exList, date, false)
+          setTitle(`Giáo án ${pkg.courseNameSnapshot || 'Huấn Luyện'} (${levelLabel})`)
+          setPresetNotice(`Đã nạp giáo án chuẩn mẫu của gói "${pkg.courseNameSnapshot}"!`)
+          setTimeout(() => setPresetNotice(null), 4000)
+        }
+      } catch {
+        applyPreset(matchedPresetId, level, exList, date, false)
+        setTitle(`Giáo án ${pkg.courseNameSnapshot || 'Huấn Luyện'} (${levelLabel})`)
+      } finally {
+        setIsLoadingManagerSyllabus(false)
+      }
+    },
+    [packages, availableExercises, memberLevel, startDate, applyPreset]
   )
 
   const loadData = useCallback(async () => {
@@ -166,9 +250,13 @@ export function TrainingPlanBuilderPage() {
       setAvailableExercises(exList)
       setPackages(pkgs)
 
-      // Khởi tạo form sạch sẽ, không tự ý chọn mặc định học viên hay bài tập
+      // Khởi tạo form trống hoàn toàn, không tự ý nạp giáo án hay chọn member/gói tập
       setMemberId('')
       setSelectedPurchaseId('')
+      setExercises([])
+      setSelectedPresetId(null)
+      setTitle('')
+      setGoal('')
     } catch (err) {
       if (isAppApiError(err)) {
         setErrorMessage(err.message || 'Lỗi khi tải danh sách học viên và bài tập.')
@@ -184,81 +272,23 @@ export function TrainingPlanBuilderPage() {
     loadData()
   }, [loadData])
 
-  // Update selected purchase when member changes
+  // Khi chọn học viên: reset gói tập và giáo án để người dùng chọn gói tập
   const handleMemberChange = (newMemberId: string) => {
     setMemberId(newMemberId)
-    const memberPkg = packages.find(
-      (p) => p.memberId === newMemberId && (p.status === 'ACTIVE' || p.status === 'COMPLETED')
-    )
-    if (memberPkg) {
-      setSelectedPurchaseId(memberPkg.id)
-    } else {
-      setSelectedPurchaseId('')
-    }
+    setSelectedPurchaseId('')
+    setExercises([])
+    setSelectedPresetId(null)
+    setTitle('')
+    setGoal('')
   }
 
-  // Nạp giáo án chuẩn từ Khóa học do Manager thiết lập trong Database
+  // Nạp lại giáo án chuẩn từ Khóa học do Manager thiết lập trong Database
   const handleApplyManagerCourseSyllabus = async () => {
-    const selectedPkg = packages.find((p) => p.id === selectedPurchaseId)
-    if (!selectedPkg || !selectedPkg.courseId) {
-      setErrorMessage('Chưa xác định được khóa học của gói PT này để nạp giáo án chuẩn.')
+    if (!selectedPurchaseId) {
+      setErrorMessage('Chưa chọn gói PT để nạp giáo án chuẩn.')
       return
     }
-
-    setIsLoadingManagerSyllabus(true)
-    setErrorMessage(null)
-    try {
-      const course = await coursesExercisesService.getTrainingCourseById(selectedPkg.courseId)
-      const syllabusList = course.courseExercisesCourseId || []
-
-      if (syllabusList.length === 0) {
-        setPresetNotice(
-          `Khóa học "${course.name}" chưa có bài tập mẫu do Manager thiết lập. Bạn có thể sử dụng các mẫu chuẩn bên dưới.`
-        )
-        setTimeout(() => setPresetNotice(null), 5000)
-        return
-      }
-
-      // Map các bài tập chuẩn của Manager theo cấp độ học viên hiện tại
-      const newRows: ExerciseRow[] = syllabusList.map((item, idx) => {
-        const ex = item.exercise
-        const levelConfig = {
-          BEGINNER: { sets: 3, reps: 12, weight: '20.00', rest: 75, rpe: 'RPE 6.5 (An toàn)' },
-          INTERMEDIATE: { sets: 4, reps: 10, weight: '40.00', rest: 60, rpe: 'RPE 8 (Chừa 2 rep)' },
-          ADVANCED: { sets: 4, reps: 8, weight: '60.00', rest: 90, rpe: 'RPE 8.5 (Tạ nặng)' },
-        }[memberLevel]
-
-        return {
-          exerciseId: item.exerciseId || ex?.id || '',
-          name: ex?.name || `Động tác #${idx + 1}`,
-          scheduledDate: startDate,
-          sets: levelConfig.sets,
-          reps: levelConfig.reps,
-          weight: levelConfig.weight,
-          rest: levelConfig.rest,
-          roleName: `0${idx + 1}. Bài tập chuẩn Manager`,
-          rpe: levelConfig.rpe,
-          instructions: item.coachNote || 'Thực hiện động tác có kiểm soát nhịp thở và góc chuyển động.',
-        }
-      })
-
-      setExercises(newRows)
-      setTitle(`Giáo án ${course.name} (Chuẩn Trung Tâm)`)
-      if (course.objective) setGoal(course.objective)
-
-      setPresetNotice(
-        `👑 Đã nạp thành công ${newRows.length} bài tập chuẩn từ Khóa học "${course.name}" do Manager thiết lập!`
-      )
-      setTimeout(() => setPresetNotice(null), 5000)
-    } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Lỗi khi tải giáo án khóa học của Manager.')
-      } else {
-        setErrorMessage('Không thể kết nối đến máy chủ để lấy giáo án chuẩn.')
-      }
-    } finally {
-      setIsLoadingManagerSyllabus(false)
-    }
+    await handlePackageSelect(selectedPurchaseId)
   }
 
   const handleAddExerciseRow = () => {
@@ -302,21 +332,19 @@ export function TrainingPlanBuilderPage() {
 
   const handleLevelChange = (newLevel: MemberLevel) => {
     setMemberLevel(newLevel)
-    if (!selectedPresetId) return
-    const currentPreset = WORKOUT_PRESETS.find((p) => p.id === selectedPresetId)
-    if (!currentPreset) return
+    const baseConfigs = {
+      BEGINNER: { sets: 3, reps: 12, weight: '20.00', rest: 75, rpe: 'RPE 6.5 (An toàn)' },
+      INTERMEDIATE: { sets: 4, reps: 10, weight: '40.00', rest: 60, rpe: 'RPE 8 (Chừa 2 rep)' },
+      ADVANCED: { sets: 4, reps: 8, weight: '60.00', rest: 90, rpe: 'RPE 8.5 (Tạ nặng)' },
+    }[newLevel]
+
+    const currentPreset = selectedPresetId ? WORKOUT_PRESETS.find((p) => p.id === selectedPresetId) : null
 
     setExercises((prev) =>
       prev.map((row, idx) => {
-        const presetItem = currentPreset.exercises[idx]
+        const presetItem = currentPreset?.exercises[idx]
         if (!presetItem) {
-          // Tính tự động cho bài tập thêm thủ công
-          const base = {
-            BEGINNER: { sets: 3, reps: 12, weight: '20.00', rest: 75, rpe: 'RPE 6.5 (An toàn)' },
-            INTERMEDIATE: { sets: 4, reps: 10, weight: '40.00', rest: 60, rpe: 'RPE 8 (Chừa 2 rep)' },
-            ADVANCED: { sets: 4, reps: 8, weight: '60.00', rest: 90, rpe: 'RPE 8.5 (Tạ nặng)' },
-          }[newLevel]
-          return { ...row, ...base }
+          return { ...row, ...baseConfigs }
         }
         const cfg = presetItem.byLevel[newLevel]
         return {
@@ -326,10 +354,22 @@ export function TrainingPlanBuilderPage() {
           weight: cfg.weight,
           rest: cfg.restSeconds,
           rpe: cfg.rpe,
-          instructions: cfg.instructions,
+          instructions: cfg.instructions || row.instructions,
         }
       })
     )
+
+    const levelLabel =
+      newLevel === 'BEGINNER' ? 'Mới tập' : newLevel === 'INTERMEDIATE' ? 'Tiêu chuẩn' : 'Nâng cao'
+    if (selectedPackage?.courseNameSnapshot) {
+      setTitle((prev) => {
+        if (!prev || prev.startsWith('Giáo án ')) {
+          return `Giáo án ${selectedPackage.courseNameSnapshot} (${levelLabel})`
+        }
+        return prev
+      })
+    }
+
     setPresetNotice(
       `Đã chuyển thông số bài tập sang cấp độ: ${
         newLevel === 'BEGINNER' ? 'Mới tập (Beginner)' : newLevel === 'INTERMEDIATE' ? 'Trung bình' : 'Nâng cao'
@@ -338,26 +378,55 @@ export function TrainingPlanBuilderPage() {
     setTimeout(() => setPresetNotice(null), 3000)
   }
 
-  const handleSavePlan = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSavePlan = async (e?: React.FormEvent, shouldAssign = true) => {
+    if (e) e.preventDefault()
+
+    const scrollToTop = () => {
+      try {
+        if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        }
+        if (typeof document !== 'undefined') {
+          const scrollContainers = [
+            document.documentElement,
+            document.body,
+            document.querySelector('main'),
+          ]
+          scrollContainers.forEach((el) => {
+            if (el && typeof el.scrollTo === 'function') el.scrollTo({ top: 0, behavior: 'smooth' })
+          })
+        }
+      } catch {
+        /* Ignore in test environments lacking scrollTo */
+      }
+    }
+
+    const notifyError = (msg: string) => {
+      setErrorMessage(msg)
+      setSuccessNotice(null)
+      scrollToTop()
+      setTimeout(() => {
+        setErrorMessage((prev) => (prev === msg ? null : prev))
+      }, 10000)
+    }
 
     if (!title.trim()) {
-      setErrorMessage('Vui lòng nhập tên giáo án huấn luyện.')
+      notifyError('Vui lòng nhập tên giáo án huấn luyện.')
       return
     }
 
     if (!memberId) {
-      setErrorMessage('Vui lòng chọn học viên nhận giáo án.')
+      notifyError('Vui lòng chọn học viên nhận giáo án.')
       return
     }
 
     if (!selectedPurchaseId) {
-      setErrorMessage('Vui lòng chọn gói tập PT còn hiệu lực của học viên để gán giáo án.')
+      notifyError('Vui lòng chọn gói tập PT còn hiệu lực của học viên để gán giáo án.')
       return
     }
 
     if (exercises.length === 0) {
-      setErrorMessage('Giáo án phải có ít nhất 1 bài tập. Vui lòng bấm nạp giáo án mẫu hoặc thêm động tác.')
+      notifyError('Giáo án phải có ít nhất 1 bài tập. Vui lòng bấm nạp giáo án mẫu hoặc thêm động tác.')
       return
     }
 
@@ -369,7 +438,7 @@ export function TrainingPlanBuilderPage() {
           (endDate && item.scheduledDate > endDate)
       )
     ) {
-      setErrorMessage('Ngày của mỗi bài tập phải nằm trong thời gian giáo án.')
+      notifyError('Ngày của mỗi bài tập phải nằm trong thời gian giáo án.')
       return
     }
 
@@ -378,7 +447,7 @@ export function TrainingPlanBuilderPage() {
     for (const item of exercises) {
       const key = `${item.scheduledDate}_${item.exerciseId}`
       if (duplicateMap.has(key)) {
-        setErrorMessage(
+        notifyError(
           `Bài tập "${item.name}" bị trùng lặp trong ngày ${item.scheduledDate}. Mỗi bài tập chỉ xuất hiện tối đa 1 lần trong cùng một ngày.`
         )
         return
@@ -417,8 +486,10 @@ export function TrainingPlanBuilderPage() {
         })
       }
 
-      // Step 3: Assign the plan
-      await trainingPlansService.assignTrainingPlan(draftPlan.id)
+      // Step 3: Assign the plan if requested
+      if (shouldAssign) {
+        await trainingPlansService.assignTrainingPlan(draftPlan.id)
+      }
       draftId = null
 
       // Lưu lại thông tin để hiển thị thông báo chi tiết cho HLV
@@ -441,18 +512,11 @@ export function TrainingPlanBuilderPage() {
         title: successTitle,
         memberName: assignedMember?.fullName || (assignedMember as any)?.user?.fullName || 'học viên',
         exerciseCount: totalExercises,
+        isDraft: !shouldAssign,
       })
 
       // Cuộn mượt lên đầu trang
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      const scrollContainers = [
-        document.documentElement,
-        document.body,
-        document.querySelector('main'),
-      ]
-      scrollContainers.forEach((el) => {
-        if (el) el.scrollTo({ top: 0, behavior: 'smooth' })
-      })
+      scrollToTop()
 
       // Tự động đóng thông báo sau 8 giây
       setTimeout(() => {
@@ -466,11 +530,11 @@ export function TrainingPlanBuilderPage() {
           /* Keep the original error visible. */
         }
       }
+      let errText = 'Không thể kết nối đến máy chủ khi tạo giáo án.'
       if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Lỗi khi lưu và giao giáo án.')
-      } else {
-        setErrorMessage('Không thể kết nối đến máy chủ khi tạo giáo án.')
+        errText = err.message || (shouldAssign ? 'Lỗi khi lưu và giao giáo án.' : 'Lỗi khi lưu bản nháp giáo án.')
       }
+      notifyError(errText)
     } finally {
       setIsSubmitting(false)
     }
@@ -499,14 +563,20 @@ export function TrainingPlanBuilderPage() {
             </div>
             <div className="flex-1 space-y-1">
               <h4 className="text-sm font-bold text-text-primary flex items-center gap-1.5">
-                <span>Lưu & Giao Giáo Án Thành Công!</span>
+                <span>{successNotice.isDraft ? 'Lưu Bản Nháp Thành Công!' : 'Lưu & Giao Giáo Án Thành Công!'}</span>
                 <span className="text-base">🎉</span>
               </h4>
               <p className="text-xs text-text-muted leading-relaxed">
-                Đã giao giáo án <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">"{successNotice.title}"</strong> ({successNotice.exerciseCount} động tác) cho học viên <strong className="text-text-primary font-semibold">{successNotice.memberName}</strong>.
+                {successNotice.isDraft ? (
+                  <>Đã lưu bản nháp giáo án <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">"{successNotice.title}"</strong> ({successNotice.exerciseCount} động tác) cho học viên <strong className="text-text-primary font-semibold">{successNotice.memberName}</strong>.</>
+                ) : (
+                  <>Đã giao giáo án <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">"{successNotice.title}"</strong> ({successNotice.exerciseCount} động tác) cho học viên <strong className="text-text-primary font-semibold">{successNotice.memberName}</strong>.</>
+                )}
               </p>
               <p className="text-[11px] text-text-muted/80 pt-0.5">
-                Hội viên đã có thể xem lịch tập và bài tập trên ứng dụng di động. Form đã được làm mới sạch sẽ sẵn sàng tạo giáo án tiếp theo.
+                {successNotice.isDraft
+                  ? 'Giáo án đã được lưu ở trạng thái Bản nháp. HLV có thể tiếp tục chỉnh sửa trước khi giao cho học viên.'
+                  : 'Hội viên đã có thể xem lịch tập và bài tập trên ứng dụng di động. Form đã được làm mới sạch sẽ sẵn sàng tạo giáo án tiếp theo.'}
               </p>
             </div>
             <button
@@ -514,6 +584,37 @@ export function TrainingPlanBuilderPage() {
               onClick={() => setSuccessNotice(null)}
               className="text-text-muted hover:text-text-primary p-1 rounded-lg hover:bg-bg-surface-muted transition-colors cursor-pointer"
               title="Đóng thông báo"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Error Notification Toast */}
+      {errorMessage && (
+        <div className="fixed top-6 right-6 z-50 max-w-md w-full animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className="rounded-2xl border-2 border-rose-500 bg-bg-surface p-4.5 shadow-2xl ring-4 ring-rose-500/20 flex items-start gap-3.5">
+            <div className="rounded-full bg-rose-500/15 p-2 shrink-0">
+              <AlertTriangle className="h-6 w-6 text-rose-600 dark:text-rose-400" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <h4 className="text-sm font-bold text-text-primary flex items-center gap-1.5">
+                <span>Không Thể Lưu Giáo Án</span>
+                <span className="text-base">⚠️</span>
+              </h4>
+              <p className="text-xs text-rose-600 dark:text-rose-400 font-medium leading-relaxed">
+                Chi tiết: {errorMessage}
+              </p>
+              <p className="text-[11px] text-text-muted/80 pt-0.5">
+                Vui lòng kiểm tra lại thông tin học viên, bài tập và lịch phân bổ trước khi thử lại.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setErrorMessage(null)}
+              className="text-text-muted hover:text-text-primary p-1 rounded-lg hover:bg-bg-surface-muted transition-colors cursor-pointer"
+              title="Đóng thông báo lỗi"
             >
               <X className="h-4 w-4" />
             </button>
@@ -559,9 +660,19 @@ export function TrainingPlanBuilderPage() {
 
       {/* Notifications */}
       {errorMessage && (
-        <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 text-xs text-danger flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-danger" />
-          <span>{errorMessage}</span>
+        <div className="rounded-2xl border border-danger/40 bg-danger/10 p-4 text-xs text-danger flex items-center justify-between gap-3 shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-danger" />
+            <span className="font-semibold">{errorMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setErrorMessage(null)}
+            className="text-danger hover:opacity-75 cursor-pointer p-1 rounded-lg hover:bg-danger/10 transition-colors"
+            title="Đóng thông báo lỗi"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
@@ -577,9 +688,11 @@ export function TrainingPlanBuilderPage() {
           <div className="flex items-start gap-2.5">
             <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
             <div className="space-y-0.5">
-              <p className="font-semibold text-sm">Đã lưu bài tập và giao giáo án thành công!</p>
+              <p className="font-semibold text-sm">
+                {successNotice.isDraft ? 'Đã lưu bản nháp giáo án thành công!' : 'Đã lưu bài tập và giao giáo án thành công!'}
+              </p>
               <p className="text-xs opacity-90">
-                Giáo án <strong className="underline">"{successNotice.title}"</strong> ({successNotice.exerciseCount} bài tập) đã được giao thành công cho học viên <strong>{successNotice.memberName}</strong>. Toàn bộ form đã được xóa sạch để sẵn sàng tạo giáo án mới.
+                Giáo án <strong className="underline">"{successNotice.title}"</strong> ({successNotice.exerciseCount} bài tập) {successNotice.isDraft ? 'đã được lưu bản nháp' : 'đã được giao thành công'} cho học viên <strong>{successNotice.memberName}</strong>. Form đã được làm mới sạch sẽ.
               </p>
             </div>
           </div>
@@ -603,7 +716,7 @@ export function TrainingPlanBuilderPage() {
           Bạn hiện chưa có học viên nào trong danh sách phụ trách.
         </div>
       ) : (
-        <form onSubmit={handleSavePlan} noValidate className="space-y-6">
+        <form onSubmit={(e) => handleSavePlan(e, true)} noValidate className="space-y-6">
           {/* SECTION 1: Thông tin cơ bản giáo án */}
           <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
             <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
@@ -615,10 +728,9 @@ export function TrainingPlanBuilderPage() {
               <Input
                 label="Tên giáo án"
                 required
-                placeholder="Ví dụ: Giáo án Lưng & Bắp tay trước (Kéo - Hypertrophy)"
+                placeholder="Ví dụ: Giáo án Lưng & Bắp tay trước (Kéo - Hypertrophy)..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ví dụ: Giáo án Tăng Cơ Toàn Thân..."
               />
               <Select
                 label="Giao cho Học viên"
@@ -641,7 +753,7 @@ export function TrainingPlanBuilderPage() {
                   label="Gói tập PT liên kết"
                   required
                   value={selectedPurchaseId}
-                  onChange={(e) => setSelectedPurchaseId(e.target.value)}
+                  onChange={(e) => handlePackageSelect(e.target.value)}
                   options={
                     eligiblePackagesForMember.length > 0
                       ? [
@@ -682,7 +794,38 @@ export function TrainingPlanBuilderPage() {
             />
           </div>
 
-          {/* SECTION 2: Kế Thừa Giáo Án Chuẩn Manager & Cấp Độ Học Viên */}
+          {/* Chưa chọn member hoặc chưa chọn gói tập -> Không hiện giáo án */}
+          {!memberId ? (
+            <div className="rounded-2xl border border-dashed border-border-subtle bg-bg-surface p-10 text-center space-y-3 shadow-xs">
+              <div className="mx-auto w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                <Dumbbell className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-text-primary">
+                  Vui lòng chọn học viên nhận giáo án
+                </h3>
+                <p className="text-xs text-text-muted max-w-md mx-auto">
+                  Chọn học viên ở trên để xem danh sách các gói tập PT khả dụng của học viên.
+                </p>
+              </div>
+            </div>
+          ) : !selectedPurchaseId ? (
+            <div className="rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-10 text-center space-y-3 shadow-xs">
+              <div className="mx-auto w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center text-primary">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-text-primary">
+                  Vui lòng chọn gói tập PT liên kết của học viên
+                </h3>
+                <p className="text-xs text-text-muted max-w-md mx-auto">
+                  Mỗi gói tập sẽ có giáo án và mục tiêu riêng biệt. Chọn gói PT ở trên để hệ thống tự động hiển thị giáo án và bài tập tương ứng.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* SECTION 2: Kế Thừa Giáo Án Chuẩn Manager & Cấp Độ Học Viên */}
           <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-bg-surface to-bg-surface p-6 space-y-5 shadow-sm">
             {/* Banner liên kết Khóa học của Manager */}
             {selectedPackage?.courseNameSnapshot && (
@@ -691,11 +834,14 @@ export function TrainingPlanBuilderPage() {
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <span className="font-bold text-xs text-primary uppercase tracking-wide">
-                      Khóa học của Manager: {selectedPackage.courseNameSnapshot}
+                      Gói tập PT: {selectedPackage.courseNameSnapshot}
+                    </span>
+                    <span className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-medium">
+                      Đang áp dụng giáo án của gói này
                     </span>
                   </div>
                   <p className="text-[11px] text-text-muted">
-                    Học viên đã đăng ký gói PT theo khóa này. Bạn có thể nạp ngay toàn bộ bài tập và hướng dẫn kỹ thuật chuẩn do Manager ban hành.
+                    Giáo án và danh sách động tác bên dưới đã được tự động đồng bộ theo gói tập "{selectedPackage.courseNameSnapshot}". Bạn có thể tùy chỉnh lại số hiệp, tạ hoặc thêm/bớt bài tập nếu cần.
                   </p>
                 </div>
 
@@ -711,7 +857,7 @@ export function TrainingPlanBuilderPage() {
                   <span>
                     {isLoadingManagerSyllabus
                       ? 'Đang tải giáo án...'
-                      : `Nạp giáo án khóa ${selectedPackage.courseNameSnapshot}`}
+                      : `Nạp lại giáo án ${selectedPackage.courseNameSnapshot}`}
                   </span>
                 </Button>
               </div>
@@ -808,23 +954,32 @@ export function TrainingPlanBuilderPage() {
             )}
 
             {/* Presets Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {WORKOUT_PRESETS.map((preset) => {
                 const isSelected = preset.id === selectedPresetId
+                const isMatchedPackage =
+                  selectedPackage &&
+                  getPresetIdForCourseName(selectedPackage.courseNameSnapshot) === preset.id
+
                 return (
                   <div
                     key={preset.id}
                     onClick={() => handleSelectPreset(preset.id)}
-                    className={`rounded-xl border p-4 cursor-pointer transition-all flex flex-col justify-between ${
+                    className={`rounded-xl border p-4 cursor-pointer transition-all flex flex-col justify-between relative ${
                       isSelected
                         ? 'border-primary bg-primary/10 shadow-sm ring-1 ring-primary'
                         : 'border-border-subtle bg-bg-surface hover:border-primary/50 hover:bg-bg-surface-muted/30'
                     }`}
                   >
+                    {isMatchedPackage && (
+                      <span className="absolute -top-2.5 right-3 bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                        Gói hiện tại
+                      </span>
+                    )}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-xs text-text-primary">{preset.name}</span>
-                        {isSelected && <Check className="h-4 w-4 text-primary" />}
+                        {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
                       </div>
                       <p className="text-[11px] text-text-muted line-clamp-2">{preset.description}</p>
                     </div>
@@ -1106,10 +1261,24 @@ export function TrainingPlanBuilderPage() {
             </div>
           )}
 
+
+          {/* Bottom Error Notification */}
           {errorMessage && (
-            <div className="rounded-xl border border-danger/30 bg-danger/10 p-3.5 text-xs text-danger flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 shrink-0 text-danger" />
-              <span className="font-medium">{errorMessage}</span>
+            <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-3.5 text-xs text-rose-700 dark:text-rose-300 flex items-center justify-between gap-2 shadow-sm animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                <span className="font-semibold">
+                  Lỗi: {errorMessage}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setErrorMessage(null)}
+                className="text-rose-700 dark:text-rose-300 hover:opacity-75 cursor-pointer p-1"
+                title="Đóng thông báo lỗi"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
           )}
 
@@ -1118,7 +1287,7 @@ export function TrainingPlanBuilderPage() {
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span className="font-semibold">
-                  ✅ Đã lưu giáo án "{successNotice.title}" thành công cho {successNotice.memberName}! Form đã được làm mới sạch sẽ.
+                  ✅ {successNotice.isDraft ? `Đã lưu bản nháp "${successNotice.title}"` : `Đã lưu giáo án "${successNotice.title}"`} thành công cho {successNotice.memberName}! Form đã được làm mới sạch sẽ.
                 </span>
               </div>
               <button
@@ -1153,6 +1322,16 @@ export function TrainingPlanBuilderPage() {
                 </Button>
               )}
               <Button
+                type="button"
+                variant="outline"
+                disabled={isSubmitting}
+                onClick={(e) => handleSavePlan(e, false)}
+                className="px-5 shadow-sm cursor-pointer text-xs font-semibold py-2.5"
+                title="Lưu giáo án ở trạng thái bản nháp (DRAFT) để tiếp tục cập nhật sau"
+              >
+                Lưu Bản Nháp
+              </Button>
+              <Button
                 type="submit"
                 variant="primary"
                 disabled={isSubmitting}
@@ -1164,7 +1343,9 @@ export function TrainingPlanBuilderPage() {
             </div>
           </div>
         </div>
-      </form>
+      </>
+    )}
+  </form>
     )}
   </div>
 )

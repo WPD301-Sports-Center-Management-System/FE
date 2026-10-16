@@ -8,7 +8,24 @@ export function mapSlotsToCalendarEvents(
 ): CalendarEvent[] {
   return slots
     .filter((slot) => {
-      if (filter === 'ALL') return true
+      const hasRelatedBooking = bookings.some(
+        (b) => b.slotId === slot.id && b.status !== 'CANCELLED_EARLY' && b.status !== 'CANCELLED_LATE'
+      )
+      const isCustomerBooked =
+        slot.status === 'BOOKED' ||
+        slot.status === 'COMPLETED' ||
+        hasRelatedBooking ||
+        Boolean(slot.bookingId || (slot as any).booking?.id || slot.memberName)
+      const isBlocked = slot.status === 'BLOCKED'
+
+      if (filter === 'ALL') {
+        // Trên Thời khóa biểu: Chỉ xuất hiện khi có học viên đặt lịch (hoặc đã hoàn thành, hoặc ca bị khóa).
+        // Các slot OPEN (chưa có khách đặt) không hiển thị thành card trên thời khóa biểu.
+        return isCustomerBooked || isBlocked
+      }
+      if (filter === 'BOOKED') {
+        return isCustomerBooked
+      }
       return slot.status === filter
     })
     .map((slot) => {

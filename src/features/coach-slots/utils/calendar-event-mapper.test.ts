@@ -65,9 +65,11 @@ describe('calendar-event-mapper', () => {
     },
   ]
 
-  it('correctly maps slots to CalendarEvent with JavaScript Date objects', () => {
+  it('correctly maps slots to CalendarEvent with JavaScript Date objects on timetable', () => {
     const events = mapSlotsToCalendarEvents(mockSlots, mockBookings, 'ALL')
-    expect(events).toHaveLength(5)
+    // On the timetable (ALL view): only booked/completed sessions and blocked times appear as cards (slt-2, slt-3, slt-4).
+    // Unbooked OPEN (slt-1) and CANCELLED (slt-5) do not clutter the timetable.
+    expect(events).toHaveLength(3)
 
     const bookedEvent = events.find((e) => e.id === 'slt-2')
     expect(bookedEvent).toBeDefined()
@@ -78,24 +80,25 @@ describe('calendar-event-mapper', () => {
     expect(bookedEvent?.start).toBeInstanceOf(Date)
     expect(bookedEvent?.end).toBeInstanceOf(Date)
 
-    const openEvent = events.find((e) => e.id === 'slt-1')
-    expect(openEvent?.title).toBe('Khung giờ trống')
-    expect(openEvent?.status).toBe('OPEN')
-    expect(openEvent?.start).toBeInstanceOf(Date)
-
     const blockedEvent = events.find((e) => e.id === 'slt-3')
     expect(blockedEvent?.title).toBe('Họp ban huấn luyện')
     expect(blockedEvent?.status).toBe('BLOCKED')
+
+    const completedEvent = events.find((e) => e.id === 'slt-4')
+    expect(completedEvent).toBeDefined()
+    expect(completedEvent?.status).toBe('COMPLETED')
   })
 
   it('filters events accurately by status', () => {
     const openOnly = mapSlotsToCalendarEvents(mockSlots, mockBookings, 'OPEN')
     expect(openOnly).toHaveLength(1)
     expect(openOnly[0].id).toBe('slt-1')
+    expect(openOnly[0].title).toBe('Khung giờ trống')
+    expect(openOnly[0].status).toBe('OPEN')
 
     const bookedOnly = mapSlotsToCalendarEvents(mockSlots, mockBookings, 'BOOKED')
-    expect(bookedOnly).toHaveLength(1)
-    expect(bookedOnly[0].id).toBe('slt-2')
+    expect(bookedOnly).toHaveLength(2)
+    expect(bookedOnly.map((e) => e.id)).toEqual(['slt-2', 'slt-4'])
 
     const blockedOnly = mapSlotsToCalendarEvents(mockSlots, mockBookings, 'BLOCKED')
     expect(blockedOnly).toHaveLength(1)

@@ -658,6 +658,211 @@ export const WORKOUT_PRESETS: WorkoutPreset[] = [
       },
     ],
   },
+  {
+    id: 'full_body_foundation',
+    name: 'Giáo án Toàn Thân Nền Tảng (Full Body Foundation)',
+    split: 'FULL_BODY',
+    targetMuscleGroup: 'Toàn Thân (Full Body Compound)',
+    badgeColor: 'bg-teal-100 text-teal-800 border-teal-200',
+    description: 'Phát triển thể lực toàn diện, kích hoạt cơ bắp đa khớp và xây dựng form chuẩn căn bản',
+    defaultTitle: 'Giáo án Full Body Foundation (Toàn Thân Nền Tảng)',
+    defaultGoal: 'Củng cố kỹ thuật các chuyển động đa khớp chính, tăng sức bền và thăng bằng cơ bắp',
+    recoveryDays: 2,
+    exercises: [
+      {
+        candidateNames: ['Burpee', 'Push Up', 'Plank'],
+        roleName: '01. Khởi động kích hoạt toàn thân (Activation)',
+        phase: 'ACTIVATION',
+        targetMuscle: 'Toàn thân & Tim mạch',
+        byLevel: {
+          BEGINNER: {
+            sets: 2,
+            reps: 8,
+            rpe: 'RPE 6 (Khởi động)',
+            weight: '0.00',
+            restSeconds: 45,
+            instructions: 'Burpee nhịp nhàng, làm nóng khớp và tăng nhẹ nhịp tim.',
+          },
+          INTERMEDIATE: {
+            sets: 2,
+            reps: 12,
+            rpe: 'RPE 6.5',
+            weight: '0.00',
+            restSeconds: 45,
+            instructions: 'Bật nhảy dứt khoát, kiểm soát tiếp đất êm ái.',
+          },
+          ADVANCED: {
+            sets: 2,
+            reps: 15,
+            rpe: 'RPE 7',
+            weight: '0.00',
+            restSeconds: 45,
+            instructions: 'Tốc độ cao kết hợp hít thở đều, sẵn sàng cho bài compound.',
+          },
+        },
+      },
+      {
+        candidateNames: ['Squat', 'Leg Press', 'Lunge'],
+        roleName: '02. Heavy Compound thân dưới (Squat)',
+        phase: 'HEAVY_COMPOUND',
+        targetMuscle: 'Đùi trước, Mông & Đùi sau',
+        byLevel: {
+          BEGINNER: {
+            sets: 3,
+            reps: 10,
+            rpe: 'RPE 7 (Phom chuẩn)',
+            weight: '30.00',
+            restSeconds: 90,
+            instructions: 'Hạ đùi song song mặt sàn, giữ lưng thẳng, đầu gối mở theo mũi chân.',
+          },
+          INTERMEDIATE: {
+            sets: 4,
+            reps: 8,
+            rpe: 'RPE 8 (Chừa 2 rep)',
+            weight: '60.00',
+            restSeconds: 105,
+            instructions: 'Gồng core vững vàng, đạp gót chân dứt khoát.',
+          },
+          ADVANCED: {
+            sets: 4,
+            reps: 6,
+            rpe: 'RPE 8.5 (Tạ nặng)',
+            weight: '85.00',
+            restSeconds: 120,
+            instructions: 'Gánh tạ nặng đúng biên độ, giữ đai lưng an toàn.',
+          },
+        },
+      },
+      {
+        candidateNames: ['Bench Press', 'Incline Press', 'Push Up'],
+        roleName: '03. Heavy Compound đẩy thân trên (Bench Press)',
+        phase: 'HYPERTROPHY',
+        targetMuscle: 'Cơ Ngực & Tay sau',
+        byLevel: {
+          BEGINNER: {
+            sets: 3,
+            reps: 10,
+            rpe: 'RPE 7',
+            weight: '25.00',
+            restSeconds: 75,
+            instructions: 'Hạ thanh đòn ngang ngực, đẩy đều lực hai tay.',
+          },
+          INTERMEDIATE: {
+            sets: 4,
+            reps: 8,
+            rpe: 'RPE 8',
+            weight: '50.00',
+            restSeconds: 90,
+            instructions: 'Kiểm soát nhịp hạ 2 giây, siết ngực khi đẩy lên.',
+          },
+          ADVANCED: {
+            sets: 4,
+            reps: 6,
+            rpe: 'RPE 8.5',
+            weight: '70.00',
+            restSeconds: 105,
+            instructions: 'Đẩy tạ dứt khoát, cố định bả vai áp sát ghế.',
+          },
+        },
+      },
+      {
+        candidateNames: ['Lat Pulldown', 'Pull Up', 'Seated Row'],
+        roleName: '04. Heavy Compound kéo thân trên (Lat Pulldown)',
+        phase: 'UNILATERAL',
+        targetMuscle: 'Cơ Lưng xô & Tay trước',
+        byLevel: {
+          BEGINNER: {
+            sets: 3,
+            reps: 10,
+            rpe: 'RPE 7',
+            weight: '25.00',
+            restSeconds: 60,
+            instructions: 'Kéo thanh bar về trước ngực trên, siết chặt cơ xô.',
+          },
+          INTERMEDIATE: {
+            sets: 3,
+            reps: 10,
+            rpe: 'RPE 8',
+            weight: '45.00',
+            restSeconds: 75,
+            instructions: 'Mở ngực, không đung đưa thân người khi kéo.',
+          },
+          ADVANCED: {
+            sets: 4,
+            reps: 8,
+            rpe: 'RPE 8.5',
+            weight: '60.00',
+            restSeconds: 90,
+            instructions: 'Tạ nặng kiểm soát nhịp nhả tạ 2s cảm nhận giãn xô.',
+          },
+        },
+      },
+      {
+        candidateNames: ['Shoulder Press', 'Chest Fly', 'Bicep Curl'],
+        roleName: '05. Sức mạnh vai & Tay (Shoulder Press)',
+        phase: 'ACCESSORY',
+        targetMuscle: 'Vai trước/giữa & Thân trên',
+        byLevel: {
+          BEGINNER: {
+            sets: 3,
+            reps: 10,
+            rpe: 'RPE 7',
+            weight: '15.00',
+            restSeconds: 60,
+            instructions: 'Đẩy tạ đứng thẳng hướng trần nhà, gồng chắc bụng.',
+          },
+          INTERMEDIATE: {
+            sets: 3,
+            reps: 10,
+            rpe: 'RPE 8',
+            weight: '25.00',
+            restSeconds: 60,
+            instructions: 'Đẩy tạ nhịp nhàng, hạ tạ ngang tai.',
+          },
+          ADVANCED: {
+            sets: 4,
+            reps: 8,
+            rpe: 'RPE 8.5',
+            weight: '35.00',
+            restSeconds: 75,
+            instructions: 'Đẩy tạ có tải lớn, siết cơ vai ở đỉnh.',
+          },
+        },
+      },
+      {
+        candidateNames: ['Plank', 'Passive Lat Hang & Foam Roll', 'Push Up'],
+        roleName: '06. Khóa Core & Hạ nhiệt hồi phục (Plank)',
+        phase: 'COOL_DOWN',
+        targetMuscle: 'Cơ bụng toàn diện (Core)',
+        byLevel: {
+          BEGINNER: {
+            sets: 2,
+            reps: 30,
+            rpe: 'RPE 6 (Giữ 30s)',
+            weight: '0.00',
+            restSeconds: 45,
+            instructions: 'Plank gồng chặt bụng 30s, sau đó thả lỏng kéo giãn cột sống.',
+          },
+          INTERMEDIATE: {
+            sets: 2,
+            reps: 45,
+            rpe: 'RPE 7 (Giữ 45s)',
+            weight: '0.00',
+            restSeconds: 45,
+            instructions: 'Plank gồng 45s, giữ thẳng từ gót chân đến đầu.',
+          },
+          ADVANCED: {
+            sets: 2,
+            reps: 60,
+            rpe: 'RPE 8 (Giữ 60s)',
+            weight: '0.00',
+            restSeconds: 45,
+            instructions: 'Plank siết core 60s, kéo giãn cơ toàn thân hoàn tất buổi tập.',
+          },
+        },
+      },
+    ],
+  },
 ]
 
 /**
@@ -682,4 +887,25 @@ export function findMatchingExercise(
     if (partial) return partial
   }
   return undefined
+}
+
+/**
+ * Ánh xạ tên gói tập / khóa học sang Preset ID tương ứng
+ */
+export function getPresetIdForCourseName(courseName?: string | null): string {
+  if (!courseName) return 'full_body_foundation'
+  const lower = courseName.toLowerCase()
+  if (lower.includes('full body') || lower.includes('toàn thân') || lower.includes('foundation')) {
+    return 'full_body_foundation'
+  }
+  if (lower.includes('back') || lower.includes('lưng') || lower.includes('posture') || lower.includes('cột sống')) {
+    return 'pull_day_hypertrophy'
+  }
+  if (lower.includes('chest') || lower.includes('ngực') || lower.includes('push') || lower.includes('strength')) {
+    return 'push_day_strength'
+  }
+  if (lower.includes('leg') || lower.includes('chân') || lower.includes('lower') || lower.includes('đùi') || lower.includes('mông')) {
+    return 'leg_day_power'
+  }
+  return 'full_body_foundation'
 }

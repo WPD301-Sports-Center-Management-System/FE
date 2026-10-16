@@ -37,7 +37,7 @@ export const coachSlotService = {
       cleanParams.status = params.status
     }
     if (params?.page) cleanParams.page = params.page
-    if (params?.limit) cleanParams.limit = params.limit
+    cleanParams.limit = params?.limit ?? 500
 
     const res = await apiClient.get<any>('/coach-slots', { params: cleanParams })
     const rawItems = res?.data?.items || res?.data || (Array.isArray(res) ? res : [])

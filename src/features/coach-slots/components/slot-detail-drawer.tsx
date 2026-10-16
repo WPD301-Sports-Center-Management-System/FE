@@ -18,8 +18,6 @@ import {
   ShieldAlert,
   Dumbbell,
   CheckCircle2,
-  Sparkles,
-  MapPin,
   Info,
 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
@@ -453,7 +451,7 @@ export function SlotDetailDrawer({
                 </span>
                 <div className="space-y-2">
                   <Button
-                    variant="default"
+                    variant="primary"
                     className="w-full justify-between bg-primary hover:bg-primary-hover text-white text-xs font-semibold py-2.5 shadow-sm"
                     onClick={() => handleNavigate('/coach/bookings')}
                   >

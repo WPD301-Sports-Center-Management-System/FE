@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { Views, type View } from 'react-big-calendar'
-import { addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek } from 'date-fns'
+import { addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns'
 import { Plus, Layers, AlertTriangle, RefreshCw, Sparkles } from 'lucide-react'
 import { coachesService } from '@/features/coaches/services/coaches.service'
 import { Button } from '@/shared/components/ui/button'
@@ -83,7 +83,9 @@ export function CoachSlotsPage() {
       const e = endOfWeek(date, { weekStartsOn: 1 })
       return { from: s.toISOString(), to: e.toISOString() }
     }
-    return { from: date.toISOString(), to: date.toISOString() }
+    const s = startOfDay(date)
+    const e = endOfDay(date)
+    return { from: s.toISOString(), to: e.toISOString() }
   }, [date, view])
 
   // Queries & Mutations
@@ -95,6 +97,7 @@ export function CoachSlotsPage() {
   } = useCoachSlots({
     from: visibleRange.from,
     to: visibleRange.to,
+    limit: 500,
   })
 
   const createSlotMutation = useCreateSlot()
@@ -276,6 +279,7 @@ export function CoachSlotsPage() {
       <div className="space-y-4">
         <CoachScheduleCalendar
           events={calendarEvents}
+          rawSlots={slots}
           date={date}
           view={view}
           onNavigate={setDate}

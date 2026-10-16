@@ -128,10 +128,10 @@ export function BookingCalendarPage() {
     setErrorMessage(null)
     try {
       const results = await Promise.allSettled([
-        ptBookingsService.getBookings({ limit: 100 }),
-        coachSlotService.getSlots({ limit: 100 }),
-        membersService.getMembers({ limit: 100 }),
-        ptPurchasesService.getPurchases({ status: 'ACTIVE', limit: 100 }),
+        ptBookingsService.getBookings({ limit: 500 }),
+        coachSlotService.getSlots({ limit: 500 }),
+        membersService.getMembers({ limit: 500 }),
+        ptPurchasesService.getPurchases({ status: 'ACTIVE', limit: 500 }),
       ])
 
       const errors: string[] = []

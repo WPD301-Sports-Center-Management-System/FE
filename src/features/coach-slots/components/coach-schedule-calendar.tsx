@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { STANDARD_TEMPLATE_SLOTS, type TemplateSlotConfig, SLOT_STATUS_CONFIG } from '../constants/coach-slot.constants'
 import type { CalendarEvent } from '../types/coach-slot-types'
+import type { CoachSlot } from '@/shared/types/api'
 
 export interface SelectedTimeRange {
   dateStr: string
@@ -25,17 +26,19 @@ export interface SelectedTimeRange {
 
 interface CoachScheduleCalendarProps {
   events: CalendarEvent[]
+  rawSlots?: CoachSlot[]
   date: Date
   view: string
   onNavigate: (newDate: Date) => void
   onView: (newView: any) => void
-  onEventClick: (slotId: string, event: CalendarEvent) => void
+  onEventClick: (slotId: string, event: CalendarEvent | any) => void
   onTimeSelect?: (selection: SelectedTimeRange) => void
   isLoading?: boolean
 }
 
 export function CoachScheduleCalendar({
   events,
+  rawSlots = [],
   date,
   view,
   onEventClick,
@@ -172,6 +175,15 @@ export function CoachScheduleCalendar({
                   const slotStartDateTime = new Date(year, month - 1, day, sH, sM, 0, 0)
                   const isPast = slotStartDateTime <= new Date()
 
+                  // Tìm slot OPEN đã mở trên hệ thống (chưa có khách đặt) khớp với ca này
+                  const existingOpenSlot = rawSlots.find((s) => {
+                    if (s.status !== 'OPEN') return false
+                    const sDate = s.startsAt.split('T')[0]
+                    if (sDate !== d.dateStr) return false
+                    const sTime = s.startsAt.substring(11, 16)
+                    return sTime === slot.startTime
+                  })
+
                   return (
                     <td
                       key={`${d.dateStr}-${slot.index}`}
@@ -267,6 +279,21 @@ export function CoachScheduleCalendar({
                           title="Đã qua thời gian (Quá khứ - Không thể mở slot)"
                         >
                           <span className="text-text-muted/40 text-sm font-bold">-</span>
+                        </div>
+                      ) : existingOpenSlot ? (
+                        /* Slot đã mở sẵn sàng trên hệ thống, đang chờ học viên đặt lịch */
+                        <div
+                          onClick={() => onEventClick(existingOpenSlot.id, existingOpenSlot as any)}
+                          className="h-full w-full min-h-[60px] rounded-xl flex items-center justify-center text-text-muted font-semibold cursor-pointer hover:bg-emerald-500/10 hover:border hover:border-emerald-500/30 transition-all group/open-slot"
+                          title={`Ca ${slot.index} (${slot.startTime} - ${slot.endTime}) đang mở nhận lịch (Chờ học viên đặt). Click để xem chi tiết / chặn ca.`}
+                        >
+                          <span className="group-hover/open-slot:hidden text-text-muted/60 text-sm font-medium">
+                            -
+                          </span>
+                          <span className="hidden group-hover/open-slot:inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-lg border border-emerald-500/20 shadow-xs animate-in fade-in duration-150">
+                            <Clock className="h-3 w-3 text-emerald-500" />
+                            Chờ hội viên đặt
+                          </span>
                         </div>
                       ) : (
                         /* Future Empty Cell - Clickable to Open Slot */
