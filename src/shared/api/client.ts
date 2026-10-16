@@ -94,7 +94,7 @@ apiClient.interceptors.response.use(
       isRefreshing = true
 
       const refreshToken = authStorage.getRefreshToken()
-      if (!refreshToken) {
+      if (!refreshToken || refreshToken.length < 20) {
         authStorage.clearSession()
         window.dispatchEvent(new CustomEvent('auth:unauthorized'))
         isRefreshing = false

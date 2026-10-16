@@ -11,8 +11,8 @@ import type { MemberSummary } from '@/shared/types/api'
 export function CoachAiRecommendationPage() {
   const [members, setMembers] = useState<MemberSummary[]>([])
   const [memberId, setMemberId] = useState('')
-  const [targetFocus, setTargetFocus] = useState('Phát triển nhóm cơ Ngực & Vai, giảm mỡ vòng eo')
-  const [fitnessLevel, setFitnessLevel] = useState('Trung bình (Đã tập 6 tháng)')
+  const [targetFocus, setTargetFocus] = useState('')
+  const [fitnessLevel, setFitnessLevel] = useState('')
 
   const [isLoadingMembers, setIsLoadingMembers] = useState(true)
   const [generationState, setGenerationState] = useState<'idle' | 'generating' | 'success' | 'error'>('idle')
@@ -39,9 +39,6 @@ export function CoachAiRecommendationPage() {
       const res = await coachesService.getMyMembers()
       const list = (res?.data || (Array.isArray(res) ? res : [])) as MemberSummary[]
       setMembers(list)
-      if (list.length > 0) {
-        setMemberId(list[0].id)
-      }
     } catch (err) {
       if (isAppApiError(err)) {
         setErrorMessage(err.message || 'Lỗi khi tải danh sách học viên.')
@@ -219,15 +216,19 @@ export function CoachAiRecommendationPage() {
             label="Chọn Học viên"
             value={memberId}
             onChange={(e) => setMemberId(e.target.value)}
-            options={members.map((m: any) => ({
-              value: m.id,
-              label: `${m.fullName || m.user?.fullName || 'Học viên'} (${m.memberCode || 'HV'})`,
-            }))}
+            options={[
+              { value: '', label: '-- Chọn học viên --' },
+              ...members.map((m: any) => ({
+                value: m.id,
+                label: `${m.fullName || m.user?.fullName || 'Học viên'} (${m.memberCode || 'HV'})`,
+              })),
+            ]}
           />
           <Input
             label="Trình độ thể lực & Thói quen vận động"
             value={fitnessLevel}
             onChange={(e) => setFitnessLevel(e.target.value)}
+            placeholder="Ví dụ: Mới bắt đầu, Trung bình (đã tập 6 tháng)..."
           />
         </div>
 
@@ -236,6 +237,7 @@ export function CoachAiRecommendationPage() {
           required
           value={targetFocus}
           onChange={(e) => setTargetFocus(e.target.value)}
+          placeholder="Ví dụ: Phát triển nhóm cơ Ngực & Vai, giảm mỡ vòng eo..."
         />
 
         <div className="flex justify-end pt-2">

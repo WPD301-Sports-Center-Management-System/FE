@@ -107,7 +107,7 @@ export function BookingCalendarPage() {
 
   // Cancel Modal State
   const [cancelTarget, setCancelTarget] = useState<Booking | null>(null)
-  const [cancelReason, setCancelReason] = useState('Hội viên bận đột xuất')
+  const [cancelReason, setCancelReason] = useState('')
   const [cancelType, setCancelType] = useState<'MEMBER' | 'COACH'>('MEMBER')
 
   // Business Rules Modal
@@ -1513,9 +1513,10 @@ export function BookingCalendarPage() {
                 <Button
                   size="sm"
                   variant="primary"
-                  className="bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => handleCompleteBooking(selectedBookingDetail)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || Boolean(selectedBookingDetail.startsAt && new Date(selectedBookingDetail.startsAt).getTime() > Date.now())}
+                  title={selectedBookingDetail.startsAt && new Date(selectedBookingDetail.startsAt).getTime() > Date.now() ? 'Chỉ kích hoạt khi thời gian thực tế chạm mốc giờ hẹn trở đi' : undefined}
                 >
                   <Check className="h-3 w-3 mr-1" />
                   Hoàn thành buổi tập
@@ -1523,9 +1524,10 @@ export function BookingCalendarPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="text-amber-700 dark:text-amber-300 border-amber-600/40 text-xs hover:bg-amber-500/10"
+                  className="text-amber-700 dark:text-amber-300 border-amber-600/40 text-xs hover:bg-amber-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => handleNoShowBooking(selectedBookingDetail)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || Boolean(selectedBookingDetail.startsAt && new Date(selectedBookingDetail.startsAt).getTime() > Date.now())}
+                  title={selectedBookingDetail.startsAt && new Date(selectedBookingDetail.startsAt).getTime() > Date.now() ? 'Chỉ kích hoạt khi thời gian thực tế chạm mốc giờ hẹn trở đi' : undefined}
                 >
                   <UserX className="h-3 w-3 mr-1" />
                   Báo No-show

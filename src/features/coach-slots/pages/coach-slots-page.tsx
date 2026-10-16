@@ -141,10 +141,16 @@ export function CoachSlotsPage() {
   )
 
   const handleEventClick = useCallback(
-    (slotId: string) => {
+    (slotId: string, event?: any) => {
       const found = slots.find((s) => s.id === slotId)
       if (found) {
-        setSelectedSlot(found)
+        setSelectedSlot({
+          ...found,
+          ...(event || {}),
+        })
+        setIsDetailOpen(true)
+      } else if (event) {
+        setSelectedSlot(event as any)
         setIsDetailOpen(true)
       }
     },

@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
-import { FileText, Activity, RefreshCw, AlertCircle, Phone, Mail, User, Calendar, Dumbbell, HeartPulse } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { FileText, Activity, RefreshCw, AlertCircle, Phone, Mail, User, Calendar, Dumbbell, HeartPulse, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/shared/components/ui/button'
 import { Modal } from '@/shared/components/ui/modal'
+import { Input, Select } from '@/shared/components/ui/input'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { coachesService } from '@/features/coaches/services/coaches.service'
 import { formatDate } from '@/shared/utils/date'
@@ -13,6 +14,8 @@ export function CoachStudentsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [selectedStudent, setSelectedStudent] = useState<Purchase | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('ALL')
 
   const loadStudents = useCallback(async () => {
     setIsLoading(true)
@@ -30,6 +33,39 @@ export function CoachStudentsPage() {
   useEffect(() => {
     loadStudents()
   }, [loadStudents])
+
+  const filteredPurchases = useMemo(() => {
+    return purchases.filter((p) => {
+      const name = (
+        (p as any).member?.user?.fullName ||
+        p.memberName ||
+        (p as any).member?.fullName ||
+        ''
+      ).toLowerCase()
+      const code = (
+        (p as any).memberCode ||
+        (p as any).member?.memberCode ||
+        p.memberCode ||
+        (p as any).purchaseCode ||
+        ''
+      ).toLowerCase()
+      const phone = ((p as any).phone || (p as any).member?.user?.phone || '').toLowerCase()
+      const email = ((p as any).email || (p as any).member?.user?.email || '').toLowerCase()
+      const course = (p.courseNameSnapshot || '').toLowerCase()
+      const q = searchQuery.toLowerCase().trim()
+
+      const matchesSearch =
+        !q ||
+        name.includes(q) ||
+        code.includes(q) ||
+        phone.includes(q) ||
+        email.includes(q) ||
+        course.includes(q)
+      const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter
+
+      return matchesSearch && matchesStatus
+    })
+  }, [purchases, searchQuery, statusFilter])
 
   return (
     <div className="space-y-6">
@@ -55,6 +91,31 @@ export function CoachStudentsPage() {
         </Button>
       </div>
 
+      {/* Search Bar & Status Filter */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted pointer-events-none" />
+          <Input
+            placeholder="Tìm theo tên học viên, mã HV, SĐT, email hoặc gói tập..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 text-xs"
+          />
+        </div>
+        <div className="w-full sm:w-56">
+          <Select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="text-xs"
+          >
+            <option value="ALL">Tất cả trạng thái</option>
+            <option value="ACTIVE">Đang hoạt động</option>
+            <option value="COMPLETED">Đã hoàn thành</option>
+            <option value="PENDING_PAYMENT">Chờ thanh toán</option>
+          </Select>
+        </div>
+      </div>
+
       {errorMessage && (
         <div className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-3.5 text-xs text-danger">
           <AlertCircle className="h-4 w-4 shrink-0 text-danger mt-0.5" />
@@ -66,9 +127,9 @@ export function CoachStudentsPage() {
         <div className="flex justify-center p-12">
           <RefreshCw className="h-8 w-8 animate-spin text-orange-500" />
         </div>
-      ) : purchases.length > 0 ? (
+      ) : filteredPurchases.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {purchases.map((p) => {
+          {filteredPurchases.map((p) => {
             const studentName =
               (p as any).member?.user?.fullName ||
               p.memberName ||
@@ -195,7 +256,7 @@ export function CoachStudentsPage() {
                   >
                     Hồ sơ chi tiết
                   </Button>
-                  <Link to="/coach/training-plans" className="w-full">
+                  <Link to={`/coach/training-plans?memberId=${p.memberId}`} className="w-full">
                     <Button size="sm" variant="primary" className="w-full text-xs">
                       Soạn giáo án
                     </Button>

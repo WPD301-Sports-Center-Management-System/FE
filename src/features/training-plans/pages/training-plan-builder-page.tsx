@@ -19,12 +19,13 @@ interface ExerciseRow {
 }
 
 export function TrainingPlanBuilderPage() {
+  const preselectedMemberId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('memberId') : null
   const [members, setMembers] = useState<MemberSummary[]>([])
   const [packages, setPackages] = useState<Purchase[]>([])
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([])
 
-  const [title, setTitle] = useState('Giáo án Siết Cơ & Tăng Sức Mạnh')
-  const [goal, setGoal] = useState('Tối ưu hóa phom tạ Barbell và kiểm soát nhịp hạ tạ')
+  const [title, setTitle] = useState('')
+  const [goal, setGoal] = useState('')
   const [memberId, setMemberId] = useState('')
   const [selectedPurchaseId, setSelectedPurchaseId] = useState('')
   const [startDate, setStartDate] = useState(() => new Date().toISOString().split('T')[0])
@@ -57,7 +58,8 @@ export function TrainingPlanBuilderPage() {
       setPackages(pkgs)
 
       if (items.length > 0) {
-        const initialMemberId = items[0].id
+        const targetMember = (preselectedMemberId && items.find((m) => m.id === preselectedMemberId)) || items[0]
+        const initialMemberId = targetMember.id
         setMemberId(initialMemberId)
 
         // Find package for this member
@@ -263,9 +265,9 @@ export function TrainingPlanBuilderPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 label="Tên giáo án"
-                required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ví dụ: Giáo án Tăng Cơ Toàn Thân..."
               />
               <Select
                 label="Giao cho Học viên"
@@ -317,6 +319,7 @@ export function TrainingPlanBuilderPage() {
               label="Mục tiêu trọng tâm của buổi tập"
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
+              placeholder="Ví dụ: Tối ưu hóa phom tạ Barbell và kiểm soát nhịp hạ tạ..."
             />
           </div>
 

@@ -38,7 +38,7 @@ export function ReviewsAuditPage() {
 
   // Hide Review Modal
   const [hideReview, setHideReview] = useState<CoachReview | null>(null)
-  const [hideReason, setHideReason] = useState('Nội dung không phù hợp quy chuẩn')
+  const [hideReason, setHideReason] = useState('')
   const [isActionLoading, setIsActionLoading] = useState(false)
   const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(null)
 
@@ -440,6 +440,7 @@ export function ReviewsAuditPage() {
             required
             value={hideReason}
             onChange={(e) => setHideReason(e.target.value)}
+            placeholder="Nhập lý do kiểm duyệt / ẩn đánh giá này..."
           />
           <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
             <Button type="button" variant="ghost" onClick={() => setHideReview(null)} disabled={isActionLoading}>

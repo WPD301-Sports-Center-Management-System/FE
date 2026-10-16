@@ -205,6 +205,21 @@ export type CoachSlot = {
   note?: string
   coachName?: string
   courseName?: string
+  bookingId?: string
+  bookingCode?: string
+  bookingStatus?: PtBookingStatus
+  bookedAt?: string
+  memberName?: string
+  memberPhone?: string
+  memberEmail?: string
+  memberAvatar?: string
+  memberCode?: string
+  fitnessLevel?: string
+  medicalNotes?: string
+  packageName?: string
+  totalCredits?: number
+  consumedCredits?: number
+  remainingCredits?: number
 }
 
 export type PackageOption = {

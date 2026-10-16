@@ -90,6 +90,13 @@ describe('TrainingResultPage', () => {
       expect(screen.getByText('Xuất Bản Kết Quả (Publish)')).toBeInTheDocument()
     })
 
+    fireEvent.change(screen.getByLabelText(/Đánh giá & Góp ý của HLV/i), {
+      target: { value: 'Hội viên hoàn thành tốt.' },
+    })
+    fireEvent.change(screen.getByLabelText(/Điểm tiến độ/i), {
+      target: { value: '90' },
+    })
+
     fireEvent.click(screen.getByText('Xuất Bản Kết Quả (Publish)'))
 
     await waitFor(() => {

@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CheckCircle2, Activity, Dumbbell, AlertTriangle, RefreshCw, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Textarea } from '@/shared/components/ui/input'
 import { ptBookingsService } from '@/features/pt-bookings-schedule/services/pt-bookings.service'
+import { coachesService } from '@/features/coaches/services/coaches.service'
 import { coursesExercisesService } from '@/features/courses-exercises/services/courses-exercises.service'
 import { isAppApiError } from '@/shared/api/api-error'
 import { formatDateTime } from '@/shared/utils/date'
@@ -16,16 +18,17 @@ interface SetItem {
 }
 
 export function TrainingResultPage() {
+  const [searchParams] = useSearchParams()
+  const targetBookingId = searchParams.get('bookingId')
+
   const [completedBookings, setCompletedBookings] = useState<Booking[]>([])
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [selectedBookingId, setSelectedBookingId] = useState('')
   const [selectedExerciseId, setSelectedExerciseId] = useState('')
   const [setsData, setSetsData] = useState<SetItem[]>([
-    { reps: 10, weight: 50, rpe: 7 },
-    { reps: 10, weight: 55, rpe: 8 },
-    { reps: 8, weight: 60, rpe: 9 },
+    { reps: 10, weight: 0, rpe: 7 },
   ])
-  const [coachComment, setCoachComment] = useState('Hội viên đẩy tốt, cơ ngực căng tối đa, hoàn thành đúng form.')
+  const [coachComment, setCoachComment] = useState('')
   const [progressScore, setProgressScore] = useState(90)
 
   const [isLoading, setIsLoading] = useState(true)
@@ -37,13 +40,39 @@ export function TrainingResultPage() {
     setIsLoading(true)
     setErrorMessage(null)
     try {
-      const [bookingsRes, exercisesRes] = await Promise.all([
-        ptBookingsService.getBookings({ limit: 100 }),
-        coursesExercisesService.getExercises({ limit: 100 }),
-      ])
+      let allBookings: Booking[] = []
+      try {
+        const bookingsRes = await ptBookingsService.getBookings({ limit: 100 })
+        allBookings =
+          (bookingsRes as any)?.data ||
+          (bookingsRes as any)?.items ||
+          (Array.isArray(bookingsRes) ? bookingsRes : [])
+      } catch {
+        // Fallback for coach endpoint
+      }
 
-      const allBookings = (bookingsRes as any)?.data || (Array.isArray(bookingsRes) ? bookingsRes : [])
-      const exList = (exercisesRes as any)?.data || (Array.isArray(exercisesRes) ? exercisesRes : [])
+      if (allBookings.length === 0) {
+        try {
+          const myBookingsRes = await coachesService.getMyBookings()
+          allBookings =
+            (myBookingsRes as any)?.data ||
+            (myBookingsRes as any)?.items ||
+            (Array.isArray(myBookingsRes) ? myBookingsRes : [])
+        } catch {
+          // ignore
+        }
+      }
+
+      let exList: Exercise[] = []
+      try {
+        const exercisesRes = await coursesExercisesService.getExercises({ limit: 100 })
+        exList =
+          (exercisesRes as any)?.data ||
+          (exercisesRes as any)?.items ||
+          (Array.isArray(exercisesRes) ? exercisesRes : [])
+      } catch {
+        exList = []
+      }
 
       // ONLY allow bookings that are COMPLETED
       const finished = allBookings.filter((b: Booking) => b.status === 'COMPLETED')
@@ -51,13 +80,17 @@ export function TrainingResultPage() {
       setCompletedBookings(finished)
       setExercises(exList)
 
-      if (finished.length > 0 && !selectedBookingId) {
-        setSelectedBookingId(finished[0].id)
-      } else if (finished.length === 0) {
+      if (finished.length > 0) {
+        if (targetBookingId && finished.some((b: Booking) => b.id === targetBookingId)) {
+          setSelectedBookingId(targetBookingId)
+        } else if (!selectedBookingId || !finished.some((b: Booking) => b.id === selectedBookingId)) {
+          setSelectedBookingId(finished[0].id)
+        }
+      } else {
         setSelectedBookingId('')
       }
 
-      if (exList.length > 0 && !selectedExerciseId) {
+      if (exList.length > 0 && (!selectedExerciseId || !exList.some((e: Exercise) => e.id === selectedExerciseId))) {
         setSelectedExerciseId(exList[0].id)
       }
     } catch (err) {
@@ -69,7 +102,7 @@ export function TrainingResultPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [selectedBookingId, selectedExerciseId])
+  }, [selectedBookingId, selectedExerciseId, targetBookingId])
 
   useEffect(() => {
     loadData()
@@ -312,6 +345,7 @@ export function TrainingResultPage() {
                 required
                 value={coachComment}
                 onChange={(e) => setCoachComment(e.target.value)}
+                placeholder="Nhập đánh giá và nhận xét của HLV cho buổi tập..."
               />
             </div>
             <div>

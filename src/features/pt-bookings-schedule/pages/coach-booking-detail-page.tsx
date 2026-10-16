@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { CheckCircle2, UserX, XCircle, Clock, ArrowRight, RefreshCw, Calendar, AlertCircle } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { CheckCircle2, UserX, XCircle, Clock, ArrowRight, RefreshCw, Calendar, AlertCircle, Search, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { coachesService } from '@/features/coaches/services/coaches.service'
 import { formatDateTime } from '@/shared/utils/date'
@@ -9,9 +9,47 @@ import { Modal } from '@/shared/components/ui/modal'
 import { Textarea } from '@/shared/components/ui/input'
 import { isAppApiError } from '@/shared/api/api-error'
 import type { Booking } from '@/shared/types/api'
+import { STANDARD_TEMPLATE_SLOTS } from '@/features/coach-slots/constants/coach-slot.constants'
+
+function getSlotBadge(startTimeStr?: string) {
+  if (!startTimeStr) return null
+  const d = new Date(startTimeStr)
+  const h = d.getHours()
+  const m = d.getMinutes()
+  const totalMin = h * 60 + m
+
+  const matched = STANDARD_TEMPLATE_SLOTS.find((s) => {
+    const [sH, sM] = s.startTime.split(':').map(Number)
+    const [eH, eM] = s.endTime.split(':').map(Number)
+    const startMin = (sH ?? 0) * 60 + (sM ?? 0)
+    const endMin = (eH ?? 0) * 60 + (eM ?? 0)
+    return totalMin >= startMin - 15 && totalMin < endMin
+  })
+
+  if (!matched) return null
+
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold border ${matched.colorBadge}`}
+    >
+      Slot {matched.index} ({matched.periodLabel}: {matched.startTime} – {matched.endTime})
+    </span>
+  )
+}
+
+const STATUS_FILTER_OPTIONS = [
+  { value: 'ALL', label: 'Tất cả trạng thái' },
+  { value: 'CONFIRMED', label: 'Đã xác nhận' },
+  { value: 'NO_SHOW', label: 'Vắng mặt' },
+  { value: 'CANCELLED_EARLY', label: 'Hủy sớm (Hoàn buổi)' },
+  { value: 'COMPLETED', label: 'Đã hoàn thành' },
+]
 
 export function CoachBookingDetailPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('ALL')
+
   const [isLoading, setIsLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [cancelModalBooking, setCancelModalBooking] = useState<Booking | null>(null)
@@ -19,6 +57,36 @@ export function CoachBookingDetailPage() {
   const [isSubmittingCancel, setIsSubmittingCancel] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const filteredBookings = useMemo(() => {
+    return bookings.filter((b) => {
+      const memberName = ((b as any).member?.user?.fullName || b.memberName || '').toLowerCase()
+      const courseName = (
+        (b as any).purchase?.courseNameSnapshot ||
+        (b as any).slot?.offering?.course?.name ||
+        b.courseName ||
+        ''
+      ).toLowerCase()
+      const search = searchTerm.trim().toLowerCase()
+
+      const matchesSearch = !search || memberName.includes(search) || courseName.includes(search)
+      if (!matchesSearch) return false
+
+      if (statusFilter === 'ALL') return true
+      if (statusFilter === 'CONFIRMED') return b.status === 'CONFIRMED'
+      if (statusFilter === 'NO_SHOW') return b.status === 'NO_SHOW'
+      if (statusFilter === 'CANCELLED_EARLY') {
+        return (
+          b.status === 'CANCELLED_EARLY' ||
+          b.status === 'COACH_CANCELLED' ||
+          b.status === 'CANCELLED_LATE'
+        )
+      }
+      if (statusFilter === 'COMPLETED') return b.status === 'COMPLETED'
+
+      return b.status === statusFilter
+    })
+  }, [bookings, searchTerm, statusFilter])
 
   const loadBookings = useCallback(async () => {
     setIsLoading(true)
@@ -131,6 +199,46 @@ export function CoachBookingDetailPage() {
         </Button>
       </div>
 
+      {/* Search Bar & Dropdown Filter - Directly Below Title */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        {/* Search input by member name */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted pointer-events-none" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Tìm kiếm theo tên hội viên hoặc khóa học..."
+            className="w-full rounded-xl border border-border-subtle bg-bg-surface pl-10 pr-9 py-2.5 text-xs text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary shadow-sm transition-all"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary p-0.5 rounded transition-colors"
+              title="Xóa tìm kiếm"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Dropdown status filter */}
+        <div className="sm:w-64">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full rounded-xl border border-border-subtle bg-bg-surface px-3.5 py-2.5 text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary shadow-sm transition-all cursor-pointer font-medium"
+          >
+            {STATUS_FILTER_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value} className="bg-bg-surface text-text-primary">
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {statusMessage && (
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-4 text-xs text-emerald-300 flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
@@ -155,13 +263,37 @@ export function CoachBookingDetailPage() {
           <h3 className="text-base font-semibold text-text-primary">Chưa có lịch hẹn nào</h3>
           <p className="text-xs text-text-muted mt-1">Các buổi tập PT 1:1 đã được hội viên đặt sẽ hiển thị tại đây.</p>
         </div>
+      ) : filteredBookings.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border-subtle bg-bg-surface p-12 text-center space-y-3">
+          <Search className="h-10 w-10 text-text-muted mx-auto opacity-40" />
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary">Không tìm thấy lịch hẹn phù hợp</h3>
+            <p className="text-xs text-text-muted mt-1">
+              {searchTerm
+                ? `Không có lịch hẹn nào khớp với từ khóa "${searchTerm}"`
+                : 'Không có lịch hẹn nào thuộc trạng thái đã chọn.'}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSearchTerm('')
+              setStatusFilter('ALL')
+            }}
+            className="text-xs mt-2"
+          >
+            Đặt lại bộ lọc
+          </Button>
+        </div>
       ) : (
         <div className="space-y-4">
-          {bookings.map((b) => {
+          {filteredBookings.map((b) => {
             const memberName = (b as any).member?.user?.fullName || b.memberName || 'Hội viên đã đăng ký'
             const courseName = (b as any).purchase?.courseNameSnapshot || (b as any).slot?.offering?.course?.name || b.courseName || 'Khóa Huấn Luyện Cá Nhân PT 1:1'
             const startTime = b.startsAt || (b as any).slot?.startsAt
             const isProcessing = processingId === b.id
+            const isNotStartedYet = Boolean(startTime && new Date(startTime).getTime() > Date.now())
 
             return (
               <div
@@ -169,15 +301,16 @@ export function CoachBookingDetailPage() {
                 className="rounded-2xl border border-border-subtle bg-bg-surface p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm"
               >
                 <div className="space-y-2">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5 flex-wrap">
                     <h3 className="text-base font-bold text-text-primary">{memberName}</h3>
                     <StatusBadge status={b.status} />
+                    {getSlotBadge(startTime)}
                   </div>
                   <p className="text-xs text-text-muted">{courseName}</p>
                   <div className="flex items-center gap-2 flex-wrap text-xs font-mono text-primary">
                     <Clock className="h-3.5 w-3.5" />
                     <span>{startTime ? formatDateTime(startTime) : 'Chưa xếp thời gian'}</span>
-                    {startTime && new Date(startTime) > new Date() && (
+                    {startTime && isNotStartedYet && (
                       <span className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-sans">
                         Chưa đến giờ hẹn
                       </span>
@@ -200,9 +333,10 @@ export function CoachBookingDetailPage() {
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="text-xs text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
+                      className="text-xs text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={() => handleMarkNoShow(b)}
-                      disabled={isProcessing}
+                      disabled={isProcessing || isNotStartedYet}
+                      title={isNotStartedYet ? 'Chỉ kích hoạt khi thời gian thực tế chạm mốc giờ hẹn trở đi' : 'Báo hội viên vắng mặt'}
                     >
                       <UserX className="h-3.5 w-3.5 mr-1" />
                       Hội viên vắng
@@ -210,10 +344,11 @@ export function CoachBookingDetailPage() {
                     <Button
                       size="sm"
                       variant="primary"
-                      className="text-xs"
+                      className="text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={() => handleMarkCompleted(b)}
-                      disabled={isProcessing}
+                      disabled={isProcessing || isNotStartedYet}
                       isLoading={isProcessing}
+                      title={isNotStartedYet ? 'Chỉ kích hoạt khi thời gian thực tế chạm mốc giờ hẹn trở đi' : 'Đánh dấu hoàn thành buổi tập'}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                       Hoàn thành buổi tập
@@ -222,7 +357,7 @@ export function CoachBookingDetailPage() {
                 )}
 
                 {b.status === 'COMPLETED' && (
-                  <Link to="/coach/training-results">
+                  <Link to={`/coach/training-results?bookingId=${b.id}`}>
                     <Button size="sm" variant="outline" className="text-xs gap-1.5 border-teal-500/30 text-teal-600 dark:text-teal-300 hover:bg-teal-500/10">
                       <span>Ghi Training Result</span>
                       <ArrowRight className="h-3.5 w-3.5" />

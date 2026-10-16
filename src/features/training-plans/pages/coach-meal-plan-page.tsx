@@ -29,8 +29,8 @@ const DEFAULT_MEALS: MealItemState[] = [
 export function CoachMealPlanPage() {
   const [members, setMembers] = useState<MemberSummary[]>([])
   const [memberId, setMemberId] = useState('')
-  const [title, setTitle] = useState('Thực Đơn Tăng Cơ Giảm Mỡ (High Protein - 2200 kcal)')
-  const [targetCalories, setTargetCalories] = useState('2200')
+  const [title, setTitle] = useState('')
+  const [targetCalories, setTargetCalories] = useState('')
   const [meals] = useState<MealItemState[]>(DEFAULT_MEALS)
 
   const [isLoading, setIsLoading] = useState(true)
@@ -45,9 +45,6 @@ export function CoachMealPlanPage() {
       const res = await coachesService.getMyMembers()
       const items = (res?.data || (Array.isArray(res) ? res : [])) as MemberSummary[]
       setMembers(items)
-      if (items.length > 0) {
-        setMemberId(items[0].id)
-      }
     } catch (err) {
       if (isAppApiError(err)) {
         setErrorMessage(err.message || 'Lỗi khi tải danh sách học viên.')
@@ -179,7 +176,13 @@ export function CoachMealPlanPage() {
           <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <Input label="Tên kế hoạch bữa ăn" required value={title} onChange={(e) => setTitle(e.target.value)} />
+                <Input
+                  label="Tên kế hoạch bữa ăn"
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Ví dụ: Thực Đơn Tăng Cơ Giảm Mỡ (High Protein)..."
+                />
               </div>
               <Input
                 label="Mục tiêu Calorie (kcal/ngày)"
@@ -187,6 +190,7 @@ export function CoachMealPlanPage() {
                 required
                 value={targetCalories}
                 onChange={(e) => setTargetCalories(e.target.value)}
+                placeholder="Ví dụ: 2000"
               />
             </div>
 
@@ -194,10 +198,13 @@ export function CoachMealPlanPage() {
               label="Học viên áp dụng"
               value={memberId}
               onChange={(e) => setMemberId(e.target.value)}
-              options={members.map((m: any) => ({
-                value: m.id,
-                label: `${m.fullName || m.user?.fullName || 'Hội viên'} (${m.memberCode || 'HV'})`,
-              }))}
+              options={[
+                { value: '', label: '-- Chọn học viên --' },
+                ...members.map((m: any) => ({
+                  value: m.id,
+                  label: `${m.fullName || m.user?.fullName || 'Hội viên'} (${m.memberCode || 'HV'})`,
+                })),
+              ]}
             />
           </div>
 

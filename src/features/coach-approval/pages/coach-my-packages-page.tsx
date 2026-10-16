@@ -24,9 +24,9 @@ export function CoachMyPackagesPage() {
   const [form, setForm] = useState({
     name: '',
     courseId: '',
-    sessionCount: 12,
-    validityDays: 60,
-    price: '3600000',
+    sessionCount: '' as unknown as number,
+    validityDays: '' as unknown as number,
+    price: '',
     description: '',
   })
 
@@ -107,9 +107,9 @@ export function CoachMyPackagesPage() {
       setForm({
         name: '',
         courseId: courses[0]?.id || '',
-        sessionCount: 12,
-        validityDays: 60,
-        price: '3600000',
+        sessionCount: '' as unknown as number,
+        validityDays: '' as unknown as number,
+        price: '',
         description: '',
       })
 
@@ -407,16 +407,18 @@ export function CoachMyPackagesPage() {
               label="Số buổi tập"
               type="number"
               required
-              value={form.sessionCount}
+              value={form.sessionCount || ''}
               onChange={(e) => setForm({ ...form, sessionCount: Number(e.target.value) })}
+              placeholder="Ví dụ: 12"
               disabled={isSubmitting}
             />
             <Input
               label="Hạn sử dụng (Ngày)"
               type="number"
               required
-              value={form.validityDays}
+              value={form.validityDays || ''}
               onChange={(e) => setForm({ ...form, validityDays: Number(e.target.value) })}
+              placeholder="Ví dụ: 60"
               disabled={isSubmitting}
             />
           </div>
@@ -426,6 +428,7 @@ export function CoachMyPackagesPage() {
             required
             value={form.price}
             onChange={(e) => setForm({ ...form, price: e.target.value })}
+            placeholder="Ví dụ: 3000000"
             disabled={isSubmitting}
           />
           <Textarea

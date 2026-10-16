@@ -126,6 +126,12 @@ describe('LoginPage', () => {
       target: { value: 'incorrect-password' },
     })
     const submitBtn = screen.getByRole('button', { name: /Đăng nhập ngay/i })
+    fireEvent.change(screen.getByLabelText(/Email hoặc Số điện thoại/i), {
+      target: { value: 'wrong@gym.local' },
+    })
+    fireEvent.change(screen.getByLabelText(/Mật khẩu/i), {
+      target: { value: 'wrongpass' },
+    })
     fireEvent.click(submitBtn)
 
     expect(await screen.findByText(/Tài khoản hoặc mật khẩu không chính xác/i)).toBeInTheDocument()

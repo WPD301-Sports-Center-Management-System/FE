@@ -11,7 +11,18 @@ export interface CalendarEvent {
   end: Date
   status: SlotStatus
   bookingId?: string
+  bookingCode?: string
   memberName?: string
+  memberPhone?: string
+  memberEmail?: string
+  memberAvatar?: string
+  memberCode?: string
+  fitnessLevel?: string
+  medicalNotes?: string
+  packageName?: string
+  totalCredits?: number
+  consumedCredits?: number
+  remainingCredits?: number
   courseName?: string
   coachName?: string
   note?: string

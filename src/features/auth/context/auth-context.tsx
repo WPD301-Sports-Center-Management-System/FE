@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      if (refreshToken) {
+      if (refreshToken && refreshToken.length >= 20) {
         const refreshRes = await authService.refreshToken(refreshToken)
         authStorage.setTokens({
           accessToken: refreshRes.accessToken,
