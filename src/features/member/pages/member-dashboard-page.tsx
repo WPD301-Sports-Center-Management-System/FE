@@ -13,6 +13,9 @@ import {
   AlertTriangle,
   Clock,
   Download,
+  Eye,
+  Flame,
+  AlertCircle,
 } from 'lucide-react'
 
 import { useAuth } from '@/features/auth/context/auth-context'
@@ -25,6 +28,7 @@ import { formatVND } from '@/shared/utils/currency'
 import { formatDateTime, formatDate } from '@/shared/utils/date'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { Button } from '@/shared/components/ui/button'
+import { Modal } from '@/shared/components/ui/modal'
 import type {
   Subscription,
   Purchase,
@@ -49,6 +53,10 @@ export function MemberDashboardPage() {
   const [progress, setProgress] = useState<MemberProgressData | null>(null)
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([])
   const [supportRequests, setSupportRequests] = useState<SupportRequest[]>([])
+
+  const [selectedMealPlan, setSelectedMealPlan] = useState<MealPlan | null>(null)
+  const [selectedMealDay, setSelectedMealDay] = useState<number>(1)
+  const [selectedTrainingPlan, setSelectedTrainingPlan] = useState<TrainingPlan | null>(null)
 
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -359,54 +367,125 @@ export function MemberDashboardPage() {
             <div className="space-y-6">
               {/* Training Plans */}
               <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
-                <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-primary" />
-                  <span>Giáo Án Tập Luyện Được Giao</span>
-                </h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
+                    <Dumbbell className="h-4 w-4 text-primary" />
+                    <span>Giáo Án Tập Luyện Được Giao</span>
+                  </h2>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    {trainingPlans.length} giáo án
+                  </span>
+                </div>
+
                 {trainingPlans.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-border-subtle p-8 text-center text-xs text-text-muted">
                     Huấn luyện viên chưa giao giáo án tập luyện riêng cho bạn.
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {trainingPlans.map((tp) => (
-                      <div key={tp.id} className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 space-y-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-bold text-text-primary text-sm">{tp.title}</p>
-                            <p className="text-xs text-text-muted">Mục tiêu: {tp.goal || 'Tăng cơ giảm mỡ'}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {trainingPlans.map((tp) => {
+                      const exercises = tp.trainingPlanExercisesTrainingPlanId || tp.exercises || []
+                      return (
+                        <div
+                          key={tp.id}
+                          className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 space-y-3 hover:border-primary/40 transition-all flex flex-col justify-between"
+                        >
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-start gap-2">
+                              <p className="font-bold text-text-primary text-sm line-clamp-1">{tp.title}</p>
+                              <StatusBadge status={tp.status} />
+                            </div>
+                            <p className="text-xs text-text-muted line-clamp-1">
+                              Mục tiêu: <strong className="text-text-primary">{tp.goal || 'Tăng cường thể lực'}</strong>
+                            </p>
+                            <div className="flex items-center gap-3 text-[11px] text-text-muted">
+                              <span>{exercises.length} bài tập</span>
+                              <span>•</span>
+                              <span>Bắt đầu: {formatDate(tp.startDate)}</span>
+                              {tp.endDate && (
+                                <>
+                                  <span>•</span>
+                                  <span>Kết thúc: {formatDate(tp.endDate)}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
-                          <StatusBadge status={tp.status} />
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedTrainingPlan(tp)}
+                            className="w-full gap-1.5 text-xs mt-2"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            <span>Xem chi tiết bài tập</span>
+                          </Button>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
 
               {/* Meal Plans */}
               <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
-                <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
-                  <Utensils className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>Thực Đơn Dinh Dưỡng</span>
-                </h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
+                    <Utensils className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Thực Đơn Dinh Dưỡng Được Giao</span>
+                  </h2>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                    {mealPlans.length} thực đơn
+                  </span>
+                </div>
+
                 {mealPlans.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-border-subtle p-8 text-center text-xs text-text-muted">
-                    Chưa có thực đơn dinh dưỡng nào được thiết lập.
+                    Huấn luyện viên chưa thiết lập thực đơn dinh dưỡng nào cho bạn.
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {mealPlans.map((mp) => (
-                      <div key={mp.id} className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 space-y-1">
-                        <div className="flex justify-between items-start">
-                          <p className="font-bold text-text-primary text-sm">{mp.title}</p>
-                          <StatusBadge status={mp.status} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {mealPlans.map((mp) => {
+                      const items = mp.mealPlanItemsMealPlanId || mp.items || []
+                      return (
+                        <div
+                          key={mp.id}
+                          className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 space-y-3 hover:border-primary/40 transition-all flex flex-col justify-between"
+                        >
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-start gap-2">
+                              <p className="font-bold text-text-primary text-sm line-clamp-1">{mp.title}</p>
+                              <StatusBadge status={mp.status} />
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-text-muted">
+                              <span>Mục tiêu calo: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{mp.dailyCalorieTarget ? `${mp.dailyCalorieTarget} kcal/ngày` : 'Chưa đặt'}</strong></span>
+                              <span>•</span>
+                              <span>{items.length} món ăn</span>
+                            </div>
+                            <p className="text-[11px] text-text-muted">Áp dụng từ: {formatDate(mp.startDate)}</p>
+                          </div>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedMealPlan(mp)
+                              const planItems = mp.mealPlanItemsMealPlanId || mp.items || []
+                              if (planItems.length > 0) {
+                                const days = Array.from(new Set(planItems.map((i) => i.dayNumber))).sort((a, b) => a - b)
+                                setSelectedMealDay(days[0] || 1)
+                              } else {
+                                setSelectedMealDay(1)
+                              }
+                            }}
+                            className="w-full gap-1.5 text-xs mt-2"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            <span>Xem chi tiết thực đơn</span>
+                          </Button>
                         </div>
-                        <p className="text-xs text-text-muted">
-                          Calo mục tiêu: {mp.dailyCalorieTarget ? `${mp.dailyCalorieTarget} kcal` : 'Chưa thiết lập'}
-                        </p>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -574,6 +653,245 @@ export function MemberDashboardPage() {
           )}
         </>
       )}
+
+      {/* Modal: View Member Meal Plan Detail */}
+      <Modal
+        isOpen={!!selectedMealPlan}
+        onClose={() => setSelectedMealPlan(null)}
+        title={selectedMealPlan?.title || 'Thực Đơn Dinh Dưỡng'}
+        description={`Mục tiêu: ${selectedMealPlan?.dailyCalorieTarget ? `${selectedMealPlan.dailyCalorieTarget} kcal/ngày` : 'Chưa đặt'} • Bắt đầu: ${formatDate(selectedMealPlan?.startDate)}`}
+        maxWidth="lg"
+      >
+        {selectedMealPlan && (() => {
+          const items = selectedMealPlan.mealPlanItemsMealPlanId || selectedMealPlan.items || []
+          const days = Array.from(new Set(items.map((i) => i.dayNumber))).sort((a, b) => a - b)
+          const currentDayItems = items.filter((i) => i.dayNumber === selectedMealDay)
+          const dayCal = currentDayItems.reduce((acc, m) => acc + (Number(m.estimatedCalories) || 0), 0)
+          const dayP = currentDayItems.reduce((acc, m) => acc + (Number(m.proteinGrams) || 0), 0)
+          const dayC = currentDayItems.reduce((acc, m) => acc + (Number(m.carbsGrams) || 0), 0)
+          const dayF = currentDayItems.reduce((acc, m) => acc + (Number(m.fatGrams) || 0), 0)
+
+          return (
+            <div className="space-y-4 text-xs">
+              {/* Medical disclaimer alert */}
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                <span>
+                  {selectedMealPlan.medicalDisclaimer ||
+                    'Thực đơn thể hình mang tính tham khảo nhằm phục vụ tập luyện, không thay thế chỉ định y khoa.'}
+                </span>
+              </div>
+
+              {items.length === 0 ? (
+                <div className="p-6 text-center text-text-muted border border-dashed border-border-subtle rounded-xl">
+                  Chưa có danh sách món ăn chi tiết trong thực đơn này.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Day Tabs */}
+                  {days.length > 1 && (
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {days.map((d) => (
+                        <button
+                          key={d}
+                          onClick={() => setSelectedMealDay(d)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border ${
+                            selectedMealDay === d
+                              ? 'bg-primary text-white border-primary'
+                              : 'bg-bg-surface-muted text-text-muted border-border-subtle'
+                          }`}
+                        >
+                          Ngày {d}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Day Macro Overview */}
+                  <div className="grid grid-cols-4 gap-2 p-3 rounded-xl bg-bg-surface-muted border border-border-subtle text-center text-xs">
+                    <div>
+                      <span className="text-[10px] text-text-muted block flex items-center justify-center gap-1">
+                        <Flame className="h-3 w-3 text-amber-500" />
+                        <span>Calo</span>
+                      </span>
+                      <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{dayCal} kcal</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-text-muted block">Protein</span>
+                      <span className="font-bold text-primary">{dayP}g</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-text-muted block">Carbs</span>
+                      <span className="font-bold text-amber-600 dark:text-amber-400">{dayC}g</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-text-muted block">Fat</span>
+                      <span className="font-bold text-rose-600 dark:text-rose-400">{dayF}g</span>
+                    </div>
+                  </div>
+
+                  {/* Meals list */}
+                  <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+                    {currentDayItems.map((meal) => (
+                      <div
+                        key={meal.id}
+                        className="p-3 rounded-xl border border-border-subtle bg-bg-surface space-y-1.5"
+                      >
+                        <div className="flex justify-between items-start">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary">
+                            {meal.mealType}
+                          </span>
+                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                            {meal.estimatedCalories || 0} kcal
+                          </span>
+                        </div>
+                        <p className="text-xs font-semibold text-text-primary">{meal.foodName}</p>
+                        {meal.quantity && (
+                          <p className="text-[11px] text-text-muted">Định lượng: {meal.quantity}</p>
+                        )}
+                        <div className="flex gap-4 text-[10px] text-text-muted border-t border-border-subtle pt-1">
+                          <span>Đạm: <strong className="text-primary">{meal.proteinGrams || 0}g</strong></span>
+                          <span>Carbs: <strong className="text-amber-600 dark:text-amber-400">{meal.carbsGrams || 0}g</strong></span>
+                          <span>Béo: <strong className="text-rose-600 dark:text-rose-400">{meal.fatGrams || 0}g</strong></span>
+                          {meal.note && <span className="italic">Lưu ý: {meal.note}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2 border-t border-border-subtle">
+                <Button variant="outline" onClick={() => setSelectedMealPlan(null)}>
+                  Đóng
+                </Button>
+              </div>
+            </div>
+          )
+        })()}
+      </Modal>
+
+      {/* Modal: View Member Training Plan Detail */}
+      <Modal
+        isOpen={!!selectedTrainingPlan}
+        onClose={() => setSelectedTrainingPlan(null)}
+        title={selectedTrainingPlan?.title || 'Giáo Án Tập Luyện'}
+        description={`Mục tiêu: ${selectedTrainingPlan?.goal || 'Tăng cường thể lực'} • Thời gian: ${formatDate(selectedTrainingPlan?.startDate)} → ${formatDate(selectedTrainingPlan?.endDate) || 'Dài hạn'}`}
+        maxWidth="lg"
+      >
+        {selectedTrainingPlan && (() => {
+          const exercises =
+            selectedTrainingPlan.trainingPlanExercisesTrainingPlanId || selectedTrainingPlan.exercises || []
+
+          return (
+            <div className="space-y-4 text-xs">
+              {/* Header summary */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3 rounded-xl bg-bg-surface-muted border border-border-subtle text-xs">
+                <div>
+                  <span className="text-text-muted block text-[10px]">Trạng thái:</span>
+                  <StatusBadge status={selectedTrainingPlan.status} />
+                </div>
+                <div>
+                  <span className="text-text-muted block text-[10px]">Số lượng bài tập:</span>
+                  <span className="font-bold text-primary">{exercises.length} động tác</span>
+                </div>
+                <div>
+                  <span className="text-text-muted block text-[10px]">Ngày bắt đầu:</span>
+                  <span className="font-medium text-text-primary">{formatDate(selectedTrainingPlan.startDate)}</span>
+                </div>
+              </div>
+
+              {/* Coach notes if any */}
+              {selectedTrainingPlan.notes && (
+                <div className="p-3 rounded-xl bg-bg-surface-muted border border-border-subtle space-y-1">
+                  <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block">
+                    Lời dặn của Huấn luyện viên:
+                  </span>
+                  <p className="text-text-primary leading-relaxed">{selectedTrainingPlan.notes}</p>
+                </div>
+              )}
+
+              {/* Exercises List */}
+              {exercises.length === 0 ? (
+                <div className="p-8 text-center text-text-muted border border-dashed border-border-subtle rounded-xl">
+                  Giáo án này chưa có bài tập cụ thể nào.
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                  {exercises.map((ex, idx) => (
+                    <div
+                      key={ex.id || idx}
+                      className="p-3.5 rounded-xl border border-border-subtle bg-bg-surface space-y-2 hover:border-primary/30 transition-colors"
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] shrink-0">
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <p className="font-bold text-text-primary text-xs">
+                              {ex.exercise?.name || ex.exerciseName || 'Bài tập thể hình'}
+                            </p>
+                            {ex.exercise?.targetMuscle && (
+                              <span className="text-[10px] text-primary font-medium">
+                                Nhóm cơ: {ex.exercise.targetMuscle}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {ex.scheduledDate && (
+                          <span className="text-[10px] font-mono text-text-muted">
+                            Lịch: {formatDate(ex.scheduledDate)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Reps/Sets/Weight Grid */}
+                      <div className="grid grid-cols-4 gap-2 p-2 rounded-lg bg-bg-surface-muted text-center text-[11px]">
+                        <div>
+                          <span className="text-[10px] text-text-muted block">Số hiệp</span>
+                          <span className="font-bold text-text-primary">{ex.sets || 3} sets</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-text-muted block">Lặp lại</span>
+                          <span className="font-bold text-text-primary">{ex.reps || 12} reps</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-text-muted block">Mức tạ</span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                            {ex.targetWeight || 'Bodyweight'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-text-muted block">Nghỉ</span>
+                          <span className="font-bold text-amber-600 dark:text-amber-400">
+                            {ex.restSeconds || 60}s
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Instructions */}
+                      {(ex.instructions || ex.exercise?.instructions) && (
+                        <p className="text-[11px] text-text-muted border-t border-border-subtle pt-1.5 leading-relaxed">
+                          <strong className="text-text-primary font-medium">Hướng dẫn: </strong>
+                          {ex.instructions || ex.exercise?.instructions}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2 border-t border-border-subtle">
+                <Button variant="outline" onClick={() => setSelectedTrainingPlan(null)}>
+                  Đóng
+                </Button>
+              </div>
+            </div>
+          )
+        })()}
+      </Modal>
     </div>
   )
 }

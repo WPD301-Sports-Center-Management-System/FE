@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Plus,
   Trash2,
@@ -19,6 +19,9 @@ import {
   BookOpen,
   X,
   RotateCcw,
+  ListFilter,
+  Search,
+  Eye,
 } from 'lucide-react'
 import { coachesService } from '@/features/coaches/services/coaches.service'
 import { coursesExercisesService } from '@/features/courses-exercises/services/courses-exercises.service'
@@ -31,8 +34,11 @@ import {
 } from '../utils/training-presets'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Select } from '@/shared/components/ui/input'
+import { Modal } from '@/shared/components/ui/modal'
+import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { isAppApiError } from '@/shared/api/api-error'
-import type { MemberSummary, Exercise, Purchase } from '@/shared/types/api'
+import { formatDate } from '@/shared/utils/date'
+import type { MemberSummary, Exercise, Purchase, TrainingPlan, TrainingPlanExercise } from '@/shared/types/api'
 
 interface ExerciseRow {
   exerciseId: string
@@ -79,6 +85,16 @@ export function TrainingPlanBuilderPage() {
     exerciseCount: number
     isDraft?: boolean
   } | null>(null)
+
+  // List view states & modal
+  const [activeViewMode, setActiveViewMode] = useState<'builder' | 'list'>('builder')
+  const [existingPlans, setExistingPlans] = useState<TrainingPlan[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'DRAFT' | 'ASSIGNED' | 'COMPLETED' | 'ARCHIVED'>('ALL')
+  const [memberFilter, setMemberFilter] = useState('')
+  const [viewingPlan, setViewingPlan] = useState<TrainingPlan | null>(null)
+  const [viewingPlanExercises, setViewingPlanExercises] = useState<TrainingPlanExercise[]>([])
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false)
 
   const handleResetForm = () => {
     setTitle('')
@@ -250,6 +266,16 @@ export function TrainingPlanBuilderPage() {
       setAvailableExercises(exList)
       setPackages(pkgs)
 
+      if (typeof trainingPlansService.getTrainingPlans === 'function') {
+        try {
+          const plansRes = await trainingPlansService.getTrainingPlans()
+          const pList = ((plansRes as any)?.data || (Array.isArray(plansRes) ? plansRes : [])) as TrainingPlan[]
+          setExistingPlans(pList)
+        } catch {
+          // Ignore error if plans fetch fails
+        }
+      }
+
       // Khởi tạo form trống hoàn toàn, không tự ý nạp giáo án hay chọn member/gói tập
       setMemberId('')
       setSelectedPurchaseId('')
@@ -267,6 +293,68 @@ export function TrainingPlanBuilderPage() {
       setIsLoading(false)
     }
   }, [])
+
+  const handleViewPlanDetail = async (plan: TrainingPlan) => {
+    setViewingPlan(plan)
+    setIsLoadingDetail(true)
+    setViewingPlanExercises([])
+    try {
+      const fullPlan = await trainingPlansService.getTrainingPlanById(plan.id)
+      const exList = (fullPlan.trainingPlanExercisesTrainingPlanId || fullPlan.exercises || []) as TrainingPlanExercise[]
+      setViewingPlanExercises(exList)
+    } catch (err) {
+      if (isAppApiError(err)) {
+        setErrorMessage(err.message || 'Lỗi khi tải chi tiết bài tập của giáo án.')
+      }
+    } finally {
+      setIsLoadingDetail(false)
+    }
+  }
+
+  const handleAssignExistingDraft = async (planId: string) => {
+    setIsSubmitting(true)
+    setErrorMessage(null)
+    try {
+      await trainingPlansService.assignTrainingPlan(planId)
+      setSuccessNotice({
+        title: viewingPlan?.title || 'Giáo án huấn luyện',
+        memberName: 'học viên',
+        exerciseCount: viewingPlanExercises.length,
+        isDraft: false,
+      })
+      if (typeof trainingPlansService.getTrainingPlans === 'function') {
+        const plansRes = await trainingPlansService.getTrainingPlans()
+        setExistingPlans((plansRes as any)?.data || [])
+      }
+      if (viewingPlan?.id === planId) {
+        setViewingPlan((prev) => (prev ? { ...prev, status: 'ASSIGNED' } : null))
+      }
+    } catch (err) {
+      if (isAppApiError(err)) {
+        setErrorMessage(err.message || 'Lỗi khi giao giáo án.')
+      } else {
+        setErrorMessage('Không thể giao giáo án lên máy chủ.')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const filteredPlans = useMemo(() => {
+    return existingPlans.filter((p) => {
+      const matchSearch =
+        searchQuery === '' ||
+        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.member?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.member?.user?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.memberName?.toLowerCase().includes(searchQuery.toLowerCase())
+
+      const matchStatus = statusFilter === 'ALL' || p.status === statusFilter
+      const matchMember = memberFilter === '' || p.memberId === memberFilter
+
+      return matchSearch && matchStatus && matchMember
+    })
+  }, [existingPlans, searchQuery, statusFilter, memberFilter])
 
   useEffect(() => {
     loadData()
@@ -706,7 +794,211 @@ export function TrainingPlanBuilderPage() {
         </div>
       )}
 
-      {isLoading ? (
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4 space-y-1 shadow-sm">
+          <p className="text-xs text-text-muted flex items-center gap-1.5">
+            <FileText className="h-3.5 w-3.5 text-primary" />
+            <span>Tổng giáo án</span>
+          </p>
+          <p className="text-2xl font-extrabold text-text-primary">{existingPlans.length}</p>
+        </div>
+        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4 space-y-1 shadow-sm">
+          <p className="text-xs text-text-muted flex items-center gap-1.5">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+            <span>Đã giao (Assigned)</span>
+          </p>
+          <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+            {existingPlans.filter((p) => p.status === 'ASSIGNED').length}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4 space-y-1 shadow-sm">
+          <p className="text-xs text-text-muted flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5 text-amber-500" />
+            <span>Bản nháp (Draft)</span>
+          </p>
+          <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">
+            {existingPlans.filter((p) => p.status === 'DRAFT').length}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4 space-y-1 shadow-sm">
+          <p className="text-xs text-text-muted flex items-center gap-1.5">
+            <Dumbbell className="h-3.5 w-3.5 text-cyan-500" />
+            <span>Học viên phụ trách</span>
+          </p>
+          <p className="text-2xl font-extrabold text-cyan-600 dark:text-cyan-400">{members.length}</p>
+        </div>
+      </div>
+
+      {/* View Switcher Tabs */}
+      <div className="flex border-b border-border-subtle gap-2 text-xs font-semibold">
+        <button
+          type="button"
+          onClick={() => setActiveViewMode('builder')}
+          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl transition-colors border-b-2 cursor-pointer ${
+            activeViewMode === 'builder'
+              ? 'border-primary text-primary bg-bg-surface font-bold'
+              : 'border-transparent text-text-muted hover:text-text-primary'
+          }`}
+        >
+          <Plus className="h-4 w-4" />
+          <span>Trình Soạn Giáo Án Mới</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveViewMode('list')}
+          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl transition-colors border-b-2 cursor-pointer ${
+            activeViewMode === 'list'
+              ? 'border-primary text-primary bg-bg-surface font-bold'
+              : 'border-transparent text-text-muted hover:text-text-primary'
+          }`}
+        >
+          <ListFilter className="h-4 w-4" />
+          <span>Danh Sách Giáo Án Đã Soạn ({existingPlans.length})</span>
+        </button>
+      </div>
+
+      {activeViewMode === 'list' ? (
+        <div className="space-y-4">
+          {/* Filter Bar */}
+          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+            <div className="relative flex-1">
+              <Search className="h-4 w-4 absolute left-3 top-3 text-text-muted" />
+              <input
+                type="text"
+                placeholder="Tìm theo tên giáo án hoặc tên học viên..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-border-subtle bg-bg-surface-muted text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                aria-label="Lọc theo trạng thái"
+                className="text-xs px-3 py-2 rounded-xl border border-border-subtle bg-bg-surface text-text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="ALL">Tất cả trạng thái</option>
+                <option value="ASSIGNED">Đã giao (Assigned)</option>
+                <option value="DRAFT">Bản nháp (Draft)</option>
+                <option value="COMPLETED">Hoàn thành (Completed)</option>
+                <option value="ARCHIVED">Đã lưu trữ (Archived)</option>
+              </select>
+
+              <select
+                value={memberFilter}
+                onChange={(e) => setMemberFilter(e.target.value)}
+                aria-label="Lọc theo học viên"
+                className="text-xs px-3 py-2 rounded-xl border border-border-subtle bg-bg-surface text-text-primary focus:outline-none focus:ring-1 focus:ring-primary max-w-[200px]"
+              >
+                <option value="">Tất cả học viên</option>
+                {members.map((m: any) => (
+                  <option key={m.id} value={m.id}>
+                    {m.fullName || m.user?.fullName || 'Học viên'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Plan Cards Grid */}
+          {isLoading ? (
+            <div className="p-16 text-center text-text-muted text-xs flex flex-col items-center gap-2">
+              <RefreshCw className="h-6 w-6 animate-spin text-primary" />
+              <span>Đang tải danh sách giáo án từ máy chủ...</span>
+            </div>
+          ) : filteredPlans.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border-subtle bg-bg-surface p-12 text-center space-y-3">
+              <Dumbbell className="h-10 w-10 text-text-muted mx-auto opacity-50" />
+              <p className="text-sm font-semibold text-text-primary">Chưa có giáo án nào</p>
+              <p className="text-xs text-text-muted max-w-sm mx-auto">
+                {searchQuery || statusFilter !== 'ALL' || memberFilter
+                  ? 'Không tìm thấy giáo án phù hợp với bộ lọc hiện tại.'
+                  : 'Bạn chưa tạo giáo án tập luyện nào cho học viên. Hãy bắt đầu ngay!'}
+              </p>
+              <Button size="sm" variant="primary" type="button" onClick={() => setActiveViewMode('builder')} className="gap-1.5 mt-2">
+                <Plus className="h-4 w-4" />
+                <span>Soạn giáo án đầu tiên</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredPlans.map((plan) => {
+                const exCount =
+                  (plan.trainingPlanExercisesTrainingPlanId || plan.exercises || []).length
+                const memberName =
+                  plan.member?.fullName ||
+                  plan.member?.user?.fullName ||
+                  plan.memberName ||
+                  members.find((m) => m.id === plan.memberId)?.fullName ||
+                  'Học viên'
+
+                return (
+                  <div
+                    key={plan.id}
+                    className="rounded-2xl border border-border-subtle bg-bg-surface p-5 space-y-4 shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between"
+                  >
+                    <div className="space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-bold text-text-primary text-sm line-clamp-1">{plan.title}</h3>
+                        <StatusBadge status={plan.status} />
+                      </div>
+
+                      <p className="text-xs text-text-muted flex items-center gap-1.5">
+                        <span>Học viên:</span>
+                        <strong className="text-text-primary font-medium">{memberName}</strong>
+                      </p>
+
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border-subtle text-[11px]">
+                        <div className="p-2 rounded-xl bg-bg-surface-muted space-y-0.5">
+                          <span className="text-text-muted block text-[10px]">Mục tiêu</span>
+                          <span className="font-semibold text-text-primary line-clamp-1">
+                            {plan.goal || 'Tăng cường thể lực'}
+                          </span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-bg-surface-muted space-y-0.5">
+                          <span className="text-text-muted block text-[10px]">Thời gian</span>
+                          <span className="font-semibold text-text-primary">{formatDate(plan.startDate)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-3 border-t border-border-subtle">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        type="button"
+                        onClick={() => handleViewPlanDetail(plan)}
+                        className="gap-1 text-xs flex-1"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        <span>Xem chi tiết ({exCount})</span>
+                      </Button>
+
+                      {plan.status === 'DRAFT' && (
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          type="button"
+                          onClick={() => handleAssignExistingDraft(plan.id)}
+                          disabled={isSubmitting}
+                          className="gap-1 text-xs flex-1"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <span>Giao học viên</span>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      ) : isLoading ? (
         <div className="p-12 text-center text-text-muted text-xs flex flex-col items-center gap-2">
           <RefreshCw className="h-6 w-6 animate-spin text-primary" />
           <span>Đang tải danh sách học viên và thư viện bài tập từ máy chủ...</span>
@@ -1347,6 +1639,135 @@ export function TrainingPlanBuilderPage() {
     )}
   </form>
     )}
+
+  {/* Modal: View Coach Training Plan Detail */}
+  <Modal
+    isOpen={!!viewingPlan}
+    onClose={() => setViewingPlan(null)}
+    title={viewingPlan?.title || 'Chi Tiết Giáo Án Huấn Luyện'}
+    description={`Học viên: ${viewingPlan?.member?.fullName || viewingPlan?.member?.user?.fullName || viewingPlan?.memberName || (viewingPlan ? members.find((m) => m.id === viewingPlan.memberId)?.fullName : '') || 'Học viên'} • Mục tiêu: ${viewingPlan?.goal || 'Tăng cường thể lực'}`}
+    maxWidth="xl"
+  >
+    {viewingPlan && (
+      <div className="space-y-4 text-xs">
+        {/* Header info */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3 rounded-xl bg-bg-surface-muted border border-border-subtle">
+          <div>
+            <span className="text-text-muted block text-[10px]">Trạng thái:</span>
+            <StatusBadge status={viewingPlan.status} />
+          </div>
+          <div>
+            <span className="text-text-muted block text-[10px]">Số lượng bài tập:</span>
+            <span className="font-bold text-primary">{viewingPlanExercises.length} bài tập</span>
+          </div>
+          <div>
+            <span className="text-text-muted block text-[10px]">Ngày áp dụng:</span>
+            <span className="font-medium text-text-primary">{formatDate(viewingPlan.startDate)}</span>
+          </div>
+        </div>
+
+        {viewingPlan.notes && (
+          <div className="p-3 rounded-xl bg-bg-surface-muted border border-border-subtle space-y-1">
+            <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block">
+              Ghi chú của HLV:
+            </span>
+            <p className="text-text-primary leading-relaxed">{viewingPlan.notes}</p>
+          </div>
+        )}
+
+        {isLoadingDetail ? (
+          <div className="p-8 text-center text-text-muted flex flex-col items-center gap-2">
+            <RefreshCw className="h-5 w-5 animate-spin text-primary" />
+            <span>Đang tải danh sách bài tập từ máy chủ...</span>
+          </div>
+        ) : viewingPlanExercises.length === 0 ? (
+          <div className="p-6 text-center text-text-muted border border-dashed border-border-subtle rounded-xl">
+            Giáo án này chưa có bài tập cụ thể nào.
+          </div>
+        ) : (
+          <div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
+            {viewingPlanExercises.map((ex, idx) => (
+              <div
+                key={ex.id || idx}
+                className="p-3 rounded-xl border border-border-subtle bg-bg-surface space-y-2"
+              >
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] shrink-0">
+                      {idx + 1}
+                    </span>
+                    <div>
+                      <p className="font-bold text-text-primary text-xs">
+                        {ex.exercise?.name || ex.exerciseName || 'Bài tập'}
+                      </p>
+                      {ex.exercise?.targetMuscle && (
+                        <span className="text-[10px] text-primary font-medium">
+                          Nhóm cơ: {ex.exercise.targetMuscle}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {ex.scheduledDate && (
+                    <span className="text-[10px] font-mono text-text-muted">
+                      {formatDate(ex.scheduledDate)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-4 gap-2 p-2 rounded-lg bg-bg-surface-muted text-center text-[11px]">
+                  <div>
+                    <span className="text-[10px] text-text-muted block">Hiệp</span>
+                    <span className="font-bold text-text-primary">{ex.sets || 3} sets</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-text-muted block">Lặp lại</span>
+                    <span className="font-bold text-text-primary">{ex.reps || 12} reps</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-text-muted block">Mức tạ</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      {ex.targetWeight || 'Bodyweight'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-text-muted block">Nghỉ</span>
+                    <span className="font-bold text-amber-600 dark:text-amber-400">{ex.restSeconds || 60}s</span>
+                  </div>
+                </div>
+
+                {(ex.instructions || ex.exercise?.instructions) && (
+                  <p className="text-[11px] text-text-muted border-t border-border-subtle pt-1 leading-relaxed">
+                    <strong className="text-text-primary">Hướng dẫn: </strong>
+                    {ex.instructions || ex.exercise?.instructions}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex justify-between items-center pt-2 border-t border-border-subtle">
+          <Button variant="outline" type="button" onClick={() => setViewingPlan(null)}>
+            Đóng
+          </Button>
+
+          {viewingPlan.status === 'DRAFT' && (
+            <Button
+              variant="primary"
+              type="button"
+              onClick={() => handleAssignExistingDraft(viewingPlan.id)}
+              disabled={isSubmitting}
+              className="gap-1.5"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              <span>Giao Ngay Cho Học Viên</span>
+            </Button>
+          )}
+        </div>
+      </div>
+    )}
+  </Modal>
   </div>
 )
 }

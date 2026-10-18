@@ -42,18 +42,18 @@ export const trainingPlansService = {
   /**
    * [1] GET /training-plans - List training plans (Coach / Manager)
    */
-  async getTrainingPlans(params?: TrainingPlanQueryParams): Promise<ApiSuccess<TrainingPlan[]>> {
-    const res = await apiClient.get<ApiSuccess<TrainingPlan[]>>('/training-plans', { params })
-    return res as unknown as ApiSuccess<TrainingPlan[]>
+  async getTrainingPlans(params?: TrainingPlanQueryParams): Promise<{ data: TrainingPlan[]; meta?: any }> {
+    const res = (await apiClient.get('/training-plans', { params })) as any
+    const items = res?.data || res?.items || (Array.isArray(res) ? res : [])
+    return { data: items, meta: res?.meta }
   },
 
   /**
    * [2] GET /training-plans/:id - Get training plan details with exercises
    */
   async getTrainingPlanById(id: string): Promise<TrainingPlan> {
-    const res = await apiClient.get<ApiSuccess<TrainingPlan>>(`/training-plans/${id}`)
-    const data = res as unknown as ApiSuccess<TrainingPlan>
-    return data.data ?? (data as unknown as TrainingPlan)
+    const res = (await apiClient.get(`/training-plans/${id}`)) as any
+    return (res?.data ?? res) as TrainingPlan
   },
 
   /**

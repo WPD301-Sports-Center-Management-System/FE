@@ -1,5 +1,5 @@
 import { apiClient } from '@/shared/api/client'
-import type { ApiSuccess, MealPlan } from '@/shared/types/api'
+import type { MealPlan } from '@/shared/types/api'
 
 export interface CreateMealPlanPayload {
   memberId: string
@@ -45,45 +45,42 @@ export const mealPlansService = {
   /**
    * [1] GET /meal-plans - List meal plans
    */
-  async getMealPlans(params?: MealPlanQueryParams): Promise<ApiSuccess<MealPlan[]>> {
-    const res = await apiClient.get<ApiSuccess<MealPlan[]>>('/meal-plans', { params })
-    return res as unknown as ApiSuccess<MealPlan[]>
+  async getMealPlans(params?: MealPlanQueryParams): Promise<{ data: MealPlan[]; meta?: any }> {
+    const res = (await apiClient.get('/meal-plans', { params })) as any
+    const items = res?.data || res?.items || (Array.isArray(res) ? res : [])
+    return { data: items, meta: res?.meta }
   },
 
   /**
    * [2] GET /meal-plans/:id - Get meal plan details with items
    */
   async getMealPlanById(id: string): Promise<MealPlan> {
-    const res = await apiClient.get<ApiSuccess<MealPlan>>(`/meal-plans/${id}`)
-    const data = res as unknown as ApiSuccess<MealPlan>
-    return data.data ?? (data as unknown as MealPlan)
+    const res = (await apiClient.get(`/meal-plans/${id}`)) as any
+    return (res?.data ?? res) as MealPlan
   },
 
   /**
    * [3] POST /meal-plans - Create DRAFT meal plan
    */
   async createMealPlan(payload: CreateMealPlanPayload): Promise<MealPlan> {
-    const res = await apiClient.post<ApiSuccess<MealPlan>>('/meal-plans', payload)
-    const data = res as unknown as ApiSuccess<MealPlan>
-    return data.data ?? (data as unknown as MealPlan)
+    const res = (await apiClient.post('/meal-plans', payload)) as any
+    return (res?.data ?? res) as MealPlan
   },
 
   /**
    * [4] PATCH /meal-plans/:id - Update draft meal plan
    */
   async updateMealPlan(id: string, payload: UpdateMealPlanPayload): Promise<MealPlan> {
-    const res = await apiClient.patch<ApiSuccess<MealPlan>>(`/meal-plans/${id}`, payload)
-    const data = res as unknown as ApiSuccess<MealPlan>
-    return data.data ?? (data as unknown as MealPlan)
+    const res = (await apiClient.patch(`/meal-plans/${id}`, payload)) as any
+    return (res?.data ?? res) as MealPlan
   },
 
   /**
    * [5] POST /meal-plans/:id/assign - Assign meal plan to member (status becomes ACTIVE)
    */
   async assignMealPlan(id: string): Promise<MealPlan> {
-    const res = await apiClient.post<ApiSuccess<MealPlan>>(`/meal-plans/${id}/assign`, {})
-    const data = res as unknown as ApiSuccess<MealPlan>
-    return data.data ?? (data as unknown as MealPlan)
+    const res = (await apiClient.post(`/meal-plans/${id}/assign`, {})) as any
+    return (res?.data ?? res) as MealPlan
   },
 
   /**

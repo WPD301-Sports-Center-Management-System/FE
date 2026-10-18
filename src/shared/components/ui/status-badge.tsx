@@ -32,7 +32,8 @@ const statusMap: Record<string, { label: string; bg: string; text: string; dot: 
 
   BLOCKED: { label: 'Đã khóa', bg: 'bg-bg-surface-muted border-border-subtle', text: 'text-text-muted', dot: 'bg-text-muted' },
   INACTIVE: { label: 'Tạm dừng', bg: 'bg-bg-surface-muted border-border-subtle', text: 'text-text-muted', dot: 'bg-text-muted' },
-  DRAFT: { label: 'Bản nháp', bg: 'bg-bg-surface-muted border-border-subtle', text: 'text-text-muted', dot: 'bg-text-muted' },
+  DRAFT: { label: 'Bản nháp', bg: 'bg-amber-500/15 border-amber-500/30', text: 'text-amber-700 dark:text-amber-300', dot: 'bg-amber-500' },
+  ARCHIVED: { label: 'Đã lưu trữ', bg: 'bg-bg-surface-muted border-border-subtle', text: 'text-text-muted', dot: 'bg-text-muted' },
 }
 
 export function StatusBadge({ status, text }: StatusBadgeProps) {

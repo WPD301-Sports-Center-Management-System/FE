@@ -14,6 +14,7 @@ import {
   FileText,
   Activity,
   Sparkles,
+  Utensils,
 } from 'lucide-react'
 import type { UserRole } from '@/shared/types/api'
 
@@ -104,6 +105,7 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
             items: [
               { to: '/coach/packages', label: 'Gói dạy của tôi', icon: Dumbbell },
               { to: '/coach/training-plans', label: 'Soạn Giáo án', icon: FileText },
+              { to: '/coach/meal-plans', label: 'Thực đơn Dinh dưỡng', icon: Utensils },
               { to: '/coach/training-results', label: 'Ghi Kết quả tập', icon: Activity },
               { to: '/coach/assessments', label: 'InBody & Thể trạng', icon: BarChart3 },
               { to: '/coach/ai-recommendation', label: 'Gợi ý từ AI', icon: Sparkles },

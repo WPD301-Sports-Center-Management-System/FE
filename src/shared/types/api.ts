@@ -338,30 +338,50 @@ export type Invoice = {
   paymentMethod?: PaymentMethod
 }
 
+export type TrainingPlanExercise = {
+  id: string
+  trainingPlanId?: string
+  exerciseId: string
+  exerciseName?: string
+  exercise?: {
+    id: string
+    name: string
+    targetMuscle?: string
+    instructions?: string
+  }
+  scheduledDate?: string | null
+  sets?: number
+  reps?: number
+  durationMinutes?: number
+  restSeconds?: number
+  targetWeight?: string
+  instructions?: string
+  sortOrder?: number
+}
+
 export type TrainingPlan = {
   id: string
   coachId: string
   memberId: string
-  ptPurchaseId: string
+  ptPurchaseId?: string
   title: string
   goal?: string
+  notes?: string
   startDate: string
   endDate?: string
   status: TrainingPlanStatus
   assignedAt?: string
-  exercises: Array<{
-    id: string
-    exerciseId: string
-    exerciseName?: string
-    scheduledDate?: string | null
-    sets?: number
-    reps?: number
-    durationMinutes?: number
-    restSeconds?: number
-    targetWeight?: string
-    sortOrder: number
-  }>
+  exercises?: TrainingPlanExercise[]
+  trainingPlanExercisesTrainingPlanId?: TrainingPlanExercise[]
   memberName?: string
+  member?: {
+    id: string
+    fullName?: string
+    user?: { fullName?: string; email?: string }
+    memberCode?: string
+  }
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type TrainingResult = {
@@ -427,28 +447,47 @@ export type ProgressSeries = {
   goals: FitnessGoal[]
 }
 
+export type MealPlanItem = {
+  id: string
+  mealPlanId?: string
+  dayNumber: number
+  mealType: string
+  foodName: string
+  quantity?: string | null
+  estimatedCalories?: number | null
+  proteinGrams?: number | string | null
+  carbsGrams?: number | string | null
+  fatGrams?: number | string | null
+  note?: string | null
+  sortOrder?: number
+}
+
 export type MealPlan = {
   id: string
   memberId: string
   coachId: string
+  ptPurchaseId?: string | null
   title: string
-  dailyCalorieTarget?: number
+  description?: string | null
+  dailyCalorieTarget?: number | null
   startDate: string
-  endDate?: string
+  endDate?: string | null
   medicalDisclaimer: string
   status: MealPlanStatus
-  items: Array<{
+  items?: MealPlanItem[]
+  mealPlanItemsMealPlanId?: MealPlanItem[]
+  member?: {
     id: string
-    dayNumber: number
-    mealType: string
-    foodName: string
-    quantity?: string
-    estimatedCalories?: number
-    proteinGrams?: string
-    carbsGrams?: string
-    fatGrams?: string
-    sortOrder: number
-  }>
+    fullName?: string
+    user?: { fullName?: string; email?: string }
+    memberCode?: string
+  }
+  coach?: {
+    id: string
+    user?: { fullName?: string }
+  }
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type GymArea = {
@@ -527,3 +566,4 @@ export type AuditLog = {
   afterData?: Record<string, unknown>
   createdAt: string
 }
+  
