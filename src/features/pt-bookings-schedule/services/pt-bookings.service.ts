@@ -9,6 +9,10 @@ import type {
   NoShowBookingPayload,
   CreateTrainingResultPayload,
   BookingDetail,
+  CoachRecurringMatrixResponse,
+  FixedSchedulePayload,
+  FixedSchedulePreviewResponse,
+  FixedScheduleBookResponse,
 } from '../types/pt-bookings.types'
 
 export const ptBookingsService = {
@@ -100,5 +104,29 @@ export const ptBookingsService = {
   async getMyMemberBookings(params?: { status?: string; page?: number; limit?: number }): Promise<ApiSuccess<Booking[]>> {
     const res = await apiClient.get<ApiSuccess<Booking[]>>('/me/pt-bookings', { params })
     return res as unknown as ApiSuccess<Booking[]>
+  },
+
+  /**
+   * [10] GET /coaches/{coachId}/recurring-matrix - Get recurring availability matrix for coach
+   */
+  async getCoachRecurringMatrix(coachId: string, params?: { startDate?: string; totalWeeks?: number }): Promise<CoachRecurringMatrixResponse> {
+    const res = await apiClient.get<ApiSuccess<CoachRecurringMatrixResponse>>(`/coaches/${coachId}/recurring-matrix`, { params })
+    return (res as any)?.data ?? res
+  },
+
+  /**
+   * [11] POST /pt-package-purchases/{id}/fixed-schedule/preview - Preview fixed recurring schedule
+   */
+  async previewFixedSchedule(purchaseId: string, payload: FixedSchedulePayload): Promise<FixedSchedulePreviewResponse> {
+    const res = await apiClient.post<ApiSuccess<FixedSchedulePreviewResponse>>(`/pt-package-purchases/${purchaseId}/fixed-schedule/preview`, payload)
+    return (res as any)?.data ?? res
+  },
+
+  /**
+   * [12] POST /pt-package-purchases/{id}/fixed-schedule/book - Book full fixed recurring schedule
+   */
+  async bookFixedSchedule(purchaseId: string, payload: FixedSchedulePayload): Promise<FixedScheduleBookResponse> {
+    const res = await apiClient.post<ApiSuccess<FixedScheduleBookResponse>>(`/pt-package-purchases/${purchaseId}/fixed-schedule/book`, payload)
+    return (res as any)?.data ?? res
   },
 }

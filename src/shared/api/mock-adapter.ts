@@ -467,6 +467,104 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
       filtered = filtered.filter((s) => s.status === config.params.status)
     }
     resData = filtered
+  } else if (url.startsWith('coaches/') && url.endsWith('/recurring-matrix') && method === 'get') {
+    const coachId = url.split('/')[1]
+    const coach = db.coaches.find((c) => c.id === coachId) || db.coaches[0]
+    const startDate = (config.params?.startDate as string) || new Date().toISOString().slice(0, 10)
+    const totalWeeks = Number(config.params?.totalWeeks || 4)
+    const slotConfigs = [
+      { index: 1, name: 'Slot 1 (Ca Sáng sớm)', startTime: '06:00', endTime: '07:00' },
+      { index: 2, name: 'Slot 2 (Ca Sáng)', startTime: '07:15', endTime: '08:15' },
+      { index: 3, name: 'Slot 3 (Ca Trưa)', startTime: '11:30', endTime: '12:30' },
+      { index: 4, name: 'Slot 4 (Ca Chiều)', startTime: '16:45', endTime: '17:45' },
+      { index: 5, name: 'Slot 5 (Cao điểm 1)', startTime: '18:00', endTime: '19:00' },
+      { index: 6, name: 'Slot 6 (Cao điểm 2)', startTime: '19:15', endTime: '20:15' },
+    ]
+    const dayNames: Record<number, string> = { 1: 'Thứ Hai', 2: 'Thứ Ba', 3: 'Thứ Tư', 4: 'Thứ Năm', 5: 'Thứ Sáu', 6: 'Thứ Bảy', 7: 'Chủ Nhật' }
+    const matrix = [1, 2, 3, 4, 5, 6, 7].map((dow) => ({
+      dayOfWeek: dow,
+      dayName: dayNames[dow] || `Thứ ${dow}`,
+      slots: slotConfigs.map((s) => ({
+        slotIndex: s.index,
+        slotName: s.name,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        isAvailableFully: true,
+        totalWeeksChecked: totalWeeks,
+        conflictCount: 0,
+        conflicts: [],
+      })),
+    }))
+    const patterns = [
+      { key: 'MON_WED_FRI', name: 'Thứ 2 - 4 - 6', daysOfWeek: [1, 3, 5] },
+      { key: 'TUE_THU_SAT', name: 'Thứ 3 - 5 - 7', daysOfWeek: [2, 4, 6] },
+    ].map((p) => ({
+      ...p,
+      availableSlots: slotConfigs.map((s) => ({ slotIndex: s.index, slotName: s.name, startTime: s.startTime, endTime: s.endTime })),
+      hasAvailableSlots: true,
+    }))
+    resData = {
+      coachId,
+      coachName: (coach as any)?.user?.fullName || 'HLV Nguyễn Văn Nam',
+      startDate,
+      totalWeeks,
+      matrix,
+      patterns,
+    }
+  } else if (url.startsWith('pt-package-purchases/') && url.endsWith('/fixed-schedule/preview') && method === 'post') {
+    const purchaseId = url.split('/')[1]
+    const purchase = db.purchases.find((p) => p.id === purchaseId) || db.purchases[0]
+    const slotConfigs = [
+      { index: 1, name: 'Slot 1 (Ca Sáng sớm)', startTime: '06:00', endTime: '07:00' },
+      { index: 2, name: 'Slot 2 (Ca Sáng)', startTime: '07:15', endTime: '08:15' },
+      { index: 3, name: 'Slot 3 (Ca Trưa)', startTime: '11:30', endTime: '12:30' },
+      { index: 4, name: 'Slot 4 (Ca Chiều)', startTime: '16:45', endTime: '17:45' },
+      { index: 5, name: 'Slot 5 (Cao điểm 1)', startTime: '18:00', endTime: '19:00' },
+      { index: 6, name: 'Slot 6 (Cao điểm 2)', startTime: '19:15', endTime: '20:15' },
+    ]
+    const chosenSlot = slotConfigs.find((s) => s.index === data.slotIndex) || slotConfigs[3]
+    resData = {
+      isAvailable: true,
+      totalSessions: 12,
+      startDate: data.startDate || '2026-10-26',
+      endDate: '2026-11-20',
+      slot: chosenSlot,
+      coachName: purchase?.coachNameSnapshot || 'HLV',
+      courseName: purchase?.courseNameSnapshot || 'Khóa tập PT',
+      memberName: 'Hội viên',
+      isGymActiveUntilEnd: true,
+      sessions: [
+        {
+          sessionNumber: 1,
+          date: data.startDate || '2026-10-26',
+          dayOfWeek: 1,
+          dayName: 'Thứ Hai',
+          slotIndex: chosenSlot.index,
+          slotName: chosenSlot.name,
+          startTime: chosenSlot.startTime,
+          endTime: chosenSlot.endTime,
+          startsAt: `${data.startDate || '2026-10-26'}T${chosenSlot.startTime}:00+07:00`,
+          endsAt: `${data.startDate || '2026-10-26'}T${chosenSlot.endTime}:00+07:00`,
+          isAvailable: true,
+          conflictReason: null,
+          isGymMembershipActive: true,
+        },
+      ],
+    }
+  } else if (url.startsWith('pt-package-purchases/') && url.endsWith('/fixed-schedule/book') && method === 'post') {
+    const purchaseId = url.split('/')[1]
+    resData = {
+      success: true,
+      totalBooked: 12,
+      purchaseId,
+      coachId: 'coa-01',
+      courseId: 'cou-01',
+      memberId: 'mem-01',
+      slotName: 'Slot 4 (Ca Chiều)',
+      startDate: data.startDate || '2026-10-26',
+      endDate: '2026-11-20',
+      bookings: [],
+    }
   } else if (url.startsWith('coach-slots/') && method === 'patch') {
     const id = url.split('/')[1]
     const slot = db.slots.find((s) => s.id === id)

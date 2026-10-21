@@ -35,6 +35,7 @@ import { ptBookingsService } from '../services/pt-bookings.service'
 import { coachSlotService } from '@/features/coach-slots/services/coach-slot-service'
 import { membersService } from '@/features/memberships/services/members.service'
 import { ptPurchasesService } from '@/features/pt-packages-sales/services/pt-purchases.service'
+import { RecurringScheduleModal } from '../components/recurring-schedule-modal'
 import { isAppApiError } from '@/shared/api/api-error'
 import type { Booking, CoachSlot, MemberSummary, Purchase } from '@/shared/types/api'
 
@@ -112,6 +113,7 @@ export function BookingCalendarPage() {
 
   // Business Rules Modal
   const [showRulesModal, setShowRulesModal] = useState(false)
+  const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false)
 
   // Filter & Navigation State
   // Default to today and tomorrow in YYYY-MM-DD
@@ -603,6 +605,15 @@ export function BookingCalendarPage() {
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => setIsRecurringModalOpen(true)}
+            className="flex items-center gap-1.5 text-xs shadow-sm"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Thiết lập lịch cố định gói PT
+          </Button>
           <Button
             size="sm"
             variant="outline"
@@ -1704,6 +1715,14 @@ export function BookingCalendarPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Modal Thiết Lập Lịch Cố Định Gói PT 1:1 */}
+      <RecurringScheduleModal
+        isOpen={isRecurringModalOpen}
+        onClose={() => setIsRecurringModalOpen(false)}
+        allPurchases={purchases}
+        onSuccess={loadData}
+      />
     </div>
   )
 }

@@ -9,6 +9,7 @@ import { coursesExercisesService } from '@/features/courses-exercises/services/c
 import { coachesService } from '@/features/coaches/services/coaches.service'
 import { coachApprovalService } from '@/features/coach-approval/services/coach-approval.service'
 import { ptPurchasesService } from '../services/pt-purchases.service'
+import { RecurringScheduleModal } from '@/features/pt-bookings-schedule/components/recurring-schedule-modal'
 import { paymentsService } from '@/features/payments-invoices/services/payments.service'
 import { isAppApiError } from '@/shared/api/api-error'
 import type { PaymentMethod, MemberSummary, TrainingCourse, CoachSummary, PackageOption, Purchase } from '@/shared/types/api'
@@ -35,6 +36,7 @@ export function PtPackageSalePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [createdPurchase, setCreatedPurchase] = useState<Purchase | null>(null)
   const [pendingPurchase, setPendingPurchase] = useState<Purchase | null>(null)
+  const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false)
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
@@ -243,10 +245,14 @@ export function PtPackageSalePage() {
             Mã hợp đồng: <span className="font-mono text-primary font-bold">{createdPurchase.purchaseCode || createdPurchase.id}</span>
           </p>
           <div className="pt-4 flex flex-wrap justify-center gap-3">
-            <Button variant="outline" onClick={() => navigate('/receptionist/calendar')}>
-              Xếp lịch tập ngay
+            <Button variant="primary" onClick={() => setIsRecurringModalOpen(true)} className="gap-1.5 shadow-sm">
+              <Sparkles className="h-4 w-4" />
+              Thiết lập lịch cố định ngay
             </Button>
-            <Button variant="primary" onClick={() => navigate('/receptionist/payments')}>
+            <Button variant="outline" onClick={() => navigate('/receptionist/calendar')}>
+              Lịch tổng
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/receptionist/payments')}>
               Xem biên lai thu ngân
             </Button>
             <Button
@@ -385,6 +391,14 @@ export function PtPackageSalePage() {
           </div>
         </form>
       )}
+
+      {/* Modal Thiết Lập Lịch Cố Định Gói PT 1:1 */}
+      <RecurringScheduleModal
+        isOpen={isRecurringModalOpen}
+        onClose={() => setIsRecurringModalOpen(false)}
+        purchase={createdPurchase}
+        onSuccess={() => navigate('/receptionist/calendar')}
+      />
     </div>
   )
 }

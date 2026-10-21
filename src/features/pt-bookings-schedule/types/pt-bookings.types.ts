@@ -101,3 +101,92 @@ export interface BookingDetail extends Booking {
     makeupEligible: boolean
   }
 }
+
+export interface RecurringMatrixSlot {
+  slotIndex: number
+  slotName: string
+  startTime: string
+  endTime: string
+  isAvailableFully: boolean
+  totalWeeksChecked: number
+  conflictCount: number
+  conflicts: Array<{ date: string; reason: string }>
+}
+
+export interface RecurringMatrixDay {
+  dayOfWeek: number
+  dayName: string
+  slots: RecurringMatrixSlot[]
+}
+
+export interface RecurringPatternSuggestion {
+  key: string
+  name: string
+  daysOfWeek: number[]
+  availableSlots: Array<{ slotIndex: number; slotName: string; startTime: string; endTime: string }>
+  hasAvailableSlots: boolean
+}
+
+export interface CoachRecurringMatrixResponse {
+  coachId: string
+  coachName: string
+  startDate: string
+  totalWeeks: number
+  matrix: RecurringMatrixDay[]
+  patterns: RecurringPatternSuggestion[]
+}
+
+export interface FixedSchedulePayload {
+  startDate: string
+  daysOfWeek: number[]
+  slotIndex: number
+}
+
+export interface FixedScheduleSessionItem {
+  sessionNumber: number
+  date: string
+  dayOfWeek: number
+  dayName: string
+  slotIndex: number
+  slotName: string
+  startTime: string
+  endTime: string
+  startsAt: string
+  endsAt: string
+  isAvailable: boolean
+  conflictReason: string | null
+  isGymMembershipActive: boolean
+}
+
+export interface FixedSchedulePreviewResponse {
+  isAvailable: boolean
+  totalSessions: number
+  startDate: string
+  endDate: string
+  slot: { index: number; name: string; startTime: string; endTime: string }
+  coachName: string
+  courseName: string
+  memberName: string
+  isGymActiveUntilEnd: boolean
+  sessions: FixedScheduleSessionItem[]
+}
+
+export interface FixedScheduleBookResponse {
+  success: boolean
+  totalBooked: number
+  purchaseId: string
+  coachId: string
+  courseId: string
+  memberId: string
+  slotName: string
+  startDate: string
+  endDate: string
+  bookings: Array<{
+    id: string
+    bookingCode: string
+    sessionNumber: number
+    date: string
+    startsAt: string
+    endsAt: string
+  }>
+}
