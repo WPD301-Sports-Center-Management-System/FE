@@ -13,6 +13,13 @@ export interface ManagerDashboardData {
   revenue: ManagerDashboardRevenue
   bookingsToday: number
   equipmentIssues: number
+  completedBookingsToday?: number
+  availableSlotsToday?: number
+  pendingApprovals?: number
+  pendingCoachApprovals?: number
+  pendingPackageApprovals?: number
+  revenueChangePercent?: number | null
+  revenueTrend?: Array<{ date: string; label: string; revenue: number; bookings: number }>
 }
 
 export interface ReceptionistDashboardData {

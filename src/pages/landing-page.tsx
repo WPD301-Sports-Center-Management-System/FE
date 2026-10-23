@@ -65,7 +65,7 @@ export const LandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#070a11] text-slate-100 selection:bg-orange-500 selection:text-white relative">
+    <div className="landing-page min-h-screen bg-[#070a11] text-slate-100 selection:bg-orange-500 selection:text-white relative">
       
       {/* Top Navbar */}
       <Navbar 
@@ -74,7 +74,7 @@ export const LandingPage = () => {
       />
 
       {/* Main Sections */}
-      <main>
+      <main className="pb-20 md:pb-0">
         <HeroSection 
           onOpenTrialModal={handleOpenGeneralTrial} 
           onOpenDownloadModal={() => setDownloadModalOpen(true)} 
@@ -107,6 +107,27 @@ export const LandingPage = () => {
 
       {/* Footer */}
       <Footer onOpenDownloadModal={() => setDownloadModalOpen(true)} />
+
+      {/* Mobile-first conversion bar: keeps the main action available without
+          forcing users to scroll back to the hero. */}
+      <div className="landing-mobile-cta fixed inset-x-0 bottom-0 z-40 border-t border-slate-700/80 bg-[#0b101a]/95 px-4 py-3 backdrop-blur-xl md:hidden">
+        <div className="mx-auto flex max-w-md items-center gap-2">
+          <button
+            type="button"
+            onClick={handleOpenGeneralTrial}
+            className="flex-1 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-orange-950/40 transition-transform active:scale-[.98]"
+          >
+            Đăng ký tập thử
+          </button>
+          <button
+            type="button"
+            onClick={() => setDownloadModalOpen(true)}
+            className="rounded-xl border border-slate-600 bg-slate-800/80 px-4 py-3 text-sm font-semibold text-slate-200"
+          >
+            Tải app
+          </button>
+        </div>
+      </div>
 
       {/* Modals */}
       <TrialModal 

@@ -184,7 +184,7 @@ export function ReviewsAuditPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2">
             <ShieldAlert className="h-6 w-6 text-primary" />
-            <span>Kiểm Duyệt Đánh Giá & Audit Log (WEB-MAN-11, 12)</span>
+            <span>Kiểm duyệt đánh giá & nhật ký hoạt động</span>
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Giám sát tính minh bạch đánh giá HLV và nhật ký thao tác dữ liệu hệ thống

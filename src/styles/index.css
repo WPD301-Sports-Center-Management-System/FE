@@ -243,3 +243,99 @@
 .animate-pulse-glow {
   animation: pulseGlow 3s ease-in-out infinite;
 }
+
+/* Landing page theme bridge.
+   Most landing sections were originally designed with dark-only utility
+   colors. These scoped overrides let the existing light/dark selector apply
+   to the whole marketing page without changing the dashboard theme tokens. */
+html:not(.dark) .landing-page {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+html:not(.dark) .landing-page main > section {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .landing-page main > section:nth-child(even) {
+  background: #f8fafc !important;
+}
+
+html:not(.dark) .landing-page main > section [class*="bg-slate-900"],
+html:not(.dark) .landing-page main > section [class*="bg-slate-800"] {
+  background-color: #ffffff !important;
+}
+
+html:not(.dark) .landing-page main > section [class*="border-slate-8"],
+html:not(.dark) .landing-page main > section [class*="border-slate-7"] {
+  border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .landing-page main > section h1,
+html:not(.dark) .landing-page main > section h2,
+html:not(.dark) .landing-page main > section h3,
+html:not(.dark) .landing-page main > section h4 {
+  color: #0f172a !important;
+}
+
+/* Text used inside accordion/card labels often uses text-white directly
+   instead of a heading element. In light mode it must not disappear on the
+   white card surface. Buttons keep their white CTA text below. */
+html:not(.dark) .landing-page main > section span[class*="text-white"],
+html:not(.dark) .landing-page main > section div[class*="text-white"] {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .landing-page main > section button[class*="text-white"],
+html:not(.dark) .landing-page main > section a[class*="text-white"] {
+  color: #ffffff !important;
+}
+
+/* Featured pricing cards intentionally use a dark contrast surface even in
+   light mode. Restore their light text after the generic light-mode rules. */
+html:not(.dark) .landing-page .landing-pricing-dark h3,
+html:not(.dark) .landing-page .landing-pricing-dark h4,
+html:not(.dark) .landing-page .landing-pricing-dark [class*="text-white"] {
+  color: #f8fafc !important;
+}
+
+html:not(.dark) .landing-page .landing-pricing-dark p,
+html:not(.dark) .landing-page .landing-pricing-dark [class*="text-slate-300"],
+html:not(.dark) .landing-page .landing-pricing-dark [class*="text-slate-400"] {
+  color: #cbd5e1 !important;
+}
+
+html:not(.dark) .landing-page main > section p,
+html:not(.dark) .landing-page main > section [class*="text-slate-300"],
+html:not(.dark) .landing-page main > section [class*="text-slate-400"] {
+  color: #475569 !important;
+}
+
+/* Product previews stay dark in light mode so the app screenshots remain
+   visually consistent and readable. */
+html:not(.dark) .landing-page .landing-preview [class*="bg-slate-900"],
+html:not(.dark) .landing-page .landing-preview [class*="bg-slate-800"] {
+  background-color: #0f172a !important;
+}
+
+html:not(.dark) .landing-page .landing-preview h1,
+html:not(.dark) .landing-page .landing-preview h2,
+html:not(.dark) .landing-page .landing-preview h3,
+html:not(.dark) .landing-page .landing-preview h4,
+html:not(.dark) .landing-page .landing-preview [class*="text-white"],
+html:not(.dark) .landing-page .landing-preview [class*="text-slate-300"],
+html:not(.dark) .landing-page .landing-preview [class*="text-slate-400"] {
+  color: #f8fafc !important;
+}
+
+html:not(.dark) .landing-page .landing-mobile-cta {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #e2e8f0;
+}
+
+html:not(.dark) .landing-page .landing-mobile-cta button:last-child {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+}

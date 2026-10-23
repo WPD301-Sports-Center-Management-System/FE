@@ -43,7 +43,7 @@ describe('CoachApprovalPage', () => {
     render(<CoachApprovalPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Phê Duyệt HLV & Gói Tập (WEB-MAN-07)')).toBeInTheDocument()
+      expect(screen.getByText('Phê duyệt HLV & gói tập')).toBeInTheDocument()
       expect(screen.getByText('Chest Strength Nâng Cao')).toBeInTheDocument()
       expect(screen.getByText(/Coach Hải Thể Hình/i)).toBeInTheDocument()
     })
@@ -83,6 +83,7 @@ describe('CoachApprovalPage', () => {
 
     const approveBtn = screen.getByRole('button', { name: /Phê duyệt/i })
     fireEvent.click(approveBtn)
+    fireEvent.click(screen.getByRole('button', { name: /Xác nhận phê duyệt/i }))
 
     await waitFor(() => {
       expect(coachApprovalService.approveCoachCourseOffering).toHaveBeenCalledWith('off-pending')
@@ -181,6 +182,7 @@ describe('CoachApprovalPage', () => {
 
     const approveBtn = screen.getByRole('button', { name: /Phê duyệt/i })
     fireEvent.click(approveBtn)
+    fireEvent.click(screen.getByRole('button', { name: /Xác nhận phê duyệt/i }))
 
     await waitFor(() => {
       expect(coachApprovalService.approvePtPackageOption).toHaveBeenCalledWith('pkg-pending-1')

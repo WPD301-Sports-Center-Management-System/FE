@@ -96,7 +96,7 @@ export function MuscleGroupFormModal({
           label="Link hình ảnh minh họa (URL)"
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="https://images.unsplash.com/..."
+          placeholder="https://example.com/anh-nhom-co.jpg"
           disabled={isSubmitting}
         />
         <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">

@@ -148,7 +148,7 @@ export const Footer = ({ onOpenDownloadModal }: FooterProps) => {
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-orange-400 shrink-0" />
-                <span>support@apexfit.vn</span>
+                <span>support@sportscenter.vn</span>
               </div>
               <div className="flex items-start gap-2.5 pt-1">
                 <Clock className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
@@ -164,7 +164,7 @@ export const Footer = ({ onOpenDownloadModal }: FooterProps) => {
 
         {/* Bottom Copyright */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <p>© 2026 ApexFit Gym Management System. All rights reserved.</p>
+          <p>© 2026 Sports Center Gym Management System. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <a href="#" className="hover:text-slate-300 transition-colors">Điều khoản dịch vụ</a>
             <a href="#" className="hover:text-slate-300 transition-colors">Chính sách bảo mật</a>

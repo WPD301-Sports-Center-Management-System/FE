@@ -146,7 +146,7 @@ export function PaymentListPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Sổ Thu Ngân & Hóa Đơn (WEB-REC-08, 09)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Sổ thu ngân & hóa đơn</h1>
           <p className="text-xs text-text-muted mt-1">
             Ghi nhận các khoản thu vé Gym, hợp đồng PT và phát hành hóa đơn điện tử tự động
           </p>

@@ -110,7 +110,7 @@ export function CourseFormModal({
           label="Link ảnh banner khóa học (URL)"
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="https://images.unsplash.com/..."
+          placeholder="https://example.com/anh-khoa-hoc.jpg"
           disabled={isSubmitting}
         />
         <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">

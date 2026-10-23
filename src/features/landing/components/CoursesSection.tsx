@@ -44,13 +44,13 @@ export const CoursesSection = ({ onSelectCourse }: CoursesSectionProps) => {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-12">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-xs font-semibold text-orange-400">
-            <span>DANH MỤC KHÓA TẬP THEO NHÓM CƠ</span>
+            <span>CHỌN MỤC TIÊU BẠN MUỐN CẢI THIỆN</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold font-heading text-white tracking-tight">
-            Khóa Tập <span className="text-gradient-orange">Cá Nhân Hóa 1:1</span> Chuyên Sâu
+            Lộ trình tập theo <span className="text-gradient-orange">mục tiêu của bạn</span>
           </h2>
           <p className="text-base text-slate-300">
-            Tập trung đúng nhóm cơ mong muốn, khắc phục điểm yếu cơ thể và đạt kết quả nhanh hơn gấp 3 lần với lộ trình bài bản.
+            Chọn mục tiêu, xem nội dung buổi tập và để PT tư vấn cách bắt đầu phù hợp với thể trạng hiện tại.
           </p>
         </div>
 
@@ -158,7 +158,7 @@ export const CoursesSection = ({ onSelectCourse }: CoursesSectionProps) => {
                     onClick={() => onSelectCourse(course)}
                     className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-slate-800 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-600/30 border border-slate-700 hover:border-orange-500 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <span>Chọn Khóa Này & Đặt Lịch PT</span>
+                    <span>Xem khóa & đăng ký tư vấn</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>

@@ -103,7 +103,7 @@ export function CoachScheduleCalendar({
   }
 
   return (
-    <div className="relative rounded-2xl border border-border-subtle bg-bg-surface shadow-md backdrop-blur-md overflow-hidden min-w-0 w-full">
+    <div className="relative rounded-2xl border border-border-subtle bg-bg-surface shadow-md shadow-slate-900/[0.04] backdrop-blur-md overflow-hidden min-w-0 w-full">
       {/* Loading overlay */}
       {isLoading && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-bg-app/60 backdrop-blur-xs">
@@ -154,7 +154,7 @@ export function CoachScheduleCalendar({
           {/* Table Body - 7 Standard Template Slots */}
           <tbody className="divide-y divide-border-subtle">
             {STANDARD_TEMPLATE_SLOTS.map((slot) => (
-              <tr key={slot.index} className="divide-x divide-border-subtle hover:bg-bg-surface-muted/40 transition-colors">
+              <tr key={slot.index} className="divide-x divide-border-subtle hover:bg-bg-surface-muted/40 transition-colors group/row">
                 {/* Slot Number Column */}
                 <td className="w-14 sm:w-16 p-2 text-center align-middle sticky left-0 z-10 bg-bg-surface shadow-xs">
                   <div className="flex flex-col items-center justify-center">
@@ -308,15 +308,14 @@ export function CoachScheduleCalendar({
                               })
                             }
                           }}
-                          className="h-full w-full min-h-[60px] rounded-xl flex items-center justify-center text-text-muted font-semibold cursor-pointer hover:bg-bg-surface-muted hover:text-orange-400 transition-all group/empty"
+                          className="h-full w-full min-h-[60px] rounded-xl flex items-center justify-center text-text-muted font-semibold cursor-pointer hover:bg-orange-500/[0.06] hover:ring-1 hover:ring-inset hover:ring-orange-500/25 hover:text-orange-400 transition-all group/empty"
                           title={`Click để mở Ca ${slot.index} (${slot.startTime} - ${slot.endTime}) ngày ${d.formatted}`}
                         >
                           <span className="group-hover/empty:hidden text-text-muted/60 text-sm font-medium">
                             -
                           </span>
-                          <span className="hidden group-hover/empty:inline-flex items-center gap-1 text-[10px] font-semibold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded-lg border border-orange-500/20 shadow-xs animate-in fade-in duration-150">
-                            <Plus className="h-3 w-3" />
-                            Mở ca
+                          <span className="hidden group-hover/empty:inline-flex items-center justify-center h-7 w-7 text-orange-500 bg-orange-500/10 rounded-full border border-orange-500/20 shadow-xs animate-in fade-in zoom-in-95 duration-150" aria-label="Mở ca">
+                            <Plus className="h-4 w-4" />
                           </span>
                         </div>
                       )}

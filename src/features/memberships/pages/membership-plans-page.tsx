@@ -77,7 +77,7 @@ export function MembershipPlansPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quản lý Bảng Giá Vé Gym (WEB-MAN-04)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quản lý bảng giá vé Gym</h1>
           <p className="text-xs text-text-muted mt-1">
             Cấu hình gói hội viên tập tự do phòng Gym. Giá thay đổi chỉ áp dụng cho lượt mua mới.
           </p>

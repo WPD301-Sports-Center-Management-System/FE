@@ -168,7 +168,7 @@ export function CoachAiRecommendationPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Gợi Ý Bài Tập Từ Trí Tuệ Nhân Tạo (WEB-COA-11)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Gợi ý bài tập từ AI</h1>
           <p className="text-xs text-text-muted mt-1">
             Ứng dụng mô hình AI kết hợp dữ liệu InBody và mục tiêu của học viên để phác thảo giáo án thông minh
           </p>

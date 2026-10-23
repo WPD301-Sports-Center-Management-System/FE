@@ -10,6 +10,7 @@ export interface CreatePtPurchasePayload {
 export interface PtPurchaseQueryParams {
   memberId?: string
   coachId?: string
+  purchaseCode?: string
   status?: PtPurchaseStatus
   page?: number
   limit?: number

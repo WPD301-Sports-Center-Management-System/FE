@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { FileText, Activity, RefreshCw, AlertCircle, Phone, Mail, User, Calendar, Dumbbell, HeartPulse, Search } from 'lucide-react'
+import { FileText, Activity, RefreshCw, AlertCircle, Phone, Mail, User, Calendar, Dumbbell, HeartPulse, Search, Users, CheckCircle2, Clock3, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/shared/components/ui/button'
 import { Modal } from '@/shared/components/ui/modal'
@@ -67,15 +67,25 @@ export function CoachStudentsPage() {
     })
   }, [purchases, searchQuery, statusFilter])
 
+  const studentStats = useMemo(() => ({
+    total: purchases.length,
+    active: purchases.filter((p) => p.status === 'ACTIVE').length,
+    completed: purchases.filter((p) => p.status === 'COMPLETED').length,
+  }), [purchases])
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2.5">
-            <Dumbbell className="h-6 w-6 text-orange-500" />
-            <span>Học Viên Của Tôi (WEB-COA-05, 06)</span>
+          <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-orange-500">
+            <span className="h-2 w-2 rounded-full bg-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.12)]" />
+            Quản lý học viên
+          </p>
+          <h1 className="text-2xl sm:text-[28px] font-bold tracking-tight text-text-primary flex items-center gap-2.5">
+            <Dumbbell className="h-6 w-6 text-orange-500" strokeWidth={2.5} />
+            <span>Học viên của tôi</span>
           </h1>
-          <p className="text-xs text-text-muted mt-1">
+          <p className="text-sm text-text-muted mt-1.5">
             Danh sách hội viên đang theo học các gói huấn luyện PT 1:1 do bạn trực tiếp giảng dạy
           </p>
         </div>
@@ -84,15 +94,29 @@ export function CoachStudentsPage() {
           variant="outline"
           onClick={loadStudents}
           disabled={isLoading}
-          className="gap-2 text-xs self-start sm:self-auto"
+          className="gap-2 text-xs self-start sm:self-auto min-h-10"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           <span>Làm mới</span>
         </Button>
       </div>
 
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {[
+          { label: 'Tổng học viên', value: studentStats.total, icon: Users, tone: 'text-primary', bg: 'bg-primary/10' },
+          { label: 'Đang hoạt động', value: studentStats.active, icon: CheckCircle2, tone: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+          { label: 'Đã hoàn thành', value: studentStats.completed, icon: Clock3, tone: 'text-sky-500', bg: 'bg-sky-500/10' },
+        ].map((stat) => {
+          const Icon = stat.icon
+          return <div key={stat.label} className="flex items-center gap-3 rounded-2xl border border-border-subtle bg-bg-surface p-4 shadow-sm shadow-slate-900/[0.03]">
+            <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.bg}`}><Icon className={`h-5 w-5 ${stat.tone}`} /></span>
+            <span><span className="block text-xl font-bold leading-none text-text-primary">{stat.value}</span><span className="mt-1 block text-xs font-medium text-text-muted">{stat.label}</span></span>
+          </div>
+        })}
+      </div>
+
       {/* Search Bar & Status Filter */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 rounded-2xl border border-border-subtle bg-bg-surface p-3 shadow-sm shadow-slate-900/[0.03]">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted pointer-events-none" />
           <Input
@@ -101,6 +125,7 @@ export function CoachStudentsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 text-xs"
           />
+          {searchQuery && <button type="button" onClick={() => setSearchQuery('')} aria-label="Xóa tìm kiếm" className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-text-muted hover:bg-bg-surface-muted hover:text-text-primary"><X className="h-3.5 w-3.5" /></button>}
         </div>
         <div className="w-full sm:w-56">
           <Select
@@ -128,7 +153,7 @@ export function CoachStudentsPage() {
           <RefreshCw className="h-8 w-8 animate-spin text-orange-500" />
         </div>
       ) : filteredPurchases.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredPurchases.map((p) => {
             const studentName =
               (p as any).member?.user?.fullName ||
@@ -165,13 +190,13 @@ export function CoachStudentsPage() {
             return (
               <div
                 key={p.id}
-                className="rounded-2xl border border-border-subtle bg-bg-surface p-5 space-y-4 hover:border-border-strong shadow-sm transition-all flex flex-col justify-between"
+                className="group flex flex-col justify-between space-y-4 rounded-2xl border border-border-subtle bg-bg-surface p-5 shadow-sm shadow-slate-900/[0.04] transition-all hover:-translate-y-0.5 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/[0.06]"
               >
                 <div className="space-y-3.5">
                   {/* Student Header with Avatar */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-700/20 border border-orange-500/30 flex items-center justify-center text-orange-500 font-bold text-sm shrink-0">
+                      <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-700/20 border border-orange-500/30 flex items-center justify-center text-orange-500 font-bold text-sm shrink-0 shadow-inner">
                         {initials || <User className="h-5 w-5" />}
                       </div>
                       <div>
@@ -251,7 +276,7 @@ export function CoachStudentsPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="w-full text-xs"
+                    className="w-full text-xs transition-colors group-hover:border-orange-500/40"
                     onClick={() => setSelectedStudent(p)}
                   >
                     Hồ sơ chi tiết

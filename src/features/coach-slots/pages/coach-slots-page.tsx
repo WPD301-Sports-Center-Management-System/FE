@@ -208,20 +208,24 @@ export function CoachSlotsPage() {
   )
 
   return (
-    <div className="space-y-5 max-w-[1680px] mx-auto w-full min-w-0">
+    <div className="space-y-6 max-w-[1680px] mx-auto w-full min-w-0">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+      <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-orange-500 mb-2">
+            <span className="h-2 w-2 rounded-full bg-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.12)]" />
+            Lịch làm việc
+          </div>
+          <h1 className="text-2xl sm:text-[28px] font-bold tracking-tight text-text-primary">
             Quản lý khung giờ làm việc
           </h1>
-          <p className="text-xs text-text-muted mt-1">
+          <p className="text-sm text-text-muted mt-1.5 max-w-2xl">
             Đăng ký các slot trống để học viên hoặc Lễ tân có thể xếp lịch tập PT 1:1
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5 xl:justify-end">
           <Button
-            className="gap-2 text-xs bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-md shadow-orange-500/20"
+            className="gap-2 text-xs bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-md shadow-orange-500/20 min-h-10"
             onClick={() => setIsQuickModalOpen(true)}
           >
             <Sparkles className="h-4 w-4" />
@@ -229,7 +233,7 @@ export function CoachSlotsPage() {
           </Button>
           <Button
             variant="outline"
-            className="gap-2 text-xs border-border-subtle hover:border-border-strong"
+            className="gap-2 text-xs border-border-subtle hover:border-border-strong min-h-10"
             onClick={() => setIsBulkCreateOpen(true)}
           >
             <Layers className="h-4 w-4 text-orange-400" />
@@ -237,7 +241,7 @@ export function CoachSlotsPage() {
           </Button>
           <Button
             variant="secondary"
-            className="gap-2 text-xs"
+            className="gap-2 text-xs min-h-10"
             onClick={() => {
               setPrefilledCreate(undefined)
               setIsCreateOpen(true)

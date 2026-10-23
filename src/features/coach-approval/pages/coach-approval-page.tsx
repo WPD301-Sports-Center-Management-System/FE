@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Check, X, RefreshCw, AlertCircle, Award, Search, Power } from 'lucide-react'
+import { Check, X, RefreshCw, AlertCircle, Award, Search, Power, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatVND } from '@/shared/utils/currency'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
@@ -9,6 +9,7 @@ import { Textarea } from '@/shared/components/ui/input'
 import { coachApprovalService } from '@/features/coach-approval/services/coach-approval.service'
 import { isAppApiError } from '@/shared/api/api-error'
 import type { OfferingDetail, PackageOption } from '@/features/coach-approval/types/coach-approval.types'
+import { Link } from 'react-router-dom'
 
 export function CoachApprovalPage() {
   const [activeTab, setActiveTab] = useState<'offering' | 'package'>('offering')
@@ -27,6 +28,7 @@ export function CoachApprovalPage() {
 
   // Action states
   const [processingId, setProcessingId] = useState<string | null>(null)
+  const [approvalTarget, setApprovalTarget] = useState<{ id: string; type: 'offering' | 'package'; name: string } | null>(null)
 
   // Reject Modal State
   const [rejectItem, setRejectItem] = useState<{ id: string; type: 'package' | 'offering' } | null>(null)
@@ -154,6 +156,18 @@ export function CoachApprovalPage() {
     }
   }
 
+  const handleConfirmApproval = async () => {
+    if (!approvalTarget) return
+    const target = approvalTarget
+    setApprovalTarget(null)
+    if (target.type === 'offering') {
+      const offering = offerings.find((item) => item.id === target.id)
+      if (offering) await handleApproveOffering(offering)
+    } else {
+      await handleApprovePackage(target.id)
+    }
+  }
+
   // Handle Reject Submission (PATCH /coach-course-offerings/:id/reject or /pt-package-options/:id/reject)
   const handleConfirmReject = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -247,7 +261,7 @@ export function CoachApprovalPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2">
             <Award className="h-6 w-6 text-orange-500" />
-            <span>Phê Duyệt HLV & Gói Tập (WEB-MAN-07)</span>
+            <span>Phê duyệt HLV & gói tập</span>
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Xét duyệt năng lực dạy khóa học và các gói huấn luyện PT 1:1 do Huấn luyện viên đề xuất
@@ -397,6 +411,13 @@ export function CoachApprovalPage() {
                     </div>
 
                     <div className="flex items-center justify-end gap-2 pt-3 border-t border-border-subtle mt-2">
+                      {(off.coach?.id || off.coachId) && (
+                        <Link to={`/coaches/${off.coach?.id || off.coachId}`} target="_blank" rel="noreferrer">
+                          <Button size="sm" variant="outline" className="text-xs gap-1.5">
+                            <Eye className="h-3.5 w-3.5" /> Xem hồ sơ
+                          </Button>
+                        </Link>
+                      )}
                       {off.status === 'PENDING' && (
                         <>
                           <Button
@@ -412,7 +433,7 @@ export function CoachApprovalPage() {
                           <Button
                             size="sm"
                             variant="primary"
-                            onClick={() => handleApproveOffering(off)}
+                            onClick={() => setApprovalTarget({ id: off.id, type: 'offering', name: `${coachName} · ${courseTitle}` })}
                             disabled={processingId === off.id}
                             isLoading={processingId === off.id}
                             className="text-xs"
@@ -524,6 +545,13 @@ export function CoachApprovalPage() {
 
                   {pkg.approvalStatus === 'PENDING' && (
                     <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-subtle">
+                      {pkg.coachId && (
+                        <Link to={`/coaches/${pkg.coachId}`} target="_blank" rel="noreferrer">
+                          <Button size="sm" variant="outline" className="text-xs gap-1.5">
+                            <Eye className="h-3.5 w-3.5" /> Xem hồ sơ
+                          </Button>
+                        </Link>
+                      )}
                       <Button
                         size="sm"
                         variant="danger"
@@ -536,7 +564,7 @@ export function CoachApprovalPage() {
                       <Button
                         size="sm"
                         variant="primary"
-                        onClick={() => handleApprovePackage(pkg.id)}
+                        onClick={() => setApprovalTarget({ id: pkg.id, type: 'package', name: `${coachName} · ${pkg.name}` })}
                         disabled={processingId === pkg.id}
                         isLoading={processingId === pkg.id}
                       >
@@ -548,6 +576,13 @@ export function CoachApprovalPage() {
 
                   {pkg.approvalStatus === 'APPROVED' && (
                     <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-subtle">
+                      {pkg.coachId && (
+                        <Link to={`/coaches/${pkg.coachId}`} target="_blank" rel="noreferrer">
+                          <Button size="sm" variant="outline" className="text-xs gap-1.5">
+                            <Eye className="h-3.5 w-3.5" /> Xem hồ sơ
+                          </Button>
+                        </Link>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -573,6 +608,32 @@ export function CoachApprovalPage() {
       )}
 
       {/* Modal Rejection with mandatory reason */}
+      <Modal
+        isOpen={!!approvalTarget}
+        onClose={() => {
+          if (!processingId) setApprovalTarget(null)
+        }}
+        title="Xác nhận phê duyệt"
+        description="Vui lòng kiểm tra thông tin trước khi cho phép mở bán hoặc nhận lớp."
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-text-primary">
+            <p className="font-semibold">{approvalTarget?.name}</p>
+            <p className="mt-1 text-xs text-text-muted">
+              {approvalTarget?.type === 'offering'
+                ? 'Sau khi duyệt, Coach có thể mở slot cho khóa học này.'
+                : 'Sau khi duyệt, gói PT có thể được kích hoạt và bán cho hội viên.'}
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 border-t border-border-subtle pt-3">
+            <Button type="button" variant="ghost" onClick={() => setApprovalTarget(null)} disabled={!!processingId}>Hủy</Button>
+            <Button type="button" variant="primary" onClick={handleConfirmApproval} isLoading={!!processingId}>
+              <Check className="h-4 w-4" /> Xác nhận phê duyệt
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       <Modal
         isOpen={!!rejectItem}
         onClose={() => {

@@ -3,13 +3,14 @@ import type { MealPlan } from '@/shared/types/api'
 
 export interface CreateMealPlanPayload {
   memberId: string
-  ptPurchaseId?: string
+  ptPurchaseId: string
   title: string
   description?: string
   dailyCalorieTarget?: number
   startDate: string
   endDate?: string
   medicalDisclaimer: string
+  items?: MealPlanItemPayload[]
 }
 
 export interface UpdateMealPlanPayload {

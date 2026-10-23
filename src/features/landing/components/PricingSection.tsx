@@ -29,13 +29,13 @@ export const PricingSection = ({ onSelectPtPackage, onSelectMembership }: Pricin
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-12">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-xs font-semibold text-orange-400">
-            <span>BẢNG GIÁ MINH BẠCH & LINH HOẠT</span>
+            <span>CHỌN GÓI PHÙ HỢP VỚI NHỊP SỐNG</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold font-heading text-white tracking-tight">
-            Đầu Tư Cho Vóc Dáng & Sức Khỏe <span className="text-gradient-orange">Đúng Cách</span>
+            Bắt đầu với chi phí <span className="text-gradient-orange">rõ ràng, dễ chủ động</span>
           </h2>
           <p className="text-base text-slate-300">
-            Không chi phí ẩn. Đặt lịch linh hoạt bằng Credit, bảo lưu theo quy định và thanh toán trực tuyến an toàn qua VNPay.
+            Chọn membership để tự tập tại gym hoặc chọn gói PT 1:1 để có người đồng hành sát hơn. Giá và quyền lợi hiển thị rõ trước khi đăng ký.
           </p>
         </div>
 
@@ -51,7 +51,7 @@ export const PricingSection = ({ onSelectPtPackage, onSelectMembership }: Pricin
               }`}
             >
               <Flame className="w-4 h-4" />
-              <span>Gói PT 1:1 Kèm Huấn Luyện Viên</span>
+              <span>Gói PT 1:1</span>
             </button>
 
             <button
@@ -63,7 +63,7 @@ export const PricingSection = ({ onSelectPtPackage, onSelectMembership }: Pricin
               }`}
             >
               <Zap className="w-4 h-4" />
-              <span>Thẻ Hội Viên Membership Gym</span>
+              <span>Thẻ hội viên Gym</span>
             </button>
           </div>
         </div>
@@ -76,7 +76,7 @@ export const PricingSection = ({ onSelectPtPackage, onSelectMembership }: Pricin
                 key={pkg.id}
                 className={`rounded-3xl p-7 flex flex-col justify-between relative transition-all duration-300 ${
                   pkg.popular
-                    ? 'bg-gradient-to-b from-[#161f33] to-[#0d1524] border-2 border-orange-500 shadow-2xl shadow-orange-950/40 transform -translate-y-2'
+                    ? 'landing-pricing-dark bg-gradient-to-b from-[#161f33] to-[#0d1524] border-2 border-orange-500 shadow-2xl shadow-orange-950/40 transform -translate-y-2'
                     : 'bg-slate-900/80 border border-slate-800 hover:border-slate-700'
                 }`}
               >
@@ -143,7 +143,7 @@ export const PricingSection = ({ onSelectPtPackage, onSelectMembership }: Pricin
                         : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 hover:border-orange-500'
                     }`}
                   >
-                    <span>Chọn Gói {pkg.credits} Buổi</span>
+                    <span>Tư vấn gói {pkg.credits} buổi</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -161,7 +161,7 @@ export const PricingSection = ({ onSelectPtPackage, onSelectMembership }: Pricin
                 key={plan.id}
                 className={`rounded-3xl p-7 flex flex-col justify-between relative transition-all duration-300 ${
                   plan.popular
-                    ? 'bg-gradient-to-b from-[#142338] to-[#0a1524] border-2 border-sky-500 shadow-2xl shadow-sky-950/40 transform -translate-y-2'
+                    ? 'landing-pricing-dark bg-gradient-to-b from-[#142338] to-[#0a1524] border-2 border-sky-500 shadow-2xl shadow-sky-950/40 transform -translate-y-2'
                     : 'bg-slate-900/80 border border-slate-800 hover:border-slate-700'
                 }`}
               >

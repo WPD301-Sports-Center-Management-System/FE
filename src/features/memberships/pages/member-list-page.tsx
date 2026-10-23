@@ -383,7 +383,7 @@ export function MemberListPage() {
             src={
               row.avatarUrl ||
               row.user?.avatarUrl ||
-              'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'
+              '/favicon.svg'
             }
             alt={row.fullName || row.user?.fullName}
             className="h-9 w-9 rounded-xl object-cover border border-border-subtle"
@@ -426,7 +426,7 @@ export function MemberListPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-            Danh Sách Hội Viên (WEB-REC-02, 03)
+            Danh sách hội viên
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Quản lý hồ sơ hội viên phòng Gym, theo dõi thể trạng InBody, gói thẻ tập và lịch sử rèn luyện
@@ -514,7 +514,7 @@ export function MemberListPage() {
                   src={
                     selectedMember.avatarUrl ||
                     (selectedMember as any).user?.avatarUrl ||
-                    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'
+                    '/favicon.svg'
                   }
                   alt={selectedMember.fullName}
                   className="h-14 w-14 rounded-2xl object-cover border border-primary/30"

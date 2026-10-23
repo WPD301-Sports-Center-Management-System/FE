@@ -242,7 +242,7 @@ export function UserManagementPage() {
             <img
               src={
                 row.avatarUrl ||
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80'
+                '/favicon.svg'
               }
               alt={row.fullName}
               className="h-9 w-9 rounded-full object-cover border border-border-subtle shrink-0"
@@ -303,7 +303,7 @@ export function UserManagementPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-            Quản lý Tài Khoản & Nhân Sự (WEB-MAN-02)
+            Quản lý tài khoản & nhân sự
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Quản lý phân quyền Manager, Lễ tân, Huấn luyện viên và Hội viên qua API

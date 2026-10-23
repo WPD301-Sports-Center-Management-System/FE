@@ -35,18 +35,17 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
               </span>
-              <span>🔥 Huấn Luyện 1:1 Chuẩn Quốc Tế • Tích Hợp AI Lộ Trình</span>
+              <span>🔥 Tập đúng mục tiêu • Có PT đồng hành 1:1</span>
             </div>
 
             {/* Main Headline */}
             <div className="space-y-4">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight font-heading leading-[1.15] text-white">
-                Bứt Phá Thể Hình Với Lộ Trình{' '}
-                <span className="text-gradient-orange">PT 1:1 Cá Nhân Hóa</span>{' '}
-                Toàn Diện
+                Một lộ trình tập luyện{' '}
+                <span className="text-gradient-orange">phù hợp với chính bạn</span>
               </h1>
               <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
-                Không lớp nhóm xô bồ. Chọn Huấn luyện viên chuyên môn, chủ động đặt lịch theo slot linh hoạt và theo dõi từng chuyển biến cơ thể ngay trên ứng dụng di động.
+                Bắt đầu bằng một buổi tư vấn, chọn PT phù hợp và tập theo kế hoạch rõ ràng. Bạn chủ động lịch tập, còn Sports Center giúp bạn theo dõi tiến độ từng bước.
               </p>
             </div>
 
@@ -57,7 +56,7 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl text-base font-bold text-white bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 hover:from-orange-500 hover:to-amber-400 glow-button transition-all transform active:scale-95 cursor-pointer"
               >
                 <Flame className="w-5 h-5 text-white" />
-                <span>Đăng Ký Tập Thử & Nhận Tư Vấn</span>
+                <span>Đăng ký tư vấn miễn phí</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
@@ -65,7 +64,7 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
                 href="#courses"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-sm font-semibold text-slate-200 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 hover:border-slate-600 transition-all"
               >
-                <span>Khám Phá Khóa Tập</span>
+                <span>Xem lộ trình phù hợp</span>
               </a>
             </div>
 
@@ -73,23 +72,23 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
             <div className="pt-6 border-t border-slate-800/80 grid grid-cols-3 gap-4 text-center lg:text-left">
               <div>
                 <div className="text-2xl sm:text-3xl font-extrabold font-heading text-white">
-                  100<span className="text-orange-500">%</span>
+                1<span className="text-orange-500">:1</span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">Coach có bằng quốc tế (NASM, ACE, ISSA)</p>
+                <p className="text-xs text-slate-400 mt-1">Huấn luyện theo mục tiêu riêng</p>
               </div>
 
               <div>
                 <div className="text-2xl sm:text-3xl font-extrabold font-heading text-white">
-                  200<span className="text-orange-500">+</span>
+                5<span className="text-orange-500">+</span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">Bài tập phân loại theo từng nhóm cơ</p>
+                <p className="text-xs text-slate-400 mt-1">Nhóm mục tiêu để bạn lựa chọn</p>
               </div>
 
               <div>
                 <div className="text-2xl sm:text-3xl font-extrabold font-heading text-white">
-                  98.4<span className="text-emerald-400">%</span>
+                100<span className="text-emerald-400">%</span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">Hội viên đạt mục tiêu sau 10-20 buổi</p>
+                <p className="text-xs text-slate-400 mt-1">Theo dõi lịch tập và tiến độ trên app</p>
               </div>
             </div>
 
@@ -99,7 +98,7 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
           <div className="lg:col-span-5 relative flex justify-center">
             
             {/* Phone Mockup Frame */}
-            <div className="relative w-full max-w-[360px] sm:max-w-[390px] rounded-[38px] p-3.5 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-2 border-slate-700 shadow-2xl shadow-orange-950/40">
+            <div className="landing-preview relative w-full max-w-[360px] sm:max-w-[390px] rounded-[38px] p-3.5 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-2 border-slate-700 shadow-2xl shadow-orange-950/40">
               
               {/* Screen Content */}
               <div className="rounded-[30px] bg-[#090d16] p-4 sm:p-5 border border-white/5 space-y-4 text-left overflow-hidden relative">
@@ -207,7 +206,7 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
                   className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Smartphone className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Mở Ứng Dụng ApexFit Mobile</span>
+                  <span>Mở ứng dụng Sports Center</span>
                 </button>
 
               </div>

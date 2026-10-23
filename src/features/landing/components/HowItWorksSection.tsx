@@ -15,31 +15,31 @@ export const HowItWorksSection = ({ onOpenTrialModal }: HowItWorksSectionProps) 
   const steps = [
     {
       step: '01',
-      title: 'Chọn Mục Tiêu & Khóa Tập',
-      description: 'Lựa chọn nhóm cơ mong muốn cải thiện (Ngực, Lưng, Chân mông, Core, hoặc Đốt mỡ toàn thân) với bài tập trực quan.',
+      title: 'Nói rõ mục tiêu của bạn',
+      description: 'Chọn mục tiêu muốn cải thiện và chia sẻ tình trạng hiện tại để đội ngũ có cơ sở tư vấn lộ trình phù hợp.',
       icon: Target,
-      tag: 'Khám Phá'
+      tag: 'BẮT ĐẦU'
     },
     {
       step: '02',
-      title: 'Chọn Huấn Luyện Viên & Gói PT',
-      description: 'Xem chứng chỉ và phong cách dạy của Coach. Mua gói 5, 10 hoặc 20 buổi với thanh toán VNPay / tại quầy nhận credit ngay.',
+      title: 'Chọn PT và hình thức tập',
+      description: 'Xem chuyên môn, phong cách hướng dẫn và lịch trống của PT trước khi chọn gói hoặc đăng ký buổi tư vấn.',
       icon: CreditCard,
-      tag: 'Kích Hoạt Gói'
+      tag: 'LỰA CHỌN'
     },
     {
       step: '03',
-      title: 'Tự Do Đặt Lịch 1:1 Bằng Credit',
-      description: 'Dùng credit đặt từng slot mở phù hợp với thời gian rảnh của bạn. Hủy lịch trước 12 tiếng được hoàn 100% credit.',
+      title: 'Đặt lịch theo thời gian rảnh',
+      description: 'Chọn slot phù hợp trên hệ thống và nhận nhắc lịch. Các thay đổi lịch được xử lý theo chính sách hiển thị rõ ràng.',
       icon: CalendarCheck,
-      tag: 'Linh Hoạt 100%'
+      tag: 'CHỦ ĐỘNG'
     },
     {
       step: '04',
-      title: 'Tập Luyện & Đo Lường Kết Quả',
-      description: 'Coach hướng dẫn 1:1, ghi nhận kết quả sau buổi và cập nhật chỉ số InBody & thực đơn dinh dưỡng định kỳ trên App.',
+      title: 'Tập đều và xem lại tiến độ',
+      description: 'Sau mỗi giai đoạn, bạn cùng PT nhìn lại kết quả để điều chỉnh bài tập, cường độ và thói quen cho chặng tiếp theo.',
       icon: Trophy,
-      tag: 'Chuyển Hóa'
+      tag: 'TIẾN BỘ'
     }
   ];
 
@@ -50,13 +50,13 @@ export const HowItWorksSection = ({ onOpenTrialModal }: HowItWorksSectionProps) 
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-xs font-semibold text-orange-400">
-            <span>QUY TRÌNH TINH GỌN & THÔNG MINH</span>
+            <span>BẮT ĐẦU ĐƠN GIẢN, TIẾN BỘ RÕ RÀNG</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold font-heading text-white tracking-tight">
-            4 Bước Đơn Giản Để <span className="text-gradient-orange">Bắt Đầu Lộ Trình</span>
+            4 bước để <span className="text-gradient-orange">bắt đầu đúng hướng</span>
           </h2>
           <p className="text-base text-slate-300">
-            Trải nghiệm đặt lịch và tập luyện mượt mà, chủ động hoàn toàn trên hệ sinh thái Web & Mobile.
+            Từ mục tiêu ban đầu đến từng buổi tập, mọi thông tin được gom về một nơi để bạn dễ theo dõi và chủ động.
           </p>
         </div>
 
@@ -110,8 +110,8 @@ export const HowItWorksSection = ({ onOpenTrialModal }: HowItWorksSectionProps) 
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-sm sm:text-base font-bold text-white">Chưa chắc chắn mình phù hợp với khóa nào?</h4>
-              <p className="text-xs text-slate-400">Đăng ký để được Huấn luyện viên trưởng tư vấn và đo InBody hoàn toàn miễn phí.</p>
+              <h4 className="text-sm sm:text-base font-bold text-white">Chưa biết nên bắt đầu từ đâu?</h4>
+              <p className="text-xs text-slate-400">Để lại thông tin, đội ngũ Sports Center sẽ tư vấn mục tiêu và lịch tập phù hợp.</p>
             </div>
           </div>
 
@@ -119,7 +119,7 @@ export const HowItWorksSection = ({ onOpenTrialModal }: HowItWorksSectionProps) 
             onClick={onOpenTrialModal}
             className="px-6 py-3 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 glow-button shrink-0 transition-all cursor-pointer"
           >
-            Nhận Tư Vấn Miễn Phí
+            Nhận lộ trình miễn phí
           </button>
         </div>
 

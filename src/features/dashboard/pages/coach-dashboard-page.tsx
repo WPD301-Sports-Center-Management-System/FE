@@ -75,7 +75,7 @@ export function CoachDashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Bảng Điều Khiển HLV (WEB-COA-01)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Tổng quan huấn luyện viên</h1>
           <p className="text-xs text-text-muted mt-1">
             Chào mừng HLV {user?.fullName || 'Huấn luyện viên'} • Lịch giảng dạy và tiến độ học viên cá nhân
           </p>

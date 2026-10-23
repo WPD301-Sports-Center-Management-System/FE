@@ -6,7 +6,7 @@ export interface StatusBadgeProps {
 const statusMap: Record<string, { label: string; bg: string; text: string; dot: string }> = {
   ACTIVE: { label: 'Đang hoạt động', bg: 'bg-emerald-500/15 border-emerald-500/30', text: 'text-emerald-700 dark:text-emerald-300', dot: 'bg-emerald-500' },
   PAID: { label: 'Đã thanh toán', bg: 'bg-emerald-500/15 border-emerald-500/30', text: 'text-emerald-700 dark:text-emerald-300', dot: 'bg-emerald-500' },
-  COMPLETED: { label: 'Đã hoàn thành', bg: 'bg-emerald-500/15 border-emerald-500/30', text: 'text-emerald-700 dark:text-emerald-300', dot: 'bg-emerald-500' },
+  COMPLETED: { label: 'Đã hoàn thành', bg: 'bg-sky-500/15 border-sky-500/30', text: 'text-sky-700 dark:text-sky-300', dot: 'bg-sky-500' },
   OPERATIONAL: { label: 'Hoạt động tốt', bg: 'bg-emerald-500/15 border-emerald-500/30', text: 'text-emerald-700 dark:text-emerald-300', dot: 'bg-emerald-500' },
   APPROVED: { label: 'Đã duyệt', bg: 'bg-emerald-500/15 border-emerald-500/30', text: 'text-emerald-700 dark:text-emerald-300', dot: 'bg-emerald-500' },
 

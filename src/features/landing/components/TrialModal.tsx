@@ -218,7 +218,7 @@ export const TrialModal = ({
                 <span>Xác Nhận Đăng Ký Tập Thử</span>
               </button>
               <p className="text-[10px] text-slate-400 text-center mt-2">
-                Thông tin của bạn được bảo mật tuyệt đối theo chính sách của ApexFit.
+                Thông tin của bạn được bảo mật theo chính sách của Sports Center.
               </p>
             </div>
           </form>

@@ -20,19 +20,10 @@ export function PublicCoachProfilePage() {
       setIsLoading(true)
       setErrorMessage(null)
       try {
-        let targetId = coachId
-        // If param is a mock ID or missing, load active coach from list
-        if (!targetId || targetId.startsWith('coa-')) {
-          const list = await coachesService.getCoaches({ limit: 1 })
-          if (list.data && list.data.length > 0) {
-            targetId = list.data[0].id
-          }
-        }
-
-        if (targetId) {
+        if (coachId) {
           const [detailRes, reviewsRes] = await Promise.allSettled([
-            coachesService.getCoachById(targetId),
-            coachesService.getCoachReviews(targetId),
+            coachesService.getCoachById(coachId),
+            coachesService.getCoachReviews(coachId),
           ])
 
           if (detailRes.status === 'fulfilled') {
@@ -107,7 +98,7 @@ export function PublicCoachProfilePage() {
           <img
             src={
               coach.avatarUrl ||
-              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
+              '/favicon.svg'
             }
             alt={coach.fullName}
             className="h-36 w-36 rounded-2xl border-2 border-primary/40 object-cover shadow-lg"
@@ -117,30 +108,30 @@ export function PublicCoachProfilePage() {
               <div>
                 <h1 className="text-3xl font-extrabold text-text-primary">{coach.fullName}</h1>
                 <p className="text-sm font-medium text-primary mt-0.5">
-                  {coach.specialization || 'Chuyên gia Huấn luyện Cá nhân (PT 1:1)'}
+                  {coach.specialization || 'Chưa cập nhật chuyên môn'}
                 </p>
               </div>
               <div className="flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2">
                 <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
                 <span className="text-lg font-bold text-amber-600 dark:text-amber-300">
-                  {coach.averageRating ? Number(coach.averageRating).toFixed(1) : '5.0'}
+                  {coach.averageRating ? Number(coach.averageRating).toFixed(1) : '—'}
                 </span>
                 <span className="text-xs text-text-muted">({coach.reviewCount || reviews.length} đánh giá)</span>
               </div>
             </div>
 
             <p className="text-sm text-text-muted leading-relaxed">
-              {coach.bio || 'Huấn luyện viên giàu kinh nghiệm chuyên sâu về tập luyện thể hình, cải thiện vóc dáng và phục hồi chức năng vận động.'}
+              {coach.bio || 'Huấn luyện viên chưa cập nhật phần giới thiệu.'}
             </p>
 
             <div className="flex flex-wrap gap-4 pt-2 text-xs text-text-muted">
               <div className="flex items-center gap-1.5">
                 <Clock className="h-4 w-4 text-primary" />
-                <span>Kinh nghiệm: <strong className="text-text-primary">{coach.yearsOfExperience || 3} năm</strong></span>
+                <span>Kinh nghiệm: <strong className="text-text-primary">{coach.yearsOfExperience ? `${coach.yearsOfExperience} năm` : 'Chưa cập nhật'}</strong></span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Award className="h-4 w-4 text-sky-500" />
-                <span>Chứng chỉ: <strong className="text-text-primary">{coach.certification || 'NASM / ISSA Certified Personal Trainer'}</strong></span>
+                <span>Chứng chỉ: <strong className="text-text-primary">{coach.certification || 'Chưa cập nhật'}</strong></span>
               </div>
             </div>
           </div>

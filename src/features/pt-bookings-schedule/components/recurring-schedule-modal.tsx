@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Calendar,
   Clock,
@@ -13,6 +14,7 @@ import { Modal } from '@/shared/components/ui/modal'
 import { Button } from '@/shared/components/ui/button'
 import { ptBookingsService } from '../services/pt-bookings.service'
 import { ptPurchasesService } from '@/features/pt-packages-sales/services/pt-purchases.service'
+import { STANDARD_TEMPLATE_SLOTS } from '@/features/coach-slots/constants/coach-slot.constants'
 import type { Purchase } from '@/shared/types/api'
 import type {
   CoachRecurringMatrixResponse,
@@ -42,6 +44,7 @@ export function RecurringScheduleModal({
   allPurchases,
   onSuccess,
 }: RecurringScheduleModalProps) {
+  const navigate = useNavigate()
   // Navigation & form state
   const defaultStartDate = useMemo(() => {
     const d = new Date()
@@ -87,6 +90,9 @@ export function RecurringScheduleModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [showSessionList, setShowSessionList] = useState(false)
+  const availableCredits = currentPurchase
+    ? (currentPurchase.availableCredits ?? (currentPurchase.totalCredits - currentPurchase.reservedCredits - currentPurchase.consumedCredits))
+    : 0
 
   // Calculate estimated total weeks
   const totalWeeks = useMemo(() => {
@@ -95,22 +101,42 @@ export function RecurringScheduleModal({
     return Math.max(1, Math.ceil(currentPurchase.availableCredits / sessionsPerWeek))
   }, [currentPurchase, selectedDays])
 
-  // Load coach availability matrix
+  // The receptionist creates the selected schedule directly. Coach availability is
+  // verified by the server only when there is an actual overlapping booking.
   const loadMatrix = useCallback(async () => {
     if (!currentPurchase?.coachId) return
     setIsLoadingMatrix(true)
     setErrorMessage(null)
     try {
-      const res = await ptBookingsService.getCoachRecurringMatrix(currentPurchase.coachId, {
+      const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7']
+      setMatrixData({
+        coachId: currentPurchase.coachId,
+        coachName: currentPurchase.coachNameSnapshot || 'Huấn luyện viên',
         startDate,
         totalWeeks,
+        patterns: [],
+        matrix: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({
+          dayOfWeek,
+          dayName: dayNames[dayOfWeek === 7 ? 0 : dayOfWeek],
+          slots: STANDARD_TEMPLATE_SLOTS.map((template) => {
+            return {
+              slotIndex: template.index,
+              slotName: template.name,
+              startTime: template.startTime,
+              endTime: template.endTime,
+              isAvailableFully: true,
+              totalWeeksChecked: totalWeeks,
+              conflictCount: 0,
+              conflicts: [],
+            }
+          }),
+        })),
       })
-      setMatrixData(res)
     } catch (err) {
       if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể tải ma trận lịch trống của HLV.')
+        setErrorMessage(err.message || 'Không thể khởi tạo lịch tập.')
       } else {
-        setErrorMessage('Lỗi kết nối khi tải lịch HLV.')
+        setErrorMessage('Lỗi kết nối khi khởi tạo lịch tập.')
       }
     } finally {
       setIsLoadingMatrix(false)
@@ -129,12 +155,32 @@ export function RecurringScheduleModal({
     setIsLoadingPreview(true)
     setErrorMessage(null)
     try {
-      const res = await ptBookingsService.previewFixedSchedule(currentPurchase.id, {
-        startDate,
-        daysOfWeek: selectedDays,
-        slotIndex: selectedSlotIndex,
+      const template = STANDARD_TEMPLATE_SLOTS.find((item) => item.index === selectedSlotIndex)
+      if (!template) return
+      const dates: Date[] = []
+      const cursor = new Date(`${startDate}T00:00:00`)
+      while (dates.length < availableCredits) {
+        const day = cursor.getDay() || 7
+        if (selectedDays.includes(day)) dates.push(new Date(cursor))
+        cursor.setDate(cursor.getDate() + 1)
+      }
+      const sessions = dates.map((time, index) => {
+        const day = time.getDay() || 7
+        const date = `${time.getFullYear()}-${String(time.getMonth() + 1).padStart(2, '0')}-${String(time.getDate()).padStart(2, '0')}`
+        return { sessionNumber: index + 1, date: time.toLocaleDateString('vi-VN'), dayOfWeek: day, dayName: time.toLocaleDateString('vi-VN', { weekday: 'long' }), slotIndex: selectedSlotIndex, slotName: template.name, startTime: template.startTime, endTime: template.endTime, startsAt: new Date(`${date}T${template.startTime}:00+07:00`).toISOString(), endsAt: new Date(`${date}T${template.endTime}:00+07:00`).toISOString(), isAvailable: true, conflictReason: null, isGymMembershipActive: true }
       })
-      setPreviewData(res)
+      setPreviewData({
+        isAvailable: true,
+        totalSessions: availableCredits,
+        startDate,
+        endDate: sessions.at(-1)?.date || startDate,
+        slot: { index: template.index, name: template.name, startTime: template.startTime, endTime: template.endTime },
+        coachName: currentPurchase.coachNameSnapshot || 'Huấn luyện viên',
+        courseName: currentPurchase.courseNameSnapshot,
+        memberName: currentPurchase.memberName || 'Hội viên',
+        isGymActiveUntilEnd: true,
+        sessions,
+      })
     } catch (err) {
       if (isAppApiError(err)) {
         setErrorMessage(err.message || 'Không thể xem trước lịch tập.')
@@ -145,7 +191,7 @@ export function RecurringScheduleModal({
     } finally {
       setIsLoadingPreview(false)
     }
-  }, [currentPurchase?.id, startDate, selectedDays, selectedSlotIndex])
+  }, [currentPurchase?.id, startDate, selectedDays, selectedSlotIndex, availableCredits])
 
   useEffect(() => {
     if (isOpen && currentPurchase?.id && selectedDays.length > 0 && selectedSlotIndex) {
@@ -170,23 +216,20 @@ export function RecurringScheduleModal({
   // Handle confirm booking
   const handleConfirmBook = async () => {
     if (!currentPurchase?.id) return
-    if (!previewData || !previewData.isAvailable) {
-      setErrorMessage('Khung giờ đã chọn bị trùng lịch với học viên khác. Vui lòng chọn khung giờ trống!')
+    if (!previewData || selectedDays.length === 0) {
+      setErrorMessage('Vui lòng chọn ít nhất một ngày tập.')
       return
     }
 
     setIsSubmitting(true)
     setErrorMessage(null)
     try {
-      const res = await ptBookingsService.bookFixedSchedule(currentPurchase.id, {
+      const result = await ptBookingsService.bookFixedSchedule(currentPurchase.id, {
         startDate,
         daysOfWeek: selectedDays,
         slotIndex: selectedSlotIndex,
       })
-
-      setSuccessMessage(
-        `Đã thiết lập thành công ${res.totalBooked} buổi tập cố định (${res.slotName}) từ ${res.startDate} đến ${res.endDate}!`
-      )
+      setSuccessMessage(`Đã đặt thành công ${result.totalBooked} buổi theo lịch đã chọn.`)
       setTimeout(() => {
         onSuccess?.()
         onClose()
@@ -214,16 +257,18 @@ export function RecurringScheduleModal({
       >
         <div className="py-8 text-center space-y-3">
           <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto" />
-          <p className="text-xs text-text-muted">Không tìm thấy hợp đồng gói PT nào đang hoạt động cần xếp lịch.</p>
-          <Button variant="outline" onClick={onClose} size="sm">Đóng</Button>
+          <div className="space-y-1 text-center">
+            <p className="text-sm font-semibold text-text-primary">Chưa có gói PT sẵn sàng để xếp lịch</p>
+            <p className="text-xs text-text-muted">Chỉ gói đã thanh toán và kích hoạt, còn buổi tập mới có thể đặt lịch.</p>
+          </div>
+          <div className="flex justify-center gap-2">
+            <Button variant="primary" onClick={() => navigate('/receptionist/pt-sale')} size="sm">Đến bán gói / thu tiền</Button>
+            <Button variant="outline" onClick={onClose} size="sm">Đóng</Button>
+          </div>
         </div>
       </Modal>
     )
   }
-
-  const availableCredits = currentPurchase
-    ? (currentPurchase.availableCredits ?? (currentPurchase.totalCredits - currentPurchase.reservedCredits - currentPurchase.consumedCredits))
-    : 0
 
   return (
     <Modal
@@ -232,10 +277,10 @@ export function RecurringScheduleModal({
       title={
         <div className="flex items-center gap-2 text-text-primary">
           <Sparkles className="h-5 w-5 text-primary" />
-          <span>Thiết Lập Lịch Cố Định Gói PT 1:1</span>
+          <span>Xếp nhiều buổi cho gói PT 1:1</span>
         </div>
       }
-      description={`Xếp lịch độc quyền với HLV ${currentPurchase?.coachNameSnapshot || 'HLV'} cho toàn bộ số buổi của gói tập.`}
+      description={`Chọn slot trống thực tế của HLV ${currentPurchase?.coachNameSnapshot || 'HLV'} rồi đặt các buổi khả dụng.`}
       maxWidth="2xl"
     >
       <div className="space-y-5 max-h-[80vh] overflow-y-auto pr-1">
@@ -388,10 +433,10 @@ export function RecurringScheduleModal({
           <label className="text-xs font-bold text-text-primary flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <Clock className="h-4 w-4 text-primary" />
-              <span>2. Ma trận Lịch Trống của HLV ({totalWeeks} tuần tới) & Chọn Slot</span>
+              <span>2. Chọn khung giờ cố định ({totalWeeks} tuần dự kiến)</span>
             </span>
             <span className="text-[11px] font-normal text-text-muted">
-              Xanh lá = Trống 100% • Đỏ = Đã có học viên
+              Lễ tân có thể xếp trực tiếp • Hệ thống sẽ chặn lịch bị trùng khi xác nhận
             </span>
           </label>
 
@@ -422,7 +467,7 @@ export function RecurringScheduleModal({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
-                  {[1, 2, 3, 4, 5, 6].map((slotIdx) => {
+                  {[1, 2, 3, 4, 5, 6, 7].map((slotIdx) => {
                     const isRowSelected = selectedSlotIndex === slotIdx
                     // Get slot meta from Monday
                     const slotMeta = matrixData.matrix[0]?.slots.find((s) => s.slotIndex === slotIdx)
@@ -469,6 +514,9 @@ export function RecurringScheduleModal({
                           const slotCell = d.slots.find((s) => s.slotIndex === slotIdx)
                           const isDaySelected = selectedDays.includes(d.dayOfWeek)
                           const isAvailable = slotCell?.isAvailableFully
+                          const openCount = slotCell
+                            ? Math.max(0, slotCell.totalWeeksChecked - slotCell.conflictCount)
+                            : 0
 
                           return (
                             <td
@@ -479,14 +527,21 @@ export function RecurringScheduleModal({
                             >
                               {isAvailable ? (
                                 <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/15 px-1.5 py-0.5 font-bold text-emerald-600 dark:text-emerald-400">
-                                  ✓ Trống
+                                  ✓ Có thể xếp
+                                </span>
+                              ) : openCount === 0 ? (
+                                <span
+                                  className="inline-flex items-center gap-0.5 rounded-full bg-slate-500/15 px-1.5 py-0.5 font-bold text-slate-600 dark:text-slate-300"
+                                  title={slotCell?.conflicts.map((c) => `${c.date}: ${c.reason}`).join('\n')}
+                                >
+                                  — Chưa mở
                                 </span>
                               ) : (
                                 <span
-                                  className="inline-flex items-center gap-0.5 rounded-full bg-danger/15 px-1.5 py-0.5 font-bold text-danger"
+                                  className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 font-bold text-amber-700 dark:text-amber-300"
                                   title={slotCell?.conflicts.map((c) => `${c.date}: ${c.reason}`).join('\n')}
                                 >
-                                  ✕ Kín lịch
+                                  ~ Còn {openCount}/{slotCell?.totalWeeksChecked}
                                 </span>
                               )}
                             </td>

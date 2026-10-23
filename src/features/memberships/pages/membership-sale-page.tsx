@@ -155,7 +155,7 @@ export function MembershipSalePage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2.5">
             <CreditCard className="h-6 w-6 text-primary" />
-            <span>Đăng Ký & Bán Vé Gym (WEB-REC-05)</span>
+            <span>Đăng ký & bán vé Gym</span>
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Kích hoạt thẻ tập Gym không giới hạn khung giờ, kết nối API hệ thống và ghi nhận doanh thu

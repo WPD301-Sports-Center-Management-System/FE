@@ -137,7 +137,7 @@ export function CoachAssessmentsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Chỉ Số InBody & Tiến Độ Thể Hình (WEB-COA-09)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Chỉ số InBody & tiến độ thể hình</h1>
           <p className="text-xs text-text-muted mt-1">
             Ghi chép số đo cơ thể, tỷ lệ mỡ, khối lượng cơ và theo dõi mục tiêu của học viên
           </p>

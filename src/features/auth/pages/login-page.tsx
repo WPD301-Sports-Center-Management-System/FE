@@ -1,17 +1,16 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Dumbbell, AlertCircle } from 'lucide-react'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
 import { isAppApiError } from '@/shared/api/api-error'
-import { isPathAllowedForRole } from '@/features/auth/guards/auth-guards'
+import { getDashboardPath } from '@/features/auth/guards/auth-guards'
 import type { UserRole } from '@/shared/types/api'
 
 export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
 
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
@@ -20,24 +19,7 @@ export function LoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleRedirectAfterLogin = (role: UserRole) => {
-    const from = (location.state as { from?: { pathname: string } })?.from?.pathname
-    if (from && isPathAllowedForRole(from, role)) {
-      navigate(from, { replace: true })
-      return
-    }
-
-    switch (role) {
-      case 'RECEPTIONIST':
-        navigate('/receptionist', { replace: true })
-        break
-      case 'COACH':
-        navigate('/coach', { replace: true })
-        break
-      case 'MANAGER':
-      default:
-        navigate('/manager', { replace: true })
-        break
-    }
+    navigate(getDashboardPath(role), { replace: true })
   }
 
   const handleSubmit = async (e: FormEvent) => {

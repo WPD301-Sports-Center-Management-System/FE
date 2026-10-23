@@ -130,14 +130,14 @@ export const MobileAppSection = ({ onOpenDownloadModal }: MobileAppSectionProps)
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-xs font-semibold text-sky-400">
                 <Smartphone className="w-3.5 h-3.5" />
-                <span>HỆ SINH THÁI ỨNG DỤNG APEXFIT MOBILE</span>
+                <span>SPORTS CENTER TRÊN ĐIỆN THOẠI</span>
               </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold font-heading text-white tracking-tight">
-                Toàn Bộ Tiến Độ & Lịch Tập{' '}
-                <span className="text-gradient-cyan">Nằm Gọn Trong Tay Bạn</span>
+                Chủ động lịch tập{' '}
+                <span className="text-gradient-cyan">ngay trên điện thoại</span>
               </h2>
               <p className="text-base text-slate-300">
-                Ứng dụng di động được thiết kế riêng cho hội viên. Đặt lịch, hủy lịch, xem giáo án, meal plan và kiểm tra InBody mọi lúc mọi nơi.
+                Xem lịch trống, đặt buổi tập, theo dõi kết quả và nhận thông tin mới nhất từ phòng gym trong một nơi duy nhất.
               </p>
             </div>
 
@@ -223,13 +223,13 @@ export const MobileAppSection = ({ onOpenDownloadModal }: MobileAppSectionProps)
 
           {/* Right Column: Phone Screen Live Rendering */}
           <div className="lg:col-span-5 flex justify-center">
-            <div className="w-full max-w-[340px] rounded-[36px] p-3.5 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-2 border-slate-700 shadow-2xl">
+            <div className="landing-preview w-full max-w-[340px] rounded-[36px] p-3.5 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-2 border-slate-700 shadow-2xl">
               <div className="rounded-[28px] bg-[#070b14] p-5 border border-white/5 space-y-4">
                 
                 {/* Status Bar */}
                 <div className="flex items-center justify-between text-[11px] text-slate-400 pb-2 border-b border-slate-800">
                   <span className="font-semibold text-white">09:41</span>
-                  <span className="text-sky-400 font-bold">ApexFit App</span>
+                  <span className="text-sky-400 font-bold">Sports Center App</span>
                 </div>
 
                 {/* Dynamic Screen Top */}

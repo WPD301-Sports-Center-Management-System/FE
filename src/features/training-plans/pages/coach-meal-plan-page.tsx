@@ -40,7 +40,7 @@ import { Modal } from '@/shared/components/ui/modal'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { isAppApiError } from '@/shared/api/api-error'
 import { formatDate } from '@/shared/utils/date'
-import type { MemberSummary, MealPlan, MealPlanItem, BodyAssessment, FitnessGoal } from '@/shared/types/api'
+import type { MemberSummary, MealPlan, MealPlanItem, BodyAssessment, FitnessGoal, Purchase } from '@/shared/types/api'
 
 interface MealFormItem {
   id?: string
@@ -71,6 +71,7 @@ export function CoachMealPlanPage() {
 
   // Real data states from BE
   const [members, setMembers] = useState<MemberSummary[]>([])
+  const [packages, setPackages] = useState<Purchase[]>([])
   const [plans, setPlans] = useState<MealPlan[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -82,6 +83,7 @@ export function CoachMealPlanPage() {
 
   // Builder form states
   const [memberId, setMemberId] = useState('')
+  const [ptPurchaseId, setPtPurchaseId] = useState('')
   const [title, setTitle] = useState('')
   const [targetCalories, setTargetCalories] = useState('2000')
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
@@ -129,9 +131,10 @@ export function CoachMealPlanPage() {
   const loadData = useCallback(async () => {
     setIsLoading(true)
     try {
-      const [membersRes, plansRes] = await Promise.allSettled([
+      const [membersRes, plansRes, packagesRes] = await Promise.allSettled([
         coachesService.getMyMembers(),
         mealPlansService.getMealPlans(),
+        coachesService.getMyPackages({ limit: 100 }),
       ])
 
       if (membersRes.status === 'fulfilled') {
@@ -147,6 +150,9 @@ export function CoachMealPlanPage() {
         if (isAppApiError(err)) {
           toast.error(err.message || 'Lỗi khi tải danh sách thực đơn từ máy chủ.')
         }
+      }
+      if (packagesRes.status === 'fulfilled') {
+        setPackages(packagesRes.value.data || [])
       }
     } catch {
       toast.error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối.')
@@ -186,6 +192,7 @@ export function CoachMealPlanPage() {
   // Reset builder state
   const handleResetBuilder = useCallback(() => {
     setMemberId('')
+    setPtPurchaseId('')
     setTitle('')
     setTargetCalories('2000')
     setStartDate(new Date().toISOString().split('T')[0])
@@ -199,6 +206,8 @@ export function CoachMealPlanPage() {
   // Handle member selection and auto-derive physical stats
   const handleMemberSelect = async (newMemberId: string) => {
     setMemberId(newMemberId)
+    const memberPackages = packages.filter((pkg) => pkg.memberId === newMemberId && ['ACTIVE', 'COMPLETED'].includes(pkg.status))
+    setPtPurchaseId(memberPackages.length === 1 ? memberPackages[0].id : '')
     if (!newMemberId) {
       setBiometricAnalysis(null)
       setMeals([])
@@ -654,6 +663,10 @@ export function CoachMealPlanPage() {
       toast.error('Vui lòng chọn học viên áp dụng thực đơn.')
       return
     }
+    if (!ptPurchaseId) {
+      toast.error('Vui lòng chọn đúng gói PT đang phụ trách học viên này.')
+      return
+    }
     if (!title.trim()) {
       toast.error('Vui lòng nhập tên kế hoạch thực đơn dinh dưỡng.')
       return
@@ -675,17 +688,14 @@ export function CoachMealPlanPage() {
       // Step 1: Create real draft meal plan via POST /meal-plans
       const plan = await mealPlansService.createMealPlan({
         memberId,
+        ptPurchaseId,
         title: title.trim(),
         dailyCalorieTarget: Number(targetCalories) || 2000,
         startDate: startDate || new Date().toISOString().split('T')[0],
         endDate: endDate ? endDate : undefined,
         description: notes.trim() ? notes.trim() : undefined,
         medicalDisclaimer: disclaimer,
-      })
-
-      // Step 2: Add all meal items to the plan via POST /meal-plans/:id/items
-      for (const m of meals) {
-        await mealPlansService.addMealItem(plan.id, {
+        items: meals.map((m) => ({
           dayNumber: m.dayNumber,
           mealType: m.mealType,
           foodName: m.foodName.trim(),
@@ -696,8 +706,8 @@ export function CoachMealPlanPage() {
           fatGrams: Number(m.fatGrams) || 0,
           note: m.note?.trim() || undefined,
           sortOrder: m.sortOrder,
-        })
-      }
+        })),
+      })
 
       // Step 3: If assign immediately, call POST /meal-plans/:id/assign
       if (assignImmediately) {
@@ -822,10 +832,10 @@ export function CoachMealPlanPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-extrabold tracking-tight text-text-primary">
-              Kế Hoạch Dinh Dưỡng Thể Hình (WEB-COA-10)
+              Kế hoạch dinh dưỡng thể hình
             </h1>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300">
-              REAL BACKEND API
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+              Dữ liệu đã đồng bộ
             </span>
           </div>
           <p className="text-xs text-text-muted mt-1">
@@ -873,15 +883,9 @@ export function CoachMealPlanPage() {
       </div>
 
       {/* Mandatory Medical Disclaimer Notice */}
-      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-3 shadow-sm">
-        <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-        <div>
-          <p className="font-bold">Lưu ý Pháp lý / Y tế (Medical Disclaimer):</p>
-          <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5 leading-relaxed">
-            Thực đơn và các chỉ số calo/macro do Huấn luyện viên thể hình gợi ý nhằm mục tiêu tập luyện nâng cao thể lực,
-            không thay thế cho chỉ định của bác sĩ chuyên khoa hoặc chế độ điều trị y tế đối với bệnh lý đặc thù.
-          </p>
-        </div>
+      <div className="rounded-2xl border border-amber-500/25 bg-amber-500/8 px-4 py-3 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-3 shadow-sm">
+        <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+        <p className="leading-relaxed"><strong className="mr-1">Lưu ý y tế:</strong> Thực đơn chỉ mang tính tham khảo cho mục tiêu tập luyện, không thay thế tư vấn của bác sĩ hoặc chuyên gia dinh dưỡng.</p>
       </div>
 
       {/* Stats Overview */}
@@ -952,7 +956,7 @@ export function CoachMealPlanPage() {
       {activeTab === 'list' && (
         <div className="space-y-4">
           {/* Filter Bar */}
-          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-3 shadow-sm flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
             <div className="relative flex-1">
               <Search className="h-4 w-4 absolute left-3 top-3 text-text-muted" />
               <input
@@ -960,16 +964,16 @@ export function CoachMealPlanPage() {
                 placeholder="Tìm theo tên thực đơn hoặc tên học viên..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-border-subtle bg-bg-surface-muted text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl border border-border-subtle bg-bg-surface-muted text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:w-[420px]">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
                 aria-label="Lọc theo trạng thái"
-                className="text-xs px-3 py-2 rounded-xl border border-border-subtle bg-bg-surface text-text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="text-xs px-3 py-2.5 rounded-xl border border-border-subtle bg-bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               >
                 <option value="ALL">Tất cả trạng thái</option>
                 <option value="ACTIVE">Đang hoạt động (Active)</option>
@@ -981,7 +985,7 @@ export function CoachMealPlanPage() {
                 value={memberFilter}
                 onChange={(e) => setMemberFilter(e.target.value)}
                 aria-label="Lọc theo học viên"
-                className="text-xs px-3 py-2 rounded-xl border border-border-subtle bg-bg-surface text-text-primary focus:outline-none focus:ring-1 focus:ring-primary max-w-[200px]"
+                className="text-xs px-3 py-2.5 rounded-xl border border-border-subtle bg-bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary max-w-none"
               >
                 <option value="">Tất cả học viên</option>
                 {members.map((m: any) => (
@@ -1022,24 +1026,25 @@ export function CoachMealPlanPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredPlans.map((plan) => (
                 <div
                   key={plan.id}
-                  className="rounded-2xl border border-border-subtle bg-bg-surface p-5 space-y-4 shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between"
+                  className="group rounded-2xl border border-border-subtle border-l-4 border-l-primary/70 bg-bg-surface p-5 space-y-4 shadow-sm hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md transition-all flex flex-col justify-between"
                 >
                   <div className="space-y-2.5">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold text-text-primary text-sm line-clamp-1">{plan.title}</h3>
+                      <div className="min-w-0">
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-primary">Meal plan</p>
+                        <h3 className="font-bold text-text-primary text-sm line-clamp-2 leading-snug">{plan.title || 'Chưa đặt tên thực đơn'}</h3>
+                      </div>
                       <StatusBadge status={plan.status} />
                     </div>
 
-                    <p className="text-xs text-text-muted flex items-center gap-1.5">
-                      <span>Áp dụng cho:</span>
-                      <strong className="text-text-primary font-medium">
-                        {plan.member?.fullName || plan.member?.user?.fullName || getMemberDisplayName(plan.memberId)}
-                      </strong>
-                    </p>
+                    <div className="rounded-xl bg-bg-surface-muted px-3 py-2.5 text-xs">
+                      <p className="text-[10px] uppercase tracking-wide text-text-muted">Học viên nhận</p>
+                      <p className="mt-0.5 truncate font-semibold text-text-primary">{plan.member?.fullName || plan.member?.user?.fullName || getMemberDisplayName(plan.memberId)}</p>
+                    </div>
 
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border-subtle text-[11px]">
                       <div className="p-2 rounded-xl bg-bg-surface-muted space-y-0.5">
@@ -1052,6 +1057,10 @@ export function CoachMealPlanPage() {
                         <span className="text-text-muted block text-[10px]">Bắt đầu từ</span>
                         <span className="font-semibold text-text-primary">{formatDate(plan.startDate)}</span>
                       </div>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-text-muted">
+                      <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Đã liên kết gói PT</span>
+                      {plan.endDate && <span>Đến {formatDate(plan.endDate)}</span>}
                     </div>
                   </div>
 
@@ -1124,6 +1133,30 @@ export function CoachMealPlanPage() {
                   ]}
                 />
               </div>
+
+              {memberId && (
+                <div className="md:col-span-3">
+                  <Select
+                    id="select-pt-purchase-input"
+                    label="Gói PT áp dụng (BẮT BUỘC)"
+                    required
+                    value={ptPurchaseId}
+                    onChange={(e) => setPtPurchaseId(e.target.value)}
+                    options={[
+                      { value: '', label: '-- Chọn đúng gói PT đang phụ trách --' },
+                      ...packages
+                        .filter((pkg) => pkg.memberId === memberId && ['ACTIVE', 'COMPLETED'].includes(pkg.status))
+                        .map((pkg) => ({
+                          value: pkg.id,
+                          label: `${pkg.courseNameSnapshot || 'Gói PT'} · ${pkg.availableCredits ?? pkg.totalCredits ?? 0} buổi còn lại`,
+                        })),
+                    ]}
+                  />
+                  {packages.filter((pkg) => pkg.memberId === memberId && ['ACTIVE', 'COMPLETED'].includes(pkg.status)).length === 0 && (
+                    <p className="mt-1 text-xs text-danger">Học viên chưa có gói PT ACTIVE/COMPLETED do bạn phụ trách.</p>
+                  )}
+                </div>
+              )}
 
               {/* Dynamic Member Biometrics & Nutrition Banner */}
               {isLoadingMemberStats && (

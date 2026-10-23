@@ -44,6 +44,7 @@ describe('mealPlansService', () => {
   it('[3] calls POST /meal-plans to create draft', async () => {
     const payload = {
       memberId: 'mem-1',
+      ptPurchaseId: 'purchase-1',
       title: 'Kế hoạch Calo 2000',
       dailyCalorieTarget: 2000,
       startDate: '2026-10-20',

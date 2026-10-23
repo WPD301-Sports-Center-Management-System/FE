@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Check, AlertTriangle, AlertCircle, RefreshCw, Sparkles, User, ShieldCheck } from 'lucide-react'
+import { Check, AlertTriangle, AlertCircle, RefreshCw, Sparkles, User, ShieldCheck, Search } from 'lucide-react'
 import { formatVND } from '@/shared/utils/currency'
 import { Button } from '@/shared/components/ui/button'
-import { Select } from '@/shared/components/ui/input'
+import { Input, Select } from '@/shared/components/ui/input'
 import { membersService } from '@/features/memberships/services/members.service'
 import { coursesExercisesService } from '@/features/courses-exercises/services/courses-exercises.service'
 import { coachesService } from '@/features/coaches/services/coaches.service'
@@ -36,6 +36,8 @@ export function PtPackageSalePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [createdPurchase, setCreatedPurchase] = useState<Purchase | null>(null)
   const [pendingPurchase, setPendingPurchase] = useState<Purchase | null>(null)
+  const [purchaseCode, setPurchaseCode] = useState('')
+  const [isSearchingPurchase, setIsSearchingPurchase] = useState(false)
   const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false)
 
   const loadData = useCallback(async () => {
@@ -125,6 +127,40 @@ export function PtPackageSalePage() {
   const gymShare = priceNum * 0.4
   const coachShare = priceNum * 0.6
 
+  const handleFindPendingPurchase = async () => {
+    const code = purchaseCode.trim().toUpperCase()
+    if (!code) {
+      setErrorMessage('Vui lòng nhập mã đơn PT của hội viên.')
+      return
+    }
+
+    setIsSearchingPurchase(true)
+    setErrorMessage(null)
+    try {
+      const response = await ptPurchasesService.getPurchases({
+        purchaseCode: code,
+        status: 'PENDING_PAYMENT',
+        limit: 1,
+      })
+      const purchase = response.data?.[0]
+      if (!purchase) {
+        setErrorMessage('Không tìm thấy đơn PT đang chờ thanh toán với mã này.')
+        return
+      }
+
+      setPendingPurchase(purchase)
+      setMemberId(purchase.memberId)
+      setCourseId(purchase.courseId)
+      setCoachId(purchase.coachId)
+      setPackageOptionId(purchase.packageOptionId)
+      setPaymentMethod('CASH')
+    } catch (err) {
+      setErrorMessage(isAppApiError(err) ? err.message : 'Không thể tra cứu đơn PT. Vui lòng thử lại.')
+    } finally {
+      setIsSearchingPurchase(false)
+    }
+  }
+
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!memberId) {
@@ -207,7 +243,7 @@ export function PtPackageSalePage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-primary" />
-            <span>Bán Gói Tập PT 1:1 Tại Quầy (WEB-REC-06)</span>
+            <span>Bán gói tập PT 1:1 tại quầy</span>
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Ký hợp đồng huấn luyện viên cá nhân PT 1:1. Tự động phân bổ doanh thu: Gym 40% • HLV 60%.
@@ -225,6 +261,33 @@ export function PtPackageSalePage() {
           <span>{errorMessage}</span>
         </div>
       )}
+
+      <section className="rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-sm">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end">
+          <Input
+            label="Thanh toán đơn PT đã tạo từ Mobile"
+            value={purchaseCode}
+            onChange={(event) => setPurchaseCode(event.target.value.toUpperCase())}
+            placeholder="Nhập mã đơn, ví dụ: PT-75BFC..."
+            className="flex-1"
+            disabled={isSearchingPurchase || isSubmitting}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2 md:mb-0.5"
+            onClick={handleFindPendingPurchase}
+            isLoading={isSearchingPurchase}
+            disabled={isSearchingPurchase || isSubmitting || !purchaseCode.trim()}
+          >
+            <Search className="h-4 w-4" />
+            Tra cứu đơn
+          </Button>
+        </div>
+        <p className="mt-2 text-xs text-text-muted">
+          Nhập mã đơn do hội viên cung cấp. Chỉ đơn đang chờ thanh toán mới có thể được xác nhận tại quầy.
+        </p>
+      </section>
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">

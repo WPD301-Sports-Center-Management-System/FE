@@ -724,7 +724,7 @@ export function TrainingPlanBuilderPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-            Trình Soạn Giáo Án Huấn Luyện (WEB-COA-07)
+            Trình soạn giáo án huấn luyện
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Kế thừa giáo án chuẩn của Manager, tùy biến sets, reps, tạ và thời gian nghỉ theo thể trạng học viên

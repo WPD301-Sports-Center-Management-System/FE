@@ -74,8 +74,23 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('keydown', handleEscape);
+    };
   }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
 
   return (
     <header 
@@ -95,14 +110,14 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
         <div className="flex items-center justify-between gap-4">
           
           {/* Logo */}
-          <a href="#" className="flex items-center gap-2.5 shrink-0 group">
+          <a href="#" aria-label="SPORTS CENTER - Trang chủ" className="flex items-center gap-2.5 shrink-0 group">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/30 group-hover:scale-105 transition-transform">
               <Dumbbell className="w-4 h-4 text-white transform -rotate-45" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="text-lg font-black tracking-tight font-heading text-text-primary whitespace-nowrap">
-                  APEX<span className="text-primary">FIT</span>
+                  SPORTS <span className="text-primary">CENTER</span>
                 </span>
                 <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 whitespace-nowrap">
                   1:1 PT
@@ -115,7 +130,7 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
           </a>
 
           {/* Desktop Nav Links with Real-time Scroll Glow */}
-          <nav className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0 p-1 rounded-full bg-bg-surface-muted/90 border border-border-subtle backdrop-blur-sm">
+          <nav aria-label="Điều hướng chính" className="hidden xl:flex items-center gap-1.5 shrink-0 p-1 rounded-full bg-bg-surface-muted/90 border border-border-subtle backdrop-blur-sm">
             {navLinks.map((link) => {
               const isActive = activeSection === link.id;
               return (
@@ -138,7 +153,7 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
           </nav>
 
           {/* Action CTAs */}
-          <div className="hidden lg:flex items-center gap-2.5 shrink-0">
+          <div className="hidden xl:flex items-center gap-2 shrink-0">
             {/* Theme Selector */}
             <ThemeSelector />
 
@@ -172,7 +187,7 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
           </div>
 
           {/* Tablet/Mobile Actions & Hamburger */}
-          <div className="flex lg:hidden items-center gap-2">
+          <div className="flex xl:hidden items-center gap-2">
             <ThemeSelector />
             <button
               onClick={onOpenTrialModal}
@@ -184,6 +199,7 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-text-muted hover:text-text-primary bg-bg-surface border border-border-subtle focus:outline-none cursor-pointer"
               aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -193,7 +209,14 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden mt-2 mx-4 p-4 rounded-2xl bg-bg-surface/95 border border-border-subtle backdrop-blur-xl shadow-2xl space-y-3">
+        <>
+          <button
+            type="button"
+            aria-label="Đóng menu"
+            onClick={() => setMobileMenuOpen(false)}
+            className="fixed inset-0 top-[4.5rem] bg-slate-950/50 backdrop-blur-[2px] cursor-default"
+          />
+          <div className="relative z-10 xl:hidden mt-2 mx-4 p-4 rounded-2xl bg-bg-surface/95 border border-border-subtle backdrop-blur-xl shadow-2xl space-y-3">
           <div className="flex flex-col space-y-1">
             {navLinks.map((link) => {
               const isActive = activeSection === link.id;
@@ -255,7 +278,8 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
             <Flame className="w-4 h-4" />
             <span>Đăng Ký Tư Vấn & Tập Thử 1:1</span>
           </button>
-        </div>
+          </div>
+        </>
       )}
     </header>
   );

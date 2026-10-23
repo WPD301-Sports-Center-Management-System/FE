@@ -44,6 +44,7 @@ export function SlotDetailDrawer({
   isDeleting = false,
 }: SlotDetailDrawerProps) {
   const [copied, setCopied] = useState(false)
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -135,12 +136,12 @@ export function SlotDetailDrawer({
         aria-hidden="true"
       />
 
-      <div className="fixed inset-y-0 right-0 flex max-w-full pl-6 sm:pl-10">
+      <div className="fixed inset-y-0 right-0 flex max-w-full sm:pl-6">
         <aside
           role="dialog"
           aria-modal="true"
           aria-labelledby="drawer-title"
-          className="w-screen max-w-md bg-bg-surface border-l border-border-subtle shadow-2xl flex flex-col justify-between transition-all animate-in slide-in-from-right duration-250 ease-out"
+          className="w-screen max-w-xl bg-bg-surface border-l border-border-subtle shadow-2xl flex flex-col justify-between transition-all animate-in slide-in-from-right duration-250 ease-out"
         >
           {/* Header */}
           <div className="px-6 py-5 border-b border-border-subtle bg-bg-surface-muted/40">
@@ -180,7 +181,7 @@ export function SlotDetailDrawer({
           </div>
 
           {/* Body */}
-          <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto text-sm">
+          <div className="min-h-0 px-6 py-5 space-y-4 flex-1 overflow-y-auto text-sm">
             {/* Booking Code Banner (if booked) */}
             {isBooked && (
               <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-primary/5 border border-primary/20">
@@ -488,6 +489,27 @@ export function SlotDetailDrawer({
 
           {/* Footer Actions */}
           <div className="px-6 py-4 border-t border-border-subtle bg-bg-surface space-y-2">
+            {isConfirmingDelete && (
+              <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-text-primary space-y-3">
+                <p className="font-semibold">Hủy khung giờ này?</p>
+                <p className="text-text-muted">Khung giờ sẽ không còn nhận được lịch đặt mới.</p>
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => setIsConfirmingDelete(false)} disabled={isDeleting}>Quay lại</Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    isLoading={isDeleting}
+                    onClick={() => {
+                      onDeleteSlot?.(slot.id)
+                      setIsConfirmingDelete(false)
+                      onClose()
+                    }}
+                  >
+                    Xác nhận hủy
+                  </Button>
+                </div>
+              </div>
+            )}
             {isOpenStatus && (
               <div className="grid grid-cols-2 gap-2.5">
                 {onBlockSlot && (
@@ -509,10 +531,7 @@ export function SlotDetailDrawer({
                     variant="outline"
                     className="w-full text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10 gap-1.5 text-xs font-semibold"
                     onClick={() => {
-                      if (window.confirm('Bạn có chắc chắn muốn hủy khung giờ này không?')) {
-                        onDeleteSlot(slot.id)
-                        onClose()
-                      }
+                      setIsConfirmingDelete(true)
                     }}
                     disabled={isDeleting}
                   >
@@ -528,10 +547,7 @@ export function SlotDetailDrawer({
                 variant="outline"
                 className="w-full text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10 gap-1.5 text-xs font-semibold"
                 onClick={() => {
-                  if (window.confirm('Bạn có chắc chắn muốn hủy khung giờ này không?')) {
-                    onDeleteSlot(slot.id)
-                    onClose()
-                  }
+                  setIsConfirmingDelete(true)
                 }}
                 disabled={isDeleting}
               >

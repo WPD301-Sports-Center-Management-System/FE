@@ -30,7 +30,7 @@ export function ScheduleToolbar({
   ]
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-border-subtle bg-bg-surface p-4 shadow-sm backdrop-blur-md lg:flex-row lg:items-center lg:justify-between">
+    <div className="flex flex-col gap-4 rounded-2xl border border-border-subtle bg-bg-surface p-3.5 sm:p-4 shadow-sm shadow-slate-900/[0.04] backdrop-blur-md lg:flex-row lg:items-center lg:justify-between">
       {/* Navigation Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1 rounded-xl border border-border-subtle bg-bg-surface-muted p-1">
@@ -45,7 +45,7 @@ export function ScheduleToolbar({
           <button
             type="button"
             onClick={onToday}
-            className="rounded-lg px-2.5 py-1 text-xs font-semibold text-text-primary hover:bg-bg-surface transition-colors"
+            className="rounded-lg px-3 py-2 text-xs font-semibold text-text-primary hover:bg-bg-surface transition-colors"
           >
             Hôm nay
           </button>
@@ -59,14 +59,14 @@ export function ScheduleToolbar({
           </button>
         </div>
 
-        <div className="flex items-center gap-2 text-sm font-bold text-text-primary">
+        <div className="flex items-center gap-2 text-sm font-bold text-text-primary min-w-0">
           <CalendarIcon className="h-4 w-4 text-orange-400" />
-          <span>{rangeText || 'Đang tải lịch...'}</span>
+          <span className="truncate">{rangeText || 'Đang tải lịch...'}</span>
         </div>
       </div>
 
       {/* View Switcher & Filters */}
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3 lg:justify-end">
         {/* View Switcher */}
         <div className="flex rounded-xl border border-border-subtle bg-bg-surface-muted p-1">
           <button
@@ -102,7 +102,7 @@ export function ScheduleToolbar({
               onClick={() => onStatusFilterChange(f.value)}
               className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
                 statusFilter === f.value
-                  ? 'border border-orange-500/40 bg-orange-500/20 text-orange-400 font-bold'
+                  ? 'border border-orange-500/40 bg-orange-500/15 text-orange-600 dark:text-orange-300 font-bold shadow-sm'
                   : 'text-text-muted hover:bg-bg-surface-muted hover:text-text-primary'
               }`}
             >

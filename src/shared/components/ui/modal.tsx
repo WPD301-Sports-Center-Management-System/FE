@@ -42,11 +42,11 @@ export function Modal({ isOpen, onClose, title, description, children, maxWidth 
       <div
         role="dialog"
         aria-modal="true"
-        className={`relative w-full ${widthStyles} rounded-2xl border border-border-subtle bg-bg-surface p-6 shadow-2xl text-text-primary transition-all`}
+        className={`relative flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden ${widthStyles} rounded-2xl border border-border-subtle bg-bg-surface p-4 sm:p-6 shadow-2xl text-text-primary transition-all`}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border-subtle pb-4">
-          <div>
-            <h3 className="text-lg font-bold text-text-primary">{title}</h3>
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border-subtle pb-4">
+          <div className="min-w-0">
+            <h3 className="break-words text-lg font-bold leading-snug text-text-primary">{title}</h3>
             {description && <p className="mt-1 text-xs text-text-muted">{description}</p>}
           </div>
           <button
@@ -58,7 +58,7 @@ export function Modal({ isOpen, onClose, title, description, children, maxWidth 
           </button>
         </div>
 
-        <div className="mt-4">{children}</div>
+        <div className="mt-4 min-h-0 overflow-y-auto overscroll-contain">{children}</div>
       </div>
     </div>
   )

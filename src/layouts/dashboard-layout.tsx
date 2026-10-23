@@ -4,6 +4,7 @@ import { Dumbbell, X } from 'lucide-react'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { SidebarNav } from './components/sidebar-nav'
 import { Topbar } from './components/topbar'
+import { SidebarAccount } from './components/sidebar-account'
 
 const COLLAPSED_STORAGE_KEY = 'sidebar_collapsed'
 
@@ -127,24 +128,8 @@ export function DashboardLayout() {
             onNavigate={() => setIsMobileOpen(false)}
           />
         </div>
+        <SidebarAccount isCollapsed={isCollapsed} />
 
-        {/* Footer info */}
-        <div
-          className={`border-t border-border-subtle p-3 text-center transition-all ${
-            isCollapsed ? 'hidden lg:block' : 'block'
-          }`}
-        >
-          {isCollapsed ? (
-            <span
-              className="inline-block text-[10px] font-bold text-primary"
-              title="Phiên bản v1.1 • Dual-Mode"
-            >
-              v1.1
-            </span>
-          ) : (
-            <p className="text-[10px] text-text-muted">Phiên bản v1.1 • Dual-Mode Mock Ready</p>
-          )}
-        </div>
       </aside>
 
       {/* Main Container - Responsive left padding based on sidebar state */}

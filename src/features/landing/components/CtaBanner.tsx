@@ -20,15 +20,15 @@ export const CtaBanner = ({ onOpenTrialModal, onOpenDownloadModal }: CtaBannerPr
             
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs font-bold uppercase tracking-wider">
               <Flame className="w-3.5 h-3.5" />
-              <span>KHỞI ĐẦU HÀNH TRÌNH BỨT PHÁ</span>
+              <span>BẮT ĐẦU TỪ MỘT BUỔI TƯ VẤN</span>
             </div>
 
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black font-heading text-white tracking-tight leading-tight">
-              Sẵn Sàng Thay Đổi Vóc Dáng Cùng <span className="text-gradient-orange">Chuyên Gia 1:1</span> Ngay Hôm Nay?
+              Bạn đã sẵn sàng tập luyện <span className="text-gradient-orange">theo cách phù hợp hơn</span> chưa?
             </h2>
 
             <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto">
-              Nhận ngay 01 buổi đo InBody phân tích thể trạng toàn diện & buổi tập thử 1:1 có chuyên môn kiểm duyệt hoàn toàn miễn phí.
+              Để lại thông tin để được tư vấn mục tiêu, gợi ý lộ trình và giải đáp câu hỏi trước khi quyết định đăng ký.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -37,7 +37,7 @@ export const CtaBanner = ({ onOpenTrialModal, onOpenDownloadModal }: CtaBannerPr
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 glow-button cursor-pointer transition-all transform active:scale-95"
               >
                 <Flame className="w-5 h-5" />
-                <span>Đăng Ký Tập Thử 1:1 Miễn Phí</span>
+                <span>Đăng ký tư vấn miễn phí</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 

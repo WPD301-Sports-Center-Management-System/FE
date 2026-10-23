@@ -132,7 +132,7 @@ export function ExerciseFormModal({
             label="Link hình ảnh minh họa (URL)"
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://images.unsplash.com/..."
+            placeholder="https://example.com/anh-bai-tap.jpg"
             disabled={isSubmitting}
           />
           <Input

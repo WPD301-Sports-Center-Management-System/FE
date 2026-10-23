@@ -43,6 +43,7 @@ import { CoachAiRecommendationPage } from '@/features/training-plans/pages/coach
 // Member Pages
 import { MemberDashboardPage } from '@/features/member/pages/member-dashboard-page'
 import { MemberSupportPage } from '@/features/support-reviews-audit/pages/member-support-page'
+import { AccountProfilePage } from '@/features/account/pages/account-profile-page'
 
 import { VnPayReturnPage } from '@/features/payments-invoices/pages/vnpay-return-page'
 
@@ -73,6 +74,7 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
+      { path: '/account/profile', element: <AccountProfilePage /> },
       // Manager Routes (WEB-MAN-01 -> 12)
       {
         element: <ProtectedRoute allowedRoles={['MANAGER']} />,

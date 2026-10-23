@@ -67,7 +67,42 @@ export function DataTable<T extends Record<string, unknown>>({
         </div>
       )}
 
-      <div className="overflow-x-auto scrollbar-thin rounded-2xl border border-border-subtle bg-bg-surface backdrop-blur-md">
+      {/* Mobile uses labelled cards: users do not need to scroll sideways to read a record. */}
+      <div className="space-y-3 md:hidden">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="animate-pulse rounded-xl border border-border-subtle bg-bg-surface p-4 space-y-3">
+              <div className="h-4 w-2/5 rounded bg-border-subtle" />
+              <div className="h-3 w-full rounded bg-border-subtle" />
+              <div className="h-3 w-4/5 rounded bg-border-subtle" />
+            </div>
+          ))
+        ) : paginatedData.length === 0 ? (
+          <EmptyState title="Không tìm thấy kết quả" description="Không có bản ghi nào khớp với điều kiện lọc." />
+        ) : (
+          paginatedData.map((row, rowIndex) => (
+            <article key={rowIndex} className="rounded-xl border border-border-subtle bg-bg-surface p-4 shadow-sm">
+              <dl className="space-y-2.5">
+                {columns.map((column, columnIndex) => (
+                  <div key={columnIndex} className="grid grid-cols-[minmax(90px,0.8fr)_minmax(0,1.4fr)] gap-3 text-xs">
+                    <dt className="font-semibold text-text-muted">{column.header}</dt>
+                    <dd className="min-w-0 break-words text-text-primary">
+                      {typeof column.accessor === 'function'
+                        ? column.accessor(row)
+                        : column.accessor
+                        ? (row[column.accessor] as ReactNode)
+                        : null}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              {actions && <div className="mt-3 border-t border-border-subtle pt-3">{actions(row)}</div>}
+            </article>
+          ))
+        )}
+      </div>
+
+      <div className="hidden md:block overflow-x-auto scrollbar-thin rounded-2xl border border-border-subtle bg-bg-surface backdrop-blur-md">
         <table className="w-full min-w-[600px] text-left text-sm text-text-muted">
           <thead className="border-b border-border-subtle bg-bg-surface-muted text-xs font-semibold uppercase tracking-wider text-text-muted">
             <tr>
@@ -124,7 +159,7 @@ export function DataTable<T extends Record<string, unknown>>({
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-text-muted px-1">
           <span>
-            Trang {currentPage} / {totalPages}
+            Hiển thị {filteredData.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredData.length)} / {filteredData.length} · Trang {currentPage}/{totalPages}
           </span>
           <div className="flex items-center gap-1.5">
             <button

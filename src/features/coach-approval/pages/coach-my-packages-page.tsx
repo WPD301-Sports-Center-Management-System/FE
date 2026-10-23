@@ -205,7 +205,7 @@ export function CoachMyPackagesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Khóa Giảng Dạy & Gói Của Tôi (WEB-COA-02)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Khóa giảng dạy & gói của tôi</h1>
           <p className="text-xs text-text-muted mt-1">
             Đề xuất gói huấn luyện cá nhân và quản lý các khóa đào tạo đã được duyệt
           </p>

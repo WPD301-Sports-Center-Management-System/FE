@@ -504,7 +504,7 @@ export function EquipmentPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2">
             <Wrench className="h-6 w-6 text-primary" />
-            <span>Quản Lý Thiết Bị & Khu Vực Phòng Gym (WEB-MAN-08)</span>
+            <span>Quản lý thiết bị & khu vực phòng Gym</span>
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Theo dõi máy móc phòng gym, cơ sở vật chất khu vực và lịch trình bảo trì định kỳ

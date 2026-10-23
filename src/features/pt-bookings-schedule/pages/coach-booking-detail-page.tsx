@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { CheckCircle2, UserX, XCircle, Clock, ArrowRight, RefreshCw, Calendar, AlertCircle, Search, X } from 'lucide-react'
+import { CheckCircle2, UserX, XCircle, Clock, ArrowRight, RefreshCw, Calendar, AlertCircle, Search, X, ChevronDown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { coachesService } from '@/features/coaches/services/coaches.service'
 import { formatDateTime } from '@/shared/utils/date'
@@ -45,10 +45,36 @@ const STATUS_FILTER_OPTIONS = [
   { value: 'COMPLETED', label: 'Đã hoàn thành' },
 ]
 
+type DateFilter = 'TODAY' | 'UPCOMING' | 'PAST' | 'ALL'
+
+const DATE_FILTER_OPTIONS: { value: DateFilter; label: string }[] = [
+  { value: 'TODAY', label: 'Hôm nay' },
+  { value: 'UPCOMING', label: 'Sắp tới' },
+  { value: 'PAST', label: 'Đã qua' },
+  { value: 'ALL', label: 'Tất cả' },
+]
+
+function getBookingStartTime(booking: Booking) {
+  return booking.startsAt || (booking as any).slot?.startsAt
+}
+
+function getLocalDateKey(value?: string) {
+  if (!value) return ''
+  const date = new Date(value)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function formatBookingTime(value?: string) {
+  if (!value) return 'Chưa xếp thời gian'
+  return new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(new Date(value))
+}
+
 export function CoachBookingDetailPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
+  const [dateFilter, setDateFilter] = useState<DateFilter>('TODAY')
+  const [visibleCount, setVisibleCount] = useState(20)
 
   const [isLoading, setIsLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
@@ -59,6 +85,9 @@ export function CoachBookingDetailPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const filteredBookings = useMemo(() => {
+    const now = new Date()
+    const today = getLocalDateKey(now.toISOString())
+
     return bookings.filter((b) => {
       const memberName = ((b as any).member?.user?.fullName || b.memberName || '').toLowerCase()
       const courseName = (
@@ -85,8 +114,27 @@ export function CoachBookingDetailPage() {
       if (statusFilter === 'COMPLETED') return b.status === 'COMPLETED'
 
       return b.status === statusFilter
+    }).filter((b) => {
+      const startTime = getBookingStartTime(b)
+      if (!startTime || dateFilter === 'ALL') return true
+
+      const start = new Date(startTime)
+      if (dateFilter === 'TODAY') return getLocalDateKey(startTime) === today
+      if (dateFilter === 'UPCOMING') return start.getTime() > now.getTime()
+      return start.getTime() < now.getTime()
+    }).sort((a, b) => {
+      const aStart = getBookingStartTime(a)
+      const bStart = getBookingStartTime(b)
+      return new Date(aStart || 0).getTime() - new Date(bStart || 0).getTime()
     })
-  }, [bookings, searchTerm, statusFilter])
+  }, [bookings, searchTerm, statusFilter, dateFilter])
+
+  useEffect(() => {
+    setVisibleCount(20)
+  }, [searchTerm, statusFilter, dateFilter])
+
+  const visibleBookings = filteredBookings.slice(0, visibleCount)
+  const confirmedCount = filteredBookings.filter((booking) => booking.status === 'CONFIRMED').length
 
   const loadBookings = useCallback(async () => {
     setIsLoading(true)
@@ -188,7 +236,7 @@ export function CoachBookingDetailPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quản Lý Lịch Hẹn PT 1:1 (WEB-COA-04)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quản lý lịch hẹn PT 1:1</h1>
           <p className="text-xs text-text-muted mt-1">
             Điểm danh hội viên, xác nhận hoàn tất buổi dạy hoặc xử lý hủy lịch đột xuất
           </p>
@@ -199,7 +247,8 @@ export function CoachBookingDetailPage() {
         </Button>
       </div>
 
-      {/* Search Bar & Dropdown Filter - Directly Below Title */}
+      {/* Bộ lọc xử lý hoàn toàn ở client để không thay đổi API hiện có. */}
+      <div className="rounded-2xl border border-border-subtle bg-bg-surface p-3 shadow-sm space-y-3">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         {/* Search input by member name */}
         <div className="relative flex-1">
@@ -224,7 +273,7 @@ export function CoachBookingDetailPage() {
         </div>
 
         {/* Dropdown status filter */}
-        <div className="sm:w-64">
+        <div className="sm:w-56">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -236,6 +285,23 @@ export function CoachBookingDetailPage() {
               </option>
             ))}
           </select>
+        </div>
+      </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Calendar className="h-4 w-4 text-text-muted ml-1" />
+          {DATE_FILTER_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setDateFilter(option.value)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${dateFilter === option.value ? 'bg-primary text-white shadow-sm' : 'bg-bg-surface-muted text-text-muted hover:text-text-primary hover:bg-bg-surface'}`}
+            >
+              {option.label}
+            </button>
+          ))}
+          <span className="ml-auto mr-1 text-xs text-text-muted">
+            {filteredBookings.length} lịch {confirmedCount > 0 ? `• ${confirmedCount} cần xử lý` : ''}
+          </span>
         </div>
       </div>
 
@@ -280,6 +346,7 @@ export function CoachBookingDetailPage() {
             onClick={() => {
               setSearchTerm('')
               setStatusFilter('ALL')
+              setDateFilter('ALL')
             }}
             className="text-xs mt-2"
           >
@@ -287,8 +354,8 @@ export function CoachBookingDetailPage() {
           </Button>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredBookings.map((b) => {
+        <div className="space-y-2">
+          {visibleBookings.map((b) => {
             const memberName = (b as any).member?.user?.fullName || b.memberName || 'Hội viên đã đăng ký'
             const courseName = (b as any).purchase?.courseNameSnapshot || (b as any).slot?.offering?.course?.name || b.courseName || 'Khóa Huấn Luyện Cá Nhân PT 1:1'
             const startTime = b.startsAt || (b as any).slot?.startsAt
@@ -298,17 +365,18 @@ export function CoachBookingDetailPage() {
             return (
               <div
                 key={b.id}
-                className="rounded-2xl border border-border-subtle bg-bg-surface p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm"
+                className="rounded-xl border border-border-subtle bg-bg-surface px-4 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-sm hover:border-primary/25 transition-colors"
               >
-                <div className="space-y-2">
+                <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <h3 className="text-base font-bold text-text-primary">{memberName}</h3>
+                    <h3 className="text-sm font-bold text-text-primary">{memberName}</h3>
                     <StatusBadge status={b.status} />
                     {getSlotBadge(startTime)}
                   </div>
-                  <p className="text-xs text-text-muted">{courseName}</p>
+                  <p className="text-xs text-text-muted truncate">{courseName}</p>
                   <div className="flex items-center gap-2 flex-wrap text-xs font-mono text-primary">
                     <Clock className="h-3.5 w-3.5" />
+                    {startTime && <span className="font-bold text-sm">{formatBookingTime(startTime)}</span>}
                     <span>{startTime ? formatDateTime(startTime) : 'Chưa xếp thời gian'}</span>
                     {startTime && isNotStartedYet && (
                       <span className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-sans">
@@ -319,7 +387,7 @@ export function CoachBookingDetailPage() {
                 </div>
 
                 {b.status === 'CONFIRMED' && (
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                     <Button
                       size="sm"
                       variant="outline"
@@ -359,7 +427,7 @@ export function CoachBookingDetailPage() {
                 {b.status === 'COMPLETED' && (
                   <Link to={`/coach/training-results?bookingId=${b.id}`}>
                     <Button size="sm" variant="outline" className="text-xs gap-1.5 border-teal-500/30 text-teal-600 dark:text-teal-300 hover:bg-teal-500/10">
-                      <span>Ghi Training Result</span>
+                      <span>Ghi kết quả buổi tập</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Button>
                   </Link>
@@ -367,6 +435,19 @@ export function CoachBookingDetailPage() {
               </div>
             )
           })}
+          {visibleBookings.length < filteredBookings.length && (
+            <div className="pt-2 text-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setVisibleCount((count) => count + 20)}
+                className="gap-1.5 text-xs"
+              >
+                Xem thêm {Math.min(20, filteredBookings.length - visibleBookings.length)} lịch
+                <ChevronDown className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

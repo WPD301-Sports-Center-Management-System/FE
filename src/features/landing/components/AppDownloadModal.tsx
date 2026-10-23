@@ -27,7 +27,7 @@ export const AppDownloadModal = ({ isOpen, onClose }: AppDownloadModalProps) => 
         <div className="space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30 text-xs font-bold uppercase">
             <Smartphone className="w-3.5 h-3.5" />
-            <span>APEXFIT MEMBER APP</span>
+            <span>SPORTS CENTER MEMBER APP</span>
           </div>
           <h3 className="text-xl sm:text-2xl font-bold text-white">
             Tải Ứng Dụng Di Động

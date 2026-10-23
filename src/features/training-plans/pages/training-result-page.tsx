@@ -177,7 +177,7 @@ export function TrainingResultPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Ghi Nhận Kết Quả Buổi Tập (WEB-COA-08)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Ghi nhận kết quả buổi tập</h1>
           <p className="text-xs text-text-muted mt-1">
             Ghi log số hiệp thực tế, tải trọng tạ, chỉ số gắng sức (RPE 1-10) và nhận xét của HLV cho buổi tập đã hoàn thành
           </p>

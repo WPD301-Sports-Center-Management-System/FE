@@ -12,40 +12,40 @@ export const FeaturesSection = () => {
       icon: UserCheck,
       iconColor: 'text-orange-400',
       iconBg: 'bg-orange-500/10 border-orange-500/20',
-      title: 'Huấn Luyện Viên 1:1 Chuyên Nghiệp',
-      tag: 'CÁ NHÂN HÓA 100%',
-      description: 'Nói không với các lớp nhóm đại trà. Huấn luyện viên đồng hành độc quyền, chỉnh sửa từng động tác, mức tạ và nhịp thở để bạn tập đúng - an toàn - hiệu quả.',
-      perks: ['Kiểm duyệt chứng chỉ quốc tế', 'Theo sát kỹ thuật từng hiệp', 'Không chung đụng thời gian']
+      title: 'PT 1:1 theo mục tiêu của bạn',
+      tag: 'ĐỒNG HÀNH SÁT HƠN',
+      description: 'Bạn được hướng dẫn theo thể trạng và mục tiêu riêng, từ cách khởi động, kỹ thuật động tác đến mức độ tăng tải trong từng buổi tập.',
+      perks: ['Chọn PT theo chuyên môn', 'Chỉnh form trực tiếp từng buổi', 'Lịch tập chủ động']
     },
     {
       id: 'feature-2',
       icon: CalendarClock,
       iconColor: 'text-sky-400',
       iconBg: 'bg-sky-500/10 border-sky-500/20',
-      title: 'Hệ Thống Credit & Đặt Lịch Linh Hoạt',
+      title: 'Đặt lịch phù hợp với lịch sống',
       tag: 'CHỦ ĐỘNG THỜI GIAN',
-      description: 'Mua gói 5, 10 hoặc 20 buổi. Dùng credit chọn slot mở của Coach ngay trên điện thoại trong 5 giây. Hủy lịch trước 12 tiếng được hoàn 100% credit tự động.',
-      perks: ['Slot thời gian thực (Real-time)', 'Chính sách hoàn credit minh bạch', 'Thông báo nhắc lịch thông minh']
+      description: 'Xem khung giờ trống, chọn buổi tập và quản lý credit ngay trên hệ thống. Khi có thay đổi, bạn có thể xử lý lịch theo chính sách rõ ràng.',
+      perks: ['Xem slot trống theo thời gian thực', 'Theo dõi credit dễ dàng', 'Nhắc lịch trước buổi tập']
     },
     {
       id: 'feature-3',
       icon: Sparkles,
       iconColor: 'text-emerald-400',
       iconBg: 'bg-emerald-500/10 border-emerald-500/20',
-      title: 'Giáo Án Tối Ưu Bởi AI & Coach Duyệt',
-      tag: 'CÔNG NGHỆ TIÊN TIẾN',
-      description: 'Thuật toán thông minh phân tích thể trạng và mục tiêu để đề xuất bài tập và thực đơn dinh dưỡng (Meal Plan). Huấn luyện viên kiểm duyệt nghiêm ngặt trước khi áp dụng.',
-      perks: ['Gợi ý dinh dưỡng theo calo/macro', 'Lộ trình bài tập đa dạng', 'Coach trực tiếp chịu trách nhiệm']
+      title: 'Giáo án và dinh dưỡng dễ theo dõi',
+      tag: 'CÓ HỆ THỐNG HỖ TRỢ',
+      description: 'Thông tin bài tập, kết quả và gợi ý dinh dưỡng được tổ chức trong một lộ trình. PT là người xem xét và điều chỉnh trước khi áp dụng.',
+      perks: ['Gợi ý theo mục tiêu cá nhân', 'Cập nhật theo tiến độ', 'PT kiểm tra trước khi áp dụng']
     },
     {
       id: 'feature-4',
       icon: LineChart,
       iconColor: 'text-purple-400',
       iconBg: 'bg-purple-500/10 border-purple-500/20',
-      title: 'Theo Dõi Chỉ Số Thể Trạng InBody',
-      tag: 'KHOA HỌC & ĐO LƯỜNG',
-      description: 'Mọi thay đổi về cân nặng, % mỡ dưới da, khối lượng cơ bắp và số đo 3 vòng được ghi nhận sau từng buổi và trực quan hóa bằng biểu đồ trên Mobile App.',
-      perks: ['Biểu đồ tiến độ đa chiều', 'Lịch sử thành tích mức tạ', 'Báo cáo chi tiết sau mỗi chu kỳ']
+      title: 'Nhìn thấy tiến độ của chính mình',
+      tag: 'THEO DÕI CÓ CƠ SỞ',
+      description: 'Ghi nhận những thay đổi quan trọng trong quá trình tập để bạn biết điều gì đang hiệu quả và có cơ sở điều chỉnh kế hoạch tiếp theo.',
+      perks: ['Lưu lịch sử chỉ số', 'Theo dõi thành tích tập luyện', 'Đánh giá lại theo từng giai đoạn']
     }
   ];
 
@@ -56,13 +56,13 @@ export const FeaturesSection = () => {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-xs font-semibold text-orange-400">
-            <span>GIÁ TRỊ CỐT LÕI KHÁC BIỆT</span>
+            <span>VÌ SAO NÊN TẬP CÙNG SPORTS CENTER?</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold font-heading text-white tracking-tight">
-            Vì Sao Chọn Nền Tảng <span className="text-gradient-orange">ApexFit 1:1</span>?
+            Mọi thứ bạn cần để <span className="text-gradient-orange">tập đều và tập đúng</span>
           </h2>
           <p className="text-base text-slate-300">
-            Chúng tôi xây dựng hệ sinh thái tập luyện bài bản nhất nhằm đảm bảo từng đồng chi phí và từng phút bạn bỏ ra tại phòng gym đều mang lại kết quả vượt trội.
+            Không bắt đầu bằng những lời hứa quá lớn. Chúng tôi tập trung vào kế hoạch vừa sức, lịch tập rõ ràng và sự đồng hành đủ sát để bạn duy trì lâu dài.
           </p>
         </div>
 

@@ -89,7 +89,7 @@ export function ReceptionistDashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quầy Tiếp Đón Lễ Tân (WEB-REC-01)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quầy tiếp đón lễ tân</h1>
           <p className="text-xs text-text-muted mt-1">
             Điểm danh hội viên ra vào phòng gym, bán vé tập và điều phối lịch hẹn
           </p>
@@ -243,7 +243,7 @@ export function ReceptionistDashboardPage() {
                   <div key={chk.id} className="flex items-center justify-between py-3">
                     <div className="flex items-center gap-3">
                       <img
-                        src={chk.member?.avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80'}
+                        src={chk.member?.avatarUrl || '/favicon.svg'}
                         alt={chk.member?.fullName || 'Hội viên'}
                         className="h-8 w-8 rounded-full object-cover border border-border-subtle"
                       />

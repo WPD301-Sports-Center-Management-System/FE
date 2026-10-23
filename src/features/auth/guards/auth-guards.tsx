@@ -3,6 +3,20 @@ import { useAuth } from '@/features/auth/context/auth-context'
 import type { UserRole } from '@/shared/types/api'
 import { Loader2 } from 'lucide-react'
 
+export function getDashboardPath(role: UserRole | null | undefined) {
+  switch (role) {
+    case 'RECEPTIONIST':
+      return '/receptionist'
+    case 'COACH':
+      return '/coach'
+    case 'MEMBER':
+      return '/member'
+    case 'MANAGER':
+    default:
+      return '/manager'
+  }
+}
+
 export function FullPageLoader() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg-app text-text-primary">
@@ -63,23 +77,15 @@ export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) 
 
 export function GuestRoute({ children }: { children?: React.ReactNode }) {
   const { isAuthenticated, isInitializing, role } = useAuth()
-  const location = useLocation()
 
   if (isInitializing) {
     return <FullPageLoader />
   }
 
   if (isAuthenticated) {
-    const from = (location.state as { from?: { pathname: string } })?.from?.pathname
-    if (from && isPathAllowedForRole(from, role)) {
-      return <Navigate to={from} replace />
-    }
-
-    if (role === 'MANAGER') return <Navigate to="/manager" replace />
-    if (role === 'RECEPTIONIST') return <Navigate to="/receptionist" replace />
-    if (role === 'COACH') return <Navigate to="/coach" replace />
-    if (role === 'MEMBER') return <Navigate to="/member" replace />
-    return <Navigate to="/" replace />
+    // Never restore a route from a prior user's session. A shared workstation can
+    // switch roles, so the safe post-login destination is always that role's home.
+    return <Navigate to={getDashboardPath(role)} replace />
   }
 
   return children ? <>{children}</> : <Outlet />

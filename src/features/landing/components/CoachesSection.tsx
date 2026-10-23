@@ -18,13 +18,13 @@ export const CoachesSection = ({ onSelectCoach }: CoachesSectionProps) => {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-xs font-semibold text-orange-400">
-            <span>ĐỘI NGŨ HUẤN LUYỆN VIÊN ĐẠT CHUẨN</span>
+            <span>GẶP ĐÚNG NGƯỜI ĐỒNG HÀNH</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold font-heading text-white tracking-tight">
-            Chuyên Gia PT 1:1 <span className="text-gradient-orange">Được Phê Duyệt</span> Chuyên Môn
+            Chọn PT phù hợp với <span className="text-gradient-orange">mục tiêu và lịch sống</span>
           </h2>
           <p className="text-base text-slate-300">
-            100% Huấn luyện viên sở hữu bằng cấp quốc tế, kinh nghiệm thực chiến và được Center Manager duyệt năng lực cho từng khóa tập.
+            Xem thế mạnh, kinh nghiệm và khung giờ trống của từng PT trước khi đặt lịch. Bạn luôn là người quyết định lựa chọn cuối cùng.
           </p>
         </div>
 
@@ -111,7 +111,7 @@ export const CoachesSection = ({ onSelectCoach }: CoachesSectionProps) => {
                     className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 glow-button flex items-center justify-center gap-2 cursor-pointer transition-all"
                   >
                     <Calendar className="w-3.5 h-3.5" />
-                    <span>Xem Lịch Trống & Đặt Lịch</span>
+                    <span>Xem lịch trống & chọn PT</span>
                   </button>
                 </div>
 

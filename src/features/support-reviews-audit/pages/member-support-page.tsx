@@ -124,7 +124,7 @@ export function MemberSupportPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2.5">
             <HelpCircle className="h-6 w-6 text-primary" />
-            <span>Trung Tâm Hỗ Trợ Hội Viên (WEB-MEM-08)</span>
+            <span>Trung tâm hỗ trợ hội viên</span>
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Gửi phản hồi, khiếu nại hoặc thắc mắc dịch vụ trực tiếp tới ban quản lý và quầy lễ tân

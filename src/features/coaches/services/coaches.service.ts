@@ -122,7 +122,7 @@ export const coachesService = {
   /**
    * [9] GET /coaches/me/pt-packages - Get active & past student packages
    */
-  async getMyPackages(params?: { page?: number; limit?: number }): Promise<ApiSuccess<Purchase[]>> {
+  async getMyPackages(params?: { memberId?: string; status?: string; page?: number; limit?: number }): Promise<ApiSuccess<Purchase[]>> {
     const res = await apiClient.get<ApiSuccess<Purchase[]>>('/coaches/me/pt-packages', { params })
     return res as unknown as ApiSuccess<Purchase[]>
   },

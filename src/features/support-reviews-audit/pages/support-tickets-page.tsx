@@ -112,7 +112,7 @@ export function SupportTicketsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Yêu Cầu Hỗ Trợ Tại Quầy (WEB-REC-10)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Yêu cầu hỗ trợ tại quầy</h1>
           <p className="text-xs text-text-muted mt-1">
             Tiếp nhận khiếu nại, phản hồi đổi lịch và giải đáp thắc mắc từ hội viên
           </p>

@@ -167,7 +167,7 @@ export function CheckInCounterPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quầy Điểm Danh & Check-in (WEB-REC-04)</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quầy điểm danh</h1>
         <p className="text-xs text-text-muted mt-1">
           Quét mã vạch hoặc nhập mã thẻ/số điện thoại để kiểm tra quyền hạn ra vào phòng tập
         </p>
@@ -212,7 +212,7 @@ export function CheckInCounterPage() {
             <div className="rounded-3xl border border-border-subtle bg-bg-surface p-8 shadow-sm backdrop-blur-xl space-y-6">
               <div className="flex items-center gap-6">
                 <img
-                  src={searchedMember.avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'}
+                  src={searchedMember.avatarUrl || '/favicon.svg'}
                   alt={searchedMember.fullName}
                   className="h-24 w-24 rounded-2xl object-cover border-2 border-border-subtle shadow-md"
                 />

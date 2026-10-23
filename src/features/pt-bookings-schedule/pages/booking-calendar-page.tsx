@@ -105,6 +105,7 @@ export function BookingCalendarPage() {
 
   // Booking Detail Modal State
   const [selectedBookingDetail, setSelectedBookingDetail] = useState<Booking | null>(null)
+  const [confirmationTarget, setConfirmationTarget] = useState<{ booking: Booking; action: 'COMPLETE' | 'NO_SHOW' } | null>(null)
 
   // Cancel Modal State
   const [cancelTarget, setCancelTarget] = useState<Booking | null>(null)
@@ -114,6 +115,7 @@ export function BookingCalendarPage() {
   // Business Rules Modal
   const [showRulesModal, setShowRulesModal] = useState(false)
   const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false)
+  const [selectedSchedulePurchase, setSelectedSchedulePurchase] = useState<Purchase | null>(null)
 
   // Filter & Navigation State
   // Default to today and tomorrow in YYYY-MM-DD
@@ -332,7 +334,6 @@ export function BookingCalendarPage() {
   }
 
   const handleCompleteBooking = async (booking: Booking) => {
-    if (!confirm(`Xác nhận hoàn thành buổi tập cho hội viên ${booking.memberName || ''}?`)) return
     setIsSubmitting(true)
     setErrorMessage(null)
     try {
@@ -352,7 +353,6 @@ export function BookingCalendarPage() {
   }
 
   const handleNoShowBooking = async (booking: Booking) => {
-    if (!confirm(`Xác nhận đánh dấu hội viên vắng mặt không phép (No-show)? (Lượt tập sẽ bị trừ)`)) return
     setIsSubmitting(true)
     setErrorMessage(null)
     try {
@@ -575,18 +575,164 @@ export function BookingCalendarPage() {
     setViewScope('DAY')
   }
 
+  const schedulablePurchases = purchases.filter((purchase) => {
+    const credits = purchase.availableCredits ?? (purchase.totalCredits - purchase.reservedCredits - purchase.consumedCredits)
+    return credits > 0
+  })
+  const remainingCredits = schedulablePurchases.reduce(
+    (total, purchase) => total + (purchase.availableCredits ?? (purchase.totalCredits - purchase.reservedCredits - purchase.consumedCredits)),
+    0,
+  )
+  const scheduledBookings = bookings
+    .filter((booking) => selectedCoachFilter === 'ALL' || booking.coachId === selectedCoachFilter)
+    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+  const upcomingBookings = scheduledBookings.filter((booking) => new Date(booking.startsAt).getTime() >= Date.now())
+
+  const usePackageFirstFlow = useMemo(() => true, [])
+  if (usePackageFirstFlow) return (
+    <div className="space-y-6">
+      <section className="rounded-2xl border border-border-subtle bg-bg-surface p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
+              <Calendar className="h-3.5 w-3.5" /> Điều phối PT 1:1
+            </p>
+            <h1 className="text-2xl font-bold tracking-tight text-text-primary">Xếp lịch theo gói PT</h1>
+            <p className="mt-1.5 text-sm text-text-muted">
+              Chọn gói PT đã kích hoạt, sau đó thiết lập lịch cố định cho toàn bộ số buổi còn lại. Coach không cần mở slot trước; hệ thống chỉ chặn các lịch bị trùng.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="primary" onClick={() => { setSelectedSchedulePurchase(null); setIsRecurringModalOpen(true) }} className="gap-1.5">
+              <Sparkles className="h-4 w-4" /> Xếp lịch cho gói PT
+            </Button>
+            <Button size="sm" variant="outline" onClick={loadData} disabled={isLoading} className="gap-1.5">
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} /> Làm mới
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {errorMessage && <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{errorMessage}</div>}
+      {message && <div className="rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">{message}</div>}
+
+      <section className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4">
+          <p className="text-xs font-medium text-text-muted">Gói sẵn sàng xếp lịch</p>
+          <p className="mt-1 text-2xl font-bold text-text-primary">{schedulablePurchases.length}</p>
+        </div>
+        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4">
+          <p className="text-xs font-medium text-text-muted">Buổi còn lại cần xếp</p>
+          <p className="mt-1 text-2xl font-bold text-primary">{remainingCredits}</p>
+        </div>
+        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4">
+          <p className="text-xs font-medium text-text-muted">Buổi sắp diễn ra</p>
+          <p className="mt-1 text-2xl font-bold text-text-primary">{upcomingBookings.length}</p>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-border-subtle bg-bg-surface p-5 shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-border-subtle pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-text-primary">1. Chọn gói cần xếp lịch</h2>
+            <p className="mt-1 text-xs text-text-muted">Chỉ hiển thị gói đã thanh toán, đang hoạt động và còn buổi tập.</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => navigate('/receptionist/pt-sale')}>Bán gói / thu tiền</Button>
+        </div>
+
+        {isLoading ? (
+          <div className="py-10 text-center text-sm text-text-muted">Đang tải các gói PT...</div>
+        ) : schedulablePurchases.length === 0 ? (
+          <div className="py-10 text-center">
+            <AlertTriangle className="mx-auto h-7 w-7 text-amber-500" />
+            <p className="mt-3 text-sm font-semibold text-text-primary">Chưa có gói PT sẵn sàng để xếp lịch</p>
+            <p className="mt-1 text-xs text-text-muted">Hãy hoàn tất thanh toán để kích hoạt gói trước khi xếp buổi tập.</p>
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {schedulablePurchases.map((purchase) => {
+              const credits = purchase.availableCredits ?? (purchase.totalCredits - purchase.reservedCredits - purchase.consumedCredits)
+              return (
+                <div key={purchase.id} className="rounded-xl border border-border-subtle bg-bg-surface-muted/40 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-base font-bold text-text-primary">{purchase.memberName || purchase.memberCode || 'Hội viên'}</p>
+                      <p className="mt-1 text-xs text-text-muted">{purchase.courseNameSnapshot} · HLV {purchase.coachNameSnapshot}</p>
+                      <p className="mt-1 font-mono text-[11px] text-text-muted">{purchase.purchaseCode || purchase.id}</p>
+                    </div>
+                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">Còn {credits} buổi</span>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between gap-3 border-t border-border-subtle pt-3">
+                    <span className="text-xs text-text-muted">Hạn dùng: {purchase.expiresAt ? new Date(purchase.expiresAt).toLocaleDateString('vi-VN') : 'Chưa xác định'}</span>
+                    <Button size="sm" variant="primary" onClick={() => { setSelectedSchedulePurchase(purchase); setIsRecurringModalOpen(true) }} className="gap-1.5">
+                      <CalendarDays className="h-3.5 w-3.5" /> Xếp lịch
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-border-subtle bg-bg-surface p-5 shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-border-subtle pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-text-primary">2. Buổi PT đã lên lịch</h2>
+            <p className="mt-1 text-xs text-text-muted">Theo dõi lịch đã chốt; không dùng khung giờ Coach mở làm điều kiện đặt lịch.</p>
+          </div>
+          <select value={selectedCoachFilter} onChange={(event) => setSelectedCoachFilter(event.target.value)} className="rounded-xl border border-border-subtle bg-bg-input px-3 py-2 text-xs text-text-primary">
+            <option value="ALL">Tất cả huấn luyện viên</option>
+            {uniqueCoaches.map((coach) => <option key={coach.id} value={coach.id}>{coach.name}</option>)}
+          </select>
+        </div>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="text-xs text-text-muted">
+              <tr className="border-b border-border-subtle"><th className="pb-3 font-medium">Thời gian</th><th className="pb-3 font-medium">Hội viên</th><th className="pb-3 font-medium">HLV / khóa tập</th><th className="pb-3 font-medium">Trạng thái</th><th className="pb-3 text-right font-medium"> </th></tr>
+            </thead>
+            <tbody>
+              {scheduledBookings.slice(0, 50).map((booking) => (
+                <tr key={booking.id} className="border-b border-border-subtle last:border-0">
+                  <td className="py-3 font-medium text-text-primary">{formatDateTime(booking.startsAt)}</td>
+                  <td className="py-3 text-text-primary">{booking.memberName || 'Hội viên'}</td>
+                  <td className="py-3"><p className="text-text-primary">{booking.coachName || 'Huấn luyện viên'}</p><p className="text-xs text-text-muted">{booking.courseName || 'Gói PT'}</p></td>
+                  <td className="py-3"><StatusBadge status={booking.status} /></td>
+                  <td className="py-3 text-right"><Button size="sm" variant="outline" onClick={() => setSelectedBookingDetail(booking)}>Xem</Button></td>
+                </tr>
+              ))}
+              {scheduledBookings.length === 0 && <tr><td colSpan={5} className="py-10 text-center text-sm text-text-muted">Chưa có buổi PT nào được lên lịch.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <Modal isOpen={!!selectedBookingDetail} onClose={() => setSelectedBookingDetail(null)} title="Thông tin buổi PT">
+        {selectedBookingDetail && <div className="space-y-3 text-sm">
+          <div className="rounded-xl bg-bg-surface-muted p-4 space-y-2"><p><span className="text-text-muted">Hội viên: </span><strong>{selectedBookingDetail.memberName || 'Hội viên'}</strong></p><p><span className="text-text-muted">HLV: </span><strong>{selectedBookingDetail.coachName || 'Huấn luyện viên'}</strong></p><p><span className="text-text-muted">Thời gian: </span><strong>{formatDateTime(selectedBookingDetail.startsAt)}</strong></p><p><span className="text-text-muted">Trạng thái: </span><StatusBadge status={selectedBookingDetail.status} /></p></div>
+          <div className="flex justify-end"><Button variant="outline" onClick={() => setSelectedBookingDetail(null)}>Đóng</Button></div>
+        </div>}
+      </Modal>
+
+      <RecurringScheduleModal
+        isOpen={isRecurringModalOpen}
+        onClose={() => { setIsRecurringModalOpen(false); setSelectedSchedulePurchase(null) }}
+        purchase={selectedSchedulePurchase}
+        allPurchases={schedulablePurchases}
+        onSuccess={loadData}
+      />
+    </div>
+  )
+
   return (
     <div className="space-y-6">
-      {/* 1. Header Toolbar [WEB-REC-07] */}
+      {/* Header toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-bg-surface border border-border-subtle rounded-2xl p-5 shadow-sm">
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-primary/10 text-primary border border-primary/25">
-              WEB-REC-07
-            </span>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2">
               <Calendar className="h-6 w-6 text-primary" />
-              <span>Lịch Huấn Luyện & Đặt Lịch Hộ (WEB-REC-07)</span>
+              <span>Lịch huấn luyện & đặt lịch hộ</span>
             </h1>
           </div>
           <div className="flex items-center gap-3 mt-1.5 flex-wrap">
@@ -1147,7 +1293,7 @@ export function BookingCalendarPage() {
                             size="sm"
                             variant="primary"
                             className="text-xs bg-emerald-600 hover:bg-emerald-500 font-bold text-white"
-                            onClick={() => handleCompleteBooking(b)}
+                            onClick={() => setConfirmationTarget({ booking: b, action: 'COMPLETE' })}
                             disabled={isSubmitting}
                             title="Xác nhận hoàn thành buổi tập"
                           >
@@ -1158,7 +1304,7 @@ export function BookingCalendarPage() {
                             size="sm"
                             variant="outline"
                             className="text-xs text-amber-700 dark:text-amber-300 border-amber-600/40 hover:bg-amber-500/10"
-                            onClick={() => handleNoShowBooking(b)}
+                            onClick={() => setConfirmationTarget({ booking: b, action: 'NO_SHOW' })}
                             disabled={isSubmitting}
                             title="Báo hội viên vắng mặt không phép (trừ credit)"
                           >
@@ -1525,7 +1671,7 @@ export function BookingCalendarPage() {
                   size="sm"
                   variant="primary"
                   className="bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={() => handleCompleteBooking(selectedBookingDetail)}
+                  onClick={() => setConfirmationTarget({ booking: selectedBookingDetail, action: 'COMPLETE' })}
                   disabled={isSubmitting || Boolean(selectedBookingDetail.startsAt && new Date(selectedBookingDetail.startsAt).getTime() > Date.now())}
                   title={selectedBookingDetail.startsAt && new Date(selectedBookingDetail.startsAt).getTime() > Date.now() ? 'Chỉ kích hoạt khi thời gian thực tế chạm mốc giờ hẹn trở đi' : undefined}
                 >
@@ -1536,7 +1682,7 @@ export function BookingCalendarPage() {
                   size="sm"
                   variant="outline"
                   className="text-amber-700 dark:text-amber-300 border-amber-600/40 text-xs hover:bg-amber-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={() => handleNoShowBooking(selectedBookingDetail)}
+                  onClick={() => setConfirmationTarget({ booking: selectedBookingDetail, action: 'NO_SHOW' })}
                   disabled={isSubmitting || Boolean(selectedBookingDetail.startsAt && new Date(selectedBookingDetail.startsAt).getTime() > Date.now())}
                   title={selectedBookingDetail.startsAt && new Date(selectedBookingDetail.startsAt).getTime() > Date.now() ? 'Chỉ kích hoạt khi thời gian thực tế chạm mốc giờ hẹn trở đi' : undefined}
                 >
@@ -1563,6 +1709,38 @@ export function BookingCalendarPage() {
       </Modal>
 
       {/* Modal Hủy Lịch - Áp dụng quy tắc cắt giờ */}
+      <Modal
+        isOpen={!!confirmationTarget}
+        onClose={() => !isSubmitting && setConfirmationTarget(null)}
+        title={confirmationTarget?.action === 'NO_SHOW' ? 'Xác nhận hội viên vắng mặt' : 'Xác nhận hoàn thành buổi tập'}
+        description={confirmationTarget?.action === 'NO_SHOW'
+          ? 'Hội viên sẽ bị trừ một lượt tập. Hành động này cần được kiểm tra kỹ.'
+          : 'Buổi tập sẽ được ghi nhận là đã hoàn thành.'}
+      >
+        {confirmationTarget && (
+          <div className="space-y-4">
+            <div className="rounded-xl bg-bg-surface-muted p-4 text-sm text-text-muted">
+              Hội viên: <strong className="text-text-primary">{confirmationTarget.booking.memberName || 'Hội viên'}</strong>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
+              <Button variant="ghost" onClick={() => setConfirmationTarget(null)} disabled={isSubmitting}>Quay lại</Button>
+              <Button
+                variant={confirmationTarget.action === 'NO_SHOW' ? 'danger' : 'primary'}
+                isLoading={isSubmitting}
+                onClick={async () => {
+                  const target = confirmationTarget
+                  setConfirmationTarget(null)
+                  if (target.action === 'NO_SHOW') await handleNoShowBooking(target.booking)
+                  else await handleCompleteBooking(target.booking)
+                }}
+              >
+                {confirmationTarget.action === 'NO_SHOW' ? 'Xác nhận vắng mặt' : 'Xác nhận hoàn thành'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       <Modal
         isOpen={!!cancelTarget}
         onClose={() => setCancelTarget(null)}

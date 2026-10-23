@@ -9,13 +9,13 @@ export const TestimonialsSection = () => {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-xs font-semibold text-emerald-400">
-            <span>KẾT QUẢ THỰC TẾ ĐO LƯỜNG ĐƯỢC</span>
+            <span>HÀNH TRÌNH THẬT TỪ HỘI VIÊN</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold font-heading text-white tracking-tight">
-            Hội Viên Nói Gì Về <span className="text-gradient-emerald">ApexFit 1:1</span>?
+            Những thay đổi bắt đầu từ <span className="text-gradient-emerald">thói quen nhỏ</span>
           </h2>
           <p className="text-base text-slate-300">
-            Hàng trăm hội viên đã thay đổi ngoạn mục về hình thể và lối sống sau các gói tập PT 1:1 được cá nhân hóa.
+            Mỗi người có một mục tiêu khác nhau. Điều quan trọng là có kế hoạch phù hợp và một hệ thống giúp bạn duy trì đều đặn.
           </p>
         </div>
 
