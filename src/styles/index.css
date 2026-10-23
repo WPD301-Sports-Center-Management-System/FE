@@ -86,7 +86,7 @@
     color-scheme: dark;
   }
 
-  body {
+    body {
     margin: 0;
     min-width: 320px;
     min-height: 100vh;
@@ -96,6 +96,39 @@
     overflow-x: hidden;
   }
 }
+
+/* Automatic responsive root scaling across screen resolutions & Windows DPI scales */
+@media (max-width: 640px) {
+  :root {
+    font-size: 14.4px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  :root {
+    font-size: 14.8px;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  :root {
+    font-size: 15.2px;
+  }
+}
+
+@media (min-width: 1441px) and (max-width: 1920px) {
+  :root {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1921px) {
+  :root {
+    font-size: 16.5px;
+  }
+}
+
+
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {

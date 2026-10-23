@@ -18,7 +18,13 @@ import {
 } from 'lucide-react'
 import type { UserRole } from '@/shared/types/api'
 
-export function SidebarNav({ role }: { role: UserRole | null }) {
+export interface SidebarNavProps {
+  role: UserRole | null
+  isCollapsed?: boolean
+  onNavigate?: () => void
+}
+
+export function SidebarNav({ role, isCollapsed = false, onNavigate }: SidebarNavProps) {
   interface NavItem {
     to: string
     label: string
@@ -129,14 +135,18 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
   const sections = getNavSections()
 
   return (
-    <nav className="flex-1 space-y-4 px-3 py-3">
+    <nav className={`flex-1 space-y-4 ${isCollapsed ? 'px-2 py-3' : 'px-3 py-3'}`}>
       {sections.map((section, idx) => (
         <div key={section.title || idx} className="space-y-1">
           {section.title && (
-            <div className="flex items-center gap-2 px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-text-muted">
-              <span>{section.title}</span>
-              <div className="h-px flex-1 bg-border-subtle" />
-            </div>
+            isCollapsed ? (
+              <div className="my-2 border-t border-border-subtle/80" title={section.title} />
+            ) : (
+              <div className="flex items-center gap-2 px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                <span>{section.title}</span>
+                <div className="h-px flex-1 bg-border-subtle" />
+              </div>
+            )
           )}
           <div className="space-y-1">
             {section.items.map((link) => {
@@ -146,16 +156,27 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
                   key={link.to}
                   to={link.to}
                   end={link.to === '/manager' || link.to === '/receptionist' || link.to === '/coach'}
+                  onClick={() => onNavigate?.()}
+                  title={isCollapsed ? link.label : undefined}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all duration-200 ${
+                    `group relative flex items-center ${
+                      isCollapsed
+                        ? 'justify-center p-2.5'
+                        : 'gap-3 px-3.5 py-2.5'
+                    } rounded-xl text-xs font-semibold transition-all duration-200 ${
                       isActive
                         ? 'bg-primary text-primary-foreground shadow-md shadow-primary/30'
                         : 'text-text-muted hover:bg-bg-surface-muted hover:text-text-primary'
                     }`
                   }
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span>{link.label}</span>
+                  <Icon className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                  {!isCollapsed && <span className="truncate">{link.label}</span>}
+                  {isCollapsed && (
+                    <span className="pointer-events-none absolute left-full ml-3.5 z-50 hidden rounded-lg bg-bg-surface px-2.5 py-1 text-xs font-semibold text-text-primary shadow-xl border border-border-subtle whitespace-nowrap group-hover:block animate-in fade-in zoom-in-95 duration-150">
+                      {link.label}
+                    </span>
+                  )}
                 </NavLink>
               )
             })}
@@ -165,3 +186,4 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
     </nav>
   )
 }
+

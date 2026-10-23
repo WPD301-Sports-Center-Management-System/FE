@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Sparkles, Check, RefreshCw, AlertTriangle, XCircle, Edit3 } from 'lucide-react'
+import { toast } from 'sonner'
 import { coachesService } from '@/features/coaches/services/coaches.service'
 import { aiRecommendationsService, type AiRecommendation } from '../services/ai-recommendations.service'
 import { Button } from '@/shared/components/ui/button'
@@ -58,6 +59,7 @@ export function CoachAiRecommendationPage() {
     e.preventDefault()
     if (!memberId) {
       setErrorMessage('Vui lòng chọn học viên.')
+      toast.warning('Vui lòng chọn học viên.')
       return
     }
 
@@ -77,13 +79,12 @@ export function CoachAiRecommendationPage() {
       const content = rec.editedContent || rec.generatedContent || {}
       setEditableTitle(content.title || `AI Plan: ${targetFocus}`)
       setEditableNotes(content.notes || content.rationale || '')
+      toast.success('Hệ thống AI đã khởi tạo gợi ý giáo án thành công!')
     } catch (err) {
       setGenerationState('error')
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Hệ thống AI không thể tạo gợi ý.')
-      } else {
-        setErrorMessage('Lỗi kết nối máy chủ AI hoặc dịch vụ AI chưa được cấu hình.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Hệ thống AI không thể tạo gợi ý.') : 'Lỗi kết nối máy chủ AI hoặc dịch vụ AI chưa được cấu hình.'
+      setErrorMessage(msg)
+      toast.error(msg)
     }
   }
 
@@ -102,13 +103,13 @@ export function CoachAiRecommendationPage() {
       })
       setCurrentRec(updated)
       setIsEditModalOpen(false)
-      setSuccessMessage('Đã cập nhật bản nháp gợi ý AI thành công!')
+      const msg = 'Đã cập nhật bản nháp gợi ý AI thành công!'
+      setSuccessMessage(msg)
+      toast.success(msg)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể lưu chỉnh sửa gợi ý.')
-      } else {
-        setErrorMessage('Lỗi khi cập nhật bản nháp gợi ý.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể lưu chỉnh sửa gợi ý.') : 'Lỗi khi cập nhật bản nháp gợi ý.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsUpdating(false)
     }
@@ -123,13 +124,13 @@ export function CoachAiRecommendationPage() {
         title: editableTitle || undefined,
       })
       setCurrentRec({ ...currentRec, status: 'APPROVED' })
-      setSuccessMessage('Giáo án AI đã được duyệt và chuyển thành Giáo Án Chính Thức thành công!')
+      const msg = 'Giáo án AI đã được duyệt và chuyển thành Giáo Án Chính Thức thành công!'
+      setSuccessMessage(msg)
+      toast.success(msg)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể duyệt gợi ý AI.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi duyệt gợi ý AI.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể duyệt gợi ý AI.') : 'Lỗi hệ thống khi duyệt gợi ý AI.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsApproving(false)
     }
@@ -139,6 +140,7 @@ export function CoachAiRecommendationPage() {
     if (!currentRec) return
     if (!rejectionReason.trim()) {
       setErrorMessage('Vui lòng nhập lý do từ chối gợi ý.')
+      toast.warning('Vui lòng nhập lý do từ chối gợi ý.')
       return
     }
 
@@ -148,13 +150,13 @@ export function CoachAiRecommendationPage() {
       const updated = await aiRecommendationsService.rejectRecommendation(currentRec.id, rejectionReason)
       setCurrentRec(updated)
       setIsRejectModalOpen(false)
-      setSuccessMessage('Đã từ chối gợi ý AI thành công.')
+      const msg = 'Đã từ chối gợi ý AI thành công.'
+      setSuccessMessage(msg)
+      toast.success(msg)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể từ chối gợi ý AI.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi từ chối gợi ý AI.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể từ chối gợi ý AI.') : 'Lỗi hệ thống khi từ chối gợi ý AI.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsRejecting(false)
     }

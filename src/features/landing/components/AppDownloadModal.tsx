@@ -1,4 +1,5 @@
 import { X, Smartphone, QrCode, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AppDownloadModalProps {
   isOpen: boolean;
@@ -48,7 +49,7 @@ export const AppDownloadModal = ({ isOpen, onClose }: AppDownloadModalProps) => 
         <div className="grid grid-cols-2 gap-3">
           <a
             href="#"
-            onClick={(e) => { e.preventDefault(); alert('Ứng dụng iOS sắp có mặt trên App Store!'); }}
+            onClick={(e) => { e.preventDefault(); toast.info('Ứng dụng iOS sắp có mặt trên App Store!'); }}
             className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <span>Apple App Store</span>
@@ -56,7 +57,7 @@ export const AppDownloadModal = ({ isOpen, onClose }: AppDownloadModalProps) => 
 
           <a
             href="#"
-            onClick={(e) => { e.preventDefault(); alert('Ứng dụng Android sắp có mặt trên Google Play!'); }}
+            onClick={(e) => { e.preventDefault(); toast.info('Ứng dụng Android sắp có mặt trên Google Play!'); }}
             className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <span>Google Play Store</span>

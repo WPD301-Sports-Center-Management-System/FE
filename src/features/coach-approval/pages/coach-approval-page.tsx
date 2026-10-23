@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Check, X, RefreshCw, AlertCircle, Award, Search, Power } from 'lucide-react'
+import { toast } from 'sonner'
 import { formatVND } from '@/shared/utils/currency'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { Button } from '@/shared/components/ui/button'
@@ -59,6 +60,7 @@ export function CoachApprovalPage() {
 
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg)
+    toast.success(msg)
     setTimeout(() => setSuccessMessage(null), 4000)
   }
 
@@ -77,11 +79,9 @@ export function CoachApprovalPage() {
       )
       showSuccess(`Đã phê duyệt năng lực giảng dạy cho HLV ${off.coach?.user?.fullName || off.coachName || ''}!`)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Phê duyệt HLV thất bại.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi phê duyệt HLV.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Phê duyệt HLV thất bại.') : 'Lỗi hệ thống khi phê duyệt HLV.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setProcessingId(null)
     }
@@ -103,11 +103,9 @@ export function CoachApprovalPage() {
       )
       showSuccess(`Đã ${nextStatus ? 'kích hoạt' : 'tạm dừng'} giảng dạy khóa học thành công!`)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể đổi trạng thái giảng dạy.')
-      } else {
-        setErrorMessage('Lỗi kết nối khi cập nhật trạng thái.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể đổi trạng thái giảng dạy.') : 'Lỗi kết nối khi cập nhật trạng thái.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setProcessingId(null)
     }
@@ -129,11 +127,9 @@ export function CoachApprovalPage() {
       )
       showSuccess(`Đã ${nextStatus ? 'kích hoạt' : 'tạm dừng'} mở bán gói tập thành công!`)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể đổi trạng thái gói tập.')
-      } else {
-        setErrorMessage('Lỗi kết nối khi cập nhật trạng thái.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể đổi trạng thái gói tập.') : 'Lỗi kết nối khi cập nhật trạng thái.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setProcessingId(null)
     }
@@ -150,11 +146,9 @@ export function CoachApprovalPage() {
       )
       showSuccess('Đã phê duyệt gói tập PT thành công!')
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Phê duyệt gói tập thất bại.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi phê duyệt gói tập.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Phê duyệt gói tập thất bại.') : 'Lỗi hệ thống khi phê duyệt gói tập.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setProcessingId(null)
     }
@@ -201,11 +195,9 @@ export function CoachApprovalPage() {
       setRejectItem(null)
       setRejectReason('')
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Từ chối phê duyệt thất bại.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi từ chối phê duyệt.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Từ chối phê duyệt thất bại.') : 'Lỗi hệ thống khi từ chối phê duyệt.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmittingReject(false)
     }

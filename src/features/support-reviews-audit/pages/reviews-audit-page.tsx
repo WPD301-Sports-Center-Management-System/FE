@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import {
   EyeOff,
   Eye,
@@ -93,17 +94,17 @@ export function ReviewsAuditPage() {
         )
       )
       setHideReview(null)
-      setActionSuccessMessage('Đã ẩn đánh giá khỏi trang công khai thành công!')
+      const msg = 'Đã ẩn đánh giá khỏi trang công khai thành công!'
+      setActionSuccessMessage(msg)
+      toast.success(msg)
       // Refresh audit logs
       reviewsAuditService.getAuditLogs({ limit: 50 }).then((res) => {
         if (res?.data) setAuditLogs(res.data)
       }).catch(() => {})
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Lỗi khi ẩn đánh giá.')
-      } else {
-        setErrorMessage('Không thể kết nối đến máy chủ để ẩn đánh giá.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Lỗi khi ẩn đánh giá.') : 'Không thể kết nối đến máy chủ để ẩn đánh giá.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsActionLoading(false)
     }
@@ -124,17 +125,17 @@ export function ReviewsAuditPage() {
             : r
         )
       )
-      setActionSuccessMessage('Đã bỏ ẩn và hiển thị lại đánh giá thành công!')
+      const msg = 'Đã bỏ ẩn và hiển thị lại đánh giá thành công!'
+      setActionSuccessMessage(msg)
+      toast.success(msg)
       // Refresh audit logs
       reviewsAuditService.getAuditLogs({ limit: 50 }).then((res) => {
         if (res?.data) setAuditLogs(res.data)
       }).catch(() => {})
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Lỗi khi mở hiển thị đánh giá.')
-      } else {
-        setErrorMessage('Không thể kết nối đến máy chủ để hiển thị đánh giá.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Lỗi khi mở hiển thị đánh giá.') : 'Không thể kết nối đến máy chủ để hiển thị đánh giá.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsActionLoading(false)
     }
@@ -152,13 +153,13 @@ export function ReviewsAuditPage() {
       })
       const filename = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`
       await downloadBlob(blob, filename)
-      setActionSuccessMessage('Đã xuất file nhật ký kiểm toán (CSV) thành công!')
+      const msg = 'Đã xuất file nhật ký kiểm toán (CSV) thành công!'
+      setActionSuccessMessage(msg)
+      toast.success(msg)
     } catch (err: any) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Lỗi khi xuất audit log.')
-      } else {
-        setErrorMessage(err.message || 'Không thể tải file xuất kiểm toán.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Lỗi khi xuất audit log.') : (err.message || 'Không thể tải file xuất kiểm toán.')
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsExportingAudit(false)
     }

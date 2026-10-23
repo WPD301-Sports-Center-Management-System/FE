@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import {
   Eye,
   Plus,
@@ -130,6 +131,7 @@ export function MemberListPage() {
 
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg)
+    toast.success(msg)
     setTimeout(() => setSuccessMessage(null), 4000)
   }
 
@@ -186,11 +188,9 @@ export function MemberListPage() {
       const updatedSubs = await subscriptionsService.getSubscriptions({ memberId: selectedMember.id })
       setMemberSubscriptions(updatedSubs.data || [])
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Gia hạn gói tập thất bại.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi gia hạn gói.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Gia hạn gói tập thất bại.') : 'Lỗi hệ thống khi gia hạn gói.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setRenewingSubId(null)
     }
@@ -202,6 +202,7 @@ export function MemberListPage() {
     if (!cancellingSub || !selectedMember) return
     if (!cancelReason.trim()) {
       setErrorMessage('Vui lòng nhập lý do hủy gói.')
+      toast.warning('Vui lòng nhập lý do hủy gói.')
       return
     }
 
@@ -221,14 +222,10 @@ export function MemberListPage() {
       setMemberSubscriptions(updatedSubs.data || [])
       fetchMembers()
     } catch (err) {
-      if (isAppApiError(err)) {
-        const msg = err.message || 'Hủy gói tập thất bại.'
-        setCancelError(msg)
-        setErrorMessage(msg)
-      } else {
-        setCancelError('Lỗi hệ thống khi hủy gói tập.')
-        setErrorMessage('Lỗi hệ thống khi hủy gói tập.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Hủy gói tập thất bại.') : 'Lỗi hệ thống khi hủy gói tập.'
+      setCancelError(msg)
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsCancelling(false)
     }
@@ -250,11 +247,9 @@ export function MemberListPage() {
       setMemberSubscriptions(updatedSubs.data || [])
       fetchMembers()
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Thanh toán kích hoạt thất bại.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi thanh toán.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Thanh toán kích hoạt thất bại.') : 'Lỗi hệ thống khi thanh toán.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setPayingSubId(null)
     }
@@ -268,7 +263,9 @@ export function MemberListPage() {
 
     const cleanPhone = createForm.phone.trim().replace(/[\s.-]/g, '')
     if (!cleanPhone || cleanPhone.length < 9 || cleanPhone.length > 15) {
-      setCreateError('Số điện thoại phải từ 9 đến 15 chữ số.')
+      const msg = 'Số điện thoại phải từ 9 đến 15 chữ số.'
+      setCreateError(msg)
+      toast.warning(msg)
       return
     }
 
@@ -303,18 +300,16 @@ export function MemberListPage() {
       setCreateError(null)
       fetchMembers()
       showSuccess(`Đã đăng ký thành công hội viên ${res.user.fullName}`)
-    } catch (err) {
-      if (isAppApiError(err)) {
-        const detail = err.errors && err.errors.length > 0
-          ? ` (${err.errors.map((e) => e.message).join(', ')})`
-          : ''
-        const msg = `${err.message || 'Đăng ký hội viên thất bại.'}${detail}`
-        setCreateError(msg)
-        setErrorMessage(msg)
-      } else {
-        setCreateError('Lỗi hệ thống khi tạo hội viên.')
-        setErrorMessage('Lỗi hệ thống khi tạo hội viên.')
-      }
+    } catch (err: any) {
+      const detail = err.errors && err.errors.length > 0
+        ? ` (${err.errors.map((e: any) => e.message).join(', ')})`
+        : ''
+      const msg = isAppApiError(err)
+        ? `${err.message || 'Đăng ký hội viên thất bại.'}${detail}`
+        : 'Lỗi hệ thống khi tạo hội viên.'
+      setCreateError(msg)
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -355,11 +350,9 @@ export function MemberListPage() {
       }
       showSuccess('Cập nhật hồ sơ hội viên thành công!')
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể cập nhật thông tin.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi cập nhật hội viên.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể cập nhật thông tin.') : 'Lỗi hệ thống khi cập nhật hội viên.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -369,6 +362,7 @@ export function MemberListPage() {
     if (createdResult?.temporaryPassword) {
       navigator.clipboard.writeText(createdResult.temporaryPassword)
       setIsCopied(true)
+      toast.success('Đã sao chép mật khẩu tạm thời!')
       setTimeout(() => setIsCopied(false), 2500)
     }
   }

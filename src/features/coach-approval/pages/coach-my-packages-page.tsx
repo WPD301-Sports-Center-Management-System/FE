@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, RefreshCw, AlertCircle, Check, Package } from 'lucide-react'
+import { toast } from 'sonner'
 import { coachesService } from '@/features/coaches/services/coaches.service'
 import { coachApprovalService } from '@/features/coach-approval/services/coach-approval.service'
 import { coursesExercisesService } from '@/features/courses-exercises/services/courses-exercises.service'
@@ -76,6 +77,7 @@ export function CoachMyPackagesPage() {
 
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg)
+    toast.success(msg)
     setTimeout(() => setSuccessMessage(null), 4000)
   }
 
@@ -83,10 +85,12 @@ export function CoachMyPackagesPage() {
     e.preventDefault()
     if (!form.name.trim()) {
       setErrorMessage('Vui lòng nhập tên gói tập.')
+      toast.warning('Vui lòng nhập tên gói tập.')
       return
     }
     if (!form.courseId) {
       setErrorMessage('Vui lòng chọn khóa học áp dụng.')
+      toast.warning('Vui lòng chọn khóa học áp dụng.')
       return
     }
 
@@ -117,11 +121,9 @@ export function CoachMyPackagesPage() {
       const updatedPkgs = await coachesService.getMyPackageOptions({ limit: 100 })
       setPackages(updatedPkgs.data || [created, ...packages])
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Gửi đề xuất gói tập thất bại.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi gửi đề xuất gói tập.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Gửi đề xuất gói tập thất bại.') : 'Lỗi hệ thống khi gửi đề xuất gói tập.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -140,11 +142,9 @@ export function CoachMyPackagesPage() {
       )
       showSuccess(`Đã ${nextStatus ? 'mở bán' : 'tạm dừng'} gói tập "${pkg.name}" thành công!`)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể đổi trạng thái gói tập.')
-      } else {
-        setErrorMessage('Lỗi kết nối khi cập nhật trạng thái.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể đổi trạng thái gói tập.') : 'Lỗi kết nối khi cập nhật trạng thái.'
+      setErrorMessage(msg)
+      toast.error(msg)
     }
   }
 
@@ -193,11 +193,9 @@ export function CoachMyPackagesPage() {
       showSuccess(`Đã cập nhật và gửi duyệt lại gói "${updated.name}"!`)
       setEditingPkg(null)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Cập nhật gói tập thất bại.')
-      } else {
-        setErrorMessage('Lỗi kết nối khi cập nhật gói tập.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Cập nhật gói tập thất bại.') : 'Lỗi kết nối khi cập nhật gói tập.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsEditing(false)
     }

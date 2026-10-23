@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import {
   Download,
   RefreshCw,
@@ -116,13 +117,13 @@ export function ReportsPage() {
       const ext = format === 'csv' ? 'csv' : 'xlsx'
       const filename = `bao_cao_${activeTab}_${new Date().toISOString().slice(0, 10)}.${ext}`
       await downloadBlob(blob, filename)
-      setSuccessMessage(`Đã xuất báo cáo ${filename} thành công!`)
+      const msg = `Đã xuất báo cáo ${filename} thành công!`
+      setSuccessMessage(msg)
+      toast.success(msg)
     } catch (err: any) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể xuất báo cáo.')
-      } else {
-        setErrorMessage(err.message || 'Lỗi khi tải file báo cáo.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể xuất báo cáo.') : (err.message || 'Lỗi khi tải file báo cáo.')
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsExporting(false)
     }
@@ -145,13 +146,13 @@ export function ReportsPage() {
       )
       setSettleItem(null)
       setTransferRef('')
-      setSuccessMessage('Đã cập nhật trạng thái chi trả thù lao HLV thành công!')
+      const msg = 'Đã cập nhật trạng thái chi trả thù lao HLV thành công!'
+      setSuccessMessage(msg)
+      toast.success(msg)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể cập nhật quyết toán HLV.')
-      } else {
-        setErrorMessage('Lỗi kết nối khi xác nhận quyết toán.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể cập nhật quyết toán HLV.') : 'Lỗi kết nối khi xác nhận quyết toán.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSettling(false)
     }

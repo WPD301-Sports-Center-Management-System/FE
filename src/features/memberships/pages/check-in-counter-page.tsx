@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import { Search, CheckCircle2, AlertOctagon, Clock, ArrowRight, Loader2, QrCode, RotateCw, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatTime, formatDate } from '@/shared/utils/date'
@@ -108,11 +109,14 @@ export function CheckInCounterPage() {
       } else {
         setSearchedMember(null)
         setActiveSubscription(null)
-        setErrorMessage(`Không tìm thấy hội viên nào khớp với "${query}".`)
+        const msg = `Không tìm thấy hội viên nào khớp với "${query}".`
+        setErrorMessage(msg)
+        toast.error(msg)
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Có lỗi khi tra cứu hội viên.'
       setErrorMessage(msg)
+      toast.error(msg)
       setSearchedMember(null)
       setActiveSubscription(null)
     } finally {
@@ -140,7 +144,9 @@ export function CheckInCounterPage() {
         memberId: searchedMember.id,
         note: 'Vào phòng tập tại quầy',
       })
-      setSuccessMessage(`Check-in thành công cho hội viên ${searchedMember.fullName}!`)
+      const msg = `Check-in thành công cho hội viên ${searchedMember.fullName}!`
+      setSuccessMessage(msg)
+      toast.success(msg)
       // Refresh check-in list or prepend
       const recordWithMember: CheckIn = {
         ...created,
@@ -150,6 +156,7 @@ export function CheckInCounterPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Check-in thất bại. Vui lòng kiểm tra lại trạng thái thẻ.'
       setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmittingCheckIn(false)
     }

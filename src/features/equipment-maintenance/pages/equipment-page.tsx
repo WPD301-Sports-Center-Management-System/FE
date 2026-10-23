@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import { Plus, RefreshCw, AlertCircle, Check, Wrench, CheckCircle2, Eye, Edit2 } from 'lucide-react'
 import { DataTable, type Column } from '@/shared/components/ui/data-table'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
@@ -96,6 +97,7 @@ export function EquipmentPage() {
 
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg)
+    toast.success(msg)
     setTimeout(() => setSuccessMessage(null), 4000)
   }
 
@@ -182,8 +184,9 @@ export function EquipmentPage() {
       })
       await loadData()
     } catch (err: any) {
-      if (isAppApiError(err)) setErrorMessage(err.message || 'Thêm thiết bị thất bại.')
-      else setErrorMessage('Lỗi hệ thống khi thêm máy.')
+      const msg = isAppApiError(err) ? (err.message || 'Thêm thiết bị thất bại.') : 'Lỗi hệ thống khi thêm máy.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -203,8 +206,9 @@ export function EquipmentPage() {
       setStatusModalEq(null)
       await loadData()
     } catch (err: any) {
-      if (isAppApiError(err)) setErrorMessage(err.message || 'Đổi trạng thái thất bại.')
-      else setErrorMessage('Lỗi khi cập nhật trạng thái.')
+      const msg = isAppApiError(err) ? (err.message || 'Đổi trạng thái thất bại.') : 'Lỗi khi cập nhật trạng thái.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -215,6 +219,7 @@ export function EquipmentPage() {
     e.preventDefault()
     if (!createAreaForm.name.trim()) {
       setErrorMessage('Vui lòng nhập tên khu vực.')
+      toast.warning('Vui lòng nhập tên khu vực.')
       return
     }
 
@@ -232,8 +237,9 @@ export function EquipmentPage() {
       setCreateAreaForm({ name: '', location: '', description: '' })
       await loadData()
     } catch (err: any) {
-      if (isAppApiError(err)) setErrorMessage(err.message || 'Tạo khu vực thất bại.')
-      else setErrorMessage('Lỗi khi tạo khu vực.')
+      const msg = isAppApiError(err) ? (err.message || 'Tạo khu vực thất bại.') : 'Lỗi khi tạo khu vực.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -244,6 +250,7 @@ export function EquipmentPage() {
     e.preventDefault()
     if (!createMaintForm.equipmentId || !createMaintForm.scheduledAt || !createMaintForm.description.trim()) {
       setErrorMessage('Vui lòng chọn thiết bị, thời gian dự kiến và nội dung bảo trì.')
+      toast.warning('Vui lòng chọn thiết bị, thời gian dự kiến và nội dung bảo trì.')
       return
     }
 
@@ -261,8 +268,9 @@ export function EquipmentPage() {
       setCreateMaintForm({ equipmentId: '', scheduledAt: '', description: '' })
       await loadData()
     } catch (err: any) {
-      if (isAppApiError(err)) setErrorMessage(err.message || 'Lên lịch bảo trì thất bại.')
-      else setErrorMessage('Lỗi khi lên lịch bảo trì.')
+      const msg = isAppApiError(err) ? (err.message || 'Lên lịch bảo trì thất bại.') : 'Lỗi khi lên lịch bảo trì.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -287,8 +295,9 @@ export function EquipmentPage() {
       setCompleteMaintForm({ resultNote: '', nextMaintenanceAt: '' })
       await loadData()
     } catch (err: any) {
-      if (isAppApiError(err)) setErrorMessage(err.message || 'Xác nhận hoàn tất thất bại.')
-      else setErrorMessage('Lỗi khi cập nhật hoàn tất bảo trì.')
+      const msg = isAppApiError(err) ? (err.message || 'Xác nhận hoàn tất thất bại.') : 'Lỗi khi cập nhật hoàn tất bảo trì.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -338,8 +347,9 @@ export function EquipmentPage() {
       setEditingEquipment(null)
       await loadData()
     } catch (err: any) {
-      if (isAppApiError(err)) setErrorMessage(err.message || 'Cập nhật thiết bị thất bại.')
-      else setErrorMessage('Lỗi khi cập nhật thiết bị.')
+      const msg = isAppApiError(err) ? (err.message || 'Cập nhật thiết bị thất bại.') : 'Lỗi khi cập nhật thiết bị.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -372,8 +382,9 @@ export function EquipmentPage() {
       setEditingArea(null)
       await loadData()
     } catch (err: any) {
-      if (isAppApiError(err)) setErrorMessage(err.message || 'Cập nhật khu vực thất bại.')
-      else setErrorMessage('Lỗi khi cập nhật khu vực.')
+      const msg = isAppApiError(err) ? (err.message || 'Cập nhật khu vực thất bại.') : 'Lỗi khi cập nhật khu vực.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -404,8 +415,9 @@ export function EquipmentPage() {
       setEditingMaintItem(null)
       await loadData()
     } catch (err: any) {
-      if (isAppApiError(err)) setErrorMessage(err.message || 'Cập nhật lịch bảo trì thất bại.')
-      else setErrorMessage('Lỗi khi cập nhật lịch bảo trì.')
+      const msg = isAppApiError(err) ? (err.message || 'Cập nhật lịch bảo trì thất bại.') : 'Lỗi khi cập nhật lịch bảo trì.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }

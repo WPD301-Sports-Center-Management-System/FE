@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import {
   Plus,
   KeyRound,
@@ -91,6 +92,7 @@ export function UserManagementPage() {
 
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg)
+    toast.success(msg)
     setTimeout(() => setSuccessMessage(null), 4000)
   }
 
@@ -112,11 +114,9 @@ export function UserManagementPage() {
       setCreateFormData({ fullName: '', email: '', phone: '', role: 'COACH', password: '' })
       showSuccess(`Đã tạo thành công tài khoản cho ${created.fullName}`)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Tạo tài khoản thất bại.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi tạo tài khoản.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Tạo tài khoản thất bại.') : 'Lỗi hệ thống khi tạo tài khoản.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -147,11 +147,9 @@ export function UserManagementPage() {
       setEditingUser(null)
       showSuccess(`Đã cập nhật thông tin cho ${updated.fullName}`)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Cập nhật tài khoản thất bại.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi cập nhật.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Cập nhật tài khoản thất bại.') : 'Lỗi hệ thống khi cập nhật.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -170,11 +168,9 @@ export function UserManagementPage() {
       setStatusChangeUser(null)
       showSuccess(`Đã cập nhật trạng thái tài khoản sang ${statusChangeUser.targetStatus}`)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Cập nhật trạng thái thất bại.')
-      } else {
-        setErrorMessage('Lỗi khi đổi trạng thái.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Cập nhật trạng thái thất bại.') : 'Lỗi khi đổi trạng thái.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -189,12 +185,11 @@ export function UserManagementPage() {
       setTempPassword(res.temporaryPassword)
       setResetUser(user)
       setIsCopied(false)
+      toast.success(`Đã tạo mật khẩu tạm thời mới cho ${user.fullName}`)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Đặt lại mật khẩu thất bại.')
-      } else {
-        setErrorMessage('Lỗi khi đặt lại mật khẩu.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Đặt lại mật khẩu thất bại.') : 'Lỗi khi đặt lại mật khẩu.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -204,6 +199,7 @@ export function UserManagementPage() {
     if (tempPassword) {
       await navigator.clipboard.writeText(tempPassword)
       setIsCopied(true)
+      toast.success('Đã sao chép mật khẩu tạm thời!')
       setTimeout(() => setIsCopied(false), 2000)
     }
   }
@@ -228,11 +224,9 @@ export function UserManagementPage() {
       window.URL.revokeObjectURL(url)
       showSuccess('Đã xuất danh sách tài khoản ra file CSV thành công.')
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể xuất dữ liệu.')
-      } else {
-        setErrorMessage('Lỗi khi xuất file CSV.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể xuất dữ liệu.') : 'Lỗi khi xuất file CSV.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsExporting(false)
     }

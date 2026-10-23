@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Edit2, ShieldAlert, Check, RefreshCw, AlertCircle } from 'lucide-react'
+import { toast } from 'sonner'
 import { membershipPlansService } from '../services/membership-plans.service'
 import { formatVND } from '@/shared/utils/currency'
 import { Button } from '@/shared/components/ui/button'
@@ -49,8 +50,9 @@ export function MembershipPlansPage() {
       })
       setPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
       setSelectedPlan(null)
+      toast.success('Cập nhật giá gói tập thành công!')
     } catch (err: any) {
-      alert(err?.message || 'Không thể cập nhật giá gói.')
+      toast.error(err?.message || 'Không thể cập nhật giá gói.')
     } finally {
       setIsSubmitting(false)
     }
@@ -63,8 +65,9 @@ export function MembershipPlansPage() {
         isActive: !plan.isActive,
       })
       setPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+      toast.success(`Đã ${updated.isActive ? 'kích hoạt' : 'tạm ngưng'} gói ${plan.name}!`)
     } catch (err: any) {
-      alert(err?.message || 'Không thể đổi trạng thái gói.')
+      toast.error(err?.message || 'Không thể đổi trạng thái gói.')
     } finally {
       setUpdatingStatusId(null)
     }

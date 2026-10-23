@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, type FormEvent } from 'react'
 import { HelpCircle, Plus, RefreshCw, AlertCircle, MessageSquare } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Textarea } from '@/shared/components/ui/input'
 import { Modal } from '@/shared/components/ui/modal'
@@ -65,6 +66,7 @@ export function MemberSupportPage() {
     e.preventDefault()
     if (!subject.trim() || !message.trim()) {
       setErrorMessage('Vui lòng điền đầy đủ tiêu đề và nội dung yêu cầu.')
+      toast.warning('Vui lòng điền đầy đủ tiêu đề và nội dung yêu cầu.')
       return
     }
 
@@ -76,17 +78,17 @@ export function MemberSupportPage() {
         subject: subject.trim(),
         message: message.trim(),
       })
-      setSuccessMessage('Yêu cầu hỗ trợ của bạn đã được gửi thành công đến quầy tiếp đón!')
+      const msg = 'Yêu cầu hỗ trợ của bạn đã được gửi thành công đến quầy tiếp đón!'
+      setSuccessMessage(msg)
+      toast.success(msg)
       setIsCreateOpen(false)
       setSubject('')
       setMessage('')
       await loadTickets()
     } catch (err: any) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Lỗi khi tạo yêu cầu hỗ trợ.')
-      } else {
-        setErrorMessage('Không thể tạo yêu cầu hỗ trợ. Vui lòng thử lại.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Lỗi khi tạo yêu cầu hỗ trợ.') : 'Không thể tạo yêu cầu hỗ trợ. Vui lòng thử lại.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -103,13 +105,13 @@ export function MemberSupportPage() {
       if (selectedTicket?.id === ticket.id) {
         setSelectedTicket((prev) => (prev ? { ...prev, ...updated, status: 'OPEN' } : prev))
       }
-      setSuccessMessage(`Đã mở lại yêu cầu [${ticket.requestCode || ticket.id}] thành công.`)
+      const msg = `Đã mở lại yêu cầu [${ticket.requestCode || ticket.id}] thành công.`
+      setSuccessMessage(msg)
+      toast.success(msg)
     } catch (err: any) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể mở lại yêu cầu.')
-      } else {
-        setErrorMessage('Lỗi khi mở lại yêu cầu hỗ trợ.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể mở lại yêu cầu.') : 'Lỗi khi mở lại yêu cầu hỗ trợ.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }

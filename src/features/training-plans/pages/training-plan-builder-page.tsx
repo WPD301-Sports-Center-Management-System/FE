@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { toast } from 'sonner'
 import {
   Plus,
   Trash2,
@@ -152,11 +153,11 @@ export function TrainingPlanBuilderPage() {
       setGoal((prev) => (prev.trim() ? prev : preset.defaultGoal))
 
       if (showToast) {
-        setPresetNotice(
-          `Đã nạp thành công ${newRows.length} bài tập mẫu theo phân bổ ${preset.name} (Mức độ: ${
-            level === 'BEGINNER' ? 'Mới tập' : level === 'INTERMEDIATE' ? 'Trung bình' : 'Nâng cao'
-          })`
-        )
+        const msg = `Đã nạp thành công ${newRows.length} bài tập mẫu theo phân bổ ${preset.name} (Mức độ: ${
+          level === 'BEGINNER' ? 'Mới tập' : level === 'INTERMEDIATE' ? 'Trung bình' : 'Nâng cao'
+        })`
+        setPresetNotice(msg)
+        toast.success(msg)
         setTimeout(() => setPresetNotice(null), 4000)
       }
     },
@@ -227,15 +228,17 @@ export function TrainingPlanBuilderPage() {
           setTitle(`Giáo án ${course.name || pkg.courseNameSnapshot} (${levelLabel})`)
           if (course.objective) setGoal(course.objective)
 
-          setPresetNotice(
-            `👑 Đã tự động nạp giáo án chuẩn của gói "${pkg.courseNameSnapshot}" (${newRows.length} bài tập)!`
-          )
+          const msg = `👑 Đã tự động nạp giáo án chuẩn của gói "${pkg.courseNameSnapshot}" (${newRows.length} bài tập)!`
+          setPresetNotice(msg)
+          toast.success(msg)
           setTimeout(() => setPresetNotice(null), 4000)
         } else {
           // Fallback sang mẫu tương ứng nếu chưa có bài tập trong cơ sở dữ liệu
           applyPreset(matchedPresetId, level, exList, date, false)
           setTitle(`Giáo án ${pkg.courseNameSnapshot || 'Huấn Luyện'} (${levelLabel})`)
-          setPresetNotice(`Đã nạp giáo án chuẩn mẫu của gói "${pkg.courseNameSnapshot}"!`)
+          const fallbackMsg = `Đã nạp giáo án chuẩn mẫu của gói "${pkg.courseNameSnapshot}"!`
+          setPresetNotice(fallbackMsg)
+          toast.success(fallbackMsg)
           setTimeout(() => setPresetNotice(null), 4000)
         }
       } catch {
@@ -322,6 +325,7 @@ export function TrainingPlanBuilderPage() {
         exerciseCount: viewingPlanExercises.length,
         isDraft: false,
       })
+      toast.success(`Đã giao giáo án "${viewingPlan?.title || 'Giáo án huấn luyện'}" cho học viên thành công!`)
       if (typeof trainingPlansService.getTrainingPlans === 'function') {
         const plansRes = await trainingPlansService.getTrainingPlans()
         setExistingPlans((plansRes as any)?.data || [])
@@ -330,11 +334,9 @@ export function TrainingPlanBuilderPage() {
         setViewingPlan((prev) => (prev ? { ...prev, status: 'ASSIGNED' } : null))
       }
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Lỗi khi giao giáo án.')
-      } else {
-        setErrorMessage('Không thể giao giáo án lên máy chủ.')
-      }
+      const errText = isAppApiError(err) ? (err.message || 'Lỗi khi giao giáo án.') : 'Không thể giao giáo án lên máy chủ.'
+      setErrorMessage(errText)
+      toast.error(errText)
     } finally {
       setIsSubmitting(false)
     }
@@ -492,6 +494,7 @@ export function TrainingPlanBuilderPage() {
     const notifyError = (msg: string) => {
       setErrorMessage(msg)
       setSuccessNotice(null)
+      toast.error(msg)
       scrollToTop()
       setTimeout(() => {
         setErrorMessage((prev) => (prev === msg ? null : prev))
@@ -596,12 +599,19 @@ export function TrainingPlanBuilderPage() {
       setErrorMessage(null)
 
       // Cập nhật thông báo thành công
+      const targetMember = assignedMember?.fullName || (assignedMember as any)?.user?.fullName || 'học viên'
       setSuccessNotice({
         title: successTitle,
-        memberName: assignedMember?.fullName || (assignedMember as any)?.user?.fullName || 'học viên',
+        memberName: targetMember,
         exerciseCount: totalExercises,
         isDraft: !shouldAssign,
       })
+
+      if (shouldAssign) {
+        toast.success(`Đã lưu và giao giáo án "${successTitle}" (${totalExercises} bài tập) cho học viên ${targetMember} thành công!`)
+      } else {
+        toast.success(`Đã lưu bản nháp giáo án "${successTitle}" (${totalExercises} bài tập) thành công!`)
+      }
 
       // Cuộn mượt lên đầu trang
       scrollToTop()

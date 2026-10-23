@@ -49,8 +49,8 @@ export function DataTable<T extends Record<string, unknown>>({
   return (
     <div className="w-full space-y-4">
       {(searchKey || searchFn) && (
-        <div className="flex items-center justify-between gap-4">
-          <div className="relative w-72">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-72">
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
             <input
               type="text"
@@ -63,12 +63,12 @@ export function DataTable<T extends Record<string, unknown>>({
               className="w-full rounded-xl border border-border-subtle bg-bg-input py-2 pl-10 pr-4 text-xs text-text-primary placeholder:text-text-muted/60 transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-focus-ring"
             />
           </div>
-          <span className="text-xs text-text-muted">Tổng cộng: {filteredData.length} mục</span>
+          <span className="text-xs text-text-muted shrink-0">Tổng cộng: {filteredData.length} mục</span>
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-2xl border border-border-subtle bg-bg-surface backdrop-blur-md">
-        <table className="w-full text-left text-sm text-text-muted">
+      <div className="overflow-x-auto scrollbar-thin rounded-2xl border border-border-subtle bg-bg-surface backdrop-blur-md">
+        <table className="w-full min-w-[600px] text-left text-sm text-text-muted">
           <thead className="border-b border-border-subtle bg-bg-surface-muted text-xs font-semibold uppercase tracking-wider text-text-muted">
             <tr>
               {columns.map((col, idx) => (
@@ -122,7 +122,7 @@ export function DataTable<T extends Record<string, unknown>>({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-xs text-text-muted px-1">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-text-muted px-1">
           <span>
             Trang {currentPage} / {totalPages}
           </span>
@@ -144,6 +144,7 @@ export function DataTable<T extends Record<string, unknown>>({
           </div>
         </div>
       )}
+
     </div>
   )
 }

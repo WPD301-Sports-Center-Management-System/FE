@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { MessageSquare, RefreshCw, AlertTriangle, CheckCircle2, RotateCcw } from 'lucide-react'
+import { toast } from 'sonner'
 import { supportRequestsService } from '../services/support-requests.service'
 import { formatDateTime } from '@/shared/utils/date'
 import { DataTable, type Column } from '@/shared/components/ui/data-table'
@@ -59,13 +60,13 @@ export function SupportTicketsPage() {
       setTickets((prev) => prev.map((t) => (t.id === selectedTicket.id ? { ...t, ...updated } : t)))
       setSelectedTicket(null)
       setReplyText('')
-      setSuccessMessage(`Đã phản hồi và xử lý thành công ticket [${updated.requestCode || selectedTicket.id}]!`)
+      const msg = `Đã phản hồi và xử lý thành công ticket [${updated.requestCode || selectedTicket.id}]!`
+      setSuccessMessage(msg)
+      toast.success(msg)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Lỗi khi gửi phản hồi ticket.')
-      } else {
-        setErrorMessage('Không thể kết nối đến máy chủ để cập nhật yêu cầu.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Lỗi khi gửi phản hồi ticket.') : 'Không thể kết nối đến máy chủ để cập nhật yêu cầu.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -78,13 +79,13 @@ export function SupportTicketsPage() {
       const updated = await supportRequestsService.reopenSupportRequest(ticket.id)
       setTickets((prev) => prev.map((t) => (t.id === ticket.id ? { ...t, ...updated, status: 'OPEN' } : t)))
       setSelectedTicket(null)
-      setSuccessMessage(`Đã mở lại ticket [${ticket.requestCode || ticket.id}] thành công.`)
+      const msg = `Đã mở lại ticket [${ticket.requestCode || ticket.id}] thành công.`
+      setSuccessMessage(msg)
+      toast.success(msg)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể mở lại yêu cầu hỗ trợ.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi mở lại yêu cầu hỗ trợ.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể mở lại yêu cầu hỗ trợ.') : 'Lỗi hệ thống khi mở lại yêu cầu hỗ trợ.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }

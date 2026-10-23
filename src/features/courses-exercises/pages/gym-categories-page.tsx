@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, RefreshCw, AlertCircle, Check } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { coursesExercisesService } from '@/features/courses-exercises/services/courses-exercises.service'
 import { isAppApiError } from '@/shared/api/api-error'
@@ -85,6 +86,7 @@ export function GymCategoriesPage() {
 
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg)
+    toast.success(msg)
     setTimeout(() => setSuccessMessage(null), 4000)
   }
 
@@ -140,11 +142,9 @@ export function GymCategoriesPage() {
       setIsCourseModalOpen(false)
       setEditingCourse(null)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Thao tác khóa tập thất bại.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi xử lý khóa tập.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Thao tác khóa tập thất bại.') : 'Lỗi hệ thống khi xử lý khóa tập.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmittingCourse(false)
     }
@@ -163,11 +163,9 @@ export function GymCategoriesPage() {
       )
       showSuccess(`Đã ${nextStatus ? 'kích hoạt' : 'tạm dừng'} khóa tập "${c.name}" thành công!`)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể thay đổi trạng thái khóa tập.')
-      } else {
-        setErrorMessage('Lỗi kết nối khi cập nhật trạng thái khóa tập.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể thay đổi trạng thái khóa tập.') : 'Lỗi kết nối khi cập nhật trạng thái khóa tập.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setTogglingCourseId(null)
     }
@@ -222,11 +220,9 @@ export function GymCategoriesPage() {
       setAssigningMuscleCourse(null)
       loadData()
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Gán nhóm cơ thất bại.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi cập nhật nhóm cơ.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Gán nhóm cơ thất bại.') : 'Lỗi hệ thống khi cập nhật nhóm cơ.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmittingAssignMuscle(false)
     }
@@ -265,11 +261,9 @@ export function GymCategoriesPage() {
       setAssigningExerciseCourse(null)
       loadData()
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Cập nhật giáo án bài tập thất bại.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi cập nhật giáo án bài tập.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Cập nhật giáo án bài tập thất bại.') : 'Lỗi hệ thống khi cập nhật giáo án bài tập.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmittingAssignExercise(false)
     }
@@ -297,11 +291,9 @@ export function GymCategoriesPage() {
       setIsExerciseModalOpen(false)
       setEditingExercise(null)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Thao tác bài tập thất bại.')
-      } else {
-        setErrorMessage('Lỗi hệ thống khi xử lý bài tập.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Thao tác bài tập thất bại.') : 'Lỗi hệ thống khi xử lý bài tập.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmittingExercise(false)
     }
@@ -320,11 +312,9 @@ export function GymCategoriesPage() {
       )
       showSuccess(`Đã ${nextStatus ? 'kích hoạt' : 'tạm dừng'} bài tập "${ex.name}" thành công!`)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể đổi trạng thái bài tập.')
-      } else {
-        setErrorMessage('Lỗi kết nối khi đổi trạng thái bài tập.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể đổi trạng thái bài tập.') : 'Lỗi kết nối khi đổi trạng thái bài tập.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setTogglingExerciseId(null)
     }
@@ -357,11 +347,9 @@ export function GymCategoriesPage() {
       setIsMuscleModalOpen(false)
       setEditingMuscleGroup(null)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Thao tác nhóm cơ thất bại.')
-      } else {
-        setErrorMessage('Lỗi kết nối máy chủ khi xử lý nhóm cơ.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Thao tác nhóm cơ thất bại.') : 'Lỗi kết nối máy chủ khi xử lý nhóm cơ.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsSubmittingMuscle(false)
     }
@@ -380,11 +368,9 @@ export function GymCategoriesPage() {
       )
       showSuccess(`Đã ${nextStatus ? 'kích hoạt' : 'tạm dừng'} nhóm cơ "${mg.name}" thành công!`)
     } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể đổi trạng thái nhóm cơ.')
-      } else {
-        setErrorMessage('Lỗi kết nối khi đổi trạng thái nhóm cơ.')
-      }
+      const msg = isAppApiError(err) ? (err.message || 'Không thể đổi trạng thái nhóm cơ.') : 'Lỗi kết nối khi đổi trạng thái nhóm cơ.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setTogglingMuscleId(null)
     }
