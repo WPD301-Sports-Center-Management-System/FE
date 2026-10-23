@@ -23,3 +23,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local agent skills and design inspection artifacts
+.agents/
+.taste-skill/
+skills-lock.json
