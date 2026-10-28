@@ -150,7 +150,7 @@ export function ExercisesTab({
                         <h4 className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">
                           {ex.name}
                         </h4>
-                        <p className="text-[10px] text-text-muted">
+                        <p className="text-xs text-text-muted">
                           Thiết bị: {ex.equipmentRequired || 'Tự do / Bodyweight'}
                         </p>
                       </div>
@@ -177,7 +177,7 @@ export function ExercisesTab({
                       'Thực hiện động tác chuẩn xác theo giáo án HLV.'}
                   </p>
 
-                  <div className="flex justify-between items-center text-[10px] text-text-muted border-t border-border-subtle pt-2.5">
+                  <div className="flex justify-between items-center text-xs text-text-muted border-t border-border-subtle pt-2.5">
                     <span>
                       Nhóm cơ: <strong className="text-text-primary">{mgName}</strong>
                     </span>
@@ -193,7 +193,7 @@ export function ExercisesTab({
                     size="sm"
                     variant="ghost"
                     onClick={() => onOpenEdit(ex)}
-                    className="text-[11px] h-7 px-2.5 gap-1.5"
+                    className="text-xs h-7 px-2.5 gap-1.5"
                   >
                     <Edit2 className="h-3 w-3 text-primary" />
                     <span>Chỉnh sửa</span>
@@ -204,7 +204,7 @@ export function ExercisesTab({
                     variant="outline"
                     onClick={() => onToggleStatus(ex)}
                     disabled={togglingExerciseId === ex.id}
-                    className={`text-[11px] h-7 px-2.5 gap-1.5 ${
+                    className={`text-xs h-7 px-2.5 gap-1.5 ${
                       isAct
                         ? 'text-danger hover:bg-danger/10 hover:text-danger border-danger/30'
                         : 'text-success hover:bg-success/10 hover:text-success border-success/30'

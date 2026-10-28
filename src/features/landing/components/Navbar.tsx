@@ -104,11 +104,11 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
                 <span className="text-lg font-black tracking-tight font-heading text-text-primary whitespace-nowrap">
                   APEX<span className="text-primary">FIT</span>
                 </span>
-                <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 whitespace-nowrap">
+                <span className="text-xs uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 whitespace-nowrap">
                   1:1 PT
                 </span>
               </div>
-              <span className="text-[9px] text-text-muted tracking-wider whitespace-nowrap hidden sm:inline-block">
+              <span className="text-xs text-text-muted tracking-wider whitespace-nowrap hidden sm:inline-block">
                 CHUYÊN GIA THỂ HÌNH CÁ NHÂN
               </span>
             </div>
@@ -213,7 +213,7 @@ export const Navbar = ({ onOpenTrialModal, onOpenDownloadModal }: NavbarProps) =
                     <span>{link.label}</span>
                   </div>
                   {isActive ? (
-                    <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded bg-primary text-primary-foreground shadow-sm">
+                    <span className="text-xs uppercase font-extrabold px-2 py-0.5 rounded bg-primary text-primary-foreground shadow-sm">
                       Đang Xem
                     </span>
                   ) : (

@@ -20,9 +20,10 @@ export function LoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleRedirectAfterLogin = (role: UserRole) => {
-    const from = (location.state as { from?: { pathname: string } })?.from?.pathname
+    const target = (location.state as { from?: { pathname: string; search?: string } })?.from
+    const from = target?.pathname
     if (from && isPathAllowedForRole(from, role)) {
-      navigate(from, { replace: true })
+      navigate({ pathname: from, search: target?.search?.startsWith('?') ? target.search : '' }, { replace: true })
       return
     }
 
@@ -32,6 +33,9 @@ export function LoginPage() {
         break
       case 'COACH':
         navigate('/coach', { replace: true })
+        break
+      case 'MEMBER':
+        navigate('/member', { replace: true })
         break
       case 'MANAGER':
       default:
@@ -99,15 +103,12 @@ export function LoginPage() {
             <Dumbbell className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-text-primary">SPORTS CENTER</h2>
+            <h2 className="text-xl font-bold tracking-tight text-text-primary">ApexFIT</h2>
             <p className="text-xs uppercase tracking-widest text-text-muted">Hệ Thống Quản Lý Phòng Gym & PT 1:1</p>
           </div>
         </div>
 
         <div className="relative z-10 max-w-lg space-y-4">
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            Hợp Đồng API v1.1 BE • FE • Mobile
-          </span>
           <h1 className="text-4xl font-extrabold tracking-tight text-text-primary">
             Nền tảng vận hành tập luyện <span className="text-gradient-orange">Chuẩn Chuyên Nghiệp</span>
           </h1>
@@ -118,7 +119,7 @@ export function LoginPage() {
         </div>
 
         <div className="relative z-10 text-xs text-text-muted">
-          © 2026 Sports Center Management System. All rights reserved.
+          © 2026 ApexFIT. All rights reserved.
         </div>
       </div>
 
@@ -149,7 +150,7 @@ export function LoginPage() {
                 setIdentifier(e.target.value)
                 if (errorMessage) setErrorMessage(null)
               }}
-              placeholder="receptionist@gym.local hoặc manager@gym.local"
+              placeholder="Email công việc của bạn"
               disabled={isLoading}
               autoComplete="username"
             />

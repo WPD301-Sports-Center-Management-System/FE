@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { ImageUploadField } from '@/shared/components/ui/image-upload-field'
 import { Modal } from '@/shared/components/ui/modal'
 import { Input, Select, Textarea } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
@@ -106,11 +107,10 @@ export function CourseFormModal({
           placeholder="Giới thiệu lộ trình, đối tượng học viên phù hợp..."
           disabled={isSubmitting}
         />
-        <Input
-          label="Link ảnh banner khóa học (URL)"
+        <ImageUploadField
+          label="Ảnh banner khóa học"
           value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="https://images.unsplash.com/..."
+          onChange={setImageUrl}
           disabled={isSubmitting}
         />
         <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">

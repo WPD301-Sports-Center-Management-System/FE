@@ -2,7 +2,7 @@ import axios, { type InternalAxiosRequestConfig, type AxiosError } from 'axios'
 import { appConfig } from '@/app/config'
 import { authStorage } from '@/shared/utils/storage'
 import { AppApiError } from '@/shared/api/api-error'
-import { handleMockRequest } from '@/shared/api/mock-adapter'
+import { refreshSessionTokens } from './refresh-session'
 import type { ApiError as ApiErrorPayload } from '@/shared/types/api'
 
 export const apiClient = axios.create({
@@ -22,7 +22,7 @@ if (appConfig.useMock) {
     const url = config.url || ''
     const isAuthRoute = url.includes('/auth/') || url.startsWith('auth/')
     if (!isAuthRoute) {
-      config.adapter = async (cfg) => handleMockRequest(cfg)
+      config.adapter = async (cfg) => (await import('@/shared/api/mock-adapter')).handleMockRequest(cfg)
     }
     return config
   })
@@ -80,6 +80,7 @@ apiClient.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({
             resolve: (token: string) => {
+              originalRequest._retry = true
               if (originalRequest.headers) {
                 originalRequest.headers.Authorization = `Bearer ${token}`
               }
@@ -102,20 +103,9 @@ apiClient.interceptors.response.use(
       }
 
       try {
-        const refreshResponse = await axios.post<{
-          success: boolean
-          data: { accessToken: string; refreshToken: string; tokenType: string; expiresIn: string | number }
-        }>(`${appConfig.apiBaseUrl}/auth/refresh`, {
-          refreshToken,
-        })
+        const refreshedData = await refreshSessionTokens(refreshToken)
 
-        const refreshedData = refreshResponse.data?.data
         if (refreshedData?.accessToken) {
-          authStorage.setTokens({
-            accessToken: refreshedData.accessToken,
-            refreshToken: refreshedData.refreshToken || refreshToken,
-          })
-
           processQueue(null, refreshedData.accessToken)
 
           if (originalRequest.headers) {
@@ -127,8 +117,10 @@ apiClient.interceptors.response.use(
         }
       } catch (refreshErr) {
         processQueue(refreshErr, null)
-        authStorage.clearSession()
-        window.dispatchEvent(new CustomEvent('auth:unauthorized'))
+        if (authStorage.getRefreshToken() === refreshToken) {
+          authStorage.clearSession()
+          window.dispatchEvent(new CustomEvent('auth:unauthorized'))
+        }
         return Promise.reject(normalizeError(refreshErr))
       } finally {
         isRefreshing = false
@@ -153,6 +145,7 @@ function normalizeError(error: unknown): AppApiError {
     code: responseData?.code || (axiosErr.code === 'ECONNABORTED' ? 'TIMEOUT' : 'NETWORK_ERROR'),
     message: responseData?.message || axiosErr.message || 'Không thể kết nối đến máy chủ',
     errors: responseData?.errors,
+    details: responseData?.details,
   }
 
   return new AppApiError(status, payload)

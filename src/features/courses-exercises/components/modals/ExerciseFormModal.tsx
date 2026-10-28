@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { ImageUploadField } from '@/shared/components/ui/image-upload-field'
 import { Modal } from '@/shared/components/ui/modal'
 import { Input, Select, Textarea } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
@@ -128,11 +129,10 @@ export function ExerciseFormModal({
           disabled={isSubmitting}
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input
-            label="Link hình ảnh minh họa (URL)"
+          <ImageUploadField
+            label="Ảnh minh họa"
             value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://images.unsplash.com/..."
+            onChange={setImageUrl}
             disabled={isSubmitting}
           />
           <Input

@@ -9,6 +9,8 @@ export interface CheckInQueryParams {
   page?: number
   limit?: number
   memberId?: string
+  /** OPEN = still inside the gym. */
+  status?: 'OPEN' | 'CLOSED' | 'AUTO_CLOSED' | 'LEGACY_IMPORTED'
 }
 
 export type { CheckIn }

@@ -32,7 +32,7 @@ export const Footer = ({ onOpenDownloadModal }: FooterProps) => {
                 <span className="text-xl font-extrabold tracking-tight font-heading text-white">
                   APEX<span className="text-orange-500">FIT</span>
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 ml-2">
+                <span className="text-xs uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 ml-2">
                   1:1 PT
                 </span>
               </div>
@@ -109,7 +109,7 @@ export const Footer = ({ onOpenDownloadModal }: FooterProps) => {
           {/* Column 3: Internal Portals for Staff (Span 2) */}
           <div className="lg:col-span-2 space-y-4">
             <h4 className="text-sm font-bold uppercase tracking-wider text-white">Cổng Nội Bộ</h4>
-            <p className="text-[11px] text-slate-400 leading-snug">
+            <p className="text-xs text-slate-400 leading-snug">
               Dành cho nhân sự và ban điều hành hệ thống:
             </p>
             <ul className="space-y-2 text-xs">

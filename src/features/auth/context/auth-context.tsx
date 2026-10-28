@@ -4,6 +4,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   type ReactNode,
 } from 'react'
 import type { UserDetail, UserRole } from '@/shared/types/api'
@@ -44,6 +45,8 @@ function mapCurrentUserToUserDetail(data: CurrentUserResponseData): UserDetail {
     status: data.status,
     createdAt: data.createdAt || new Date().toISOString(),
     lastLoginAt: data.lastLoginAt,
+    coachProfilesUserId: data.coachProfilesUserId ?? null,
+    memberProfilesUserId: data.memberProfilesUserId ?? null,
     profile: (data.memberProfilesUserId || data.coachProfilesUserId || undefined) as
       | UserDetail['profile']
       | undefined,
@@ -55,73 +58,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isInitializing, setIsInitializing] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
 
+  const generation = useRef(0)
+
   // Initialize authentication on app mount
-  const initializeAuth = useCallback(async () => {
-    const token = authStorage.getAccessToken()
-    const refreshToken = authStorage.getRefreshToken()
-
-    if (!token && !refreshToken) {
-      setUser(null)
-      setIsInitializing(false)
-      return
-    }
-
+  const initializeAuth = useCallback(async (current: number) => {
     try {
-      if (token) {
-        try {
-          const userData = await authService.getCurrentUser()
-          const mapped = mapCurrentUserToUserDetail(userData)
-          setUser(mapped)
-          authStorage.setUser(mapped)
-          setIsInitializing(false)
-          return
-        } catch {
-          // Token might be expired, proceed to attempt refresh
-        }
+      if (!authStorage.getAccessToken()) {
+        const token = authStorage.getRefreshToken()
+        if (!token || token.length < 20) return
+        await authService.refreshToken(token)
       }
-
-      if (refreshToken && refreshToken.length >= 20) {
-        const refreshRes = await authService.refreshToken(refreshToken)
-        authStorage.setTokens({
-          accessToken: refreshRes.accessToken,
-          refreshToken: refreshRes.refreshToken || refreshToken,
-        })
-        const userData = await authService.getCurrentUser()
-        const mapped = mapCurrentUserToUserDetail(userData)
-        setUser(mapped)
-        authStorage.setUser(mapped)
-      } else {
-        authStorage.clearSession()
-        setUser(null)
-      }
+      // getCurrentUser uses the 401 interceptor; never retry with a captured old refresh token.
+      const data = await authService.getCurrentUser()
+      if (current !== generation.current) return
+      const mapped = mapCurrentUserToUserDetail(data)
+      setUser(mapped); authStorage.setUser(mapped)
     } catch {
-      authStorage.clearSession()
-      setUser(null)
+      if (current !== generation.current) return
+      authStorage.clearSession(); setUser(null)
     } finally {
-      setIsInitializing(false)
+      if (current === generation.current) setIsInitializing(false)
     }
   }, [])
 
   useEffect(() => {
-    initializeAuth()
-
+    void initializeAuth(++generation.current)
     const handleUnauthorized = () => {
-      authStorage.clearSession()
-      setUser(null)
-      queryClient.clear()
+      generation.current++
+      authStorage.clearSession(); setUser(null); setIsInitializing(false); queryClient.clear()
     }
-
     window.addEventListener('auth:unauthorized', handleUnauthorized)
-    return () => {
-      window.removeEventListener('auth:unauthorized', handleUnauthorized)
-    }
+    return () => { generation.current++; window.removeEventListener('auth:unauthorized', handleUnauthorized) }
   }, [initializeAuth])
 
   const login = async (credentials: LoginCredentials): Promise<AuthResponseData> => {
+    const current = ++generation.current
     setIsLoading(true)
     try {
       const data = await authService.login(credentials)
-      const userDetail: UserDetail = {
+      if (current !== generation.current) throw new Error('Phiên đăng nhập đã thay đổi')
+      let userDetail: UserDetail = {
         ...data.user,
         createdAt: data.user.createdAt || new Date().toISOString(),
       }
@@ -130,15 +106,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshToken: data.refreshToken,
         user: userDetail,
       })
+      // Login returns scalar user fields; /auth/me supplies member/coach profile IDs.
+      try {
+        const profile = await authService.getCurrentUser()
+        if (current !== generation.current) throw new Error('Phiên đăng nhập đã thay đổi')
+        userDetail = mapCurrentUserToUserDetail(profile)
+      } catch (error) {
+        if (current !== generation.current || !authStorage.getAccessToken()) throw error
+      }
+      authStorage.setUser(userDetail)
       queryClient.clear()
       setUser(userDetail)
-      return data
+      setIsInitializing(false)
+      return { ...data, user: userDetail }
     } finally {
-      setIsLoading(false)
+      if (current === generation.current) setIsLoading(false)
     }
   }
 
   const logout = async (): Promise<void> => {
+    generation.current++
     setIsLoading(true)
     const refreshToken = authStorage.getRefreshToken() || undefined
     try {
@@ -154,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logoutAll = async (): Promise<void> => {
+    generation.current++
     setIsLoading(true)
     try {
       await authService.logoutAll()
@@ -168,30 +156,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const refreshSession = async (): Promise<void> => {
+    const current = generation.current
     const refreshToken = authStorage.getRefreshToken()
     if (!refreshToken) {
       throw new Error('Không có refresh token')
     }
-    const res = await authService.refreshToken(refreshToken)
-    authStorage.setTokens({
-      accessToken: res.accessToken,
-      refreshToken: res.refreshToken || refreshToken,
-    })
+    await authService.refreshToken(refreshToken)
+    if (current !== generation.current) return
     const userData = await authService.getCurrentUser()
+    if (current !== generation.current) return
     const mapped = mapCurrentUserToUserDetail(userData)
     setUser(mapped)
     authStorage.setUser(mapped)
   }
 
   const updateUserProfile = async (payload: UpdateProfilePayload): Promise<void> => {
+    const current = generation.current
     setIsLoading(true)
     try {
       const res = await authService.updateProfile(payload)
-      const mapped = mapCurrentUserToUserDetail(res)
+      if (current !== generation.current) return
+      const mapped = mapCurrentUserToUserDetail({ ...user, ...res } as CurrentUserResponseData)
       setUser(mapped)
       authStorage.setUser(mapped)
     } finally {
-      setIsLoading(false)
+      if (current === generation.current) setIsLoading(false)
     }
   }
 

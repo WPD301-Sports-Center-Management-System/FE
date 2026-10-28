@@ -26,13 +26,13 @@ export const MobileAppSection = ({ onOpenDownloadModal }: MobileAppSectionProps)
       screenContent: (
         <div className="space-y-3">
           <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/30">
-            <span className="text-[10px] font-bold text-orange-400 block uppercase">Slot Đã Đặt Thành Công</span>
+            <span className="text-xs font-bold text-orange-400 block uppercase">Slot Đã Đặt Thành Công</span>
             <div className="text-xs font-bold text-white mt-1">17:30 - 18:30 • Hôm Nay</div>
-            <div className="text-[11px] text-slate-300">Coach: Nguyễn Hoàng Long (Khóa Ngực)</div>
+            <div className="text-xs text-slate-300">Coach: Nguyễn Hoàng Long (Khóa Ngực)</div>
           </div>
-          <div className="p-2.5 rounded-lg bg-slate-800/80 text-[11px] text-slate-300 flex items-center justify-between">
+          <div className="p-2.5 rounded-lg bg-slate-800/80 text-xs text-slate-300 flex items-center justify-between">
             <span>Slot ngày mai: 18:00 - 19:00</span>
-            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded">OPEN</span>
+            <span className="text-xs font-bold text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded">OPEN</span>
           </div>
         </div>
       )
@@ -41,26 +41,26 @@ export const MobileAppSection = ({ onOpenDownloadModal }: MobileAppSectionProps)
       id: 1,
       title: 'Quản Lý Ví Credit & Hủy Linh Hoạt',
       icon: CreditCard,
-      tag: 'MINH BẠCH 100%',
-      description: 'Kiểm tra chính xác số credit khả dụng, credit đang giữ và credit đã dùng. Hủy lịch trước 12 tiếng để nhận hoàn credit ngay lập tức.',
+      tag: 'MINH BẠCH',
+      description: 'Xem số buổi còn lại, buổi đã xếp lịch và buổi đã tập của từng gói PT, kèm hóa đơn từng giao dịch.',
       screenTitle: 'Ví Credit Gói Tập',
       screenContent: (
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="p-2 rounded-xl bg-slate-800 border border-slate-700">
-              <span className="text-[9px] text-slate-400 block">Tổng mua</span>
+              <span className="text-xs text-slate-400 block">Tổng mua</span>
               <span className="text-xs font-bold text-white">10 Buổi</span>
             </div>
             <div className="p-2 rounded-xl bg-slate-800 border border-slate-700">
-              <span className="text-[9px] text-slate-400 block">Đã dùng</span>
+              <span className="text-xs text-slate-400 block">Đã dùng</span>
               <span className="text-xs font-bold text-orange-400">2 Buổi</span>
             </div>
             <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40">
-              <span className="text-[9px] text-emerald-300 block">Khả dụng</span>
+              <span className="text-xs text-emerald-300 block">Khả dụng</span>
               <span className="text-xs font-bold text-emerald-400">7 Buổi</span>
             </div>
           </div>
-          <p className="text-[10px] text-slate-400 text-center italic">1 buổi đang giữ cho lịch tối nay 17:30</p>
+          <p className="text-xs text-slate-400 text-center italic">1 buổi đang giữ cho lịch tối nay 17:30</p>
         </div>
       )
     },
@@ -76,16 +76,16 @@ export const MobileAppSection = ({ onOpenDownloadModal }: MobileAppSectionProps)
           <div className="p-2 rounded-lg bg-slate-800/80 flex justify-between items-center">
             <div>
               <span className="text-white font-bold block">Bữa Sáng (07:30)</span>
-              <span className="text-[10px] text-slate-400">Yến mạch + 3 Trứng gà + Chuối</span>
+              <span className="text-xs text-slate-400">Yến mạch + 3 Trứng gà + Chuối</span>
             </div>
-            <span className="text-[11px] font-mono text-orange-400">450 kcal</span>
+            <span className="text-xs font-mono text-orange-400">450 kcal</span>
           </div>
           <div className="p-2 rounded-lg bg-slate-800/80 flex justify-between items-center">
             <div>
               <span className="text-white font-bold block">Bữa Sau Tập (18:45)</span>
-              <span className="text-[10px] text-slate-400">1 Muỗng Whey + Ức gà áp chảo</span>
+              <span className="text-xs text-slate-400">1 Muỗng Whey + Ức gà áp chảo</span>
             </div>
-            <span className="text-[11px] font-mono text-emerald-400">380 kcal</span>
+            <span className="text-xs font-mono text-emerald-400">380 kcal</span>
           </div>
         </div>
       )
@@ -106,11 +106,11 @@ export const MobileAppSection = ({ onOpenDownloadModal }: MobileAppSectionProps)
                   className="w-full bg-gradient-to-t from-orange-600 to-amber-400 rounded-t"
                   style={{ height: `${val}%` }}
                 />
-                <span className="text-[8px] text-slate-400">T{idx+1}</span>
+                <span className="text-xs text-slate-400">T{idx+1}</span>
               </div>
             ))}
           </div>
-          <div className="flex justify-between text-[10px] text-slate-300 font-semibold px-1">
+          <div className="flex justify-between text-xs text-slate-300 font-semibold px-1">
             <span>Khối lượng cơ: +2.8kg</span>
             <span className="text-emerald-400">Tỷ lệ mỡ: -5.4%</span>
           </div>
@@ -172,7 +172,7 @@ export const MobileAppSection = ({ onOpenDownloadModal }: MobileAppSectionProps)
                           }`}>
                             {item.title}
                           </h3>
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                          <span className="text-xs font-extrabold px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
                             {item.tag}
                           </span>
                         </div>
@@ -198,7 +198,7 @@ export const MobileAppSection = ({ onOpenDownloadModal }: MobileAppSectionProps)
                   </svg>
                 </div>
                 <div className="text-left">
-                  <span className="text-[10px] text-slate-400 block">Tải về trên</span>
+                  <span className="text-xs text-slate-400 block">Tải về trên</span>
                   <span className="font-bold text-xs">Apple App Store</span>
                 </div>
               </button>
@@ -213,7 +213,7 @@ export const MobileAppSection = ({ onOpenDownloadModal }: MobileAppSectionProps)
                   </svg>
                 </div>
                 <div className="text-left">
-                  <span className="text-[10px] text-slate-400 block">Tải về trên</span>
+                  <span className="text-xs text-slate-400 block">Tải về trên</span>
                   <span className="font-bold text-xs">Google Play Store</span>
                 </div>
               </button>
@@ -227,7 +227,7 @@ export const MobileAppSection = ({ onOpenDownloadModal }: MobileAppSectionProps)
               <div className="rounded-[28px] bg-[#070b14] p-5 border border-white/5 space-y-4">
                 
                 {/* Status Bar */}
-                <div className="flex items-center justify-between text-[11px] text-slate-400 pb-2 border-b border-slate-800">
+                <div className="flex items-center justify-between text-xs text-slate-400 pb-2 border-b border-slate-800">
                   <span className="font-semibold text-white">09:41</span>
                   <span className="text-sky-400 font-bold">ApexFit App</span>
                 </div>
@@ -237,7 +237,7 @@ export const MobileAppSection = ({ onOpenDownloadModal }: MobileAppSectionProps)
                   <h4 className="text-sm font-bold text-white">
                     {features[activeFeature].screenTitle}
                   </h4>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 border border-sky-500/30">
+                  <span className="text-xs px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 border border-sky-500/30">
                     Live Demo
                   </span>
                 </div>
@@ -253,8 +253,8 @@ export const MobileAppSection = ({ onOpenDownloadModal }: MobileAppSectionProps)
                     <QrCode className="w-10 h-10 text-slate-900" />
                   </div>
                   <div className="text-left">
-                    <span className="text-[11px] font-bold text-white block">Quét Mã QR Cài Đặt</span>
-                    <span className="text-[10px] text-slate-400 block">Tương thích iOS 15+ & Android 10+</span>
+                    <span className="text-xs font-bold text-white block">Quét Mã QR Cài Đặt</span>
+                    <span className="text-xs text-slate-400 block">Tương thích iOS 15+ & Android 10+</span>
                   </div>
                 </div>
 

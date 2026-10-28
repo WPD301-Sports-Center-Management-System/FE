@@ -15,6 +15,7 @@ import {
   Activity,
   Sparkles,
   Utensils,
+  PhoneCall,
 } from 'lucide-react'
 import type { UserRole } from '@/shared/types/api'
 
@@ -37,24 +38,30 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
           {
             title: 'TỔNG QUAN',
             items: [
-              { to: '/manager', label: 'Dashboard', icon: LayoutDashboard },
+              { to: '/manager', label: 'Tổng quan', icon: LayoutDashboard },
             ],
           },
           {
             title: 'QUẢN LÝ DỊCH VỤ',
             items: [
-              { to: '/manager/users', label: 'Tài khoản & User', icon: Users },
-              { to: '/manager/membership-plans', label: 'Gói Vé Gym', icon: CreditCard },
+              { to: '/manager/users', label: 'Tài khoản người dùng', icon: Users },
+              { to: '/manager/membership-plans', label: 'Gói vé gym', icon: CreditCard },
               { to: '/manager/categories', label: 'Bài tập & Khóa học', icon: Dumbbell },
               { to: '/manager/approvals', label: 'Duyệt HLV & Gói PT', icon: CheckCircle2 },
+              { to: '/manager/policies', label: 'Chính sách vận hành PT', icon: ShieldAlert },
             ],
           },
           {
             title: 'VẬN HÀNH & BÁO CÁO',
             items: [
               { to: '/manager/equipment', label: 'Thiết bị & Bảo trì', icon: Wrench },
-              { to: '/manager/reports', label: 'Báo cáo & Quyết toán', icon: BarChart3 },
-              { to: '/manager/reviews-audit', label: 'Kiểm duyệt & Audit', icon: ShieldAlert },
+              { to: '/manager/reports', label: 'Báo cáo', icon: BarChart3 },
+              { to: '/manager/coach-ledger', label: 'Đối soát Coach theo kỳ', icon: DollarSign },
+              { to: '/manager/calendar', label: 'Lịch PT toàn trung tâm', icon: Calendar },
+              { to: '/manager/sessions', label: 'Buổi cần xử lý & gián đoạn', icon: Activity },
+              { to: '/receptionist/reconciliation', label: 'Đối soát tiền nhận', icon: CreditCard },
+              { to: '/receptionist/invoices', label: 'Hóa đơn', icon: FileText },
+              { to: '/manager/reviews-audit', label: 'Đánh giá & nhật ký thao tác', icon: ShieldAlert },
             ],
           },
         ]
@@ -63,24 +70,27 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
           {
             title: 'TỔNG QUAN',
             items: [
-              { to: '/receptionist', label: 'Dashboard Lễ tân', icon: LayoutDashboard },
+              { to: '/receptionist', label: 'Tổng quan', icon: LayoutDashboard },
             ],
           },
           {
             title: 'QUẦY LỄ TÂN & HỘI VIÊN',
             items: [
-              { to: '/receptionist/check-in', label: 'Quầy Check-in', icon: CheckCircle2 },
-              { to: '/receptionist/members', label: 'Hồ sơ Hội viên', icon: Users },
-              { to: '/receptionist/calendar', label: 'Lịch Đặt Chỗ', icon: Calendar },
+              { to: '/receptionist/check-in', label: 'Quầy check-in', icon: CheckCircle2 },
+              { to: '/receptionist/members', label: 'Hồ sơ hội viên', icon: Users },
+              { to: '/receptionist/calendar', label: 'Lịch buổi PT', icon: Calendar },
             ],
           },
           {
             title: 'KINH DOANH & HỖ TRỢ',
             items: [
-              { to: '/receptionist/membership-sale', label: 'Bán Vé Gym', icon: CreditCard },
-              { to: '/receptionist/pt-sale', label: 'Bán Gói PT 1:1', icon: Dumbbell },
-              { to: '/receptionist/payments', label: 'Thu ngân & Hóa đơn', icon: DollarSign },
-              { to: '/receptionist/support', label: 'Hỗ trợ Hội viên', icon: HelpCircle },
+              { to: '/receptionist/membership-sale', label: 'Bán vé gym', icon: CreditCard },
+              { to: '/receptionist/pt-sale', label: 'Mua gói & đặt lịch PT', icon: Dumbbell },
+              { to: '/receptionist/payments', label: 'Thu ngân', icon: DollarSign },
+              { to: '/receptionist/invoices', label: 'Hóa đơn', icon: FileText },
+              { to: '/receptionist/reconciliation', label: 'Đối soát tiền nhận', icon: CreditCard },
+              { to: '/receptionist/support', label: 'Hỗ trợ hội viên', icon: HelpCircle },
+              { to: '/receptionist/trial-requests', label: 'Đăng ký tập thử', icon: PhoneCall },
             ],
           },
         ]
@@ -89,26 +99,32 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
           {
             title: 'TỔNG QUAN',
             items: [
-              { to: '/coach', label: 'Dashboard HLV', icon: LayoutDashboard },
+              { to: '/coach', label: 'Tổng quan', icon: LayoutDashboard },
             ],
           },
           {
             title: 'LỊCH TRÌNH & HỌC VIÊN',
             items: [
-              { to: '/coach/slots', label: 'Thời khóa biểu', icon: Calendar },
-              { to: '/coach/bookings', label: 'Lịch hẹn PT 1:1', icon: CheckCircle2 },
+              { to: '/coach/slots', label: 'Lịch làm việc', icon: Calendar },
+              { to: '/coach/bookings', label: 'Lịch PT 1:1', icon: CheckCircle2 },
               { to: '/coach/students', label: 'Học viên', icon: Users },
             ],
           },
           {
-            title: 'CHUYÊN MÔN & GIÁO ÁN',
+            title: 'GIÁO ÁN & THEO DÕI',
             items: [
-              { to: '/coach/packages', label: 'Gói dạy của tôi', icon: Dumbbell },
-              { to: '/coach/training-plans', label: 'Soạn Giáo án', icon: FileText },
-              { to: '/coach/meal-plans', label: 'Thực đơn Dinh dưỡng', icon: Utensils },
-              { to: '/coach/training-results', label: 'Ghi Kết quả tập', icon: Activity },
-              { to: '/coach/assessments', label: 'InBody & Thể trạng', icon: BarChart3 },
+              { to: '/coach/training-plans', label: 'Chương trình theo buổi', icon: FileText },
+              { to: '/coach/training-results', label: 'Ghi kết quả tập', icon: Activity },
+              { to: '/coach/assessments', label: 'InBody & thể trạng', icon: BarChart3 },
+              { to: '/coach/meal-plans', label: 'Thực đơn dinh dưỡng', icon: Utensils },
               { to: '/coach/ai-recommendation', label: 'Gợi ý từ AI', icon: Sparkles },
+            ],
+          },
+          {
+            title: 'GÓI PT & THU NHẬP',
+            items: [
+              { to: '/coach/packages', label: 'Quyền dạy & gói PT', icon: Dumbbell },
+              { to: '/coach/earnings', label: 'Thu nhập & đối soát', icon: DollarSign },
             ],
           },
         ]
@@ -117,7 +133,7 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
           {
             title: 'TỔNG QUAN',
             items: [
-              { to: '/member', label: 'Hồ Sơ Hội Viên', icon: LayoutDashboard },
+              { to: '/member', label: 'Hồ sơ hội viên', icon: LayoutDashboard },
             ],
           },
         ]
@@ -133,7 +149,7 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
       {sections.map((section, idx) => (
         <div key={section.title || idx} className="space-y-1">
           {section.title && (
-            <div className="flex items-center gap-2 px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+            <div className="flex items-center gap-2 px-3 pb-1 text-xs font-bold uppercase tracking-wider text-text-muted">
               <span>{section.title}</span>
               <div className="h-px flex-1 bg-border-subtle" />
             </div>

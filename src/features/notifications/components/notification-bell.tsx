@@ -16,8 +16,10 @@ import { notificationsService } from '../services/notifications.service'
 import type { AppNotification, NotificationType } from '../types/notifications.types'
 import { formatDateTime } from '@/shared/utils/date'
 import { useAuth } from '@/features/auth/context/auth-context'
+import { useNavigate } from 'react-router-dom'
 
 export function NotificationBell() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState<number>(0)
@@ -26,15 +28,24 @@ export function NotificationBell() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isMarkingAll, setIsMarkingAll] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const generation = useRef(0)
+  useEffect(() => {
+    generation.current++
+    setNotifications([])
+    setIsOpen(false)
+    setUnreadCount(0)
+  }, [user?.id])
 
   // Fetch unread count on mount or when user changes
   const fetchUnreadCount = useCallback(async () => {
+    const request = generation.current
     if (!user) {
       setUnreadCount(0)
       return
     }
     try {
       const res = await notificationsService.getUnreadCount()
+      if (request !== generation.current) return
       setUnreadCount(res.count || 0)
     } catch {
       // Ignore background badge fetch error
@@ -47,15 +58,18 @@ export function NotificationBell() {
 
   // Fetch full list when dropdown opens
   const fetchNotifications = useCallback(async () => {
+    const request = ++generation.current
     setIsLoading(true)
     setErrorMessage(null)
     try {
       const res = await notificationsService.getNotifications({ limit: 20 })
+      if (request !== generation.current) return
       setNotifications(res.data || [])
       // Update unread count based on current data
       const unread = (res.data || []).filter((n) => !n.readAt).length
       setUnreadCount(unread)
     } catch (err: any) {
+      if (request !== generation.current) return
       if (err?.status === 401) {
         setErrorMessage('Hết phiên đăng nhập. Vui lòng đăng nhập lại.')
       } else if (err?.status === 403) {
@@ -64,7 +78,7 @@ export function NotificationBell() {
         setErrorMessage('Không thể tải danh sách thông báo.')
       }
     } finally {
-      setIsLoading(false)
+      if (request === generation.current) setIsLoading(false)
     }
   }, [])
 
@@ -93,6 +107,8 @@ export function NotificationBell() {
 
   // Mark single notification as read
   const handleMarkAsRead = async (item: AppNotification) => {
+    const target = item.relatedId && (item.relatedType === 'PtPackagePurchase' ? `/pt-purchases/${item.relatedId}` : item.relatedType === 'PtBooking' ? `/pt-sessions/${item.relatedId}` : item.relatedType === 'PtEnrollment' ? (user?.role === 'COACH' ? '/coach/legacy-intake' : '/receptionist/legacy-enrollments') : null)
+    if (target) { navigate(target); setIsOpen(false) }
     if (item.readAt) return
     try {
       const updated = await notificationsService.markAsRead(item.id)
@@ -152,7 +168,7 @@ export function NotificationBell() {
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground shadow-sm">
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-xs font-bold text-primary-foreground shadow-sm">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -166,7 +182,7 @@ export function NotificationBell() {
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-text-primary">Thông báo</span>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
                   {unreadCount} mới
                 </span>
               )}
@@ -175,7 +191,7 @@ export function NotificationBell() {
               <button
                 onClick={handleMarkAllAsRead}
                 disabled={isMarkingAll}
-                className="flex items-center gap-1 text-[11px] text-primary hover:underline transition-colors disabled:opacity-50 cursor-pointer"
+                className="flex items-center gap-1 text-xs text-primary hover:underline transition-colors disabled:opacity-50 cursor-pointer"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
                 <span>{isMarkingAll ? 'Đang xử lý...' : 'Đọc tất cả'}</span>
@@ -197,7 +213,7 @@ export function NotificationBell() {
                   <p>{errorMessage}</p>
                   <button
                     onClick={fetchNotifications}
-                    className="text-[11px] text-primary hover:underline cursor-pointer"
+                    className="text-xs text-primary hover:underline cursor-pointer"
                   >
                     Thử lại
                   </button>
@@ -206,7 +222,7 @@ export function NotificationBell() {
             ) : notifications.length === 0 ? (
               <div className="py-10 text-center text-xs text-text-muted space-y-1">
                 <p>Bạn không có thông báo nào.</p>
-                <p className="text-[10px] opacity-75">Các cập nhật quan trọng sẽ hiển thị tại đây.</p>
+                <p className="text-xs opacity-75">Các cập nhật quan trọng sẽ hiển thị tại đây.</p>
               </div>
             ) : (
               notifications.map((n) => {
@@ -214,6 +230,9 @@ export function NotificationBell() {
                 return (
                   <div
                     key={n.id}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); void handleMarkAsRead(n) } }}
                     onClick={() => handleMarkAsRead(n)}
                     className={`flex items-start gap-3 p-3.5 transition-colors cursor-pointer ${
                       isUnread
@@ -233,10 +252,10 @@ export function NotificationBell() {
                           <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
                         )}
                       </div>
-                      <p className="text-[11px] text-text-muted line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-text-muted line-clamp-2 leading-relaxed">
                         {n.message}
                       </p>
-                      <div className="flex items-center gap-1 text-[10px] text-text-muted/80">
+                      <div className="flex items-center gap-1 text-xs text-text-muted/80">
                         <Clock className="h-3 w-3" />
                         <span>{formatDateTime(n.createdAt)}</span>
                       </div>

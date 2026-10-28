@@ -99,7 +99,7 @@ export function SupportTicketsPage() {
     { header: 'Chủ đề', accessor: (row) => row.subject || 'Hỗ trợ' },
     {
       header: 'Trạng thái',
-      accessor: (row) => <StatusBadge status={row.status} />,
+      accessor: (row) => <StatusBadge status={row.status} context="support" />,
     },
     {
       header: 'Thời gian gửi',
@@ -111,7 +111,7 @@ export function SupportTicketsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Yêu Cầu Hỗ Trợ Tại Quầy (WEB-REC-10)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Yêu Cầu Hỗ Trợ Tại Quầy</h1>
           <p className="text-xs text-text-muted mt-1">
             Tiếp nhận khiếu nại, phản hồi đổi lịch và giải đáp thắc mắc từ hội viên
           </p>
@@ -173,6 +173,15 @@ export function SupportTicketsPage() {
             <div className="rounded-xl bg-bg-surface-muted border border-border-subtle p-4 text-xs space-y-2">
               <p className="font-bold text-text-primary">Chủ đề: {selectedTicket.subject}</p>
               <p className="text-text-muted leading-relaxed italic">"{selectedTicket.message}"</p>
+              {!!selectedTicket.attachmentUrls?.length && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {selectedTicket.attachmentUrls.map((url, i) => (
+                    <a key={url} href={url} target="_blank" rel="noopener noreferrer" aria-label={`Mở ảnh đính kèm ${i + 1}`}>
+                      <img src={url} alt={`Ảnh đính kèm ${i + 1}`} className="h-20 w-20 rounded-lg border border-border-subtle object-cover" />
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
 
             {selectedTicket.response && (
@@ -180,7 +189,7 @@ export function SupportTicketsPage() {
                 <p className="font-semibold text-emerald-700 dark:text-emerald-300">Phản hồi hiện tại:</p>
                 <p className="text-text-primary">{selectedTicket.response}</p>
                 {selectedTicket.respondedAt && (
-                  <p className="text-[10px] text-text-muted">{formatDateTime(selectedTicket.respondedAt)}</p>
+                  <p className="text-xs text-text-muted">{formatDateTime(selectedTicket.respondedAt)}</p>
                 )}
               </div>
             )}

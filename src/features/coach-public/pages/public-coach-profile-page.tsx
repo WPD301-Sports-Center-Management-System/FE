@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Avatar } from '@/shared/components/ui/avatar'
 import { useParams, Link } from 'react-router-dom'
 import { Star, Award, CheckCircle, Clock, Calendar, ArrowLeft, LogIn, RefreshCw, AlertCircle } from 'lucide-react'
 import { coachesService } from '@/features/coaches/services/coaches.service'
@@ -104,14 +105,7 @@ export function PublicCoachProfilePage() {
       <main className="mx-auto max-w-6xl p-6 lg:p-10 space-y-10">
         {/* Coach Header Card */}
         <div className="flex flex-col md:flex-row gap-8 items-start rounded-3xl border border-border-subtle bg-bg-surface p-8 shadow-sm backdrop-blur-xl">
-          <img
-            src={
-              coach.avatarUrl ||
-              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
-            }
-            alt={coach.fullName}
-            className="h-36 w-36 rounded-2xl border-2 border-primary/40 object-cover shadow-lg"
-          />
+          <Avatar src={coach.avatarUrl} name={coach.fullName} size={144} className="rounded-2xl border-2" />
           <div className="flex-1 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
@@ -160,7 +154,7 @@ export function PublicCoachProfilePage() {
                   className="flex flex-col justify-between rounded-2xl border border-border-subtle bg-bg-surface p-6 shadow-sm hover:border-primary/40 transition-all"
                 >
                   <div className="space-y-2">
-                    <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-semibold text-primary">
+                    <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary">
                       {pkg.sessionCount} Buổi Tập
                     </span>
                     <h3 className="text-base font-bold text-text-primary">{pkg.name}</h3>
@@ -169,7 +163,7 @@ export function PublicCoachProfilePage() {
 
                   <div className="mt-6 border-t border-border-subtle pt-4 flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] uppercase text-text-muted">Học phí trọn gói</p>
+                      <p className="text-xs uppercase text-text-muted">Học phí trọn gói</p>
                       <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{formatVND(pkg.price)}</p>
                     </div>
                     <Link to="/login">
@@ -203,7 +197,7 @@ export function PublicCoachProfilePage() {
                       <p className="text-xs font-bold text-text-primary">
                         {rev.memberDisplayName || (rev as any).memberName || 'Hội viên'}
                       </p>
-                      <p className="text-[10px] text-text-muted">
+                      <p className="text-xs text-text-muted">
                         {rev.courseNameSnapshot || (rev as any).courseName || 'Khóa PT 1:1'}
                       </p>
                     </div>
@@ -214,7 +208,7 @@ export function PublicCoachProfilePage() {
                     </div>
                   </div>
                   <p className="text-xs text-text-muted leading-relaxed italic">"{rev.comment}"</p>
-                  <div className="flex items-center gap-1 text-[10px] text-text-muted/80">
+                  <div className="flex items-center gap-1 text-xs text-text-muted/80">
                     <Calendar className="h-3 w-3" />
                     <span>{formatDate(rev.createdAt)}</span>
                   </div>

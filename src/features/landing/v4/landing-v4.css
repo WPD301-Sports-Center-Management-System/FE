@@ -1,0 +1,2478 @@
+/* GENERATED from Docs/GYM_CENTER_UI_V4 (styles.css + fonts.css + landing-motion.css).
+ * Scoped to .gc-landing; only rules used by the landing are kept, source order preserved.
+ * Hand-written adjustments live in landing-v4-extra.css. */
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(/landing/fonts/font-0.ttf) format("truetype");
+}
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/landing/fonts/font-1.ttf) format("truetype");
+}
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(/landing/fonts/font-2.ttf) format("truetype");
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/landing/fonts/font-3.ttf) format("truetype");
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(/landing/fonts/font-4.ttf) format("truetype");
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(/landing/fonts/font-5.ttf) format("truetype");
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/landing/fonts/font-6.ttf) format("truetype");
+}
+
+.gc-landing {
+  font-family: "Be Vietnam Pro", sans-serif;
+  color: #f5f5f0;
+  background: #0b0d10;
+  font-synthesis: none;
+  --lime: #f47745;
+  --surface: #15191e;
+  --muted: #93999f;
+  --line: #ffffff16;
+}
+.gc-landing, .gc-landing * {
+  box-sizing: border-box;
+}
+.gc-landing {
+  scroll-behavior: smooth;
+  scroll-padding-top: 110px;
+}
+.gc-landing {
+  margin: 0;
+}
+.gc-landing button,
+.gc-landing input,
+.gc-landing select,
+.gc-landing textarea {
+  font: inherit;
+}
+.gc-landing button,
+.gc-landing a,
+.gc-landing input,
+.gc-landing select {
+  -webkit-tap-highlight-color: transparent;
+}
+.gc-landing a {
+  color: inherit;
+  text-decoration: none;
+}
+.gc-landing button {
+  cursor: pointer;
+}
+.gc-landing button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.gc-landing button {
+  color: inherit;
+}
+.gc-landing button,
+.gc-landing a {
+  touch-action: manipulation;
+}
+.gc-landing button:focus-visible,
+.gc-landing a:focus-visible,
+.gc-landing input:focus-visible,
+.gc-landing select:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 5px;
+}
+.gc-landing button {
+  border: 0;
+}
+.gc-landing h1,
+.gc-landing h2,
+.gc-landing h3,
+.gc-landing p {
+  margin-top: 0;
+}
+.gc-landing h1,
+.gc-landing h2 {
+  letter-spacing: -0.035em;
+}
+.gc-landing h2 {
+  font-size: 36px;
+  line-height: 1.25;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+.gc-landing h3 {
+  font-size: 19px;
+  font-weight: 600;
+}
+.gc-landing p {
+  line-height: 1.85;
+}
+.gc-landing img {
+  max-width: 100%;
+  object-fit: cover;
+}
+.gc-landing svg {
+  flex-shrink: 0;
+}
+.gc-landing ::selection {
+  background: var(--lime);
+  color: #0b0d10;
+}
+.gc-landing .nav {
+  height: 90px;
+  padding: 0 5%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: #0b0d10f5;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  backdrop-filter: blur(14px);
+}
+.gc-landing .brand {
+  font-size: 24px;
+  letter-spacing: -1px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 700;
+}
+.gc-landing .brand-light {
+  font-weight: 600;
+  color: #d7dad4;
+  margin-left: 4px;
+}
+.gc-landing .brand > b {
+  font-family: sans-serif;
+  font-size: 10px;
+  align-self: flex-start;
+  margin-top: 4px;
+  margin-left: 4px;
+  color: #a4aaa4;
+}
+.gc-landing .brand-mark {
+  width: 29px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-right: 10px;
+  transform: skew(-16deg);
+}
+.gc-landing .brand-mark i {
+  display: block;
+  width: 6px;
+  height: 24px;
+  background: var(--lime);
+}
+.gc-landing .brand-mark i:nth-child(2) {
+  height: 17px;
+}
+.gc-landing .brand-mark i:nth-child(3) {
+  height: 11px;
+}
+.gc-landing .nav-links {
+  display: flex;
+  gap: 25px;
+}
+.gc-landing .nav-links a,
+.gc-landing .login-link {
+  font-size: 11px;
+  color: #bcc1c2;
+  transition: color 0.2s;
+}
+.gc-landing .nav-links a:hover,
+.gc-landing .login-link:hover {
+  color: var(--lime);
+}
+.gc-landing .nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.gc-landing .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-height: 51px;
+  padding: 15px 24px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  background: #282e32;
+  transition:
+    background 0.2s,
+    transform 0.2s;
+  border: 1px solid transparent;
+}
+.gc-landing .btn:hover {
+  transform: translateY(-2px);
+  background: #37403e;
+}
+.gc-landing .btn.lime {
+  background: var(--lime);
+  color: #24140b;
+}
+.gc-landing .btn.lime:hover {
+  background: #ff905d;
+}
+.gc-landing .btn.small {
+  min-height: 40px;
+  padding: 10px 16px;
+  font-size: 10px;
+  gap: 13px;
+}
+.gc-landing .btn.outline {
+  border-color: #ffffff30;
+  background: transparent;
+}
+.gc-landing .btn.outline:hover {
+  background: #ffffff0b;
+}
+.gc-landing .icon-btn {
+  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+.gc-landing .mobile-menu {
+  display: none;
+}
+.gc-landing .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.7px;
+  line-height: 1.7;
+  color: #bdc2bc;
+  margin-bottom: 20px;
+}
+.gc-landing .eyebrow > span {
+  width: 6px;
+  height: 6px;
+  display: inline-block;
+  background: var(--lime);
+}
+.gc-landing .hero {
+  min-height: 690px;
+  position: relative;
+  display: grid;
+  grid-template-columns: 46% 54%;
+  overflow: hidden;
+  padding: 58px 5% 63px;
+}
+.gc-landing .hero-copy {
+  position: relative;
+  z-index: 2;
+}
+.gc-landing .hero h1 {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: clamp(67px, 6.7vw, 102px);
+  font-weight: 700;
+  line-height: 1.01;
+  letter-spacing: -1px;
+  margin-bottom: 27px;
+}
+.gc-landing .hero h1 span {
+  color: var(--lime);
+}
+.gc-landing .hero-desc {
+  color: #9ba2a7;
+  font-size: 12px;
+  line-height: 1.95;
+  margin-bottom: 26px;
+}
+.gc-landing .hero-actions {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+}
+.gc-landing .hero-secondary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  color: #c4c9c9;
+}
+.gc-landing .hero-note {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #8f9699;
+  font-size: 9px;
+  margin-top: 23px;
+}
+.gc-landing .hero-note svg {
+  color: #a0a895;
+}
+.gc-landing .hero-art {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gc-landing .coach-status i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--lime);
+}
+.gc-landing .scroll-cue {
+  position: absolute;
+  bottom: 22px;
+  left: 5%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 7px;
+  letter-spacing: 1.8px;
+  color: #899195;
+}
+.gc-landing .scroll-cue svg {
+  border: 1px solid #ffffff25;
+  border-radius: 20px;
+  padding: 6px;
+  box-sizing: content-box;
+}
+.gc-landing .stats-strip {
+  min-height: 126px;
+  display: flex;
+  gap: 4%;
+  align-items: center;
+  padding: 25px 5%;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: #111519;
+}
+.gc-landing .stats-intro {
+  font-size: 10px;
+  line-height: 1.9;
+  color: #8d979a;
+  padding-right: 4%;
+  border-right: 1px solid var(--line);
+}
+.gc-landing .stats-intro strong {
+  font-weight: 500;
+  color: #e4e8df;
+}
+.gc-landing .stat {
+  display: flex;
+  gap: 17px;
+  align-items: center;
+}
+.gc-landing .stat > b {
+  font-family: "Barlow Condensed";
+  font-size: 45px;
+  font-weight: 600;
+}
+.gc-landing .stat > b > span {
+  color: var(--lime);
+  font-size: 30px;
+}
+.gc-landing .stat > span {
+  font-size: 9px;
+  color: #929b9e;
+  max-width: 76px;
+  line-height: 1.8;
+}
+.gc-landing .stats-note {
+  margin-left: auto;
+  font-size: 8px;
+  color: #768182;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+.gc-landing .section {
+  padding: 80px 5%;
+}
+.gc-landing .muted {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.9;
+}
+.gc-landing .benefits {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr 1fr 1fr;
+  gap: 43px;
+  padding-top: 63px;
+  padding-bottom: 63px;
+  border-bottom: 1px solid var(--line);
+}
+.gc-landing .benefit-intro h2 {
+  font-size: 23px;
+  line-height: 1.5;
+  letter-spacing: -0.5px;
+}
+.gc-landing .benefit-intro .eyebrow {
+  margin-bottom: 13px;
+}
+.gc-landing .benefit > svg {
+  color: var(--lime);
+  margin: 5px 0 21px;
+}
+.gc-landing .benefit h3 {
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.gc-landing .benefit p {
+  color: #929b9e;
+  font-size: 10px;
+  line-height: 1.95;
+  margin: 0;
+}
+.gc-landing .section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 32px;
+  gap: 20px;
+}
+.gc-landing .section-head .eyebrow {
+  margin-bottom: 16px;
+}
+.gc-landing .section-head h2 {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+.gc-landing .section-head .muted {
+  font-size: 11px;
+  margin-bottom: 0;
+}
+.gc-landing .text-link {
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  line-height: 1.8;
+}
+.gc-landing .text-link:hover {
+  color: var(--lime);
+}
+.gc-landing .program-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+.gc-landing .tabs {
+  display: flex;
+  gap: 6px;
+}
+.gc-landing .tabs button {
+  background: transparent;
+  color: #91999c;
+  padding: 10px 18px;
+  border-radius: 3px;
+  font-size: 10px;
+  border: 1px solid transparent;
+}
+.gc-landing .tabs button.active {
+  color: #f5e5dd;
+  background: #30231d;
+  border-color: #e28b5a36;
+}
+.gc-landing .tabs button:hover {
+  color: var(--lime);
+}
+.gc-landing .subtle-label {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #879193;
+}
+.gc-landing .course-grid,
+.gc-landing .coach-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 23px;
+}
+.gc-landing .course-card {
+  height: 410px;
+  overflow: hidden;
+  border-radius: 6px;
+  position: relative;
+  background: #181e21;
+  border: 1px solid #ffffff12;
+}
+.gc-landing .course-card > img {
+  width: 100%;
+  height: 100%;
+  filter: brightness(0.65) saturate(0.6);
+  transition:
+    transform 0.65s,
+    filter 0.65s;
+}
+.gc-landing .course-card:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 25%, #0b0d10e8 100%);
+}
+.gc-landing .course-card:hover > img {
+  transform: scale(1.05);
+  filter: brightness(0.85) saturate(0.7);
+}
+.gc-landing .course-top,
+.gc-landing .course-bottom {
+  position: absolute;
+  z-index: 2;
+  left: 25px;
+  right: 25px;
+}
+.gc-landing .course-top {
+  top: 24px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+.gc-landing .course-top > span:first-child {
+  border: 1px solid #ffffff55;
+  padding: 5px 8px;
+  border-radius: 2px;
+}
+.gc-landing .course-bottom {
+  bottom: 23px;
+}
+.gc-landing .tag {
+  font-size: 8px;
+  background: #ffffff12;
+  padding: 5px 8px;
+  border-radius: 2px;
+  color: #d1dbcc;
+}
+.gc-landing .course-bottom h3 {
+  font-size: 22px;
+  margin: 18px 0 7px;
+  letter-spacing: -0.5px;
+}
+.gc-landing .course-bottom p {
+  font-size: 10px;
+  color: #adb4b4;
+  margin-bottom: 20px;
+}
+.gc-landing .course-meta {
+  padding-top: 16px;
+  border-top: 1px solid #ffffff25;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9px;
+  color: #b8c0ba;
+}
+.gc-landing .round-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid #ffffff38;
+  width: 32px;
+  height: 32px;
+  color: var(--lime);
+}
+.gc-landing .image-note {
+  font-size: 8px;
+  color: #6f7b80;
+  margin: 18px 0 0;
+}
+.gc-landing .coach-section {
+  background: #101418;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.gc-landing .coach-photo {
+  height: 330px;
+  position: relative;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #1a2023;
+}
+.gc-landing .coach-photo > img {
+  width: 100%;
+  height: 100%;
+  filter: grayscale(1) brightness(0.78);
+  transition:
+    transform 0.6s,
+    filter 0.5s;
+  object-position: center 30%;
+}
+.gc-landing .coach-card:hover img {
+  filter: grayscale(0.3) brightness(0.9);
+  transform: scale(1.04);
+}
+.gc-landing .coach-status {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  font-size: 7px;
+  letter-spacing: 0.7px;
+  background: #121818bf;
+  padding: 8px 10px;
+  border: 1px solid #ffffff18;
+  border-radius: 3px;
+}
+.gc-landing .coach-go {
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--lime);
+  color: #24150c;
+}
+.gc-landing .coach-info {
+  padding: 22px 0 0;
+}
+.gc-landing .coach-info h3 {
+  font-size: 21px;
+  margin-bottom: 6px;
+}
+.gc-landing .coach-info > span {
+  font-size: 10px;
+  color: #b1b9b8;
+}
+.gc-landing .coach-info > div {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+  padding-top: 15px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 9px;
+  color: #8b9598;
+}
+.gc-landing .journey {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 10%;
+  background: #151a1e;
+}
+.gc-landing .journey h2 {
+  font-size: 45px;
+  margin: 10px 0 27px;
+  line-height: 1.3;
+}
+.gc-landing .journey h2 span {
+  color: var(--lime);
+}
+.gc-landing .journey .text-link {
+  color: var(--lime);
+}
+.gc-landing .journey-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  border-bottom: 1px solid var(--line);
+  padding: 22px 0;
+}
+.gc-landing .journey-step:first-child {
+  padding-top: 4px;
+}
+.gc-landing .journey-step > span {
+  font-family: "Barlow Condensed";
+  font-size: 28px;
+  color: var(--lime);
+  line-height: 1.3;
+}
+.gc-landing .journey-step h3 {
+  font-size: 14px;
+  margin-bottom: 7px;
+}
+.gc-landing .journey-step p {
+  color: #919b9f;
+  font-size: 10px;
+  margin-bottom: 0;
+}
+.gc-landing .journey-step > svg {
+  margin-left: auto;
+  color: #697578;
+}
+.gc-landing .fine-print {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 8px;
+  line-height: 1.9;
+  color: #7f8a8e;
+  margin-top: 17px;
+}
+.gc-landing .pricing-tabs {
+  margin-bottom: 26px;
+}
+.gc-landing .price-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.85fr;
+  gap: 22px;
+}
+.gc-landing .price-card {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 30px;
+  background: #14191d;
+}
+.gc-landing .price-card.featured {
+  border-color: #f4774564;
+  background: #211b17;
+}
+.gc-landing .price-card .eyebrow {
+  font-size: 8px;
+  letter-spacing: 1.2px;
+  color: #a9b5aa;
+}
+.gc-landing .price-card h3 {
+  font-size: 18px;
+  letter-spacing: -0.3px;
+  margin-bottom: 26px;
+}
+.gc-landing .price-card .price {
+  font-size: 32px;
+  font-family: "Barlow Condensed";
+  font-weight: 600;
+}
+.gc-landing .price-card p {
+  color: #95a09b;
+  font-size: 10px;
+  margin-top: 10px;
+}
+.gc-landing .price-card hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 25px 0;
+}
+.gc-landing .check-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #aab5ae;
+  font-size: 10px;
+  line-height: 1.8;
+}
+.gc-landing .check-line svg {
+  color: var(--lime);
+}
+.gc-landing .price-card .btn {
+  margin-top: 23px;
+  width: 100%;
+}
+.gc-landing .price-aside {
+  padding: 30px 16px 30px 30px;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: center;
+}
+.gc-landing .price-aside > svg {
+  color: var(--lime);
+  margin-bottom: 25px;
+}
+.gc-landing .price-aside h3 {
+  font-size: 24px;
+  line-height: 1.5;
+}
+.gc-landing .price-aside p {
+  color: #8a969a;
+  font-size: 11px;
+}
+.gc-landing .price-aside .text-link {
+  color: var(--lime);
+  font-size: 10px;
+}
+.gc-landing .pt-price {
+  grid-column: span 2;
+}
+.gc-landing .consult {
+  display: grid;
+  grid-template-columns: 1fr 0.85fr;
+  gap: 12%;
+  position: relative;
+  background:
+    linear-gradient(90deg, #12180fee, #11171ef5),
+    url("/landing/gym.jpg") center/cover;
+}
+.gc-landing .consult-copy h2 {
+  font-family: "Barlow Condensed";
+  font-size: 76px;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin: 32px 0 25px;
+}
+.gc-landing .consult-copy h2 span {
+  color: var(--lime);
+}
+.gc-landing .consult-copy > p:not(.eyebrow) {
+  font-size: 12px;
+  color: #a1aaa2;
+}
+.gc-landing .consult-copy > .fine-print {
+  margin-top: 38px;
+}
+.gc-landing .lead-form {
+  background: #1b2125;
+  border: 1px solid #ffffff14;
+  border-radius: 7px;
+  padding: 32px;
+  align-self: center;
+}
+.gc-landing .lead-form h3 {
+  font-size: 20px;
+  margin-bottom: 7px;
+}
+.gc-landing .lead-form > .muted {
+  font-size: 10px;
+  margin-bottom: 24px;
+}
+.gc-landing label {
+  display: block;
+  font-size: 10px;
+  color: #c4cbcb;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+.gc-landing label > span {
+  color: var(--lime);
+}
+.gc-landing input,
+.gc-landing select,
+.gc-landing textarea {
+  display: block;
+  width: 100%;
+  border: 1px solid #ffffff20;
+  border-radius: 4px;
+  min-height: 45px;
+  padding: 12px 13px;
+  background: #12171b;
+  color: #eef2e9;
+  font-size: 11px;
+  margin-top: 8px;
+}
+.gc-landing input::placeholder {
+  color: #69747a;
+}
+.gc-landing select {
+  color: #a4adb0;
+  appearance: auto;
+}
+.gc-landing option {
+  background: #15191e;
+}
+.gc-landing input:focus,
+.gc-landing select:focus {
+  border-color: var(--lime);
+  outline: none;
+}
+.gc-landing .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.gc-landing .lead-form > .btn {
+  width: 100%;
+  margin-top: 4px;
+}
+.gc-landing .lead-form > .fine-print {
+  justify-content: center;
+  font-size: 8px;
+  margin-bottom: 0;
+}
+.gc-landing .inline-message {
+  font-size: 10px;
+  line-height: 1.8;
+  padding: 12px 14px;
+  background: #f477450b;
+  border: 1px solid #f4774536;
+  border-radius: 4px;
+  color: #e1b79f;
+}
+.gc-landing .faq {
+  display: grid;
+  grid-template-columns: 0.9fr 1.2fr;
+  gap: 12%;
+  padding-top: 90px;
+  padding-bottom: 90px;
+}
+.gc-landing .faq h2 {
+  font-size: 35px;
+}
+.gc-landing .faq-item {
+  border-bottom: 1px solid var(--line);
+}
+.gc-landing .faq-item:first-child {
+  border-top: 1px solid var(--line);
+}
+.gc-landing .faq-item button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  width: 100%;
+  padding: 23px 0;
+  background: none;
+  font-size: 12px;
+  text-align: left;
+  line-height: 1.7;
+}
+.gc-landing .faq-item button svg {
+  color: #91a08d;
+}
+.gc-landing .faq-item.expanded button svg {
+  color: var(--lime);
+}
+.gc-landing .faq-item > p {
+  color: #919c9f;
+  font-size: 11px;
+  margin: 0 30px 23px 0;
+  line-height: 1.9;
+}
+.gc-landing footer.section {
+  border-top: 1px solid var(--line);
+  padding-top: 43px;
+  padding-bottom: 24px;
+  background: #090b0d;
+}
+.gc-landing .footer-top {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  padding-bottom: 35px;
+}
+.gc-landing .footer-top p {
+  font-size: 10px;
+  color: #889393;
+  margin: 0;
+}
+.gc-landing .footer-top > .text-link {
+  margin-left: auto;
+  color: #9eaaa2;
+  font-size: 10px;
+}
+.gc-landing .footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+  font-size: 7px;
+  color: #647176;
+  letter-spacing: 0.7px;
+}
+.gc-landing .error-box {
+  padding: 20px;
+  background: #251b17;
+  border: 1px solid #d09d6c40;
+  border-radius: 5px;
+  font-size: 12px;
+}
+.gc-landing .error-box p {
+  font-size: 11px;
+  color: #b7a69e;
+}
+.gc-landing .skeleton {
+  height: 250px;
+  background: #141a1d;
+  border-radius: 6px;
+}
+.gc-landing .spin {
+  animation: gc-spin 1s linear infinite;
+}
+@keyframes gc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.gc-landing .success-panel {
+  padding: 45px 0;
+  text-align: center;
+}
+.gc-landing .success-panel > svg {
+  color: var(--lime);
+  margin-bottom: 20px;
+}
+.gc-landing .success-panel p {
+  font-size: 12px;
+  color: #a9b6a9;
+}
+.gc-landing .modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #020507bb;
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: gc-fade 0.2s;
+}
+.gc-landing .modal {
+  width: 500px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  border-radius: 9px;
+  background: #1b2125;
+  box-shadow: 0 25px 100px #0008;
+  border: 1px solid #ffffff20;
+}
+.gc-landing .modal > .icon-btn {
+  position: absolute;
+  right: 13px;
+  top: 13px;
+  color: #9eaaa0;
+  z-index: 2;
+}
+.gc-landing .modal .lead-form {
+  border: 0;
+  padding: 38px;
+}
+.gc-landing .modal-context {
+  padding: 30px 38px 0;
+  margin: 0;
+  font-size: 10px;
+  color: var(--lime);
+}
+.gc-landing .modal-context + .lead-form {
+  padding-top: 18px;
+}
+.gc-landing .field-error {
+  color: #ffb4a7;
+  font-size: 9px;
+  display: block;
+  margin-top: 6px;
+}
+.gc-landing .reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin-top: 25px;
+}
+.gc-landing .review-card {
+  background: #151b1f;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 27px;
+}
+.gc-landing .stars {
+  color: var(--lime);
+  font-size: 13px;
+  letter-spacing: 3px;
+}
+.gc-landing .review-card blockquote {
+  font-size: 12px;
+  line-height: 2;
+  color: #c6ceca;
+  margin: 20px 0 23px;
+}
+.gc-landing .review-person {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.gc-landing .initial-avatar {
+  width: 36px;
+  height: 36px;
+  background: #35251d;
+  color: #efbe9e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+.gc-landing .review-person b {
+  display: block;
+  font-size: 10px;
+  margin-bottom: 5px;
+}
+.gc-landing .review-person small {
+  font-size: 8px;
+  color: #7d8b87;
+}
+@keyframes gc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes gc-slide {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@media (min-width: 1600px) {
+  .gc-landing .hero {
+    min-height: 800px;
+    padding-top: 80px;
+  }
+  .gc-landing .hero h1 {
+    font-size: 112px;
+  }
+  .gc-landing .section {
+    padding-left: max(5%, calc((100vw - 1440px) / 2));
+    padding-right: max(5%, calc((100vw - 1440px) / 2));
+  }
+  .gc-landing .hero-desc {
+    font-size: 14px;
+  }
+}
+@media (max-width: 1200px) {
+  .gc-landing .nav-links {
+    gap: 17px;
+  }
+  .gc-landing .nav-actions {
+    gap: 15px;
+  }
+  .gc-landing .nav {
+    gap: 15px;
+    padding-inline: 4%;
+  }
+  .gc-landing .nav-links a {
+    font-size: 9px;
+  }
+  .gc-landing .brand {
+    font-size: 22px;
+  }
+  .gc-landing .hero-actions {
+    gap: 14px;
+  }
+  .gc-landing .hero-actions .btn {
+    padding: 14px 17px;
+    font-size: 10px;
+    gap: 10px;
+  }
+  .gc-landing .hero-secondary {
+    font-size: 9px;
+  }
+  .gc-landing .stats-note {
+    display: none;
+  }
+  .gc-landing .stats-strip {
+    justify-content: space-between;
+  }
+  .gc-landing .stats-intro {
+    font-size: 8px;
+  }
+  .gc-landing .benefits {
+    gap: 25px;
+  }
+  .gc-landing .benefit-intro h2 {
+    font-size: 20px;
+  }
+  .gc-landing .section-head h2 {
+    font-size: 29px;
+  }
+  .gc-landing .coach-info > div {
+    font-size: 7px;
+  }
+  .gc-landing .consult {
+    gap: 7%;
+  }
+  .gc-landing .consult-copy h2 {
+    font-size: 65px;
+  }
+}
+@media (max-width: 900px) {
+  .gc-landing .nav-links {
+    display: none;
+  }
+  .gc-landing .nav-links.open {
+    display: flex;
+    position: absolute;
+    top: 80px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    padding: 25px 5%;
+    background: #14191e;
+    border-bottom: 1px solid #ffffff25;
+    gap: 24px;
+  }
+  .gc-landing .nav-links a {
+    font-size: 12px;
+  }
+  .gc-landing .mobile-menu {
+    display: inline-flex;
+  }
+  .gc-landing .nav {
+    height: 80px;
+  }
+  .gc-landing .hero {
+    grid-template-columns: 50% 50%;
+    padding-top: 45px;
+    min-height: 620px;
+  }
+  .gc-landing .hero h1 {
+    font-size: 72px;
+  }
+  .gc-landing .hero-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .gc-landing .hero-desc {
+    font-size: 10px;
+  }
+  .gc-landing .hero-note {
+    font-size: 8px;
+    margin-top: 18px;
+  }
+  .gc-landing .benefits {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 35px;
+  }
+  .gc-landing .benefit-intro {
+    grid-column: span 3;
+  }
+  .gc-landing .benefit-intro h2 {
+    font-size: 26px;
+  }
+  .gc-landing .section {
+    padding-block: 60px;
+  }
+  .gc-landing .section-head h2 {
+    font-size: 27px;
+  }
+  .gc-landing .section-head .muted {
+    font-size: 10px;
+  }
+  .gc-landing .course-grid,
+  .gc-landing .coach-grid {
+    gap: 15px;
+  }
+  .gc-landing .course-card {
+    height: 340px;
+  }
+  .gc-landing .course-top,
+  .gc-landing .course-bottom {
+    left: 16px;
+    right: 16px;
+  }
+  .gc-landing .course-bottom h3 {
+    font-size: 18px;
+  }
+  .gc-landing .course-bottom p {
+    font-size: 9px;
+  }
+  .gc-landing .course-meta {
+    font-size: 7px;
+  }
+  .gc-landing .coach-photo {
+    height: 260px;
+  }
+  .gc-landing .coach-info h3 {
+    font-size: 19px;
+  }
+  .gc-landing .coach-info > div {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .gc-landing .journey {
+    gap: 7%;
+    grid-template-columns: 0.9fr 1.2fr;
+  }
+  .gc-landing .journey h2 {
+    font-size: 36px;
+  }
+  .gc-landing .journey-step {
+    gap: 17px;
+  }
+  .gc-landing .journey-step h3 {
+    font-size: 12px;
+  }
+  .gc-landing .journey-step p {
+    font-size: 9px;
+  }
+  .gc-landing .price-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .gc-landing .price-aside {
+    grid-column: span 2;
+    flex-direction: row;
+    align-items: center;
+    gap: 25px;
+    padding: 20px 0;
+  }
+  .gc-landing .price-aside h3 {
+    font-size: 20px;
+    margin: 0;
+    min-width: 180px;
+  }
+  .gc-landing .price-aside p {
+    margin: 0;
+  }
+  .gc-landing .price-aside > svg {
+    margin: 0;
+  }
+  .gc-landing .price-aside .text-link {
+    white-space: nowrap;
+  }
+  .gc-landing .consult {
+    grid-template-columns: 1fr 1fr;
+    gap: 5%;
+  }
+  .gc-landing .consult-copy h2 {
+    font-size: 54px;
+  }
+  .gc-landing .consult-copy .eyebrow {
+    font-size: 7px;
+  }
+  .gc-landing .consult-copy > p:not(.eyebrow) {
+    font-size: 10px;
+  }
+  .gc-landing .lead-form {
+    padding: 23px;
+  }
+  .gc-landing .lead-form h3 {
+    font-size: 16px;
+  }
+  .gc-landing .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .gc-landing .faq {
+    gap: 7%;
+    grid-template-columns: 0.8fr 1.2fr;
+  }
+  .gc-landing .faq h2 {
+    font-size: 28px;
+  }
+  .gc-landing .faq-item button {
+    font-size: 10px;
+  }
+  .gc-landing .faq-item > p {
+    font-size: 9px;
+  }
+  .gc-landing .reviews-grid {
+    gap: 15px;
+  }
+  .gc-landing .review-card {
+    padding: 20px;
+  }
+  .gc-landing .review-card blockquote {
+    font-size: 10px;
+  }
+}
+@media (max-width: 600px) {
+  .gc-landing .nav {
+    padding-inline: 5%;
+    gap: 8px;
+    height: 70px;
+  }
+  .gc-landing .brand {
+    font-size: 22px;
+  }
+  .gc-landing .brand-mark {
+    width: 24px;
+    margin-right: 7px;
+  }
+  .gc-landing .brand-mark i {
+    width: 5px;
+  }
+  .gc-landing .brand > b {
+    font-size: 7px;
+  }
+  .gc-landing .nav .login-link {
+    font-size: 9px;
+  }
+  .gc-landing .nav-actions {
+    gap: 12px;
+  }
+  .gc-landing .nav-actions > .btn {
+    display: none;
+  }
+  .gc-landing .mobile-menu {
+    padding-right: 0;
+  }
+  .gc-landing .nav-links.open {
+    top: 70px;
+  }
+  .gc-landing .hero {
+    display: flex;
+    flex-direction: column;
+    padding: 38px 6% 50px;
+    min-height: 970px;
+    overflow: hidden;
+  }
+  .gc-landing .hero-copy {
+    z-index: 3;
+  }
+  .gc-landing .hero .eyebrow {
+    font-size: 7px;
+    letter-spacing: 1.1px;
+    margin-bottom: 22px;
+  }
+  .gc-landing .hero h1 {
+    font-size: clamp(66px, 18vw, 86px);
+    line-height: 1;
+    letter-spacing: -0.5px;
+    margin-bottom: 22px;
+  }
+  .gc-landing .hero-desc {
+    font-size: 10px;
+    max-width: 310px;
+  }
+  .gc-landing .hero-actions {
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .gc-landing .hero-actions .btn {
+    font-size: 9px;
+    padding-inline: 14px;
+    min-height: 45px;
+    gap: 10px;
+  }
+  .gc-landing .hero-secondary {
+    font-size: 8px;
+    gap: 7px;
+  }
+  .gc-landing .hero-note {
+    font-size: 7px;
+    margin-top: 20px;
+  }
+  .gc-landing .hero-art {
+    height: 330px;
+    width: 100%;
+    margin-top: 25px;
+    flex: none;
+  }
+  .gc-landing .scroll-cue {
+    display: none;
+  }
+  .gc-landing .stats-strip {
+    padding: 23px 6%;
+    min-height: 90px;
+    gap: 14px;
+  }
+  .gc-landing .stats-intro {
+    display: none;
+  }
+  .gc-landing .stat {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
+  .gc-landing .stat > b {
+    font-size: 35px;
+  }
+  .gc-landing .stat > b > span {
+    font-size: 22px;
+  }
+  .gc-landing .stat > span {
+    font-size: 7px;
+    max-width: none;
+  }
+  .gc-landing .section {
+    padding: 49px 6%;
+  }
+  .gc-landing .benefits {
+    grid-template-columns: 1fr;
+    gap: 27px;
+  }
+  .gc-landing .benefit-intro {
+    grid-column: auto;
+  }
+  .gc-landing .benefit-intro h2 {
+    font-size: 25px;
+    margin: 0;
+  }
+  .gc-landing .benefit {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    column-gap: 13px;
+  }
+  .gc-landing .benefit > svg {
+    grid-row: span 2;
+    margin: 3px 0;
+  }
+  .gc-landing .benefit h3 {
+    font-size: 13px;
+    margin-bottom: 7px;
+  }
+  .gc-landing .benefit p {
+    font-size: 10px;
+  }
+  .gc-landing .section-head {
+    margin-bottom: 26px;
+    align-items: flex-start;
+  }
+  .gc-landing .eyebrow {
+    font-size: 7px;
+    letter-spacing: 1.1px;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+  .gc-landing .section-head h2 {
+    font-size: 27px;
+    line-height: 1.35;
+  }
+  .gc-landing .section-head .muted {
+    font-size: 10px;
+  }
+  .gc-landing .section-head > .text-link {
+    display: none;
+  }
+  .gc-landing .program-toolbar {
+    margin-bottom: 20px;
+  }
+  .gc-landing .tabs {
+    gap: 1px;
+    flex-wrap: wrap;
+  }
+  .gc-landing .tabs button {
+    font-size: 9px;
+    padding: 9px 12px;
+  }
+  .gc-landing .subtle-label {
+    display: none;
+  }
+  .gc-landing .course-grid,
+  .gc-landing .coach-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .gc-landing .course-card {
+    height: 385px;
+  }
+  .gc-landing .course-top,
+  .gc-landing .course-bottom {
+    left: 24px;
+    right: 24px;
+  }
+  .gc-landing .course-bottom h3 {
+    font-size: 24px;
+  }
+  .gc-landing .course-bottom p {
+    font-size: 10px;
+  }
+  .gc-landing .course-meta {
+    font-size: 9px;
+  }
+  .gc-landing .image-note {
+    font-size: 7px;
+    line-height: 1.8;
+  }
+  .gc-landing .coach-photo {
+    height: 350px;
+  }
+  .gc-landing .coach-info {
+    padding-top: 20px;
+  }
+  .gc-landing .coach-info > div {
+    flex-direction: row;
+    font-size: 8px;
+  }
+  .gc-landing .coach-info h3 {
+    font-size: 23px;
+  }
+  .gc-landing .coach-grid {
+    gap: 35px;
+  }
+  .gc-landing .journey {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .gc-landing .journey h2 {
+    font-size: 38px;
+    margin-bottom: 15px;
+  }
+  .gc-landing .journey-step {
+    gap: 22px;
+  }
+  .gc-landing .journey-step h3 {
+    font-size: 13px;
+  }
+  .gc-landing .journey-step p {
+    font-size: 10px;
+  }
+  .gc-landing .journey .fine-print {
+    font-size: 7px;
+  }
+  .gc-landing .price-grid {
+    grid-template-columns: 1fr;
+  }
+  .gc-landing .price-aside {
+    grid-column: auto;
+    display: block;
+    padding: 15px 0;
+  }
+  .gc-landing .price-aside h3 {
+    margin-top: 20px;
+    margin-bottom: 15px;
+  }
+  .gc-landing .price-aside p {
+    margin-bottom: 20px;
+  }
+  .gc-landing .price-card {
+    padding: 28px;
+  }
+  .gc-landing .pt-price {
+    grid-column: auto;
+  }
+  .gc-landing .reviews-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .gc-landing .review-card {
+    padding: 25px;
+  }
+  .gc-landing .review-card blockquote {
+    font-size: 12px;
+  }
+  .gc-landing .review-person b {
+    font-size: 11px;
+  }
+  .gc-landing .review-person small {
+    font-size: 8px;
+  }
+  .gc-landing .consult {
+    grid-template-columns: 1fr;
+    gap: 35px;
+    padding-block: 50px;
+  }
+  .gc-landing .consult-copy h2 {
+    font-size: 62px;
+    margin: 25px 0;
+  }
+  .gc-landing .consult-copy > p:not(.eyebrow) {
+    font-size: 12px;
+  }
+  .gc-landing .consult-copy > .fine-print {
+    margin-top: 20px;
+    font-size: 7px;
+  }
+  .gc-landing .lead-form {
+    padding: 25px;
+  }
+  .gc-landing .lead-form h3 {
+    font-size: 20px;
+  }
+  .gc-landing .form-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .gc-landing .lead-form label {
+    font-size: 9px;
+  }
+  .gc-landing .lead-form input,
+  .gc-landing .lead-form select {
+    font-size: 10px;
+  }
+  .gc-landing .faq {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  .gc-landing .faq h2 {
+    font-size: 30px;
+  }
+  .gc-landing .faq .muted {
+    font-size: 11px;
+  }
+  .gc-landing .faq-item button {
+    font-size: 11px;
+    padding: 20px 0;
+  }
+  .gc-landing .faq-item > p {
+    font-size: 10px;
+  }
+  .gc-landing .footer-top {
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-bottom: 24px;
+  }
+  .gc-landing .footer-top p {
+    font-size: 9px;
+  }
+  .gc-landing .footer-top > .text-link {
+    margin-left: 0;
+  }
+  .gc-landing .footer-bottom {
+    flex-wrap: wrap;
+    font-size: 6px;
+    line-height: 1.8;
+    gap: 15px;
+  }
+  .gc-landing .footer-bottom span:last-child {
+    display: none;
+  }
+  .gc-landing .modal-overlay {
+    padding: 15px;
+  }
+  .gc-landing .modal .lead-form {
+    padding: 35px 25px 25px;
+  }
+  .gc-landing .modal-context {
+    padding: 30px 25px 0;
+    font-size: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gc-landing {
+    scroll-behavior: auto;
+  }
+  .gc-landing, .gc-landing *,
+  .gc-landing *:before,
+  .gc-landing *:after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+.gc-landing .nav-links a,
+.gc-landing .login-link {
+  font-size: 12px;
+}
+.gc-landing .hero-desc {
+  font-size: 13px;
+}
+.gc-landing .hero-secondary {
+  font-size: 11px;
+}
+.gc-landing .hero-note {
+  font-size: 10px;
+}
+.gc-landing .hero-actions .btn {
+  font-size: 12px;
+}
+.gc-landing .stats-intro {
+  font-size: 11px;
+}
+.gc-landing .stat > span {
+  font-size: 10px;
+}
+.gc-landing .benefit h3 {
+  font-size: 14px;
+}
+.gc-landing .benefit p {
+  font-size: 11px;
+}
+.gc-landing .section-head .muted {
+  font-size: 12px;
+}
+.gc-landing .course-bottom p {
+  font-size: 11px;
+}
+.gc-landing .course-meta {
+  font-size: 10px;
+}
+.gc-landing .coach-info > span {
+  font-size: 11px;
+}
+.gc-landing .coach-info > div {
+  font-size: 10px;
+}
+.gc-landing .coach-profile-cta {
+  position: absolute;
+  left: 20px;
+  bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  color: #e9efde;
+}
+.gc-landing .coach-photo:after {
+  content: "";
+  position: absolute;
+  inset: 60% 0 0;
+  background: linear-gradient(transparent, #0008);
+  pointer-events: none;
+}
+.gc-landing .coach-profile-cta,
+.gc-landing .coach-go {
+  z-index: 1;
+}
+.gc-landing .journey-step p {
+  font-size: 11px;
+}
+.gc-landing .price-card p,
+.gc-landing .check-line {
+  font-size: 11px;
+}
+.gc-landing .price small {
+  font-family: "Be Vietnam Pro";
+  font-size: 11px;
+  font-weight: 400;
+  color: #929e8c;
+}
+.gc-landing .price-profile-link {
+  font-size: 10px;
+  color: #c3aaa0;
+  margin-top: 15px;
+}
+.gc-landing .review-card blockquote {
+  font-size: 13px;
+}
+.gc-landing .review-person b {
+  font-size: 11px;
+}
+.gc-landing .review-person small {
+  font-size: 9px;
+}
+.gc-landing .reviews-section {
+  border-block: 1px solid var(--line);
+  background: #101519;
+}
+.gc-landing .faq-item button {
+  font-size: 13px;
+}
+.gc-landing .faq-item > p {
+  font-size: 12px;
+}
+@media (max-width: 1200px) {
+  .gc-landing .nav-links a {
+    font-size: 10px;
+  }
+  .gc-landing .coach-info > div {
+    font-size: 9px;
+  }
+}
+@media (max-width: 600px) {
+  .gc-landing .hero-desc {
+    font-size: 11px;
+  }
+  .gc-landing .hero-actions .btn {
+    font-size: 9px;
+  }
+  .gc-landing .hero-secondary {
+    font-size: 9px;
+  }
+  .gc-landing .hero-note {
+    font-size: 8px;
+  }
+  .gc-landing .stat > span {
+    font-size: 8px;
+  }
+  .gc-landing .benefit h3 {
+    font-size: 14px;
+  }
+  .gc-landing .benefit p {
+    font-size: 11px;
+  }
+  .gc-landing .coach-info > div {
+    font-size: 9px;
+  }
+}
+.gc-landing{--lime:#f47745;--muted:#999b9e;background:#101113;color:#f5f2ee}.gc-landing .nav{background:#101113f7;height:88px}.gc-landing .brand{font-size:27px}.gc-landing .brand-light{color:#d5d3ce}.gc-landing .nav-links a,.gc-landing .login-link{color:#c7c5c0;font-size:12px}.gc-landing .nav .btn.small{font-size:11px;border-radius:3px;min-height:42px}.gc-landing .btn{border-radius:3px;gap:15px;font-size:12px}.gc-landing .btn.lime{background:#f47745;color:#21120b}.gc-landing .btn.lime:hover{background:#ff8c59}.gc-landing .hero{min-height:660px;padding:44px 5% 54px;grid-template-columns:47% 53%;gap:0;background:#101113;overflow:visible}.gc-landing .hero-copy{align-self:center;padding:10px 25px 0 0}.gc-landing .hero .eyebrow{color:#bbb3a8;font-size:10px;letter-spacing:1.8px;margin-bottom:28px}.gc-landing .hero h1{font-family:'Be Vietnam Pro',sans-serif;font-size:clamp(40px,4.3vw,65px);letter-spacing:-3.4px;line-height:1.18;font-weight:600;margin:0 0 27px}.gc-landing .hero h1 span{color:#f49369;display:inline-block;margin-top:5px}.gc-landing .hero-desc{font-size:13px;line-height:1.9;color:#a8a7a4;max-width:490px;margin-bottom:31px}.gc-landing .hero-actions .btn{min-height:49px;padding:14px 20px;font-size:11px}.gc-landing .hero-secondary{font-size:11px}.gc-landing .hero-note{margin-top:30px;font-size:9px;color:#8f908b;gap:8px}.gc-landing .hero-note svg{color:#bc8f77}.gc-landing .hero-art{min-height:540px;align-self:stretch}.gc-landing .hero-film{position:absolute;inset:0;border-radius:5px;overflow:hidden;background:#242323;border:1px solid #ffffff12}.gc-landing .hero-film video{height:100%;width:100%;object-fit:cover;object-position:45% center;filter:brightness(.8) saturate(.6)}.gc-landing .film-shade{position:absolute;inset:0;background:linear-gradient(180deg,#05060750 0%,transparent 35%,#050607c9 100%);pointer-events:none}.gc-landing .film-top{position:absolute;top:27px;left:26px;right:26px;display:flex;justify-content:space-between;align-items:center;font-size:8px;letter-spacing:1.1px;color:#d9d1c5}.gc-landing .film-top>span:first-child{display:flex;gap:8px;align-items:center}.gc-landing .film-top i{background:#f47745;width:5px;height:5px;border-radius:50%}.gc-landing .scroll-cue{display:none}.gc-landing .stats-strip{background:#17181a;border-color:#ffffff10;padding-block:25px;min-height:112px}.gc-landing .stats-intro{font-size:9px;color:#7f8282}.gc-landing .stat>b{font-family:'Be Vietnam Pro';font-size:33px;letter-spacing:-1.5px;font-weight:500}.gc-landing .stat>b>span{font-size:22px}.gc-landing .stat>span{max-width:100px;font-size:10px}.gc-landing .section h2{font-weight:500;letter-spacing:-1.1px}.gc-landing .section-head h2{font-size:32px}.gc-landing .section-head .eyebrow,.gc-landing .benefit-intro .eyebrow{font-size:8px;color:#a49e95}.gc-landing .section{padding-block:75px}.gc-landing .benefits{padding-block:55px;gap:35px}.gc-landing .benefit h3{font-size:14px;font-weight:500}.gc-landing .benefit p{font-size:11px}.gc-landing .benefit-intro h2{font-size:24px;font-weight:500;line-height:1.5}.gc-landing .benefit>svg{color:#d28e6d}.gc-landing .tabs button.active{background:#35251d;border-color:#dc814e55;color:#f4c5ac}.gc-landing .course-card{border-radius:4px;height:390px}.gc-landing .course-card>img{filter:brightness(.72) saturate(.65)}.gc-landing .course-bottom h3{font-size:22px;font-weight:500}.gc-landing .coach-section{background:#161719}.gc-landing .coach-photo{height:340px}.gc-landing .coach-photo img{filter:grayscale(.6) brightness(.82)}.gc-landing .coach-status i{background:#ef9b70}.gc-landing .coach-go{background:#ee7c4c;color:#22130e}.gc-landing .coach-info h3{font-weight:500;font-size:23px}.gc-landing .coach-info>div{color:#9c9890}.gc-landing .coach-profile-cta{font-size:10px}.gc-landing .journey{background:#1b1b1b}.gc-landing .journey h2{font-size:36px;line-height:1.5}.gc-landing .journey-step>span{font-family:'Be Vietnam Pro';font-size:20px;color:#dc9d7e;font-weight:400}.gc-landing .journey-step h3{font-weight:500}.gc-landing .journey-step p{color:#a3a099}.gc-landing .price-card{background:#191a1b;border-color:#ffffff16;border-radius:4px}.gc-landing .price-card.featured{background:#241e1a;border-color:#985e3f}.gc-landing .price-card .price{font-family:'Be Vietnam Pro';font-size:30px;font-weight:500;letter-spacing:-1px}.gc-landing .price-card .eyebrow{color:#b4a393}.gc-landing .price-card p,.gc-landing .check-line{color:#a7a39a}.gc-landing .check-line svg{color:#d99470}.gc-landing .price-aside h3{font-size:23px;font-weight:500}.gc-landing .review-card{background:#1c1d1e}.gc-landing .stars{color:#d79670}.gc-landing .initial-avatar{background:#342820;color:#e5b295}.gc-landing .reviews-section{background:#161719}.gc-landing .review-person small{color:#aaa49a}.gc-landing .consult{background:linear-gradient(90deg,#211c18f5,#13171bf5),url('/landing/gym.jpg') center/cover;gap:10%}.gc-landing .consult-copy h2{font-family:'Be Vietnam Pro';font-size:40px;line-height:1.5;font-weight:500;letter-spacing:-1.5px}.gc-landing .consult-copy h2 span{color:#ec9b75}.gc-landing .consult .eyebrow{font-size:8px}.gc-landing .lead-form{background:#242424;border-color:#ffffff12}.gc-landing .lead-form h3{font-size:21px;font-weight:500}.gc-landing .lead-form label{font-size:11px;color:#c5c0b7}.gc-landing .lead-form input,.gc-landing .lead-form select{background:#1c1c1d;border-color:#ffffff20;font-size:12px;min-height:46px}.gc-landing .lead-form>.muted{font-size:11px}.gc-landing .faq-item button{font-size:13px;font-weight:400}.gc-landing .faq-item>p{font-size:12px;color:#a6a49d}.gc-landing .faq h2{font-size:31px}.gc-landing .footer-top p{font-size:11px}
+@media(max-width:900px){.gc-landing .hero h1{font-size:44px;letter-spacing:-2px}.gc-landing .hero{grid-template-columns:48% 52%;min-height:560px}.gc-landing .hero-art{min-height:490px}.gc-landing .hero-desc{font-size:11px}.gc-landing .hero-actions{align-items:flex-start;flex-direction:column}.gc-landing .hero .eyebrow{font-size:8px}.gc-landing .hero-note{font-size:8px}.gc-landing .consult-copy h2{font-size:32px}}
+@media(max-width:600px){.gc-landing .nav{height:70px}.gc-landing .hero{display:flex;padding:35px 6% 35px;min-height:0;overflow:hidden}.gc-landing .hero-copy{padding-right:0}.gc-landing .hero h1{font-size:43px;letter-spacing:-2.2px;line-height:1.2}.gc-landing .hero .eyebrow{font-size:8px;margin-bottom:20px}.gc-landing .hero-desc{font-size:12px}.gc-landing .hero-actions{flex-direction:row;align-items:center;gap:17px}.gc-landing .hero-actions .btn{font-size:10px;padding:13px 16px}.gc-landing .hero-secondary{font-size:10px}.gc-landing .hero-note{font-size:8px;margin-top:22px}.gc-landing .hero-art{height:410px;min-height:410px;margin-top:30px}.gc-landing .film-top{font-size:6px;left:20px;right:20px;top:22px}.gc-landing .brand{font-size:23px}.gc-landing .section{padding-block:50px}.gc-landing .section-head h2{font-size:27px}.gc-landing .benefit-intro h2{font-size:25px}.gc-landing .journey h2{font-size:30px}.gc-landing .consult-copy h2{font-size:34px}.gc-landing .consult .eyebrow{font-size:7px}.gc-landing .stats-intro{display:none}.gc-landing .stat>b{font-size:29px}.gc-landing .stat>span{font-size:8px}.gc-landing .nav-links.open{background:#1c1c1d}}
+.gc-landing .public-landing .hero {
+  display: flex;
+  align-items: center;
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-height: 690px;
+  height: min(780px, calc(100svh - 117px));
+  padding: 76px 7% 106px;
+  background: #101113;
+  overflow: hidden;
+}
+.gc-landing .public-landing .hero-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.gc-landing .public-landing .hero-film {
+  inset: 0;
+  border: 0;
+  border-radius: 0;
+  background: #151617;
+  pointer-events: auto;
+}
+.gc-landing .public-landing .hero-film video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 48%;
+  filter: brightness(0.87) saturate(0.68);
+  transform: translateY(var(--hero-shift, 0px)) scale(var(--hero-scale, 1.02));
+  will-change: transform;
+}
+.gc-landing .public-landing .film-shade {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(9, 12, 13, 0.9) 0%,
+      rgba(9, 12, 13, 0.78) 25%,
+      rgba(9, 12, 13, 0.36) 57%,
+      rgba(9, 12, 13, 0.1) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(9, 12, 13, 0.9),
+      transparent 29%,
+      transparent 70%,
+      rgba(9, 12, 13, 0.1)
+    );
+}
+.gc-landing .public-landing .hero-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 690px;
+  padding: 0;
+  align-self: center;
+  pointer-events: none;
+}
+.gc-landing .public-landing .hero-copy a {
+  pointer-events: auto;
+}
+.gc-landing .public-landing .hero h1 {
+  font-size: clamp(48px, 4.75vw, 74px);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -3.2px;
+  margin-bottom: 28px;
+  text-wrap: balance;
+}
+.gc-landing .public-landing .hero h1 span {
+  color: #f3a279;
+  margin-top: 4px;
+}
+.gc-landing .public-landing .hero .eyebrow {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #d4cbbf;
+  margin-bottom: 27px;
+}
+.gc-landing .public-landing .hero-desc {
+  color: #d4d3cf;
+  max-width: 540px;
+  font-size: 14px;
+  line-height: 1.95;
+  margin-bottom: 30px;
+}
+.gc-landing .public-landing .hero-actions {
+  gap: 26px;
+  flex-direction: row;
+  align-items: center;
+}
+.gc-landing .public-landing .hero-actions .btn {
+  padding: 15px 23px;
+  min-height: 50px;
+  font-size: 12px;
+  border-radius: 5px;
+}
+.gc-landing .public-landing .hero-secondary {
+  font-size: 12px;
+  color: #e3ded6;
+}
+.gc-landing .public-landing .hero-note {
+  color: #b2b5af;
+  margin-top: 28px;
+  font-size: 10px;
+}
+.gc-landing .public-landing .hero-note svg {
+  color: #c6ae9c;
+}
+.gc-landing .public-landing .film-top {
+  top: 32px;
+  left: auto;
+  right: 7%;
+  gap: 20px;
+  font-size: 8px;
+  color: #e1d6c5;
+  opacity: 0.8;
+}
+.gc-landing .public-landing .film-top > span:first-child {
+  display: none;
+}
+
+
+
+.gc-landing .public-landing .scroll-cue {
+  display: flex;
+  position: absolute;
+  left: 7%;
+  bottom: 37px;
+  z-index: 3;
+  align-items: center;
+  gap: 12px;
+  font-size: 9px;
+  letter-spacing: 0.3px;
+  text-transform: none;
+  color: #d3d1c9;
+}
+.gc-landing .public-landing .scroll-cue > span:last-child {
+  border: 0;
+}
+.gc-landing .public-landing .scroll-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 37px;
+  border: 1px solid #ffffff35;
+  border-radius: 20px;
+}
+.gc-landing .public-landing .scroll-arrow svg {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  animation: gc-gentle-arrow 2.4s ease-in-out infinite;
+}
+@keyframes gc-gentle-arrow {
+  0%,
+  100% {
+    transform: translateY(-3px);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(3px);
+    opacity: 1;
+  }
+}
+.gc-landing .public-landing .section {
+  padding-top: 95px;
+  padding-bottom: 95px;
+}
+.gc-landing .public-landing .benefits {
+  padding-top: 63px;
+  padding-bottom: 63px;
+}
+.gc-landing .public-landing .section-head {
+  margin-bottom: 37px;
+}
+.gc-landing .public-landing .section-head h2 {
+  font-size: 36px;
+  line-height: 1.35;
+  letter-spacing: -1.2px;
+}
+.gc-landing .public-landing .section-head .eyebrow {
+  color: #bd957e;
+  letter-spacing: 1.65px;
+  font-size: 9px;
+  margin-bottom: 17px;
+}
+.gc-landing .public-landing .section-head .muted {
+  font-size: 13px;
+  color: #a3a6a3;
+}
+.gc-landing .public-landing .course-grid,
+.gc-landing .public-landing .coach-grid {
+  gap: 27px;
+}
+.gc-landing .public-landing .course-card {
+  border-radius: 11px;
+  height: 440px;
+  border-color: #ffffff15;
+  box-shadow: 0 15px 30px #00000015;
+  transition:
+    box-shadow 0.4s,
+    border-color 0.4s;
+}
+.gc-landing .public-landing .course-top {
+  top: 26px;
+  left: 27px;
+  right: 27px;
+}
+.gc-landing .public-landing .course-bottom {
+  left: 27px;
+  right: 27px;
+  bottom: 26px;
+}
+.gc-landing .public-landing .course-card:hover {
+  border-color: #bd826657;
+  box-shadow: 0 20px 50px #0003;
+}
+.gc-landing .public-landing .course-card:after {
+  background: linear-gradient(
+    180deg,
+    #080a0b08 5%,
+    #080a0b08 30%,
+    #080a0bc4 72%,
+    #080a0bee
+  );
+}
+.gc-landing .public-landing .course-bottom h3 {
+  font-size: 25px;
+  line-height: 1.35;
+  letter-spacing: -0.5px;
+  margin-top: 18px;
+}
+.gc-landing .public-landing .course-bottom p {
+  font-size: 12px;
+  color: #c4c6c0;
+  margin-bottom: 24px;
+}
+.gc-landing .public-landing .course-meta {
+  padding-top: 19px;
+  font-size: 10px;
+}
+.gc-landing .public-landing .course-card > img {
+  filter: brightness(0.84) saturate(0.65);
+}
+.gc-landing .public-landing .round-arrow {
+  width: 37px;
+  height: 37px;
+  border-color: #ffffff40;
+  transition:
+    background 0.3s,
+    transform 0.3s;
+}
+.gc-landing .public-landing .course-card:hover .round-arrow {
+  background: #ed7748;
+  color: #21140c;
+  border-color: #ed7748;
+  transform: rotate(5deg);
+}
+.gc-landing .public-landing .coach-photo {
+  border-radius: 10px;
+  height: 380px;
+}
+.gc-landing .public-landing .coach-go {
+  transition:
+    transform 0.35s,
+    background 0.35s;
+}
+.gc-landing .public-landing .coach-card:hover .coach-go {
+  transform: rotate(9deg);
+  background: #ffa16e;
+}
+.gc-landing .public-landing .price-card,
+.gc-landing .public-landing .review-card {
+  border-radius: 10px;
+  padding: 32px;
+}
+.gc-landing .public-landing .lead-form {
+  border-radius: 11px;
+  padding: 35px;
+}
+.gc-landing .public-landing .faq-item button {
+  padding-block: 26px;
+}
+.gc-landing .public-landing .faq-item button svg {
+  transition: transform 0.35s ease;
+}
+.gc-landing .public-landing .faq-item.expanded button svg {
+  transform: rotate(180deg);
+}
+.gc-landing .public-landing .landing-progress {
+  display: none;
+}
+.gc-landing .public-landing.landing-motion .landing-progress {
+  display: block;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #ed7748;
+  transform: scaleX(var(--page-progress, 0));
+  transform-origin: left center;
+  z-index: 50;
+  pointer-events: none;
+}
+.gc-landing .landing-motion .reveal-item {
+  opacity: 0;
+  transform: translate3d(0, 35px, 0) scale(0.985);
+  transition:
+    opacity 0.85s cubic-bezier(0.2, 0.65, 0.25, 1),
+    transform 1s cubic-bezier(0.2, 0.65, 0.25, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: transform, opacity;
+}
+.gc-landing .landing-motion .reveal-item.is-revealed {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+.gc-landing .landing-motion .section-head.reveal-item {
+  transform: translate3d(0, 25px, 0);
+  transition-duration: 0.85s, 0.95s;
+}
+.gc-landing .landing-motion .section-head.reveal-item.is-revealed {
+  transform: translate3d(0, 0, 0);
+}
+.gc-landing .landing-motion .course-card.reveal-item {
+  transform: translate3d(0, 52px, 0) scale(0.96);
+  transition-duration: 0.9s, 1.15s;
+}
+.gc-landing .landing-motion .course-card.reveal-item.is-revealed {
+  transform: translate3d(0, 0, 0) scale(1);
+}
+.gc-landing .landing-motion .course-card > img,
+.gc-landing .landing-motion .coach-photo > img {
+  transform: scale(var(--scroll-image-scale, 1.12));
+  transition:
+    transform 0.5s cubic-bezier(0.2, 0.65, 0.25, 1),
+    filter 0.6s;
+  will-change: transform;
+}
+.gc-landing .landing-motion .course-card:hover > img,
+.gc-landing .landing-motion .coach-card:hover .coach-photo > img {
+  transform: scale(calc(var(--scroll-image-scale, 1.02) + 0.025));
+}
+.gc-landing .public-landing .hero-copy {
+  animation: gc-hero-arrive 1.15s cubic-bezier(0.2, 0.65, 0.25, 1) both;
+}
+@keyframes gc-hero-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (min-width: 1700px) {
+  .gc-landing .public-landing .hero {
+    height: 820px;
+    max-height: none;
+    padding-left: 9%;
+    padding-right: 9%;
+  }
+  .gc-landing .public-landing .hero h1 {
+    font-size: 83px;
+  }
+  .gc-landing .public-landing .hero-desc {
+    font-size: 16px;
+  }
+}
+@media (max-width: 1000px) {
+  .gc-landing .public-landing .hero {
+    min-height: 660px;
+    height: calc(100svh - 110px);
+    max-height: 800px;
+    padding-left: 6%;
+    padding-right: 6%;
+  }
+  .gc-landing .public-landing .hero h1 {
+    font-size: 59px;
+  }
+  .gc-landing .public-landing .hero-copy {
+    max-width: 620px;
+  }
+  .gc-landing .public-landing .hero-desc {
+    font-size: 13px;
+  }
+  .gc-landing .public-landing .film-shade {
+    background:
+      linear-gradient(90deg, #090c0dea, #090c0d88 65%, #090c0d22),
+      linear-gradient(0deg, #090c0dbb, transparent 45%);
+  }
+  .gc-landing .public-landing .course-card {
+    height: 400px;
+  }
+  .gc-landing .public-landing .course-grid,
+  .gc-landing .public-landing .coach-grid {
+    gap: 18px;
+  }
+  .gc-landing .public-landing .course-bottom {
+    left: 21px;
+    right: 21px;
+  }
+  .gc-landing .public-landing .course-bottom h3 {
+    font-size: 21px;
+  }
+  .gc-landing .public-landing .coach-photo {
+    height: 310px;
+  }
+  .gc-landing .public-landing .scroll-cue {
+    left: 6%;
+  }
+  
+}
+@media (max-width: 600px) {
+  .gc-landing .public-landing .hero {
+    display: flex;
+    height: 760px;
+    min-height: 690px;
+    max-height: 950px;
+    padding: 85px 6% 135px;
+    align-items: center;
+  }
+  .gc-landing .public-landing .hero-art {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    height: 100%;
+    min-height: 0;
+  }
+  .gc-landing .public-landing .hero h1 {
+    font-size: 46px;
+    letter-spacing: -2.1px;
+    line-height: 1.2;
+  }
+  .gc-landing .public-landing .hero .eyebrow {
+    font-size: 8px;
+    letter-spacing: 1.5px;
+  }
+  .gc-landing .public-landing .hero-desc {
+    font-size: 12px;
+    line-height: 1.95;
+  }
+  .gc-landing .public-landing .hero-copy {
+    padding: 0;
+  }
+  .gc-landing .public-landing .hero-actions {
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .gc-landing .public-landing .hero-actions .btn {
+    font-size: 10px;
+    padding: 14px 17px;
+  }
+  .gc-landing .public-landing .hero-secondary {
+    font-size: 10px;
+  }
+  .gc-landing .public-landing .hero-note {
+    font-size: 8px;
+    line-height: 1.9;
+    max-width: 270px;
+  }
+  .gc-landing .public-landing .hero-film video {
+    object-position: 61% center;
+  }
+  .gc-landing .public-landing .film-shade {
+    background:
+      linear-gradient(90deg, #090c0dd9, #090c0d88),
+      linear-gradient(0deg, #090c0ddd, transparent 40%, #090c0d18);
+  }
+  .gc-landing .public-landing .film-top {
+    right: 6%;
+    top: 23px;
+    font-size: 7px;
+  }
+  .gc-landing .public-landing .scroll-cue {
+    bottom: 84px;
+    font-size: 8px;
+    gap: 8px;
+  }
+  .gc-landing .public-landing .scroll-arrow {
+    height: 28px;
+    width: 24px;
+  }
+  
+  
+  
+  .gc-landing .public-landing .section {
+    padding-top: 62px;
+    padding-bottom: 62px;
+  }
+  .gc-landing .public-landing .benefits {
+    padding-top: 48px;
+    padding-bottom: 48px;
+  }
+  .gc-landing .public-landing .section-head h2 {
+    font-size: 28px;
+    letter-spacing: -1px;
+  }
+  .gc-landing .public-landing .section-head .muted {
+    font-size: 11px;
+  }
+  .gc-landing .public-landing .section-head .eyebrow {
+    font-size: 7px;
+  }
+  .gc-landing .public-landing .course-grid,
+  .gc-landing .public-landing .coach-grid {
+    gap: 24px;
+  }
+  .gc-landing .public-landing .course-card {
+    height: 410px;
+  }
+  .gc-landing .public-landing .course-bottom h3 {
+    font-size: 25px;
+  }
+  .gc-landing .public-landing .coach-photo {
+    height: 360px;
+  }
+  .gc-landing .public-landing .lead-form {
+    padding: 26px;
+  }
+  .gc-landing .public-landing .price-card,
+  .gc-landing .public-landing .review-card {
+    padding: 27px;
+  }
+  .gc-landing .landing-motion .reveal-item {
+    transform: translate3d(0, 24px, 0) scale(0.99);
+    transition-delay: 0ms !important;
+  }
+  .gc-landing .landing-motion .course-card.reveal-item {
+    transform: translate3d(0, 35px, 0) scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gc-landing .public-landing .hero-copy,
+  .gc-landing .public-landing .scroll-arrow svg {
+    animation: none !important;
+  }
+  .gc-landing .public-landing .hero-film video {
+    transform: none !important;
+    will-change: auto;
+  }
+  .gc-landing .public-landing .reveal-item {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    will-change: auto;
+  }
+  .gc-landing .public-landing .course-card > img,
+  .gc-landing .public-landing .coach-photo > img {
+    transform: none !important;
+    transition: none !important;
+    will-change: auto;
+  }
+  .gc-landing .public-landing .landing-progress {
+    display: none !important;
+  }
+}

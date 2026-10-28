@@ -18,6 +18,7 @@ export interface PtPackageOptionQueryParams {
 }
 
 export interface CreatePtPackageOptionPayload {
+  durationMinutes?: number
   courseId: string
   coachId?: string | null
   name: string
@@ -188,6 +189,7 @@ export const coachApprovalService = {
     id: string,
     payload: {
       name?: string
+      durationMinutes?: number
       sessionCount?: number
       validityDays?: number
       price?: number

@@ -70,7 +70,7 @@ describe('GymCategoriesPage', () => {
     render(<GymCategoriesPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Danh Mục & Thư Viện Bài Tập (WEB-MAN-05)')).toBeInTheDocument()
+      expect(screen.getByText('Danh Mục & Thư Viện Bài Tập')).toBeInTheDocument()
       expect(screen.getByText('Boxing Chuyên Nghiệp')).toBeInTheDocument()
     })
   })

@@ -2,20 +2,17 @@ import { apiClient } from '@/shared/api/client'
 import type { ApiSuccess, Booking } from '@/shared/types/api'
 import type {
   PtBookingQueryParams,
-  CreateBookingPayload,
   CancelBookingPayload,
   CoachCancelBookingPayload,
   CompleteBookingPayload,
   NoShowBookingPayload,
   CreateTrainingResultPayload,
   BookingDetail,
-  CoachRecurringMatrixResponse,
-  FixedSchedulePayload,
-  FixedSchedulePreviewResponse,
-  FixedScheduleBookResponse,
 } from '../types/pt-bookings.types'
 
 export const ptBookingsService = {
+  // Sessions are created only from accepted fixed schedules (see features/fixed-pt); there is no
+  // single-slot booking and no client 'force' flag.
   /**
    * [1] GET /pt-bookings - List PT bookings with filters (Staff / Manager)
    */
@@ -24,14 +21,6 @@ export const ptBookingsService = {
     return res as unknown as ApiSuccess<Booking[]>
   },
 
-  /**
-   * [2] POST /pt-bookings - Receptionist books slot on behalf of member
-   */
-  async createBooking(payload: CreateBookingPayload): Promise<Booking> {
-    const res = await apiClient.post<ApiSuccess<Booking>>('/pt-bookings', payload)
-    const data = res as unknown as ApiSuccess<Booking>
-    return data.data ?? (data as unknown as Booking)
-  },
 
   /**
    * [3] GET /pt-bookings/{id} - Get booking detail & cancellation policy
@@ -62,7 +51,7 @@ export const ptBookingsService = {
    * [6] POST /pt-bookings/{id}/complete - Coach marks session completed
    */
   async completeBooking(id: string, payload?: CompleteBookingPayload): Promise<any> {
-    const res = await apiClient.post(`/pt-bookings/${id}/complete`, { ...payload, force: true })
+    const res = await apiClient.post(`/pt-bookings/${id}/complete`, payload ?? {})
     return res?.data ?? res
   },
 
@@ -70,7 +59,7 @@ export const ptBookingsService = {
    * [7] POST /pt-bookings/{id}/no-show - Coach marks member no-show (consumes credit)
    */
   async noShowBooking(id: string, payload?: NoShowBookingPayload): Promise<any> {
-    const res = await apiClient.post(`/pt-bookings/${id}/no-show`, { ...payload, force: true })
+    const res = await apiClient.post(`/pt-bookings/${id}/no-show`, payload ?? {})
     return res?.data ?? res
   },
 
@@ -106,27 +95,6 @@ export const ptBookingsService = {
     return res as unknown as ApiSuccess<Booking[]>
   },
 
-  /**
-   * [10] GET /coaches/{coachId}/recurring-matrix - Get recurring availability matrix for coach
-   */
-  async getCoachRecurringMatrix(coachId: string, params?: { startDate?: string; totalWeeks?: number }): Promise<CoachRecurringMatrixResponse> {
-    const res = await apiClient.get<ApiSuccess<CoachRecurringMatrixResponse>>(`/coaches/${coachId}/recurring-matrix`, { params })
-    return (res as any)?.data ?? res
-  },
 
-  /**
-   * [11] POST /pt-package-purchases/{id}/fixed-schedule/preview - Preview fixed recurring schedule
-   */
-  async previewFixedSchedule(purchaseId: string, payload: FixedSchedulePayload): Promise<FixedSchedulePreviewResponse> {
-    const res = await apiClient.post<ApiSuccess<FixedSchedulePreviewResponse>>(`/pt-package-purchases/${purchaseId}/fixed-schedule/preview`, payload)
-    return (res as any)?.data ?? res
-  },
 
-  /**
-   * [12] POST /pt-package-purchases/{id}/fixed-schedule/book - Book full fixed recurring schedule
-   */
-  async bookFixedSchedule(purchaseId: string, payload: FixedSchedulePayload): Promise<FixedScheduleBookResponse> {
-    const res = await apiClient.post<ApiSuccess<FixedScheduleBookResponse>>(`/pt-package-purchases/${purchaseId}/fixed-schedule/book`, payload)
-    return (res as any)?.data ?? res
-  },
 }

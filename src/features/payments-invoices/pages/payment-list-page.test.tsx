@@ -4,6 +4,9 @@ import { BrowserRouter } from 'react-router-dom'
 import { PaymentListPage } from './payment-list-page'
 import { paymentsService } from '../services/payments.service'
 import type { Payment, Invoice } from '@/shared/types/api'
+import { openReceipt } from '@/features/workspace/receipt-events'
+
+vi.mock('@/features/workspace/receipt-events', () => ({ openReceipt: vi.fn() }))
 
 vi.mock('../services/payments.service', () => ({
   paymentsService: {
@@ -59,7 +62,7 @@ describe('PaymentListPage', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Sổ Thu Ngân & Hóa Đơn (WEB-REC-08, 09)')).toBeInTheDocument()
+      expect(screen.getByText('Sổ Thu Ngân & Hóa Đơn')).toBeInTheDocument()
       expect(screen.getByText('PAY-20261010-001')).toBeInTheDocument()
       expect(screen.getByText('Nguyen Van A')).toBeInTheDocument()
       expect(screen.getByText('Vé Tập Gym 1 Tháng')).toBeInTheDocument()
@@ -80,9 +83,7 @@ describe('PaymentListPage', () => {
     fireEvent.click(screen.getByText('In Hóa đơn'))
 
     await waitFor(() => {
-      expect(screen.getByText('Hóa Đơn Thu Phí Dịch Vụ')).toBeInTheDocument()
-      expect(screen.getByText('INV-20261010-001')).toBeInTheDocument()
-      expect(screen.getByText('SPORTS CENTER MANAGEMENT')).toBeInTheDocument()
+      expect(openReceipt).toHaveBeenCalledWith({ invoiceId: 'inv-001' })
     })
   })
 

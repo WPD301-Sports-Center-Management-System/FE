@@ -1,3 +1,4 @@
+import { counterPayment } from '@/features/workspace/counter-payment'
 import { apiClient } from '@/shared/api/client'
 import type { ApiSuccess, Payment, Invoice } from '@/shared/types/api'
 import type {
@@ -22,9 +23,7 @@ export const paymentsService = {
    * [2] POST /payments/counter - Receptionist settles cash or bank transfer payment at counter
    */
   async payCounter(payload: CounterPaymentPayload): Promise<CounterPaymentResult> {
-    const res = await apiClient.post<ApiSuccess<CounterPaymentResult>>('/payments/counter', payload)
-    const data = res as unknown as ApiSuccess<CounterPaymentResult>
-    return data.data ?? (data as unknown as CounterPaymentResult)
+    return counterPayment<CounterPaymentResult>(payload)
   },
 
   /**

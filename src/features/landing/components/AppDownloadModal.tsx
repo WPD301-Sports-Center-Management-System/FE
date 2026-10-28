@@ -38,32 +38,23 @@ export const AppDownloadModal = ({ isOpen, onClose }: AppDownloadModalProps) => 
 
         {/* QR Code Big Frame */}
         <div className="p-5 rounded-2xl bg-white w-48 h-48 mx-auto flex flex-col items-center justify-center shadow-lg border-2 border-slate-700">
-          <QrCode className="w-36 h-36 text-slate-900" />
-          <span className="text-[10px] text-slate-600 font-bold mt-1 uppercase tracking-wider">
-            Quét mã để cài đặt
+          <QrCode className="w-36 h-36 text-slate-300" aria-hidden="true" />
+          <span className="text-xs text-slate-600 font-bold mt-1 uppercase tracking-wider">
+            Mã cài đặt sẽ có khi phát hành
           </span>
         </div>
 
         {/* App Store & Google Play Links */}
         <div className="grid grid-cols-2 gap-3">
-          <a
-            href="#"
-            onClick={(e) => { e.preventDefault(); alert('Ứng dụng iOS sắp có mặt trên App Store!'); }}
-            className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 flex items-center justify-center gap-2 transition-colors cursor-pointer"
-          >
-            <span>Apple App Store</span>
-          </a>
-
-          <a
-            href="#"
-            onClick={(e) => { e.preventDefault(); alert('Ứng dụng Android sắp có mặt trên Google Play!'); }}
-            className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 flex items-center justify-center gap-2 transition-colors cursor-pointer"
-          >
-            <span>Google Play Store</span>
-          </a>
+          {['App Store', 'Google Play'].map((store) => (
+            <div key={store} aria-disabled="true" className="p-3 rounded-xl bg-slate-800/60 text-slate-300 text-sm font-bold border border-slate-700 flex flex-col items-center justify-center">
+              <span>{store}</span>
+              <span className="text-xs font-medium text-slate-400">Sắp ra mắt</span>
+            </div>
+          ))}
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400 text-left space-y-1">
+        <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-400 text-left space-y-1">
           <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Dành cho Hội Viên Member & Huấn Luyện Viên</span>

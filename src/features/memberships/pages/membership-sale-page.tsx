@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Check, AlertCircle, RefreshCw, CreditCard, User, DollarSign, ShieldCheck } from 'lucide-react'
 import { formatVND } from '@/shared/utils/currency'
-import { formatDate } from '@/shared/utils/date'
+import { centerDate, formatDate } from '@/shared/utils/date'
+import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { Button } from '@/shared/components/ui/button'
 import { Select, Input } from '@/shared/components/ui/input'
 import { membersService } from '@/features/memberships/services/members.service'
@@ -25,13 +26,14 @@ export function MembershipSalePage() {
   // Form states
   const [selectedMemberId, setSelectedMemberId] = useState(initialMemberId)
   const [selectedPlanId, setSelectedPlanId] = useState('')
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
+  const [startDate, setStartDate] = useState(centerDate())
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH')
 
   // Submission & Response states
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [createdSubscription, setCreatedSubscription] = useState<Subscription | null>(null)
+  const [paymentIssue, setPaymentIssue] = useState<string | null>(null)
 
   // Load members and plans on mount
   const loadInitialData = useCallback(async () => {
@@ -94,35 +96,24 @@ export function MembershipSalePage() {
         startDate: startDate || undefined,
       })
 
-      const amount = selectedPlan ? parseFloat(selectedPlan.price) : 0
-
+      // The ticket is created first; a payment failure must never be shown as a completed sale.
+      let issue: string | null = null
       if (paymentMethod === 'CASH' || paymentMethod === 'BANK_TRANSFER') {
-        try {
-          await paymentsService.payCounter({
-            subscriptionId: newSub.id,
-            method: paymentMethod,
-            receivedAmount: amount,
-          })
-          newSub.status = 'ACTIVE'
-        } catch (payErr) {
-          console.warn('Counter payment settlement notice:', payErr)
-        }
+        issue = await collectAtCounter(newSub.id, newSub.priceSnapshot)
       } else if (paymentMethod === 'VNPAY') {
         try {
-          const vnpayRes = await paymentsService.createVNPay({
-            subscriptionId: newSub.id,
-            returnTarget: 'web',
-          })
+          const vnpayRes = await paymentsService.createVNPay({ subscriptionId: newSub.id, returnTarget: 'web' })
           if (vnpayRes.paymentUrl) {
             window.location.href = vnpayRes.paymentUrl
             return
           }
+          issue = 'Đã tạo vé nhưng VNPay chưa trả về đường dẫn thanh toán.'
         } catch (vnpayErr) {
-          console.warn('VNPay initiation failed:', vnpayErr)
+          issue = `Đã tạo vé nhưng chưa mở được VNPay: ${isAppApiError(vnpayErr) ? vnpayErr.message : 'lỗi kết nối'}.`
         }
       }
-
-      setCreatedSubscription(newSub)
+      setPaymentIssue(issue)
+      setCreatedSubscription(await refreshSubscription(newSub))
     } catch (err) {
       if (isAppApiError(err)) {
         setErrorMessage(err.message || 'Không thể đăng ký gói thẻ tập. Vui lòng kiểm tra lại thông tin.')
@@ -134,9 +125,36 @@ export function MembershipSalePage() {
     }
   }
 
+  // Counter payment of the exact ticket price; returns an error message or null when collected.
+  const collectAtCounter = async (subscriptionId: string, price: string | number) => {
+    if (paymentMethod !== 'CASH' && paymentMethod !== 'BANK_TRANSFER') return null
+    try {
+      await paymentsService.payCounter({ subscriptionId, method: paymentMethod, receivedAmount: Number(price) })
+      return null
+    } catch (payErr) {
+      return `Đã tạo vé nhưng CHƯA thu tiền: ${isAppApiError(payErr) ? payErr.message : 'lỗi kết nối'}. Bấm "Thu tiền lại" khi đã nhận tiền của khách.`
+    }
+  }
+  const refreshSubscription = async (sub: Subscription) => {
+    try {
+      return await subscriptionsService.getSubscriptionById(sub.id)
+    } catch {
+      return sub
+    }
+  }
+  const handleRetryPayment = async () => {
+    if (!createdSubscription) return
+    setIsSubmitting(true)
+    const issue = await collectAtCounter(createdSubscription.id, createdSubscription.priceSnapshot)
+    setPaymentIssue(issue)
+    setCreatedSubscription(await refreshSubscription(createdSubscription))
+    setIsSubmitting(false)
+  }
+
   const handleResetForNextSale = () => {
+    setPaymentIssue(null)
     setCreatedSubscription(null)
-    setStartDate(new Date().toISOString().split('T')[0])
+    setStartDate(centerDate())
     setErrorMessage(null)
   }
 
@@ -155,10 +173,10 @@ export function MembershipSalePage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2.5">
             <CreditCard className="h-6 w-6 text-primary" />
-            <span>Đăng Ký & Bán Vé Gym (WEB-REC-05)</span>
+            <span>Bán vé gym</span>
           </h1>
           <p className="text-xs text-text-muted mt-1">
-            Kích hoạt thẻ tập Gym không giới hạn khung giờ, kết nối API hệ thống và ghi nhận doanh thu
+            Bán vé tập Gym và ghi nhận thanh toán cho hội viên.
           </p>
         </div>
       </div>
@@ -175,7 +193,15 @@ export function MembershipSalePage() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
             <Check className="h-8 w-8" />
           </div>
-          <h2 className="text-xl font-bold text-text-primary">Giao Dịch Đăng Ký Gói Tập Đã Tạo Thành Công!</h2>
+          <h2 className="text-xl font-bold text-text-primary">
+            {createdSubscription.status === 'ACTIVE' ? 'Đã bán vé và kích hoạt' : paymentIssue ? 'Đã tạo vé – chưa thu tiền' : 'Đã tạo vé – đang chờ thanh toán'}
+          </h2>
+          {paymentIssue && (
+            <div className="max-w-md mx-auto flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-left text-sm text-amber-800 dark:text-amber-200">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{paymentIssue}</span>
+            </div>
+          )}
           <div className="max-w-md mx-auto rounded-2xl bg-bg-surface border border-border-subtle p-4 text-left text-xs space-y-2 text-text-muted shadow-sm">
             <div className="flex justify-between border-b border-border-subtle pb-2">
               <span className="text-text-muted">Hội viên:</span>
@@ -197,13 +223,16 @@ export function MembershipSalePage() {
             </div>
             <div className="flex justify-between items-center pt-1">
               <span className="text-text-muted">Trạng thái gói:</span>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                {createdSubscription.status}
-              </span>
+              <StatusBadge status={createdSubscription.status} />
             </div>
           </div>
 
           <div className="pt-3 flex flex-wrap justify-center gap-3">
+            {createdSubscription.status === 'PENDING' && (paymentMethod === 'CASH' || paymentMethod === 'BANK_TRANSFER') && (
+              <Button variant="primary" isLoading={isSubmitting} onClick={() => void handleRetryPayment()}>
+                Thu tiền lại
+              </Button>
+            )}
             <Button variant="outline" onClick={handleResetForNextSale}>
               Bán thêm vé mới
             </Button>
@@ -293,7 +322,7 @@ export function MembershipSalePage() {
                           </p>
                         </div>
                         {p.bonusMonths > 0 && (
-                          <span className="rounded-full bg-primary/15 border border-primary/30 px-2 py-0.5 text-[10px] font-bold text-primary">
+                          <span className="rounded-full bg-primary/15 border border-primary/30 px-2 py-0.5 text-xs font-bold text-primary">
                             Tặng +{p.bonusMonths}T
                           </span>
                         )}
@@ -349,7 +378,7 @@ export function MembershipSalePage() {
                   {selectedPlan ? formatVND(selectedPlan.price) : '0 ₫'}
                 </span>
               </div>
-              <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 pt-1">
+              <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5 pt-1">
                 <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
                 <span>Thẻ tập gym áp dụng chính sách tập luyện không giới hạn, kích hoạt tức thì sau khi xác nhận.</span>
               </p>

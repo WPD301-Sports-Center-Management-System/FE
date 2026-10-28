@@ -1,5 +1,6 @@
 import { apiClient } from '@/shared/api/client'
-import type { ApiSuccess, CoachPayout } from '@/shared/types/api'
+import type { ApiSuccess } from '@/shared/types/api'
+import type { PayoutPeriod } from '@/features/fixed-pt/types'
 import type {
   RevenueReportData,
   PtPackagesReportData,
@@ -84,19 +85,20 @@ export const reportsService = {
   },
 
   /**
-   * [8] GET /coach-payouts - List of coach payouts with settlement status
+   * [8] GET /coach-payout-periods - Coach payout periods of the per-session ledger.
+   * The legacy per-order /coach-payouts table is no longer written by the backend.
    */
-  async getCoachPayouts(params?: { status?: string; page?: number; limit?: number }): Promise<ApiSuccess<CoachPayout[]>> {
-    const res = await apiClient.get<ApiSuccess<CoachPayout[]>>('/coach-payouts', { params })
-    return res as unknown as ApiSuccess<CoachPayout[]>
+  async getCoachPayouts(params?: { status?: string; page?: number; limit?: number }): Promise<ApiSuccess<PayoutPeriod[]>> {
+    const res = await apiClient.get<ApiSuccess<PayoutPeriod[]>>('/coach-payout-periods', { params })
+    return res as unknown as ApiSuccess<PayoutPeriod[]>
   },
 
   /**
-   * [9] PATCH /coach-payouts/{id}/mark-paid - Manager marks coach payout as paid with transfer reference
+   * [9] POST /coach-payout-periods/{id}/mark-paid - Manager records the transfer of a LOCKED period
    */
-  async markPaid(id: string, payload: { transferRef: string }): Promise<CoachPayout> {
-    const res = await apiClient.patch<ApiSuccess<CoachPayout>>(`/coach-payouts/${id}/mark-paid`, payload)
-    const data = res as unknown as ApiSuccess<CoachPayout>
-    return data.data ?? (data as unknown as CoachPayout)
+  async markPaid(id: string, payload: { transferRef: string }): Promise<PayoutPeriod> {
+    const res = await apiClient.post<ApiSuccess<PayoutPeriod>>(`/coach-payout-periods/${id}/mark-paid`, payload)
+    const data = res as unknown as ApiSuccess<PayoutPeriod>
+    return data.data ?? (data as unknown as PayoutPeriod)
   },
 }

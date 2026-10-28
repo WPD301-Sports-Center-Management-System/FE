@@ -1,3 +1,4 @@
+import { centerDate } from '@/shared/utils/date'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Utensils,
@@ -23,6 +24,7 @@ import { mealPlansService } from '../services/meal-plans.service'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Select } from '@/shared/components/ui/input'
 import { Modal } from '@/shared/components/ui/modal'
+import { ConfirmDialog } from '@/shared/components/ui/confirm-dialog'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { isAppApiError } from '@/shared/api/api-error'
 import { formatDate } from '@/shared/utils/date'
@@ -40,54 +42,9 @@ interface MealFormItem {
   fatGrams: number
   note?: string
   sortOrder: number
+  /** Saved item edited locally since the last sync. */
+  dirty?: boolean
 }
-
-const DEFAULT_INITIAL_MEALS: MealFormItem[] = [
-  {
-    dayNumber: 1,
-    mealType: 'Bữa sáng (07:30)',
-    foodName: 'Yến mạch nấu sữa hạt + 3 lòng trắng trứng + 1 quả chuối',
-    quantity: '1 khẩu phần (350g)',
-    estimatedCalories: 480,
-    proteinGrams: 32,
-    carbsGrams: 65,
-    fatGrams: 10,
-    sortOrder: 1,
-  },
-  {
-    dayNumber: 1,
-    mealType: 'Bữa trưa (12:00)',
-    foodName: '200g Ức gà áp chảo + 1 chén cơm gạo lứt + 150g Bông cải xanh luộc',
-    quantity: '1 khẩu phần (450g)',
-    estimatedCalories: 620,
-    proteinGrams: 52,
-    carbsGrams: 60,
-    fatGrams: 12,
-    sortOrder: 2,
-  },
-  {
-    dayNumber: 1,
-    mealType: 'Bữa phụ trước tập (16:30)',
-    foodName: '1 Muỗng Whey Protein Isolate + 1 lát Bánh mì nguyên cám',
-    quantity: '1 phần',
-    estimatedCalories: 250,
-    proteinGrams: 28,
-    carbsGrams: 22,
-    fatGrams: 3,
-    sortOrder: 3,
-  },
-  {
-    dayNumber: 1,
-    mealType: 'Bữa tối (19:30)',
-    foodName: '200g Cá hồi áp chảo + 1 củ khoai lang nướng + Xà lách sốt giấm',
-    quantity: '1 khẩu phần (400g)',
-    estimatedCalories: 580,
-    proteinGrams: 42,
-    carbsGrams: 45,
-    fatGrams: 18,
-    sortOrder: 4,
-  },
-]
 
 const MEAL_TYPE_OPTIONS = [
   { value: 'Bữa sáng (07:00 - 08:30)', label: 'Bữa sáng (07:00 - 08:30)' },
@@ -119,10 +76,16 @@ export function CoachMealPlanPage() {
   const [memberId, setMemberId] = useState('')
   const [title, setTitle] = useState('')
   const [targetCalories, setTargetCalories] = useState('2000')
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
+  const [startDate, setStartDate] = useState(centerDate())
   const [endDate, setEndDate] = useState('')
   const [notes, setNotes] = useState('')
-  const [meals, setMeals] = useState<MealFormItem[]>(DEFAULT_INITIAL_MEALS)
+  const [meals, setMeals] = useState<MealFormItem[]>([])
+  // The server-side draft this builder writes to. Set as soon as the plan exists, so a failed save
+  // can be retried without creating a second plan, and so existing drafts can be reopened.
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null)
+  const [removedItemIds, setRemovedItemIds] = useState<string[]>([])
+  const [pendingDelete, setPendingDelete] = useState<number | null>(null)
+  const [pendingArchive, setPendingArchive] = useState<MealPlan | null>(null)
   const [selectedDay, setSelectedDay] = useState<number>(1)
 
   // Modal states: Add/Edit Meal Item
@@ -257,7 +220,8 @@ export function CoachMealPlanPage() {
     if (editingMealIndex !== null) {
       setMeals((prev) => {
         const next = [...prev]
-        next[editingMealIndex] = { ...newItem, dayNumber: prev[editingMealIndex].dayNumber }
+        const old = prev[editingMealIndex]
+        next[editingMealIndex] = { ...newItem, id: old.id, dayNumber: old.dayNumber, sortOrder: old.sortOrder, dirty: !!old.id }
         return next
       })
     } else {
@@ -269,7 +233,98 @@ export function CoachMealPlanPage() {
 
   // Remove meal
   const handleDeleteMeal = (indexInAllMeals: number) => {
+    const removed = meals[indexInAllMeals]
+    if (removed?.id) setRemovedItemIds((prev) => [...prev, removed.id!])
     setMeals((prev) => prev.filter((_, idx) => idx !== indexInAllMeals))
+    setPendingDelete(null)
+  }
+
+  const resetBuilder = () => {
+    setEditingPlanId(null)
+    setRemovedItemIds([])
+    setTitle('')
+    setMemberId('')
+    setTargetCalories('2000')
+    setStartDate(centerDate())
+    setEndDate('')
+    setNotes('')
+    setMeals([])
+    setSelectedDay(1)
+  }
+
+  const startNewPlan = () => {
+    resetBuilder()
+    setErrorMessage(null)
+    setActiveTab('builder')
+  }
+
+  // Reopen a saved DRAFT in the builder; every change is written back to the same plan.
+  const openDraftForEdit = async (plan: MealPlan) => {
+    setIsSubmitting(true)
+    setErrorMessage(null)
+    try {
+      const full = await mealPlansService.getMealPlanById(plan.id)
+      const items = (full.mealPlanItemsMealPlanId || full.items || []) as MealPlanItem[]
+      setEditingPlanId(full.id)
+      setRemovedItemIds([])
+      setMemberId(full.memberId)
+      setTitle(full.title)
+      setTargetCalories(String(full.dailyCalorieTarget ?? 2000))
+      setStartDate(String(full.startDate ?? centerDate()).slice(0, 10))
+      setEndDate(full.endDate ? String(full.endDate).slice(0, 10) : '')
+      setNotes(full.description ?? '')
+      setMeals(items.map((i) => ({
+        id: i.id,
+        dayNumber: i.dayNumber,
+        mealType: i.mealType,
+        foodName: i.foodName,
+        quantity: i.quantity ?? '',
+        estimatedCalories: Number(i.estimatedCalories ?? 0),
+        proteinGrams: Number(i.proteinGrams ?? 0),
+        carbsGrams: Number(i.carbsGrams ?? 0),
+        fatGrams: Number(i.fatGrams ?? 0),
+        note: i.note ?? '',
+        sortOrder: i.sortOrder ?? 0,
+      })))
+      setSelectedDay(items.length ? Math.min(...items.map((i) => i.dayNumber)) : 1)
+      setViewingPlan(null)
+      setActiveTab('builder')
+    } catch (err) {
+      setErrorMessage(isAppApiError(err) ? err.message : 'Không tải được bản nháp để sửa.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDuplicatePlan = async (plan: MealPlan) => {
+    setIsSubmitting(true)
+    setErrorMessage(null)
+    try {
+      const copy = await mealPlansService.duplicateMealPlan(plan.id)
+      setSuccessMessage(`Đã nhân bản "${plan.title}" thành bản nháp mới.`)
+      await loadData()
+      await openDraftForEdit(copy)
+    } catch (err) {
+      setErrorMessage(isAppApiError(err) ? err.message : 'Không nhân bản được thực đơn.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleArchivePlan = async (plan: MealPlan) => {
+    setIsSubmitting(true)
+    setErrorMessage(null)
+    try {
+      await mealPlansService.archiveMealPlan(plan.id)
+      setPendingArchive(null)
+      setViewingPlan(null)
+      setSuccessMessage(`Đã lưu trữ "${plan.title}".`)
+      await loadData()
+    } catch (err) {
+      setErrorMessage(isAppApiError(err) ? err.message : 'Không lưu trữ được thực đơn.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   // Add a new empty day
@@ -289,8 +344,12 @@ export function CoachMealPlanPage() {
 
     const clonedItems = sourceItems.map((item) => ({
       ...item,
+      id: undefined,
+      dirty: false,
       dayNumber: targetDuplicateDay,
     }))
+    const replacedIds = meals.filter((m) => m.dayNumber === targetDuplicateDay && m.id).map((m) => m.id!)
+    if (replacedIds.length) setRemovedItemIds((prev) => [...prev, ...replacedIds])
 
     setMeals((prev) => {
       // Remove any existing meals on target day, then append cloned
@@ -326,20 +385,30 @@ export function CoachMealPlanPage() {
       const disclaimer =
         'Thực đơn và chỉ số dinh dưỡng do Huấn luyện viên thể hình gợi ý nhằm mục tiêu tập luyện, không thay thế cho chỉ định của bác sĩ chuyên khoa hoặc chế độ điều trị y tế.'
 
-      // Step 1: Create real draft meal plan via POST /meal-plans
-      const plan = await mealPlansService.createMealPlan({
-        memberId,
+      const header = {
         title: title.trim(),
         dailyCalorieTarget: Number(targetCalories) || 2000,
-        startDate: startDate || new Date().toISOString().split('T')[0],
+        startDate: startDate || centerDate(),
         endDate: endDate || undefined,
         description: notes.trim() || undefined,
-        medicalDisclaimer: disclaimer,
-      })
+      }
+      // Step 1: the draft itself. Remembered right away so a retry continues on the same plan.
+      let planId = editingPlanId
+      if (planId) {
+        await mealPlansService.updateMealPlan(planId, header)
+      } else {
+        planId = (await mealPlansService.createMealPlan({ memberId, ...header, medicalDisclaimer: disclaimer })).id
+        setEditingPlanId(planId)
+      }
 
-      // Step 2: Add all meal items to the plan via POST /meal-plans/:id/items
-      for (const m of meals) {
-        await mealPlansService.addMealItem(plan.id, {
+      // Step 2: items, one request each. Every success is recorded in state immediately, so if the
+      // connection drops halfway, saving again only sends what is still missing.
+      for (const removedId of removedItemIds) {
+        await mealPlansService.deleteMealItem(planId, removedId)
+        setRemovedItemIds((prev) => prev.filter((x) => x !== removedId))
+      }
+      for (const [index, m] of meals.entries()) {
+        const body = {
           dayNumber: m.dayNumber,
           mealType: m.mealType,
           foodName: m.foodName,
@@ -349,34 +418,35 @@ export function CoachMealPlanPage() {
           carbsGrams: m.carbsGrams,
           fatGrams: m.fatGrams,
           note: m.note,
-          sortOrder: m.sortOrder,
-        })
+          sortOrder: m.sortOrder || index + 1,
+        }
+        if (!m.id) {
+          const created = await mealPlansService.addMealItem(planId, body)
+          setMeals((prev) => prev.map((x) => (x === m ? { ...x, id: created?.id } : x)))
+        } else if (m.dirty) {
+          await mealPlansService.updateMealItem(planId, m.id, body)
+          setMeals((prev) => prev.map((x) => (x === m ? { ...x, dirty: false } : x)))
+        }
       }
 
       // Step 3: If assign immediately, call POST /meal-plans/:id/assign
       if (assignImmediately) {
-        await mealPlansService.assignMealPlan(plan.id)
-        setSuccessMessage('Đã tạo và chính thức giao thực đơn dinh dưỡng cho học viên thành công!')
+        await mealPlansService.assignMealPlan(planId)
+        setSuccessMessage('Đã lưu và giao thực đơn cho học viên.')
       } else {
-        setSuccessMessage('Đã lưu bản nháp thực đơn dinh dưỡng thành công!')
+        setSuccessMessage('Đã lưu bản nháp thực đơn.')
       }
 
       // Reload real plans list
       await loadData()
       setActiveTab('list')
 
-      // Reset builder form
-      setTitle('')
-      setMemberId('')
-      setTargetCalories('2000')
-      setNotes('')
-      setMeals(DEFAULT_INITIAL_MEALS)
-      setSelectedDay(1)
+      resetBuilder()
     } catch (err) {
       if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Lỗi khi lưu thực đơn dinh dưỡng lên máy chủ.')
+        setErrorMessage(`${err.message || 'Lỗi khi lưu thực đơn.'} Các món đã lưu được giữ lại; bấm lưu lần nữa để tiếp tục.`)
       } else {
-        setErrorMessage('Không thể kết nối máy chủ để lưu thực đơn. Vui lòng thử lại.')
+        setErrorMessage('Mất kết nối khi đang lưu. Các món đã lưu được giữ lại; bấm lưu lần nữa để tiếp tục.')
       }
     } finally {
       setIsSubmitting(false)
@@ -479,11 +549,8 @@ export function CoachMealPlanPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-extrabold tracking-tight text-text-primary">
-              Kế Hoạch Dinh Dưỡng Thể Hình (WEB-COA-10)
+              Kế Hoạch Dinh Dưỡng Thể Hình
             </h1>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300">
-              REAL BACKEND API
-            </span>
           </div>
           <p className="text-xs text-text-muted mt-1">
             Soạn thực đơn theo ngày, kiểm soát Calo và cân bằng chỉ số Macro (Đạm, Tinh bột, Chất béo) cho học viên PT.
@@ -506,7 +573,7 @@ export function CoachMealPlanPage() {
             <Button
               size="sm"
               variant="primary"
-              onClick={() => setActiveTab('builder')}
+              onClick={startNewPlan}
               className="gap-1.5"
             >
               <Plus className="h-4 w-4" />
@@ -551,7 +618,7 @@ export function CoachMealPlanPage() {
         <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
         <div>
           <p className="font-bold">Lưu ý Pháp lý / Y tế (Medical Disclaimer):</p>
-          <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5 leading-relaxed">
+          <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5 leading-relaxed">
             Thực đơn và các chỉ số calo/macro do Huấn luyện viên thể hình gợi ý nhằm mục tiêu tập luyện nâng cao thể lực,
             không thay thế cho chỉ định của bác sĩ chuyên khoa hoặc chế độ điều trị y tế đối với bệnh lý đặc thù.
           </p>
@@ -616,7 +683,7 @@ export function CoachMealPlanPage() {
           }`}
         >
           <Plus className="h-4 w-4" />
-          <span>Trình Soạn Thực Đơn Mới</span>
+          <span>{editingPlanId ? 'Đang sửa bản nháp' : 'Soạn thực đơn mới'}</span>
         </button>
       </div>
 
@@ -682,7 +749,7 @@ export function CoachMealPlanPage() {
                   ? 'Không tìm thấy thực đơn phù hợp với điều kiện lọc hiện tại.'
                   : 'Bạn chưa tạo thực đơn dinh dưỡng nào cho học viên. Hãy bắt đầu ngay!'}
               </p>
-              <Button size="sm" variant="primary" onClick={() => setActiveTab('builder')} className="gap-1.5 mt-2">
+              <Button size="sm" variant="primary" onClick={startNewPlan} className="gap-1.5 mt-2">
                 <Plus className="h-4 w-4" />
                 <span>Soạn thực đơn đầu tiên</span>
               </Button>
@@ -707,15 +774,15 @@ export function CoachMealPlanPage() {
                       </strong>
                     </p>
 
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border-subtle text-[11px]">
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border-subtle text-xs">
                       <div className="p-2 rounded-xl bg-bg-surface-muted space-y-0.5">
-                        <span className="text-text-muted block text-[10px]">Mục tiêu Calo</span>
+                        <span className="text-text-muted block text-xs">Mục tiêu Calo</span>
                         <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
                           {plan.dailyCalorieTarget ? `${plan.dailyCalorieTarget} kcal/ngày` : 'Chưa đặt'}
                         </span>
                       </div>
                       <div className="p-2 rounded-xl bg-bg-surface-muted space-y-0.5">
-                        <span className="text-text-muted block text-[10px]">Bắt đầu từ</span>
+                        <span className="text-text-muted block text-xs">Bắt đầu từ</span>
                         <span className="font-semibold text-text-primary">{formatDate(plan.startDate)}</span>
                       </div>
                     </div>
@@ -735,6 +802,18 @@ export function CoachMealPlanPage() {
                     {plan.status === 'DRAFT' && (
                       <Button
                         size="sm"
+                        variant="outline"
+                        onClick={() => void openDraftForEdit(plan)}
+                        disabled={isSubmitting}
+                        className="gap-1 text-xs flex-1"
+                      >
+                        <Edit3 className="h-3.5 w-3.5" />
+                        <span>Sửa</span>
+                      </Button>
+                    )}
+                    {plan.status === 'DRAFT' && (
+                      <Button
+                        size="sm"
                         variant="primary"
                         onClick={() => handleAssignExistingPlan(plan.id)}
                         disabled={isSubmitting}
@@ -742,6 +821,17 @@ export function CoachMealPlanPage() {
                       >
                         <CheckCircle2 className="h-3.5 w-3.5" />
                         <span>Giao học viên</span>
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => void handleDuplicatePlan(plan)} disabled={isSubmitting} className="gap-1 text-xs flex-1">
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>Nhân bản</span>
+                    </Button>
+                    {plan.status !== 'ARCHIVED' && (
+                      <Button size="sm" variant="ghost" onClick={() => setPendingArchive(plan)} disabled={isSubmitting} className="gap-1 text-xs flex-1">
+                        <span>Lưu trữ</span>
                       </Button>
                     )}
                   </div>
@@ -878,7 +968,7 @@ export function CoachMealPlanPage() {
                   >
                     <span>Ngày {d}</span>
                     <span
-                      className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      className={`text-xs px-1.5 py-0.2 rounded-full ${
                         isSelected ? 'bg-white/20 text-white' : 'bg-border-subtle text-text-muted'
                       }`}
                     >
@@ -921,25 +1011,25 @@ export function CoachMealPlanPage() {
               {/* Macro Pills */}
               <div className="grid grid-cols-3 gap-3 pt-1">
                 <div className="p-2.5 rounded-lg bg-bg-surface border border-border-subtle flex flex-col">
-                  <span className="text-[10px] text-text-muted">Chất đạm (Protein)</span>
+                  <span className="text-xs text-text-muted">Chất đạm (Protein)</span>
                   <span className="text-xs font-extrabold text-primary">{dayMacroSummary.totalP}g</span>
-                  <span className="text-[10px] text-text-muted">~{dayMacroSummary.totalP * 4} kcal</span>
+                  <span className="text-xs text-text-muted">~{dayMacroSummary.totalP * 4} kcal</span>
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-bg-surface border border-border-subtle flex flex-col">
-                  <span className="text-[10px] text-text-muted">Tinh bột (Carbs)</span>
+                  <span className="text-xs text-text-muted">Tinh bột (Carbs)</span>
                   <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400">
                     {dayMacroSummary.totalC}g
                   </span>
-                  <span className="text-[10px] text-text-muted">~{dayMacroSummary.totalC * 4} kcal</span>
+                  <span className="text-xs text-text-muted">~{dayMacroSummary.totalC * 4} kcal</span>
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-bg-surface border border-border-subtle flex flex-col">
-                  <span className="text-[10px] text-text-muted">Chất béo (Fat)</span>
+                  <span className="text-xs text-text-muted">Chất béo (Fat)</span>
                   <span className="text-xs font-extrabold text-rose-600 dark:text-rose-400">
                     {dayMacroSummary.totalF}g
                   </span>
-                  <span className="text-[10px] text-text-muted">~{dayMacroSummary.totalF * 9} kcal</span>
+                  <span className="text-xs text-text-muted">~{dayMacroSummary.totalF * 9} kcal</span>
                 </div>
               </div>
             </div>
@@ -975,7 +1065,7 @@ export function CoachMealPlanPage() {
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary font-bold text-[11px]">
+                            <span className="px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary font-bold text-xs">
                               {meal.mealType}
                             </span>
                             <span className="font-bold text-text-primary text-xs">{meal.foodName}</span>
@@ -993,7 +1083,7 @@ export function CoachMealPlanPage() {
                               <Edit3 className="h-3.5 w-3.5" />
                             </button>
                             <button
-                              onClick={() => handleDeleteMeal(indexInAll)}
+                              onClick={() => setPendingDelete(indexInAll)}
                               className="p-1 rounded-md text-danger/80 hover:text-danger hover:bg-danger/10 cursor-pointer"
                               title="Xóa món"
                             >
@@ -1003,12 +1093,12 @@ export function CoachMealPlanPage() {
                         </div>
 
                         {meal.quantity && (
-                          <p className="text-[11px] text-text-muted">
+                          <p className="text-xs text-text-muted">
                             Định lượng: <span className="text-text-primary">{meal.quantity}</span>
                           </p>
                         )}
 
-                        <div className="flex flex-wrap items-center gap-4 text-[10px] text-text-muted border-t border-border-subtle pt-2">
+                        <div className="flex flex-wrap items-center gap-4 text-xs text-text-muted border-t border-border-subtle pt-2">
                           <span>
                             Protein: <strong className="text-primary">{meal.proteinGrams}g</strong>
                           </span>
@@ -1036,7 +1126,7 @@ export function CoachMealPlanPage() {
                 disabled={isSubmitting}
                 className="w-full sm:w-auto"
               >
-                Hủy & Quay lại
+                Quay lại danh sách
               </Button>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -1044,7 +1134,7 @@ export function CoachMealPlanPage() {
                   type="button"
                   variant="outline"
                   onClick={() => handleSubmitMealPlan(false)}
-                  disabled={isSubmitting || !memberId}
+                  disabled={isSubmitting || !memberId || !meals.length}
                   className="w-full sm:w-auto gap-1.5"
                 >
                   {isSubmitting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
@@ -1055,7 +1145,7 @@ export function CoachMealPlanPage() {
                   type="button"
                   variant="primary"
                   onClick={() => handleSubmitMealPlan(true)}
-                  disabled={isSubmitting || !memberId}
+                  disabled={isSubmitting || !memberId || !meals.length}
                   className="w-full sm:w-auto gap-1.5"
                 >
                   {isSubmitting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
@@ -1197,23 +1287,23 @@ export function CoachMealPlanPage() {
             {/* Header info */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-bg-surface-muted border border-border-subtle text-xs">
               <div>
-                <span className="text-text-muted block text-[10px]">Trạng thái:</span>
+                <span className="text-text-muted block text-xs">Trạng thái:</span>
                 <StatusBadge status={viewingPlan.status} />
               </div>
               <div>
-                <span className="text-text-muted block text-[10px]">Mục tiêu calo:</span>
+                <span className="text-text-muted block text-xs">Mục tiêu calo:</span>
                 <span className="font-bold text-emerald-600 dark:text-emerald-400">
                   {viewingPlan.dailyCalorieTarget ? `${viewingPlan.dailyCalorieTarget} kcal/ngày` : 'Chưa đặt'}
                 </span>
               </div>
               <div>
-                <span className="text-text-muted block text-[10px]">Áp dụng từ:</span>
+                <span className="text-text-muted block text-xs">Áp dụng từ:</span>
                 <span className="font-medium text-text-primary">{formatDate(viewingPlan.startDate)}</span>
               </div>
             </div>
 
             {/* Medical Disclaimer Reminder */}
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-2">
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
               <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
               <span>{viewingPlan.medicalDisclaimer}</span>
             </div>
@@ -1249,21 +1339,21 @@ export function CoachMealPlanPage() {
                 {/* Day macro overview */}
                 <div className="grid grid-cols-4 gap-2 p-3 rounded-xl bg-bg-surface-muted border border-border-subtle text-center text-xs">
                   <div>
-                    <span className="text-[10px] text-text-muted block">Tổng Calo</span>
+                    <span className="text-xs text-text-muted block">Tổng Calo</span>
                     <span className="font-bold text-emerald-600 dark:text-emerald-400">
                       {viewingDayMacro.cal} kcal
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-text-muted block">Protein</span>
+                    <span className="text-xs text-text-muted block">Protein</span>
                     <span className="font-bold text-primary">{viewingDayMacro.p}g</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-text-muted block">Carbs</span>
+                    <span className="text-xs text-text-muted block">Carbs</span>
                     <span className="font-bold text-amber-600 dark:text-amber-400">{viewingDayMacro.c}g</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-text-muted block">Fat</span>
+                    <span className="text-xs text-text-muted block">Fat</span>
                     <span className="font-bold text-rose-600 dark:text-rose-400">{viewingDayMacro.f}g</span>
                   </div>
                 </div>
@@ -1276,7 +1366,7 @@ export function CoachMealPlanPage() {
                       className="p-3 rounded-xl border border-border-subtle bg-bg-surface space-y-1.5"
                     >
                       <div className="flex justify-between items-start">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded bg-primary/10 text-primary">
                           {item.mealType}
                         </span>
                         <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
@@ -1285,9 +1375,9 @@ export function CoachMealPlanPage() {
                       </div>
                       <p className="text-xs font-semibold text-text-primary">{item.foodName}</p>
                       {item.quantity && (
-                        <p className="text-[11px] text-text-muted">Định lượng: {item.quantity}</p>
+                        <p className="text-xs text-text-muted">Định lượng: {item.quantity}</p>
                       )}
-                      <div className="flex gap-4 text-[10px] text-text-muted border-t border-border-subtle pt-1">
+                      <div className="flex gap-4 text-xs text-text-muted border-t border-border-subtle pt-1">
                         <span>P: <strong className="text-primary">{item.proteinGrams || 0}g</strong></span>
                         <span>C: <strong className="text-amber-600 dark:text-amber-400">{item.carbsGrams || 0}g</strong></span>
                         <span>F: <strong className="text-rose-600 dark:text-rose-400">{item.fatGrams || 0}g</strong></span>
@@ -1306,6 +1396,12 @@ export function CoachMealPlanPage() {
               </Button>
 
               {viewingPlan.status === 'DRAFT' && (
+                <Button variant="outline" onClick={() => void openDraftForEdit(viewingPlan)} disabled={isSubmitting} className="gap-1.5">
+                  <Edit3 className="h-4 w-4" />
+                  <span>Sửa bản nháp</span>
+                </Button>
+              )}
+              {viewingPlan.status === 'DRAFT' && (
                 <Button
                   variant="primary"
                   onClick={() => handleAssignExistingPlan(viewingPlan.id)}
@@ -1320,6 +1416,25 @@ export function CoachMealPlanPage() {
           </div>
         )}
       </Modal>
+
+      <ConfirmDialog
+        isOpen={pendingDelete !== null}
+        title="Xóa món này?"
+        message={<>Bỏ “{pendingDelete !== null ? meals[pendingDelete]?.foodName : ''}” khỏi ngày {selectedDay}. {editingPlanId ? 'Thay đổi được ghi khi bạn bấm lưu.' : ''}</>}
+        confirmLabel="Xóa món"
+        tone="danger"
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => pendingDelete !== null && handleDeleteMeal(pendingDelete)}
+      />
+      <ConfirmDialog
+        isOpen={!!pendingArchive}
+        title="Lưu trữ thực đơn?"
+        message={<>“{pendingArchive?.title}” sẽ không còn là thực đơn hiện tại của học viên. Bạn vẫn xem và nhân bản được sau này.</>}
+        confirmLabel="Lưu trữ"
+        isLoading={isSubmitting}
+        onCancel={() => setPendingArchive(null)}
+        onConfirm={() => pendingArchive && void handleArchivePlan(pendingArchive)}
+      />
     </div>
   )
 }

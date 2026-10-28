@@ -87,7 +87,7 @@ export function ForgotPasswordPage() {
                   setEmail(e.target.value)
                   if (errorMessage) setErrorMessage(null)
                 }}
-                placeholder="name@sports.local"
+                placeholder="Email đã đăng ký"
                 disabled={isLoading}
               />
 

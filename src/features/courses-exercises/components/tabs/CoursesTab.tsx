@@ -158,7 +158,7 @@ export function CoursesTab({
                         <BookOpen className="h-5 w-5" />
                       </div>
                       <div>
-                        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary border border-primary/20">
+                        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary border border-primary/20">
                           {c.difficultyLevel || 'Mọi cấp độ'}
                         </span>
                         <h3 className="text-base font-bold text-text-primary mt-1">{c.name}</h3>
@@ -198,7 +198,7 @@ export function CoursesTab({
                       {attachedMuscles.map((mg: any, idx: number) => (
                         <span
                           key={idx}
-                          className={`rounded-lg px-2 py-0.5 text-[10px] font-medium border ${
+                          className={`rounded-lg px-2 py-0.5 text-xs font-medium border ${
                             mg.isPrimary
                               ? 'bg-primary/15 text-primary border-primary/30 font-semibold'
                               : 'bg-bg-surface-muted text-text-muted border-border-subtle'
@@ -218,7 +218,7 @@ export function CoursesTab({
                       size="sm"
                       variant="outline"
                       onClick={() => onOpenDetail(c)}
-                      className="text-[11px] h-7 px-2.5 gap-1"
+                      className="text-xs h-7 px-2.5 gap-1"
                     >
                       <Eye className="h-3 w-3 text-sky-500" />
                       <span>Chi tiết</span>
@@ -228,7 +228,7 @@ export function CoursesTab({
                       size="sm"
                       variant="ghost"
                       onClick={() => onOpenEdit(c)}
-                      className="text-[11px] h-7 px-2.5 gap-1"
+                      className="text-xs h-7 px-2.5 gap-1"
                     >
                       <Edit2 className="h-3 w-3 text-primary" />
                       <span>Sửa</span>
@@ -238,7 +238,7 @@ export function CoursesTab({
                       size="sm"
                       variant="outline"
                       onClick={() => onOpenAssignMuscles(c)}
-                      className="text-[11px] h-7 px-2.5 gap-1"
+                      className="text-xs h-7 px-2.5 gap-1"
                     >
                       <Layers className="h-3 w-3 text-emerald-500" />
                       <span>Gán cơ</span>
@@ -248,7 +248,7 @@ export function CoursesTab({
                       size="sm"
                       variant="outline"
                       onClick={() => onOpenAssignSyllabus(c)}
-                      className="text-[11px] h-7 px-2.5 gap-1"
+                      className="text-xs h-7 px-2.5 gap-1"
                     >
                       <ListOrdered className="h-3 w-3 text-purple-500" />
                       <span>Giáo án</span>
@@ -260,7 +260,7 @@ export function CoursesTab({
                     variant="outline"
                     onClick={() => onToggleStatus(c)}
                     disabled={togglingCourseId === c.id}
-                    className={`text-[11px] h-7 px-2.5 gap-1.5 ${
+                    className={`text-xs h-7 px-2.5 gap-1.5 ${
                       isAct
                         ? 'text-danger hover:bg-danger/10 hover:text-danger border-danger/30'
                         : 'text-success hover:bg-success/10 hover:text-success border-success/30'

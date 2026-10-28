@@ -1,0 +1,95 @@
+/* Hand-written additions on top of the generated V4 styles (landing-v4.css), still scoped to .gc-landing. */
+.gc-landing {
+  min-height: 100vh;
+  background: #101113;
+  color: #f5f2ee;
+  -webkit-font-smoothing: antialiased;
+}
+.gc-landing [hidden] {
+  display: none !important;
+}
+
+/* ApexFIT logo mark (dumbbell). */
+.gc-landing .brand-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
+  border-radius: 8px;
+  background: var(--lime);
+  color: #101113;
+}
+.gc-landing .brand-icon svg {
+  width: 20px;
+  height: 20px;
+  transform: rotate(-45deg);
+}
+@media (max-width: 600px) {
+  .gc-landing .brand-icon {
+    width: 28px;
+    height: 28px;
+    margin-right: 7px;
+  }
+  .gc-landing .brand-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+}
+
+/* Anchor targets clear the sticky nav. */
+.gc-landing section[id] {
+  scroll-margin-top: 88px;
+}
+
+/* FAQ questions are wrapped in h3 for the heading outline; keep the design's button look. */
+.gc-landing .faq-item > h3 {
+  margin: 0;
+  font: inherit;
+  letter-spacing: normal;
+}
+.gc-landing .faq-item > h3 > button {
+  width: 100%;
+}
+
+/* Real data decides how many price cards there are (design showed 2 + aside). */
+@media (min-width: 901px) {
+  .gc-landing .price-grid {
+    grid-template-columns: repeat(var(--price-cols, 2), 1fr) 0.85fr;
+  }
+}
+.gc-landing .price-grid > .error-box,
+.gc-landing .price-grid > .skeleton,
+.gc-landing .price-grid > .muted {
+  grid-column: span var(--price-cols, 2);
+}
+.gc-landing .price-card .price small {
+  font-size: 0.5em;
+  font-weight: 400;
+  color: #a7a39a;
+}
+.gc-landing .price-profile-link {
+  margin-top: 16px;
+}
+
+/* Coach without a profile photo: initials instead of a stock face. */
+.gc-landing .coach-initials {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 84px;
+  font-weight: 700;
+  color: #ec9b7599;
+  background: radial-gradient(circle at 50% 40%, #2a221d, #151617 70%);
+}
+
+.gc-landing .stars-empty {
+  color: #ffffff26;
+}
+
+.gc-landing .program-toolbar .tabs {
+  flex-wrap: wrap;
+}

@@ -122,7 +122,7 @@ export function MemberSupportPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2.5">
             <HelpCircle className="h-6 w-6 text-primary" />
-            <span>Trung Tâm Hỗ Trợ Hội Viên (WEB-MEM-08)</span>
+            <span>Trung Tâm Hỗ Trợ Hội Viên</span>
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Gửi phản hồi, khiếu nại hoặc thắc mắc dịch vụ trực tiếp tới ban quản lý và quầy lễ tân
@@ -180,7 +180,7 @@ export function MemberSupportPage() {
         ) : tickets.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border-subtle p-10 text-center text-xs text-text-muted space-y-2">
             <p>Bạn chưa có yêu cầu hỗ trợ nào.</p>
-            <p className="text-[11px] opacity-75">Bấm nút "Gửi Yêu Cầu Mới" ở trên nếu cần trợ giúp từ trung tâm.</p>
+            <p className="text-xs opacity-75">Bấm nút "Gửi Yêu Cầu Mới" ở trên nếu cần trợ giúp từ trung tâm.</p>
           </div>
         ) : (
           <div className="divide-y divide-border-subtle">
@@ -189,11 +189,11 @@ export function MemberSupportPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs font-bold text-primary">{t.requestCode || t.id.slice(0, 8)}</span>
-                    <StatusBadge status={t.status} />
+                    <StatusBadge status={t.status} context="support" />
                   </div>
                   <h4 className="text-sm font-bold text-text-primary">{t.subject}</h4>
                   <p className="text-xs text-text-muted line-clamp-1">{t.message}</p>
-                  <p className="text-[10px] text-text-muted">{formatDateTime(t.createdAt)}</p>
+                  <p className="text-xs text-text-muted">{formatDateTime(t.createdAt)}</p>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -278,7 +278,7 @@ export function MemberSupportPage() {
             )}
             <div className="flex items-center justify-between">
               <span className="font-semibold text-text-muted">Trạng thái:</span>
-              <StatusBadge status={selectedTicket.status} />
+              <StatusBadge status={selectedTicket.status} context="support" />
             </div>
             <div className="rounded-xl bg-bg-surface-muted border border-border-subtle p-4 space-y-1.5">
               <p className="font-bold text-text-primary text-sm">Chủ đề: {selectedTicket.subject}</p>
@@ -290,7 +290,7 @@ export function MemberSupportPage() {
                 <p className="font-semibold text-emerald-700 dark:text-emerald-300">Phản hồi từ Ban Quản Lý / Lễ Tân:</p>
                 <p className="text-text-primary leading-relaxed whitespace-pre-wrap">{selectedTicket.response}</p>
                 {selectedTicket.respondedAt && (
-                  <p className="text-[10px] text-text-muted pt-1">
+                  <p className="text-xs text-text-muted pt-1">
                     Thời gian phản hồi: {formatDateTime(selectedTicket.respondedAt)}
                   </p>
                 )}

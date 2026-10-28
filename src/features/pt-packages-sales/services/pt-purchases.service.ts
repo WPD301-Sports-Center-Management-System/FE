@@ -1,7 +1,7 @@
+import { counterPayment } from '@/features/workspace/counter-payment'
 import { apiClient } from '@/shared/api/client'
 import type { ApiSuccess, Purchase, CoachReview } from '@/shared/types/api'
 import type {
-  CreatePtPurchasePayload,
   PtPurchaseQueryParams,
   PurchaseDetail,
   MakeupEntitlement,
@@ -16,15 +16,6 @@ export const ptPurchasesService = {
   async getPurchases(params?: PtPurchaseQueryParams): Promise<ApiSuccess<Purchase[]>> {
     const res = await apiClient.get<ApiSuccess<Purchase[]>>('/pt-package-purchases', { params })
     return res as unknown as ApiSuccess<Purchase[]>
-  },
-
-  /**
-   * [2] POST /pt-package-purchases - Create a new PT package purchase (Receptionist / Member)
-   */
-  async createPurchase(payload: CreatePtPurchasePayload): Promise<Purchase> {
-    const res = await apiClient.post<ApiSuccess<Purchase>>('/pt-package-purchases', payload)
-    const data = res as unknown as ApiSuccess<Purchase>
-    return data.data ?? (data as unknown as Purchase)
   },
 
   /**
@@ -94,7 +85,6 @@ export const ptPurchasesService = {
     receivedAmount: number
     externalRef?: string
   }): Promise<any> {
-    const res = await apiClient.post('/payments/counter', payload)
-    return res?.data ?? res
+    return counterPayment(payload)
   },
 }

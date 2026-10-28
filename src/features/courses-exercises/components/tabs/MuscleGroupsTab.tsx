@@ -94,10 +94,10 @@ export function MuscleGroupsTab({
                       <h4 className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">
                         {mg.name}
                       </h4>
-                      <p className="text-[10px] text-text-muted font-mono">
+                      <p className="text-xs text-text-muted font-mono">
                         ID: {mg.id.slice(0, 8)}...
                       </p>
-                      <p className="text-[10px] text-text-muted">
+                      <p className="text-xs text-text-muted">
                         Hồi phục: {mg.recoveryDays ?? 2} ngày
                       </p>
                     </div>
@@ -129,7 +129,7 @@ export function MuscleGroupsTab({
                   size="sm"
                   variant="ghost"
                   onClick={() => onOpenEdit(mg)}
-                  className="text-[11px] h-7 px-2.5 gap-1.5"
+                  className="text-xs h-7 px-2.5 gap-1.5"
                 >
                   <Edit2 className="h-3 w-3 text-primary" />
                   <span>Chỉnh sửa</span>
@@ -140,7 +140,7 @@ export function MuscleGroupsTab({
                   variant="outline"
                   onClick={() => onToggleStatus(mg)}
                   disabled={togglingMuscleId === mg.id}
-                  className={`text-[11px] h-7 px-2.5 gap-1.5 ${
+                  className={`text-xs h-7 px-2.5 gap-1.5 ${
                     mg.isActive
                       ? 'text-danger hover:bg-danger/10 hover:text-danger border-danger/30'
                       : 'text-success hover:bg-success/10 hover:text-success border-success/30'

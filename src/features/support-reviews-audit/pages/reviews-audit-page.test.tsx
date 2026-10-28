@@ -47,7 +47,7 @@ describe('ReviewsAuditPage', () => {
     render(<ReviewsAuditPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Kiểm Duyệt Đánh Giá & Audit Log (WEB-MAN-11, 12)')).toBeInTheDocument()
+      expect(screen.getByText('Kiểm Duyệt Đánh Giá & Audit Log')).toBeInTheDocument()
       expect(screen.getByText('Hội viên An')).toBeInTheDocument()
     })
   })

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Avatar } from '@/shared/components/ui/avatar'
 import {
   Eye,
   Plus,
@@ -16,7 +17,7 @@ import {
   Ban,
   Calendar,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { DataTable, type Column } from '@/shared/components/ui/data-table'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { Button } from '@/shared/components/ui/button'
@@ -127,6 +128,16 @@ export function MemberListPage() {
   useEffect(() => {
     fetchMembers()
   }, [fetchMembers])
+
+  // Opened from the topbar quick search: /receptionist/members?memberId=…
+  const [searchParams, setSearchParams] = useSearchParams()
+  const linkedMemberId = searchParams.get('memberId')
+  useEffect(() => {
+    if (!linkedMemberId) return
+    void handleOpenDetail({ id: linkedMemberId } as MemberWithUser)
+    setSearchParams({}, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedMemberId])
 
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg)
@@ -385,18 +396,10 @@ export function MemberListPage() {
       header: 'Hội viên',
       accessor: (row) => (
         <div className="flex items-center gap-3">
-          <img
-            src={
-              row.avatarUrl ||
-              row.user?.avatarUrl ||
-              'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'
-            }
-            alt={row.fullName || row.user?.fullName}
-            className="h-9 w-9 rounded-xl object-cover border border-border-subtle"
-          />
+          <Avatar src={row.avatarUrl || row.user?.avatarUrl} name={row.fullName || row.user?.fullName} size={36} />
           <div>
             <p className="font-bold text-text-primary text-xs">{row.fullName || row.user?.fullName}</p>
-            <p className="text-[11px] text-text-muted">
+            <p className="text-xs text-text-muted">
               {row.phone || row.user?.phone || row.user?.email || '—'}
             </p>
           </div>
@@ -416,7 +419,7 @@ export function MemberListPage() {
           <span className="font-semibold text-text-primary">
             {row.activePackageCount !== undefined ? row.activePackageCount : 0}
           </span>
-          <span className="text-text-muted text-[11px]">gói</span>
+          <span className="text-text-muted text-xs">gói</span>
         </div>
       ),
     },
@@ -432,7 +435,7 @@ export function MemberListPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-            Danh Sách Hội Viên (WEB-REC-02, 03)
+            Danh Sách Hội Viên
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Quản lý hồ sơ hội viên phòng Gym, theo dõi thể trạng InBody, gói thẻ tập và lịch sử rèn luyện
@@ -516,15 +519,7 @@ export function MemberListPage() {
             {/* Header Badge Card */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl bg-bg-surface-muted p-4 border border-border-subtle">
               <div className="flex items-center gap-3.5">
-                <img
-                  src={
-                    selectedMember.avatarUrl ||
-                    (selectedMember as any).user?.avatarUrl ||
-                    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'
-                  }
-                  alt={selectedMember.fullName}
-                  className="h-14 w-14 rounded-2xl object-cover border border-primary/30"
-                />
+                <Avatar src={selectedMember.avatarUrl || (selectedMember as any).user?.avatarUrl} name={selectedMember.fullName} size={40} className="rounded-2xl" />
                 <div>
                   <h3 className="text-base font-bold text-text-primary">
                     {selectedMember.fullName || (selectedMember as any).user?.fullName}
@@ -532,7 +527,7 @@ export function MemberListPage() {
                   <p className="text-xs font-mono text-primary font-semibold">
                     {selectedMember.memberCode}
                   </p>
-                  <p className="text-[11px] text-text-muted">
+                  <p className="text-xs text-text-muted">
                     Gia nhập: {formatDate(selectedMember.createdAt || new Date().toISOString())}
                   </p>
                 </div>
@@ -614,25 +609,25 @@ export function MemberListPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-xs text-text-primary">
                   <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle">
-                    <span className="text-text-muted block text-[11px]">Số điện thoại:</span>
+                    <span className="text-text-muted block text-xs">Số điện thoại:</span>
                     <p className="font-semibold text-text-primary mt-0.5">
                       {selectedMember.phone || (selectedMember as any).user?.phone || '—'}
                     </p>
                   </div>
                   <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle">
-                    <span className="text-text-muted block text-[11px]">Email liên kết:</span>
+                    <span className="text-text-muted block text-xs">Email liên kết:</span>
                     <p className="font-semibold text-text-primary mt-0.5">
                       {selectedMember.email || (selectedMember as any).user?.email || '—'}
                     </p>
                   </div>
                   <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle">
-                    <span className="text-text-muted block text-[11px]">Ngày sinh:</span>
+                    <span className="text-text-muted block text-xs">Ngày sinh:</span>
                     <p className="font-semibold text-text-primary mt-0.5">
                       {formatDate(selectedMember.dateOfBirth)}
                     </p>
                   </div>
                   <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle">
-                    <span className="text-text-muted block text-[11px]">Giới tính:</span>
+                    <span className="text-text-muted block text-xs">Giới tính:</span>
                     <p className="font-semibold text-text-primary mt-0.5">
                       {selectedMember.gender === 'MALE'
                         ? 'Nam'
@@ -642,13 +637,13 @@ export function MemberListPage() {
                     </p>
                   </div>
                   <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle">
-                    <span className="text-text-muted block text-[11px]">SĐT khẩn cấp:</span>
+                    <span className="text-text-muted block text-xs">SĐT khẩn cấp:</span>
                     <p className="font-semibold text-text-primary mt-0.5">
                       {selectedMember.emergencyPhone || '—'}
                     </p>
                   </div>
                   <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle">
-                    <span className="text-text-muted block text-[11px]">Trình độ thể lực:</span>
+                    <span className="text-text-muted block text-xs">Trình độ thể lực:</span>
                     <p className="font-semibold text-primary mt-0.5">
                       {selectedMember.fitnessLevel || 'Chưa đánh giá'}
                     </p>
@@ -656,7 +651,7 @@ export function MemberListPage() {
                 </div>
 
                 <div className="rounded-lg bg-bg-surface p-3 border border-border-subtle text-xs">
-                  <span className="text-text-muted block text-[11px]">Địa chỉ liên lạc:</span>
+                  <span className="text-text-muted block text-xs">Địa chỉ liên lạc:</span>
                   <p className="font-medium text-text-primary mt-0.5">
                     {selectedMember.address || 'Chưa có thông tin'}
                   </p>
@@ -679,7 +674,7 @@ export function MemberListPage() {
                     Danh sách các thẻ tập đã đăng ký:
                   </span>
                   <Link to={`/receptionist/membership-sale?memberId=${selectedMember.id}`}>
-                    <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1 border-primary/40 text-primary">
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-primary/40 text-primary">
                       <Plus className="h-3 w-3" />
                       <span>Mua gói mới</span>
                     </Button>
@@ -699,7 +694,7 @@ export function MemberListPage() {
                               <p className="font-bold text-text-primary text-sm">
                                 {sub.planNameSnapshot || 'Gói thẻ tập'}
                               </p>
-                              <p className="text-[11px] text-text-muted mt-0.5 flex items-center gap-1.5">
+                              <p className="text-xs text-text-muted mt-0.5 flex items-center gap-1.5">
                                 <Calendar className="h-3.5 w-3.5 text-text-muted" />
                                 <span>{formatDate(sub.startDate)} → {formatDate(sub.endDate)}</span>
                               </p>
@@ -707,7 +702,7 @@ export function MemberListPage() {
                             <StatusBadge status={sub.status} />
                           </div>
 
-                          <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-[11px]">
+                          <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-xs">
                             <span className="text-success font-bold text-xs">
                               {formatVND(sub.priceSnapshot)}
                             </span>
@@ -720,7 +715,7 @@ export function MemberListPage() {
                                   disabled={payingSubId === sub.id}
                                   isLoading={payingSubId === sub.id}
                                   onClick={() => handlePayCounter(sub)}
-                                  className="h-7 px-2.5 text-[11px] gap-1 bg-success hover:bg-success/90 text-white"
+                                  className="h-7 px-2.5 text-xs gap-1 bg-success hover:bg-success/90 text-white"
                                 >
                                   <Check className="h-3 w-3" />
                                   <span>Thu tiền & Kích hoạt</span>
@@ -733,7 +728,7 @@ export function MemberListPage() {
                                     setCancellingSub(sub)
                                     setCancelReason('')
                                   }}
-                                  className="h-7 px-2 text-[11px] text-danger hover:text-danger hover:bg-danger/10 gap-1"
+                                  className="h-7 px-2 text-xs text-danger hover:text-danger hover:bg-danger/10 gap-1"
                                 >
                                   <Ban className="h-3 w-3" />
                                   <span>Hủy gói</span>
@@ -747,7 +742,7 @@ export function MemberListPage() {
                                     variant="ghost"
                                     disabled={renewingSubId === sub.id}
                                     onClick={() => handleRenewSubscription(sub)}
-                                    className="h-7 px-2 text-[11px] text-info hover:text-info hover:bg-info/10 gap-1"
+                                    className="h-7 px-2 text-xs text-info hover:text-info hover:bg-info/10 gap-1"
                                   >
                                     <RotateCcw className={`h-3 w-3 ${renewingSubId === sub.id ? 'animate-spin' : ''}`} />
                                     <span>Gia hạn</span>
@@ -784,7 +779,7 @@ export function MemberListPage() {
                     Danh sách các gói huấn luyện viên 1:1 đã đăng ký:
                   </span>
                   <Link to={`/receptionist/pt-sale?memberId=${selectedMember.id}`}>
-                    <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1 border-primary/40 text-primary">
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-primary/40 text-primary">
                       <Plus className="h-3 w-3" />
                       <span>Mua gói PT mới</span>
                     </Button>
@@ -810,11 +805,11 @@ export function MemberListPage() {
                                 <p className="font-bold text-text-primary text-sm">
                                   {pkg.courseNameSnapshot || 'Gói PT 1:1'}
                                 </p>
-                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-bg-surface-muted text-text-muted border border-border-subtle">
+                                <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-bg-surface-muted text-text-muted border border-border-subtle">
                                   {pkg.purchaseCode}
                                 </span>
                               </div>
-                              <p className="text-[11px] text-text-muted mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                              <p className="text-xs text-text-muted mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                                 <span className="text-primary font-medium">
                                   Khóa: {pkg.courseNameSnapshot || 'PT 1:1'}
                                 </span>
@@ -832,26 +827,26 @@ export function MemberListPage() {
                             <StatusBadge status={pkg.status} />
                           </div>
 
-                          <div className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-bg-surface-muted border border-border-subtle text-center text-[11px]">
+                          <div className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-bg-surface-muted border border-border-subtle text-center text-xs">
                             <div>
-                              <span className="text-text-muted block text-[10px]">Đã tập</span>
+                              <span className="text-text-muted block text-xs">Đã tập</span>
                               <span className="font-bold text-text-primary">{consumed} buổi</span>
                             </div>
                             <div>
-                              <span className="text-text-muted block text-[10px]">Đang giữ chỗ</span>
+                              <span className="text-text-muted block text-xs">Đang giữ chỗ</span>
                               <span className="font-bold text-warning">{reserved} buổi</span>
                             </div>
                             <div>
-                              <span className="text-text-muted block text-[10px]">Còn lại</span>
+                              <span className="text-text-muted block text-xs">Còn lại</span>
                               <span className="font-bold text-success">{remaining} buổi</span>
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between pt-1 text-[11px]">
+                          <div className="flex items-center justify-between pt-1 text-xs">
                             <span className="text-success font-bold text-xs">
                               {formatVND(pkg.priceSnapshot)}
                             </span>
-                            <span className="text-text-muted text-[10px]">
+                            <span className="text-text-muted text-xs">
                               Tổng số: {total} buổi
                             </span>
                           </div>
@@ -887,7 +882,7 @@ export function MemberListPage() {
                       >
                         <div>
                           <p className="font-semibold text-text-primary">{b.courseName || 'Buổi tập PT 1:1'}</p>
-                          <p className="text-[11px] text-text-muted">
+                          <p className="text-xs text-text-muted">
                             HLV: {b.coachName || 'HLV chuyên trách'} • {formatDate(b.startsAt)}
                           </p>
                         </div>
@@ -918,7 +913,7 @@ export function MemberListPage() {
                             Đo InBody ngày {formatDate(a.assessedAt)}
                           </span>
                         </div>
-                        <div className="grid grid-cols-4 gap-2 text-[11px] text-text-muted pt-1">
+                        <div className="grid grid-cols-4 gap-2 text-xs text-text-muted pt-1">
                           <span>Cân nặng: <strong className="text-text-primary">{a.weightKg || '—'} kg</strong></span>
                           <span>Chiều cao: <strong className="text-text-primary">{a.heightCm || '—'} cm</strong></span>
                           <span>Mỡ: <strong className="text-text-primary">{a.bodyFatPercent || '—'} %</strong></span>
@@ -937,7 +932,7 @@ export function MemberListPage() {
 
             {/* Quick Actions Footer */}
             <div className="flex justify-between items-center border-t border-border-subtle pt-4">
-              <span className="text-[11px] text-text-muted">
+              <span className="text-xs text-text-muted">
                 Thao tác nhanh cho nhân viên quầy:
               </span>
               <div className="flex gap-2">

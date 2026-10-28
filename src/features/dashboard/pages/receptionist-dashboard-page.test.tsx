@@ -47,6 +47,10 @@ describe('ReceptionistDashboardPage', () => {
   it('renders receptionist dashboard with stats from real API', async () => {
     vi.mocked(dashboardService.getReceptionistDashboard).mockResolvedValueOnce({
       checkinsToday: 12,
+      insideGym: 0,
+      activeMembers: 0,
+      ptSessionsToday: 0,
+      openSupportRequests: 0,
       pendingPayments: 2,
       expiringSubscriptions: 5,
     })
@@ -93,7 +97,7 @@ describe('ReceptionistDashboardPage', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Quầy Tiếp Đón Lễ Tân (WEB-REC-01)')).toBeInTheDocument()
+      expect(screen.getByText('Quầy Tiếp Đón Lễ Tân')).toBeInTheDocument()
       expect(screen.getByText('Nguyen Van A')).toBeInTheDocument()
       expect(screen.getByText('MEM-001')).toBeInTheDocument()
     })
@@ -102,6 +106,10 @@ describe('ReceptionistDashboardPage', () => {
   it('renders empty state when there are no check-ins', async () => {
     vi.mocked(dashboardService.getReceptionistDashboard).mockResolvedValueOnce({
       checkinsToday: 0,
+      insideGym: 0,
+      activeMembers: 0,
+      ptSessionsToday: 0,
+      openSupportRequests: 0,
       pendingPayments: 0,
       expiringSubscriptions: 0,
     })
@@ -154,6 +162,10 @@ describe('ReceptionistDashboardPage', () => {
     // Retry
     vi.mocked(dashboardService.getReceptionistDashboard).mockResolvedValueOnce({
       checkinsToday: 5,
+      insideGym: 0,
+      activeMembers: 0,
+      ptSessionsToday: 0,
+      openSupportRequests: 0,
       pendingPayments: 0,
       expiringSubscriptions: 1,
     })
@@ -166,7 +178,7 @@ describe('ReceptionistDashboardPage', () => {
     fireEvent.click(retryButton)
 
     await waitFor(() => {
-      expect(screen.getByText('Quầy Tiếp Đón Lễ Tân (WEB-REC-01)')).toBeInTheDocument()
+      expect(screen.getByText('Quầy Tiếp Đón Lễ Tân')).toBeInTheDocument()
     })
   })
 })

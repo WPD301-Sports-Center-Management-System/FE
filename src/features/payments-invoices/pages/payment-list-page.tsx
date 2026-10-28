@@ -1,22 +1,20 @@
+import { openReceipt } from '@/features/workspace/receipt-events'
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Printer, FileText, RefreshCw, AlertTriangle, Filter, DollarSign, CreditCard, Download } from 'lucide-react'
+import { FileText, RefreshCw, AlertTriangle, Filter, DollarSign, CreditCard } from 'lucide-react'
 import { formatVND } from '@/shared/utils/currency'
 import { formatDateTime } from '@/shared/utils/date'
 import { DataTable, type Column } from '@/shared/components/ui/data-table'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { Button } from '@/shared/components/ui/button'
-import { Modal } from '@/shared/components/ui/modal'
 import { paymentsService } from '../services/payments.service'
-import { downloadBlob } from '@/shared/utils/download'
 import { isAppApiError } from '@/shared/api/api-error'
-import type { Payment, Invoice } from '@/shared/types/api'
+import type { Payment } from '@/shared/types/api'
 
 export function PaymentListPage() {
   const [payments, setPayments] = useState<Payment[]>([])
-  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null)
+  
   const [isLoading, setIsLoading] = useState(true)
   const [invoiceLoadingId, setInvoiceLoadingId] = useState<string | null>(null)
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // Filters
@@ -60,7 +58,7 @@ export function PaymentListPage() {
     try {
       const inv = await paymentsService.getInvoiceById(p.invoiceId)
       if (inv) {
-        setPreviewInvoice(inv)
+        openReceipt({ invoiceId: inv.id })
       } else {
         setErrorMessage('Không tìm thấy thông tin hóa đơn trên máy chủ.')
       }
@@ -75,22 +73,6 @@ export function PaymentListPage() {
     }
   }
 
-  const handleDownloadPdf = async (inv: Invoice) => {
-    setIsDownloadingPdf(true)
-    setErrorMessage(null)
-    try {
-      const blob = await paymentsService.downloadInvoicePdf(inv.id)
-      await downloadBlob(blob, `Invoice-${inv.invoiceNumber}.pdf`)
-    } catch (err: any) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể tải tập tin PDF hóa đơn.')
-      } else {
-        setErrorMessage(err.message || 'Không thể tải tập tin PDF hóa đơn.')
-      }
-    } finally {
-      setIsDownloadingPdf(false)
-    }
-  }
 
   const columns: Column<Payment>[] = useMemo(
     () => [
@@ -105,7 +87,7 @@ export function PaymentListPage() {
         accessor: (row) => (
           <div>
             <p className="font-semibold text-text-primary">{row.memberName || 'Hội viên'}</p>
-            {row.memberCode && <p className="text-[11px] text-text-muted font-mono">{row.memberCode}</p>}
+            {row.memberCode && <p className="text-xs text-text-muted font-mono">{row.memberCode}</p>}
           </div>
         ),
       },
@@ -122,7 +104,7 @@ export function PaymentListPage() {
       {
         header: 'Phương thức',
         accessor: (row) => (
-          <span className="inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5 rounded-full bg-bg-surface-muted border border-border-subtle text-text-primary">
+          <span className="inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5 rounded-full bg-bg-surface-muted border border-border-subtle text-text-primary">
             {row.method === 'CASH' && <DollarSign className="h-3 w-3" />}
             {row.method === 'BANK_TRANSFER' && <CreditCard className="h-3 w-3" />}
             {row.method === 'VNPAY' && <CreditCard className="h-3 w-3 text-danger" />}
@@ -132,7 +114,7 @@ export function PaymentListPage() {
       },
       {
         header: 'Trạng thái',
-        accessor: (row) => <StatusBadge status={row.status} />,
+        accessor: (row) => <StatusBadge status={row.status} context="payment" />,
       },
       {
         header: 'Thời gian',
@@ -146,7 +128,7 @@ export function PaymentListPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Sổ Thu Ngân & Hóa Đơn (WEB-REC-08, 09)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Sổ Thu Ngân & Hóa Đơn</h1>
           <p className="text-xs text-text-muted mt-1">
             Ghi nhận các khoản thu vé Gym, hợp đồng PT và phát hành hóa đơn điện tử tự động
           </p>
@@ -226,75 +208,7 @@ export function PaymentListPage() {
         )}
       />
 
-      {/* Invoice Print & Preview Modal (WEB-REC-09) */}
-      <Modal
-        isOpen={!!previewInvoice}
-        onClose={() => setPreviewInvoice(null)}
-        title="Hóa Đơn Thu Phí Dịch Vụ"
-        maxWidth="lg"
-      >
-        {previewInvoice && (
-          <div className="space-y-6 p-2">
-            <div className="border-b border-border-subtle pb-4 flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-extrabold text-text-primary">SPORTS CENTER MANAGEMENT</h3>
-                <p className="text-xs text-text-muted">123 Đường Cầu Giấy, Hà Nội • Hotline: 1900 6868</p>
-              </div>
-              <div className="text-right">
-                <span className="text-xs font-mono font-bold text-primary">
-                  {previewInvoice.invoiceNumber}
-                </span>
-                <p className="text-[10px] text-text-muted">{formatDateTime(previewInvoice.issuedAt)}</p>
-              </div>
-            </div>
 
-            <div className="text-xs text-text-muted space-y-1">
-              <p>Khách hàng: <strong className="text-text-primary">{previewInvoice.memberNameSnapshot}</strong></p>
-              <p>Hình thức thanh toán: <strong className="text-text-primary">{previewInvoice.paymentMethod}</strong></p>
-            </div>
-
-            <div className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 space-y-3">
-              <div className="flex justify-between text-xs border-b border-border-subtle pb-2 font-bold text-text-muted">
-                <span>Dịch vụ</span>
-                <span>Thành tiền</span>
-              </div>
-              <div className="flex justify-between text-sm text-text-primary">
-                <span>{previewInvoice.itemNameSnapshot}</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatVND(previewInvoice.total)}</span>
-              </div>
-            </div>
-
-            <div className="rounded-xl bg-bg-surface-muted p-3 text-center text-[11px] text-text-muted italic border border-border-subtle">
-              Lưu ý: Hóa đơn đã thanh toán tuân thủ chính sách không hoàn tiền (Non-refundable).
-            </div>
-
-            <div className="flex justify-end gap-2 border-t border-border-subtle pt-3">
-              <Button variant="ghost" onClick={() => setPreviewInvoice(null)}>
-                Đóng
-              </Button>
-              <Button
-                variant="outline"
-                className="gap-1.5"
-                disabled={isDownloadingPdf}
-                onClick={() => previewInvoice && handleDownloadPdf(previewInvoice)}
-              >
-                <Download className="h-4 w-4" />
-                <span>{isDownloadingPdf ? 'Đang tải PDF...' : 'Tải PDF'}</span>
-              </Button>
-              <Button
-                variant="primary"
-                className="gap-1.5"
-                onClick={() => {
-                  window.print()
-                }}
-              >
-                <Printer className="h-4 w-4" />
-                <span>In Hóa Đơn (Print)</span>
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
     </div>
   )
 }

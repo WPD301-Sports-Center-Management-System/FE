@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CheckCircle2, Activity, Dumbbell, AlertTriangle, RefreshCw, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Textarea } from '@/shared/components/ui/input'
 import { ptBookingsService } from '@/features/pt-bookings-schedule/services/pt-bookings.service'
-import { coachesService } from '@/features/coaches/services/coaches.service'
 import { coursesExercisesService } from '@/features/courses-exercises/services/courses-exercises.service'
 import { isAppApiError } from '@/shared/api/api-error'
 import { formatDateTime } from '@/shared/utils/date'
@@ -17,9 +16,9 @@ interface SetItem {
   rpe: number
 }
 
-export function TrainingResultPage() {
+export function TrainingResultPage({ bookingId }: { bookingId?: string } = {}) {
   const [searchParams] = useSearchParams()
-  const targetBookingId = searchParams.get('bookingId')
+  const targetBookingId = bookingId ?? searchParams.get('bookingId')
 
   const [completedBookings, setCompletedBookings] = useState<Booking[]>([])
   const [exercises, setExercises] = useState<Exercise[]>([])
@@ -29,38 +28,30 @@ export function TrainingResultPage() {
     { reps: 10, weight: 0, rpe: 7 },
   ])
   const [coachComment, setCoachComment] = useState('')
-  const [progressScore, setProgressScore] = useState(90)
+  const [progressScore, setProgressScore] = useState<number | ''>('')
 
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSaved, setIsSaved] = useState(false)
+  // What the last save did; drafts stay editable (saving again overwrites the same draft on the server).
+  const [isSaved, setIsSaved] = useState<'draft' | 'published' | false>(false)
+  const [publishOnSave, setPublishOnSave] = useState(true)
+  const formRef = useRef<HTMLFormElement>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
     setErrorMessage(null)
     try {
+      // This page is Coach-only: GET /pt-bookings is staff-only (403 for a Coach), so read the Coach's own sessions.
       let allBookings: Booking[] = []
       try {
-        const bookingsRes = await ptBookingsService.getBookings({ limit: 100 })
+        const bookingsRes = await ptBookingsService.getMyCoachBookings({ limit: 100 })
         allBookings =
           (bookingsRes as any)?.data ||
           (bookingsRes as any)?.items ||
           (Array.isArray(bookingsRes) ? bookingsRes : [])
       } catch {
-        // Fallback for coach endpoint
-      }
-
-      if (allBookings.length === 0) {
-        try {
-          const myBookingsRes = await coachesService.getMyBookings()
-          allBookings =
-            (myBookingsRes as any)?.data ||
-            (myBookingsRes as any)?.items ||
-            (Array.isArray(myBookingsRes) ? myBookingsRes : [])
-        } catch {
-          // ignore
-        }
+        // ignore: the page shows its empty state
       }
 
       let exList: Exercise[] = []
@@ -118,8 +109,10 @@ export function TrainingResultPage() {
     setSetsData(setsData.filter((_, i) => i !== index))
   }
 
-  const handleSaveResult = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // `publish` is passed in (not read from state) so the button that was clicked decides, in the same event.
+  const saveResult = async (publish: boolean) => {
+    if (formRef.current && !formRef.current.reportValidity()) return
+    setPublishOnSave(publish)
     if (!selectedBookingId) {
       setErrorMessage('Vui lòng chọn buổi tập cần ghi nhận kết quả.')
       return
@@ -133,35 +126,37 @@ export function TrainingResultPage() {
     setIsSubmitting(true)
     setErrorMessage(null)
 
-    const selectedExercise = exercises.find((ex) => ex.id === selectedExerciseId)
 
     const payload: CreateTrainingResultPayload = {
       performedAt: new Date().toISOString(),
       result: [
         {
           exerciseId: selectedExerciseId,
-          exerciseName: selectedExercise?.name || 'Bài tập chính',
           sets: setsData.map((s) => ({
             reps: Number(s.reps),
             weight: Number(s.weight),
             rpe: Number(s.rpe),
           })),
           completed: true,
-          note: 'Hoàn thành đúng kỹ thuật & nhịp thở',
         },
       ],
       coachComment,
-      progressScore: Number(progressScore),
+      progressScore: progressScore === '' ? undefined : Number(progressScore),
     }
 
     try {
       const res = await ptBookingsService.createTrainingResult(selectedBookingId, payload)
       const resId = res?.id || res?.data?.id
-      if (resId) {
-        await ptBookingsService.publishTrainingResult(resId)
+      if (publish && resId) {
+        try {
+          await ptBookingsService.publishTrainingResult(resId)
+        } catch (publishErr) {
+          setIsSaved('draft')
+          setErrorMessage(`Đã lưu nháp nhưng chưa công bố: ${isAppApiError(publishErr) ? publishErr.message : 'lỗi kết nối'}. Bấm "Lưu & công bố" lần nữa để thử lại.`)
+          return
+        }
       }
-      setIsSaved(true)
-      setTimeout(() => setIsSaved(false), 4000)
+      setIsSaved(publish ? 'published' : 'draft')
     } catch (err) {
       if (isAppApiError(err)) {
         setErrorMessage(err.message || 'Không thể lưu kết quả buổi tập')
@@ -177,7 +172,7 @@ export function TrainingResultPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Ghi Nhận Kết Quả Buổi Tập (WEB-COA-08)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Ghi Nhận Kết Quả Buổi Tập</h1>
           <p className="text-xs text-text-muted mt-1">
             Ghi log số hiệp thực tế, tải trọng tạ, chỉ số gắng sức (RPE 1-10) và nhận xét của HLV cho buổi tập đã hoàn thành
           </p>
@@ -204,11 +199,11 @@ export function TrainingResultPage() {
       {isSaved && (
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-          <span>Đã ghi nhận và xuất bản kết quả buổi tập lên hệ thống thành công!</span>
+          <span>{isSaved === 'published' ? 'Đã công bố kết quả buổi tập. Học viên đã xem được.' : 'Đã lưu nháp. Bạn có thể sửa và lưu lại; học viên chỉ thấy khi bạn công bố.'}</span>
         </div>
       )}
 
-      <form onSubmit={handleSaveResult} className="space-y-6">
+      <form ref={formRef} onSubmit={(e) => { e.preventDefault(); void saveResult(true) }} className="space-y-6">
         <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
           <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
             <Activity className="h-4 w-4 text-primary" />
@@ -360,14 +355,24 @@ export function TrainingResultPage() {
             </div>
           </div>
 
-          <div className="flex justify-end pt-4">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void saveResult(false)}
+              isLoading={isSubmitting && !publishOnSave}
+              disabled={isSubmitting || completedBookings.length === 0 || exercises.length === 0}
+            >
+              Lưu nháp
+            </Button>
             <Button
               type="submit"
               variant="primary"
               className="px-8"
+              isLoading={isSubmitting && publishOnSave}
               disabled={isSubmitting || completedBookings.length === 0 || exercises.length === 0}
             >
-              {isSubmitting ? 'Đang lưu...' : 'Xuất Bản Kết Quả (Publish)'}
+              Lưu & công bố
             </Button>
           </div>
         </div>

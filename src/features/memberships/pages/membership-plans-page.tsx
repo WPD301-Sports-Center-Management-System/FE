@@ -15,6 +15,7 @@ export function MembershipPlansPage() {
   const [newPrice, setNewPrice] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const loadPlans = async () => {
     setIsLoading(true)
@@ -36,6 +37,7 @@ export function MembershipPlansPage() {
   const handleOpenEdit = (plan: MembershipPlan) => {
     setSelectedPlan(plan)
     setNewPrice(plan.price)
+    setSaveError(null)
   }
 
   const handleSavePrice = async (e: React.FormEvent) => {
@@ -50,7 +52,7 @@ export function MembershipPlansPage() {
       setPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
       setSelectedPlan(null)
     } catch (err: any) {
-      alert(err?.message || 'Không thể cập nhật giá gói.')
+      setSaveError(err?.message || 'Không thể cập nhật giá gói.')
     } finally {
       setIsSubmitting(false)
     }
@@ -64,7 +66,7 @@ export function MembershipPlansPage() {
       })
       setPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
     } catch (err: any) {
-      alert(err?.message || 'Không thể đổi trạng thái gói.')
+      setError(err?.message || 'Không thể đổi trạng thái gói.')
     } finally {
       setUpdatingStatusId(null)
     }
@@ -74,7 +76,7 @@ export function MembershipPlansPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quản lý Bảng Giá Vé Gym (WEB-MAN-04)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quản lý Bảng Giá Vé Gym</h1>
           <p className="text-xs text-text-muted mt-1">
             Cấu hình gói hội viên tập tự do phòng Gym. Giá thay đổi chỉ áp dụng cho lượt mua mới.
           </p>
@@ -118,7 +120,7 @@ export function MembershipPlansPage() {
                 )}
 
                 <div className="space-y-3">
-                  <span className="text-[10px] uppercase font-mono tracking-wider text-text-muted">{plan.code}</span>
+                  <span className="text-xs uppercase font-mono tracking-wider text-text-muted">{plan.code}</span>
                   <h2 className="text-xl font-bold text-text-primary">{plan.name}</h2>
 
                   <div className="space-y-1.5 py-3 text-xs text-text-primary">
@@ -139,7 +141,7 @@ export function MembershipPlansPage() {
                   </div>
 
                   <div className="pt-2">
-                    <p className="text-[10px] uppercase text-text-muted">Giá niêm yết hiện hành</p>
+                    <p className="text-xs uppercase text-text-muted">Giá niêm yết hiện hành</p>
                     <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{formatVND(plan.price)}</p>
                   </div>
                 </div>
@@ -181,6 +183,7 @@ export function MembershipPlansPage() {
         description="Quy tắc Snapshot: Giá mới chỉ áp dụng cho các giao dịch tạo mới."
       >
         <form onSubmit={handleSavePrice} className="space-y-4">
+          {saveError && <p role="alert" className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-sm text-danger">{saveError}</p>}
           <Input
             label="Giá niêm yết mới (VND)"
             type="number"

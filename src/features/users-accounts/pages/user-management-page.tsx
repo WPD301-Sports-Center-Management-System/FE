@@ -1,4 +1,7 @@
+import { centerDate } from '@/shared/utils/date'
 import { useState, useEffect, useCallback } from 'react'
+import { roleLabel } from '@/shared/constants/labels'
+import { Avatar } from '@/shared/components/ui/avatar'
 import {
   Plus,
   KeyRound,
@@ -221,7 +224,7 @@ export function UserManagementPage() {
       const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv' }))
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', `users-export-${new Date().toISOString().slice(0, 10)}.csv`)
+      link.setAttribute('download', `users-export-${centerDate()}.csv`)
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -245,24 +248,17 @@ export function UserManagementPage() {
         const memberCode = row.memberCode || row.memberProfile?.memberCode
         return (
           <div className="flex items-center gap-3">
-            <img
-              src={
-                row.avatarUrl ||
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80'
-              }
-              alt={row.fullName}
-              className="h-9 w-9 rounded-full object-cover border border-border-subtle shrink-0"
-            />
+            <Avatar src={row.avatarUrl} name={row.fullName} size={36} className="rounded-full" />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="font-semibold text-text-primary text-sm">{row.fullName}</p>
                 {memberCode && (
-                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25 tracking-tight">
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25 tracking-tight">
                     {memberCode}
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-text-muted mt-0.5">{row.email}</p>
+              <p className="text-xs text-text-muted mt-0.5">{row.email}</p>
             </div>
           </div>
         )
@@ -288,7 +284,7 @@ export function UserManagementPage() {
             }`}
           >
             <Shield className="h-3 w-3 shrink-0" />
-            {row.role}
+            {roleLabel(row.role)}
           </span>
         )
       },
@@ -309,10 +305,10 @@ export function UserManagementPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-            Quản lý Tài Khoản & Nhân Sự (WEB-MAN-02)
+            Quản lý Tài Khoản & Nhân Sự
           </h1>
           <p className="text-xs text-text-muted mt-1">
-            Quản lý phân quyền Manager, Lễ tân, Huấn luyện viên và Hội viên qua API
+            Quản lý tài khoản và phân quyền cho Quản lý, Lễ tân, Huấn luyện viên và Hội viên.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -374,10 +370,10 @@ export function UserManagementPage() {
             className="rounded-xl border border-border-subtle bg-bg-input px-3 py-1.5 text-xs text-text-primary focus:border-primary focus:outline-none"
           >
             <option value="">Tất cả vai trò</option>
-            <option value="MANAGER">Quản lý (MANAGER)</option>
-            <option value="RECEPTIONIST">Lễ tân (RECEPTIONIST)</option>
-            <option value="COACH">Huấn luyện viên (COACH)</option>
-            <option value="MEMBER">Hội viên (MEMBER)</option>
+            <option value="MANAGER">Quản lý</option>
+            <option value="RECEPTIONIST">Lễ tân</option>
+            <option value="COACH">Huấn luyện viên</option>
+            <option value="MEMBER">Hội viên</option>
           </select>
 
           <select
@@ -514,10 +510,10 @@ export function UserManagementPage() {
               setCreateFormData({ ...createFormData, role: e.target.value as UserRole })
             }
             options={[
-              { value: 'COACH', label: 'Huấn Luyện Viên (COACH)' },
-              { value: 'RECEPTIONIST', label: 'Nhân Viên Lễ Tân (RECEPTIONIST)' },
-              { value: 'MANAGER', label: 'Quản Lý Trung Tâm (MANAGER)' },
-              { value: 'MEMBER', label: 'Hội Viên (MEMBER)' },
+              { value: 'COACH', label: 'Huấn Luyện Viên' },
+              { value: 'RECEPTIONIST', label: 'Nhân Viên Lễ Tân' },
+              { value: 'MANAGER', label: 'Quản Lý Trung Tâm' },
+              { value: 'MEMBER', label: 'Hội Viên' },
             ]}
             disabled={isSubmitting}
           />
@@ -584,10 +580,10 @@ export function UserManagementPage() {
               setEditFormData({ ...editFormData, role: e.target.value as UserRole })
             }
             options={[
-              { value: 'COACH', label: 'Huấn Luyện Viên (COACH)' },
-              { value: 'RECEPTIONIST', label: 'Nhân Viên Lễ Tân (RECEPTIONIST)' },
-              { value: 'MANAGER', label: 'Quản Lý Trung Tâm (MANAGER)' },
-              { value: 'MEMBER', label: 'Hội Viên (MEMBER)' },
+              { value: 'COACH', label: 'Huấn Luyện Viên' },
+              { value: 'RECEPTIONIST', label: 'Nhân Viên Lễ Tân' },
+              { value: 'MANAGER', label: 'Quản Lý Trung Tâm' },
+              { value: 'MEMBER', label: 'Hội Viên' },
             ]}
             disabled={isSubmitting}
           />

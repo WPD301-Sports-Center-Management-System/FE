@@ -114,4 +114,16 @@ export const mealPlansService = {
     const res = await apiClient.post(`/meal-plans/${planId}/days/${dayNumber}/duplicate`, { targetDayNumber })
     return res?.data ?? res
   },
+
+  /** POST /meal-plans/:id/duplicate - Copy a plan (with all items) into a new DRAFT */
+  async duplicateMealPlan(id: string): Promise<MealPlan> {
+    const res = (await apiClient.post(`/meal-plans/${id}/duplicate`, {})) as any
+    return (res?.data ?? res) as MealPlan
+  },
+
+  /** POST /meal-plans/:id/archive - Retire a plan; the member stops seeing it as current */
+  async archiveMealPlan(id: string): Promise<MealPlan> {
+    const res = (await apiClient.post(`/meal-plans/${id}/archive`, {})) as any
+    return (res?.data ?? res) as MealPlan
+  },
 }

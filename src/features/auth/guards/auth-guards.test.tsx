@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { ProtectedRoute, GuestRoute } from './auth-guards'
+import { ProtectedRoute, GuestRoute, isPathAllowedForRole } from './auth-guards'
 import * as authContext from '@/features/auth/context/auth-context'
 
 vi.mock('@/features/auth/context/auth-context', () => ({
@@ -240,5 +240,37 @@ describe('Auth Guards', () => {
       expect(screen.getByText('Member Dashboard')).toBeInTheDocument()
       expect(screen.queryByText('Login Form')).not.toBeInTheDocument()
     })
+  })
+
+  describe('isPathAllowedForRole', () => {
+    // Regression: a Manager who logged in after a session ended on /coach/* was sent back into the Coach workspace.
+    it('never sends a Manager back into the Coach workspace', () => {
+      expect(isPathAllowedForRole('/coach', 'MANAGER')).toBe(false)
+      expect(isPathAllowedForRole('/coach/schedule', 'MANAGER')).toBe(false)
+    })
+    it('lets a Manager return to the manager console and the front desk', () => {
+      expect(isPathAllowedForRole('/manager/pt-board', 'MANAGER')).toBe(true)
+      expect(isPathAllowedForRole('/receptionist/payments', 'MANAGER')).toBe(true)
+      expect(isPathAllowedForRole('/coaches/abc', 'MANAGER')).toBe(true)
+    })
+    it('keeps every other role inside its own area', () => {
+      expect(isPathAllowedForRole('/manager', 'COACH')).toBe(false)
+      expect(isPathAllowedForRole('/coach/students', 'COACH')).toBe(true)
+      expect(isPathAllowedForRole('/coach', 'RECEPTIONIST')).toBe(false)
+    })
+  })
+
+  it('GuestRoute sends a signed-in Manager to /manager even when the previous page was /coach', () => {
+    vi.mocked(authContext.useAuth).mockReturnValue({ isAuthenticated: true, isInitializing: false, role: 'MANAGER' } as unknown as ReturnType<typeof authContext.useAuth>)
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/login', state: { from: { pathname: '/coach/schedule' } } }]}>
+        <Routes>
+          <Route element={<GuestRoute />}><Route path="/login" element={<div>Login</div>} /></Route>
+          <Route path="/manager" element={<div>Manager home</div>} />
+          <Route path="/coach/schedule" element={<div>Coach schedule</div>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    expect(screen.getByText('Manager home')).toBeInTheDocument()
   })
 })

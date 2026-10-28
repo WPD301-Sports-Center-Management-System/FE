@@ -39,6 +39,7 @@ export type ApiError = {
   code: string
   message: string
   errors?: Array<{ field: string; reason?: string; message?: string }>
+  details?: unknown
 }
 
 export type UserSummary = {
@@ -63,6 +64,9 @@ export type UserDetail = UserSummary & {
     fitnessLevel?: string
   } | null
   profile?: MemberDetail | CoachDetail
+  // Present when the user comes from GET /auth/me (role profile ids).
+  coachProfilesUserId?: { id: string } | null
+  memberProfilesUserId?: { id: string } | null
 }
 
 export type AuthSession = {
@@ -223,6 +227,7 @@ export type CoachSlot = {
 }
 
 export type PackageOption = {
+  durationMinutes?: number
   id: string
   courseId: string
   coachId?: string
@@ -544,6 +549,8 @@ export type CoachReview = {
 export type SupportRequest = {
   id: string
   requestCode: string
+  // Image links uploaded by the Member (receipt screenshots etc.), at most 3.
+  attachmentUrls?: string[]
   memberId: string
   memberName?: string
   subject: string

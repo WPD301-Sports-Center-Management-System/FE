@@ -1,3 +1,4 @@
+import { openReceipt } from '@/features/workspace/receipt-events'
 import { useState, useEffect, useCallback } from 'react'
 import {
   User,
@@ -21,8 +22,6 @@ import {
 import { useAuth } from '@/features/auth/context/auth-context'
 import { meService } from '@/features/auth/services/me.service'
 import { dashboardService } from '@/features/dashboard/services/dashboard.service'
-import { paymentsService } from '@/features/payments-invoices/services/payments.service'
-import { downloadBlob } from '@/shared/utils/download'
 import { isAppApiError } from '@/shared/api/api-error'
 import { formatVND } from '@/shared/utils/currency'
 import { formatDateTime, formatDate } from '@/shared/utils/date'
@@ -153,7 +152,7 @@ export function MemberDashboardPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-extrabold text-text-primary">{user?.fullName || 'Hội viên'}</h1>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+              <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
                 MEMBER
               </span>
             </div>
@@ -306,22 +305,22 @@ export function MemberDashboardPage() {
                           </div>
                           <StatusBadge status={pkg.status} />
                         </div>
-                        <div className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-bg-surface border border-border-subtle text-center text-[11px]">
+                        <div className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-bg-surface border border-border-subtle text-center text-xs">
                           <div>
-                            <span className="text-text-muted block text-[10px]">Đã tập</span>
+                            <span className="text-text-muted block text-xs">Đã tập</span>
                             <span className="font-bold text-text-primary">{pkg.consumedCredits || 0}</span>
                           </div>
                           <div>
-                            <span className="text-text-muted block text-[10px]">Đang giữ</span>
+                            <span className="text-text-muted block text-xs">Đang giữ</span>
                             <span className="font-bold text-amber-600 dark:text-amber-400">{pkg.reservedCredits || 0}</span>
                           </div>
                           <div>
-                            <span className="text-text-muted block text-[10px]">Còn lại</span>
+                            <span className="text-text-muted block text-xs">Còn lại</span>
                             <span className="font-bold text-emerald-600 dark:text-emerald-400">{pkg.availableCredits || 0}</span>
                           </div>
                         </div>
                         {pkg.expiresAt && (
-                          <p className="text-[11px] text-text-muted flex items-center gap-1">
+                          <p className="text-xs text-text-muted flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             <span>Hạn sử dụng: {formatDate(pkg.expiresAt)}</span>
                           </p>
@@ -354,7 +353,7 @@ export function MemberDashboardPage() {
                         <p className="text-xs text-text-muted mt-0.5">HLV: {b.coachName || 'Huấn luyện viên'}</p>
                         <p className="text-xs text-cyan-600 dark:text-cyan-400 font-mono mt-1">{formatDateTime(b.startsAt)} → {formatDateTime(b.endsAt)}</p>
                       </div>
-                      <StatusBadge status={b.status} />
+                      <StatusBadge status={b.status} context="session" />
                     </div>
                   ))}
                 </div>
@@ -372,7 +371,7 @@ export function MemberDashboardPage() {
                     <Dumbbell className="h-4 w-4 text-primary" />
                     <span>Giáo Án Tập Luyện Được Giao</span>
                   </h2>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                     {trainingPlans.length} giáo án
                   </span>
                 </div>
@@ -398,7 +397,7 @@ export function MemberDashboardPage() {
                             <p className="text-xs text-text-muted line-clamp-1">
                               Mục tiêu: <strong className="text-text-primary">{tp.goal || 'Tăng cường thể lực'}</strong>
                             </p>
-                            <div className="flex items-center gap-3 text-[11px] text-text-muted">
+                            <div className="flex items-center gap-3 text-xs text-text-muted">
                               <span>{exercises.length} bài tập</span>
                               <span>•</span>
                               <span>Bắt đầu: {formatDate(tp.startDate)}</span>
@@ -434,7 +433,7 @@ export function MemberDashboardPage() {
                     <Utensils className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     <span>Thực Đơn Dinh Dưỡng Được Giao</span>
                   </h2>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                  <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
                     {mealPlans.length} thực đơn
                   </span>
                 </div>
@@ -462,7 +461,7 @@ export function MemberDashboardPage() {
                               <span>•</span>
                               <span>{items.length} món ăn</span>
                             </div>
-                            <p className="text-[11px] text-text-muted">Áp dụng từ: {formatDate(mp.startDate)}</p>
+                            <p className="text-xs text-text-muted">Áp dụng từ: {formatDate(mp.startDate)}</p>
                           </div>
 
                           <Button
@@ -500,21 +499,21 @@ export function MemberDashboardPage() {
                   {progress.assessments && progress.assessments.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div className="rounded-xl bg-bg-surface-muted border border-border-subtle p-3">
-                        <p className="text-[11px] text-text-muted">Cân nặng gần nhất</p>
+                        <p className="text-xs text-text-muted">Cân nặng gần nhất</p>
                         <p className="text-sm font-bold text-text-primary">{progress.assessments[0].weightKg} kg</p>
                       </div>
                       <div className="rounded-xl bg-bg-surface-muted border border-border-subtle p-3">
-                        <p className="text-[11px] text-text-muted">Chiều cao</p>
+                        <p className="text-xs text-text-muted">Chiều cao</p>
                         <p className="text-sm font-bold text-text-primary">{progress.assessments[0].heightCm} cm</p>
                       </div>
                       <div className="rounded-xl bg-bg-surface-muted border border-border-subtle p-3">
-                        <p className="text-[11px] text-text-muted">Tỷ lệ mỡ</p>
+                        <p className="text-xs text-text-muted">Tỷ lệ mỡ</p>
                         <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                           {progress.assessments[0].bodyFatPercent ? `${progress.assessments[0].bodyFatPercent}%` : '--'}
                         </p>
                       </div>
                       <div className="rounded-xl bg-bg-surface-muted border border-border-subtle p-3">
-                        <p className="text-[11px] text-text-muted">Khối lượng cơ</p>
+                        <p className="text-xs text-text-muted">Khối lượng cơ</p>
                         <p className="text-sm font-bold text-cyan-600 dark:text-cyan-400">
                           {progress.assessments[0].muscleMassKg ? `${progress.assessments[0].muscleMassKg} kg` : '--'}
                         </p>
@@ -557,11 +556,11 @@ export function MemberDashboardPage() {
                         <div>
                           <p className="font-bold text-text-primary text-sm">{p.itemDescription || p.description || 'Dịch vụ Gym'}</p>
                           <p className="text-xs font-mono text-text-muted">Mã: {p.paymentCode || p.id.slice(0, 8)} • {p.method}</p>
-                          {p.paidAt && <p className="text-[11px] text-text-muted mt-0.5">{formatDateTime(p.paidAt)}</p>}
+                          {p.paidAt && <p className="text-xs text-text-muted mt-0.5">{formatDateTime(p.paidAt)}</p>}
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">{formatVND(p.amount)}</p>
-                          <StatusBadge status={p.status} />
+                          <StatusBadge status={p.status} context="payment" />
                         </div>
                       </div>
                     ))}
@@ -586,7 +585,7 @@ export function MemberDashboardPage() {
                         <div>
                           <p className="font-mono font-bold text-primary text-xs">{inv.invoiceNumber}</p>
                           <p className="text-xs text-text-muted mt-0.5">{inv.itemNameSnapshot}</p>
-                          <p className="text-[11px] text-text-muted">{formatDateTime(inv.issuedAt)}</p>
+                          <p className="text-xs text-text-muted">{formatDateTime(inv.issuedAt)}</p>
                         </div>
                         <div className="flex items-center gap-3">
                           <p className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">{formatVND(inv.total)}</p>
@@ -596,15 +595,14 @@ export function MemberDashboardPage() {
                             className="text-xs h-7 gap-1"
                             onClick={async () => {
                               try {
-                                const blob = await paymentsService.downloadInvoicePdf(inv.id)
-                                await downloadBlob(blob, `hoa_don_${inv.invoiceNumber}.pdf`)
+                                openReceipt({ invoiceId: inv.id })
                               } catch {
                                 setErrorMessage('Không thể tải file PDF hóa đơn.')
                               }
                             }}
                           >
                             <Download className="h-3 w-3" />
-                            <span>PDF</span>
+                            <span>Xem hóa đơn</span>
                           </Button>
                         </div>
                       </div>
@@ -633,9 +631,9 @@ export function MemberDashboardPage() {
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-bold text-text-primary text-sm">{req.subject || 'Yêu cầu hỗ trợ'}</p>
-                          <p className="text-[10px] font-mono text-text-muted">{req.requestCode}</p>
+                          <p className="text-xs font-mono text-text-muted">{req.requestCode}</p>
                         </div>
-                        <StatusBadge status={req.status} />
+                        <StatusBadge status={req.status} context="support" />
                       </div>
                       <p className="text-xs text-text-muted">{req.message}</p>
 
@@ -674,7 +672,7 @@ export function MemberDashboardPage() {
           return (
             <div className="space-y-4 text-xs">
               {/* Medical disclaimer alert */}
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-2">
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
                 <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
                 <span>
                   {selectedMealPlan.medicalDisclaimer ||
@@ -710,22 +708,22 @@ export function MemberDashboardPage() {
                   {/* Day Macro Overview */}
                   <div className="grid grid-cols-4 gap-2 p-3 rounded-xl bg-bg-surface-muted border border-border-subtle text-center text-xs">
                     <div>
-                      <span className="text-[10px] text-text-muted block flex items-center justify-center gap-1">
+                      <span className="text-xs text-text-muted block flex items-center justify-center gap-1">
                         <Flame className="h-3 w-3 text-amber-500" />
                         <span>Calo</span>
                       </span>
                       <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{dayCal} kcal</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-text-muted block">Protein</span>
+                      <span className="text-xs text-text-muted block">Protein</span>
                       <span className="font-bold text-primary">{dayP}g</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-text-muted block">Carbs</span>
+                      <span className="text-xs text-text-muted block">Carbs</span>
                       <span className="font-bold text-amber-600 dark:text-amber-400">{dayC}g</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-text-muted block">Fat</span>
+                      <span className="text-xs text-text-muted block">Fat</span>
                       <span className="font-bold text-rose-600 dark:text-rose-400">{dayF}g</span>
                     </div>
                   </div>
@@ -738,7 +736,7 @@ export function MemberDashboardPage() {
                         className="p-3 rounded-xl border border-border-subtle bg-bg-surface space-y-1.5"
                       >
                         <div className="flex justify-between items-start">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded bg-primary/10 text-primary">
                             {meal.mealType}
                           </span>
                           <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
@@ -747,9 +745,9 @@ export function MemberDashboardPage() {
                         </div>
                         <p className="text-xs font-semibold text-text-primary">{meal.foodName}</p>
                         {meal.quantity && (
-                          <p className="text-[11px] text-text-muted">Định lượng: {meal.quantity}</p>
+                          <p className="text-xs text-text-muted">Định lượng: {meal.quantity}</p>
                         )}
-                        <div className="flex gap-4 text-[10px] text-text-muted border-t border-border-subtle pt-1">
+                        <div className="flex gap-4 text-xs text-text-muted border-t border-border-subtle pt-1">
                           <span>Đạm: <strong className="text-primary">{meal.proteinGrams || 0}g</strong></span>
                           <span>Carbs: <strong className="text-amber-600 dark:text-amber-400">{meal.carbsGrams || 0}g</strong></span>
                           <span>Béo: <strong className="text-rose-600 dark:text-rose-400">{meal.fatGrams || 0}g</strong></span>
@@ -788,15 +786,15 @@ export function MemberDashboardPage() {
               {/* Header summary */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3 rounded-xl bg-bg-surface-muted border border-border-subtle text-xs">
                 <div>
-                  <span className="text-text-muted block text-[10px]">Trạng thái:</span>
+                  <span className="text-text-muted block text-xs">Trạng thái:</span>
                   <StatusBadge status={selectedTrainingPlan.status} />
                 </div>
                 <div>
-                  <span className="text-text-muted block text-[10px]">Số lượng bài tập:</span>
+                  <span className="text-text-muted block text-xs">Số lượng bài tập:</span>
                   <span className="font-bold text-primary">{exercises.length} động tác</span>
                 </div>
                 <div>
-                  <span className="text-text-muted block text-[10px]">Ngày bắt đầu:</span>
+                  <span className="text-text-muted block text-xs">Ngày bắt đầu:</span>
                   <span className="font-medium text-text-primary">{formatDate(selectedTrainingPlan.startDate)}</span>
                 </div>
               </div>
@@ -804,7 +802,7 @@ export function MemberDashboardPage() {
               {/* Coach notes if any */}
               {selectedTrainingPlan.notes && (
                 <div className="p-3 rounded-xl bg-bg-surface-muted border border-border-subtle space-y-1">
-                  <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block">
+                  <span className="text-xs text-text-muted font-bold uppercase tracking-wider block">
                     Lời dặn của Huấn luyện viên:
                   </span>
                   <p className="text-text-primary leading-relaxed">{selectedTrainingPlan.notes}</p>
@@ -825,7 +823,7 @@ export function MemberDashboardPage() {
                     >
                       <div className="flex justify-between items-start gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] shrink-0">
+                          <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
                             {idx + 1}
                           </span>
                           <div>
@@ -833,7 +831,7 @@ export function MemberDashboardPage() {
                               {ex.exercise?.name || ex.exerciseName || 'Bài tập thể hình'}
                             </p>
                             {ex.exercise?.targetMuscle && (
-                              <span className="text-[10px] text-primary font-medium">
+                              <span className="text-xs text-primary font-medium">
                                 Nhóm cơ: {ex.exercise.targetMuscle}
                               </span>
                             )}
@@ -841,30 +839,30 @@ export function MemberDashboardPage() {
                         </div>
 
                         {ex.scheduledDate && (
-                          <span className="text-[10px] font-mono text-text-muted">
+                          <span className="text-xs font-mono text-text-muted">
                             Lịch: {formatDate(ex.scheduledDate)}
                           </span>
                         )}
                       </div>
 
                       {/* Reps/Sets/Weight Grid */}
-                      <div className="grid grid-cols-4 gap-2 p-2 rounded-lg bg-bg-surface-muted text-center text-[11px]">
+                      <div className="grid grid-cols-4 gap-2 p-2 rounded-lg bg-bg-surface-muted text-center text-xs">
                         <div>
-                          <span className="text-[10px] text-text-muted block">Số hiệp</span>
+                          <span className="text-xs text-text-muted block">Số hiệp</span>
                           <span className="font-bold text-text-primary">{ex.sets || 3} sets</span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-text-muted block">Lặp lại</span>
+                          <span className="text-xs text-text-muted block">Lặp lại</span>
                           <span className="font-bold text-text-primary">{ex.reps || 12} reps</span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-text-muted block">Mức tạ</span>
+                          <span className="text-xs text-text-muted block">Mức tạ</span>
                           <span className="font-bold text-emerald-600 dark:text-emerald-400">
                             {ex.targetWeight || 'Bodyweight'}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-text-muted block">Nghỉ</span>
+                          <span className="text-xs text-text-muted block">Nghỉ</span>
                           <span className="font-bold text-amber-600 dark:text-amber-400">
                             {ex.restSeconds || 60}s
                           </span>
@@ -873,7 +871,7 @@ export function MemberDashboardPage() {
 
                       {/* Instructions */}
                       {(ex.instructions || ex.exercise?.instructions) && (
-                        <p className="text-[11px] text-text-muted border-t border-border-subtle pt-1.5 leading-relaxed">
+                        <p className="text-xs text-text-muted border-t border-border-subtle pt-1.5 leading-relaxed">
                           <strong className="text-text-primary font-medium">Hướng dẫn: </strong>
                           {ex.instructions || ex.exercise?.instructions}
                         </p>

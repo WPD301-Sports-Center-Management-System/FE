@@ -166,7 +166,7 @@ export function CoachAiRecommendationPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Gợi Ý Bài Tập Từ Trí Tuệ Nhân Tạo (WEB-COA-11)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Gợi Ý Bài Tập Từ Trí Tuệ Nhân Tạo</h1>
           <p className="text-xs text-text-muted mt-1">
             Ứng dụng mô hình AI kết hợp dữ liệu InBody và mục tiêu của học viên để phác thảo giáo án thông minh
           </p>
@@ -261,7 +261,7 @@ export function CoachAiRecommendationPage() {
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-text-primary">{content.title || 'Bản Phác Thảo Giáo Án AI'}</h3>
                 <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  className={`text-xs px-2 py-0.5 rounded-full font-bold ${
                     currentRec.status === 'APPROVED'
                       ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                       : currentRec.status === 'REJECTED'

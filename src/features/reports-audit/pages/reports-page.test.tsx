@@ -30,10 +30,13 @@ describe('ReportsPage', () => {
       data: [
         {
           id: 'payout-1',
-          coachName: 'Coach Đỗ Thùy Trang',
+          coachId: 'coach-1',
+          coach: { user: { fullName: 'Coach Đỗ Thùy Trang' } },
+          periodFrom: '2026-10-01',
+          periodTo: '2026-10-31',
           grossAmount: '1800000',
-          gymAmount: '720000',
-          coachAmount: '1080000',
+          offsetAmount: '0',
+          netAmount: '1080000',
           status: 'PAID',
           transferRef: 'MB-123456',
         } as any,
@@ -43,7 +46,7 @@ describe('ReportsPage', () => {
     render(<ReportsPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Báo Cáo Tài Chính & Quyết Toán HLV (WEB-MAN-10)')).toBeInTheDocument()
+      expect(screen.getByText('Báo Cáo Tài Chính & Quyết Toán HLV')).toBeInTheDocument()
       expect(screen.getByText('Coach Đỗ Thùy Trang')).toBeInTheDocument()
     })
   })

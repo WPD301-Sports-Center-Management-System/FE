@@ -13,7 +13,7 @@ export const FeaturesSection = () => {
       iconColor: 'text-orange-400',
       iconBg: 'bg-orange-500/10 border-orange-500/20',
       title: 'Huấn Luyện Viên 1:1 Chuyên Nghiệp',
-      tag: 'CÁ NHÂN HÓA 100%',
+      tag: 'CÁ NHÂN HÓA',
       description: 'Nói không với các lớp nhóm đại trà. Huấn luyện viên đồng hành độc quyền, chỉnh sửa từng động tác, mức tạ và nhịp thở để bạn tập đúng - an toàn - hiệu quả.',
       perks: ['Kiểm duyệt chứng chỉ quốc tế', 'Theo sát kỹ thuật từng hiệp', 'Không chung đụng thời gian']
     },
@@ -24,7 +24,7 @@ export const FeaturesSection = () => {
       iconBg: 'bg-sky-500/10 border-sky-500/20',
       title: 'Hệ Thống Credit & Đặt Lịch Linh Hoạt',
       tag: 'CHỦ ĐỘNG THỜI GIAN',
-      description: 'Mua gói 5, 10 hoặc 20 buổi. Dùng credit chọn slot mở của Coach ngay trên điện thoại trong 5 giây. Hủy lịch trước 12 tiếng được hoàn 100% credit tự động.',
+      description: 'Chọn gói buổi tập cùng Coach, xếp lịch cố định hằng tuần ngay khi mua. Hủy hoặc đổi buổi trên ứng dụng theo mốc thời gian trung tâm công bố.',
       perks: ['Slot thời gian thực (Real-time)', 'Chính sách hoàn credit minh bạch', 'Thông báo nhắc lịch thông minh']
     },
     {
@@ -84,7 +84,7 @@ export const FeaturesSection = () => {
                     <div className={`w-12 h-12 rounded-xl border flex items-center justify-center ${feat.iconBg} ${feat.iconColor}`}>
                       <IconComponent className="w-6 h-6" />
                     </div>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 uppercase tracking-wider">
+                    <span className="text-xs font-extrabold px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 uppercase tracking-wider">
                       {feat.tag}
                     </span>
                   </div>

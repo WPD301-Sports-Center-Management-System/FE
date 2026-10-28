@@ -17,8 +17,13 @@ export interface ManagerDashboardData {
 
 export interface ReceptionistDashboardData {
   checkinsToday: number
+  /** Members currently inside the gym (open visits). */
+  insideGym: number
   pendingPayments: number
   expiringSubscriptions: number
+  activeMembers: number
+  ptSessionsToday: number
+  openSupportRequests: number
 }
 
 export interface CoachDashboardData {

@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { authService } from './auth.service'
 import { apiClient } from '@/shared/api/client'
+import { refreshSessionTokens } from '@/shared/api/refresh-session'
+vi.mock('@/shared/api/refresh-session', () => ({ refreshSessionTokens: vi.fn() }))
 
 vi.mock('@/shared/api/client', () => ({
   apiClient: {
@@ -67,16 +69,10 @@ describe('authService', () => {
       expiresIn: '15m',
     }
 
-    vi.mocked(apiClient.post).mockResolvedValueOnce({
-      success: true,
-      message: 'Thành công.',
-      data: mockRefresh,
-    } as any)
+    vi.mocked(refreshSessionTokens).mockResolvedValueOnce(mockRefresh)
 
     const result = await authService.refreshToken('old-refresh-token')
-    expect(apiClient.post).toHaveBeenCalledWith('/auth/refresh', {
-      refreshToken: 'old-refresh-token',
-    })
+    expect(refreshSessionTokens).toHaveBeenCalledWith('old-refresh-token')
     expect(result).toEqual(mockRefresh)
   })
 

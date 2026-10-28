@@ -123,6 +123,21 @@ export const membersService = {
     return data.data
   },
 
+  /** PATCH /body-assessments/{id} - Correct a recorded assessment (BMI is recalculated by the server) */
+  async updateBodyAssessment(id: string, payload: Partial<CreateBodyAssessmentPayload>): Promise<BodyAssessment> {
+    const res = await apiClient.patch<ApiSuccess<BodyAssessment>>(`/body-assessments/${id}`, payload)
+    return (res as unknown as ApiSuccess<BodyAssessment>).data
+  },
+
+  /** PATCH /fitness-goals/{id} - Update progress, targets or status of a goal */
+  async updateFitnessGoal(
+    id: string,
+    payload: Partial<CreateFitnessGoalPayload> & { status?: 'ACTIVE' | 'ACHIEVED' | 'CANCELLED' }
+  ): Promise<FitnessGoal> {
+    const res = await apiClient.patch<ApiSuccess<FitnessGoal>>(`/fitness-goals/${id}`, payload)
+    return (res as unknown as ApiSuccess<FitnessGoal>).data
+  },
+
   /**
    * [9] GET /members/{memberId}/fitness-goals - Get fitness goals
    */

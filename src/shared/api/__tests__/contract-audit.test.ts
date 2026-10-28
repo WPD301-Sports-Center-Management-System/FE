@@ -38,7 +38,15 @@ describe('FE and BE Contract Audit', () => {
       'PATCH /coach-reviews/{id}/moderation',
       'GET /invoices/{id}',
       'GET /invoices/{id}/pdf',
-      'POST /pt-bookings',
+      'POST /pt-enrollments',
+      'GET /coaches/{coachId}/intake-rules',
+      'POST /pt-enrollments/{id}/proposals',
+      'POST /pt-enrollments/{id}/accept',
+      'POST /pt-bookings/{id}/arrive',
+      'POST /pt-bookings/{id}/start',
+      'POST /pt-bookings/{id}/complete',
+      'POST /pt-schedule-changes',
+      'POST /coach-payout-periods',
       'POST /pt-bookings/{id}/training-result',
       'POST /training-results/{id}/publish',
       'POST /members/{memberId}/body-assessments',
@@ -54,6 +62,9 @@ describe('FE and BE Contract Audit', () => {
     for (const call of criticalFeCalls) {
       expect(backendEndpoints.has(call), `Expected endpoint "${call}" to exist in contract`).toBe(true)
     }
+    // Retired slot-based writes must not silently return to the product contract.
+    expect(backendEndpoints.has('POST /pt-bookings')).toBe(false)
+    expect(backendEndpoints.has('POST /coach-slots/{slotId}/book')).toBe(false)
   })
 
   it('verifies Purchase type has valid credit and course fields and no deprecated fields', () => {

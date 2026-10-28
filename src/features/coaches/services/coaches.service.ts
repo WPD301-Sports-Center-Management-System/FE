@@ -159,16 +159,16 @@ export const coachesService = {
   /**
    * [13] POST /pt-bookings/{id}/complete - Mark session completed
    */
-  async completeBooking(id: string, payload?: { note?: string; force?: boolean }): Promise<any> {
-    const res = await apiClient.post(`/pt-bookings/${id}/complete`, { ...payload, force: true })
+  async completeBooking(id: string, payload?: { note?: string; earlyEndReason?: string }): Promise<any> {
+    const res = await apiClient.post(`/pt-bookings/${id}/complete`, payload ?? {})
     return res?.data || res
   },
 
   /**
    * [14] POST /pt-bookings/{id}/no-show - Report member no-show
    */
-  async reportNoShow(id: string, reason: string, force = true): Promise<any> {
-    const res = await apiClient.post(`/pt-bookings/${id}/no-show`, { reason, force })
+  async reportNoShow(id: string, reason: string): Promise<any> {
+    const res = await apiClient.post(`/pt-bookings/${id}/no-show`, { reason })
     return res?.data || res
   },
 

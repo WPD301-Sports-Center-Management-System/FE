@@ -16,7 +16,20 @@ export function FullPageLoader() {
 
 export function isPathAllowedForRole(path: string, role: UserRole | null | undefined): boolean {
   if (!role) return false
-  if (role === 'MANAGER') return true
+  if (['/payment/vnpay-return', '/payment/vnpay/return', '/payments/vnpay-return'].includes(path)) return true
+  if (path.startsWith('/pt-sessions/') || path.startsWith('/pt-purchases/')) return true
+  // A Manager may return to the manager console, the front desk and shared detail pages, but never
+  // to another role's workspace: /coach/* reads /coaches/me/* and only works for a Coach account.
+  if (role === 'MANAGER') {
+    return (
+      path.startsWith('/manager') ||
+      path.startsWith('/receptionist') ||
+      path.startsWith('/pt-sessions/') ||
+      path.startsWith('/pt-purchases/') ||
+      path === '/' ||
+      path.startsWith('/coaches/')
+    )
+  }
   if (role === 'RECEPTIONIST') {
     return (
       path.startsWith('/receptionist') ||
@@ -70,9 +83,10 @@ export function GuestRoute({ children }: { children?: React.ReactNode }) {
   }
 
   if (isAuthenticated) {
-    const from = (location.state as { from?: { pathname: string } })?.from?.pathname
+    const target = (location.state as { from?: { pathname: string; search?: string } })?.from
+    const from = target?.pathname
     if (from && isPathAllowedForRole(from, role)) {
-      return <Navigate to={from} replace />
+      return <Navigate to={{ pathname: from, search: target?.search?.startsWith('?') ? target.search : '' }} replace />
     }
 
     if (role === 'MANAGER') return <Navigate to="/manager" replace />

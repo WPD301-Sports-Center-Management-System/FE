@@ -24,13 +24,6 @@ describe('ptBookingsService', () => {
     expect(result).toEqual({ success: true, data: [] })
   })
 
-  it('[2] createBooking calls POST /pt-bookings', async () => {
-    const payload = { memberId: 'm-1', purchaseId: 'p-1', slotId: 's-1' }
-    vi.mocked(apiClient.post).mockResolvedValueOnce({ success: true, data: { id: 'b-1', status: 'CONFIRMED' } } as any)
-    const result = await ptBookingsService.createBooking(payload)
-    expect(apiClient.post).toHaveBeenCalledWith('/pt-bookings', payload)
-    expect(result.id).toBe('b-1')
-  })
 
   it('[3] getBookingById calls GET /pt-bookings/{id}', async () => {
     vi.mocked(apiClient.get).mockResolvedValueOnce({ success: true, data: { id: 'b-1', status: 'CONFIRMED' } } as any)
@@ -51,16 +44,16 @@ describe('ptBookingsService', () => {
     expect(apiClient.post).toHaveBeenCalledWith('/pt-bookings/b-1/coach-cancel', { reason: 'HLV ốm' })
   })
 
-  it('[6] completeBooking calls POST /pt-bookings/{id}/complete with force=true', async () => {
+  it('[6] completeBooking calls POST /pt-bookings/{id}/complete without any force flag', async () => {
     vi.mocked(apiClient.post).mockResolvedValueOnce({ success: true, data: { status: 'COMPLETED' } } as any)
     await ptBookingsService.completeBooking('b-1')
-    expect(apiClient.post).toHaveBeenCalledWith('/pt-bookings/b-1/complete', { force: true })
+    expect(apiClient.post).toHaveBeenCalledWith('/pt-bookings/b-1/complete', {})
   })
 
-  it('[7] noShowBooking calls POST /pt-bookings/{id}/no-show with force=true', async () => {
+  it('[7] noShowBooking calls POST /pt-bookings/{id}/no-show without any force flag', async () => {
     vi.mocked(apiClient.post).mockResolvedValueOnce({ success: true } as any)
     await ptBookingsService.noShowBooking('b-1', { reason: 'Không đến' })
-    expect(apiClient.post).toHaveBeenCalledWith('/pt-bookings/b-1/no-show', { reason: 'Không đến', force: true })
+    expect(apiClient.post).toHaveBeenCalledWith('/pt-bookings/b-1/no-show', { reason: 'Không đến' })
   })
 
   it('[8] createTrainingResult calls POST /pt-bookings/{id}/training-result', async () => {
@@ -75,29 +68,7 @@ describe('ptBookingsService', () => {
     expect(apiClient.post).toHaveBeenCalledWith('/pt-bookings/b-1/training-result', payload)
   })
 
-  it('[10] getCoachRecurringMatrix calls GET /coaches/{coachId}/recurring-matrix', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce({ success: true, data: { coachId: 'c-1', matrix: [] } } as any)
-    const result = await ptBookingsService.getCoachRecurringMatrix('c-1', { startDate: '2026-10-26', totalWeeks: 4 })
-    expect(apiClient.get).toHaveBeenCalledWith('/coaches/c-1/recurring-matrix', {
-      params: { startDate: '2026-10-26', totalWeeks: 4 },
-    })
-    expect(result.coachId).toBe('c-1')
-  })
 
-  it('[11] previewFixedSchedule calls POST /pt-package-purchases/{id}/fixed-schedule/preview', async () => {
-    const payload = { startDate: '2026-10-26', daysOfWeek: [1, 3, 5], slotIndex: 4 }
-    vi.mocked(apiClient.post).mockResolvedValueOnce({ success: true, data: { isAvailable: true, totalSessions: 12 } } as any)
-    const result = await ptBookingsService.previewFixedSchedule('p-1', payload)
-    expect(apiClient.post).toHaveBeenCalledWith('/pt-package-purchases/p-1/fixed-schedule/preview', payload)
-    expect(result.isAvailable).toBe(true)
-  })
 
-  it('[12] bookFixedSchedule calls POST /pt-package-purchases/{id}/fixed-schedule/book', async () => {
-    const payload = { startDate: '2026-10-26', daysOfWeek: [1, 3, 5], slotIndex: 4 }
-    vi.mocked(apiClient.post).mockResolvedValueOnce({ success: true, data: { success: true, totalBooked: 12 } } as any)
-    const result = await ptBookingsService.bookFixedSchedule('p-1', payload)
-    expect(apiClient.post).toHaveBeenCalledWith('/pt-package-purchases/p-1/fixed-schedule/book', payload)
-    expect(result.totalBooked).toBe(12)
-  })
 })
 

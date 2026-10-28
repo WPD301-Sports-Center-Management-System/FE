@@ -6,6 +6,7 @@ vi.mock('@/shared/api/client', () => ({
   apiClient: {
     get: vi.fn(),
     patch: vi.fn(),
+    post: vi.fn(),
   },
 }))
 
@@ -33,9 +34,9 @@ describe('reportsService', () => {
     expect(res).toEqual(mockRev)
   })
 
-  it('[2] calls GET /coach-payouts', async () => {
+  it('[2] calls GET /coach-payout-periods', async () => {
     const mockPayouts = [
-      { id: 'cp-1', grossAmount: '1800000', gymAmount: '720000', coachAmount: '1080000', status: 'PAID' },
+      { id: 'cp-1', grossAmount: '1080000', offsetAmount: '0', netAmount: '1080000', status: 'PAID' },
     ]
     vi.mocked(apiClient.get).mockResolvedValueOnce({
       success: true,
@@ -43,23 +44,23 @@ describe('reportsService', () => {
     } as any)
 
     const res = await reportsService.getCoachPayouts({ status: 'PAID' })
-    expect(apiClient.get).toHaveBeenCalledWith('/coach-payouts', { params: { status: 'PAID' } })
+    expect(apiClient.get).toHaveBeenCalledWith('/coach-payout-periods', { params: { status: 'PAID' } })
     expect(res.data).toEqual(mockPayouts)
   })
 
-  it('[3] calls PATCH /coach-payouts/{id}/mark-paid', async () => {
+  it('[3] calls POST /coach-payout-periods/{id}/mark-paid', async () => {
     const mockPayout = {
       id: 'cp-1',
       status: 'PAID',
       transferRef: 'REF-TXN-123',
     }
-    vi.mocked(apiClient.patch).mockResolvedValueOnce({
+    vi.mocked(apiClient.post).mockResolvedValueOnce({
       success: true,
       data: mockPayout,
     } as any)
 
     const res = await reportsService.markPaid('cp-1', { transferRef: 'REF-TXN-123' })
-    expect(apiClient.patch).toHaveBeenCalledWith('/coach-payouts/cp-1/mark-paid', {
+    expect(apiClient.post).toHaveBeenCalledWith('/coach-payout-periods/cp-1/mark-paid', {
       transferRef: 'REF-TXN-123',
     })
     expect(res).toEqual(mockPayout)

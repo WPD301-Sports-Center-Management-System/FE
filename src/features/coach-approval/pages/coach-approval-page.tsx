@@ -8,6 +8,11 @@ import { Textarea } from '@/shared/components/ui/input'
 import { coachApprovalService } from '@/features/coach-approval/services/coach-approval.service'
 import { isAppApiError } from '@/shared/api/api-error'
 import type { OfferingDetail, PackageOption } from '@/features/coach-approval/types/coach-approval.types'
+import { PackageOptionDialog } from '../components/package-option-dialog'
+import { coursesExercisesService } from '@/features/courses-exercises/services/courses-exercises.service'
+import { useLoad } from '@/features/fixed-pt/hooks'
+import { ErrorBanner, Notice } from '@/features/fixed-pt/components/ui'
+import { fetchAllPages } from '@/shared/api/pagination'
 
 export function CoachApprovalPage() {
   const [activeTab, setActiveTab] = useState<'offering' | 'package'>('offering')
@@ -16,6 +21,8 @@ export function CoachApprovalPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [sharedDialog, setSharedDialog] = useState<PackageOption | 'new' | null>(null)
+  const courses = useLoad(() => fetchAllPages(params => coursesExercisesService.getTrainingCourses(params)))
 
   // Filter States
   const [offeringSearch, setOfferingSearch] = useState('')
@@ -37,11 +44,11 @@ export function CoachApprovalPage() {
     setErrorMessage(null)
     try {
       const [offRes, pkgRes] = await Promise.all([
-        coachApprovalService.getCoachCourseOfferings(),
-        coachApprovalService.getPtPackageOptions({ limit: 100 }),
+        fetchAllPages(params => coachApprovalService.getCoachCourseOfferings(params)),
+        fetchAllPages(params => coachApprovalService.getPtPackageOptions(params)),
       ])
-      setOfferings(offRes.data || [])
-      setPackageOptions(pkgRes.data || [])
+      setOfferings(offRes)
+      setPackageOptions(pkgRes)
     } catch (err) {
       if (isAppApiError(err)) {
         setErrorMessage(err.message || 'Không thể tải danh sách phê duyệt HLV & Gói PT.')
@@ -251,11 +258,17 @@ export function CoachApprovalPage() {
 
   return (
     <div className="space-y-6">
+      <Notice>1. Duyệt quyền dạy khóa → 2. Duyệt gói Coach đề xuất hoặc tạo gói chung. Gói chung được mở bán ngay cho Coach đủ quyền dạy. Không duyệt từng đơn mua hay từng lịch tập.</Notice>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button disabled={courses.loading || !!courses.error || !courses.data?.some(c => c.isActive)} onClick={() => setSharedDialog('new')}>Tạo gói PT chung</Button>
+        {!courses.loading && !courses.error && !courses.data?.some(c => c.isActive) && <p className="text-sm text-text-muted">Tạo và mở khóa tại Bài tập & Khóa học trước khi tạo gói.</p>}
+      </div>
+      <ErrorBanner message={courses.error} onRetry={courses.reload} />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2">
             <Award className="h-6 w-6 text-orange-500" />
-            <span>Phê Duyệt HLV & Gói Tập (WEB-MAN-07)</span>
+            <span>Phê Duyệt HLV & Gói Tập</span>
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Xét duyệt năng lực dạy khóa học và các gói huấn luyện PT 1:1 do Huấn luyện viên đề xuất
@@ -307,7 +320,7 @@ export function CoachApprovalPage() {
               : 'border-transparent text-text-muted hover:text-text-primary'
           }`}
         >
-          Gói PT HLV đề xuất ({packageOptions.length})
+          Gói PT: đề xuất & gói chung ({packageOptions.length})
         </button>
       </div>
 
@@ -369,7 +382,7 @@ export function CoachApprovalPage() {
                           <h3 className="text-base font-bold text-text-primary">{courseTitle}</h3>
                           <p className="text-xs text-orange-500 font-semibold mt-0.5">HLV: {coachName}</p>
                           {off.course?.difficultyLevel && (
-                            <span className="inline-block mt-1 text-[10px] rounded bg-bg-surface-muted px-2 py-0.5 text-text-muted">
+                            <span className="inline-block mt-1 text-xs rounded bg-bg-surface-muted px-2 py-0.5 text-text-muted">
                               Độ khó: {off.course.difficultyLevel}
                             </span>
                           )}
@@ -378,7 +391,7 @@ export function CoachApprovalPage() {
                           <StatusBadge status={off.status} />
                           {isApproved && (
                             <span
-                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                                 off.isActive
                                   ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                                   : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
@@ -514,6 +527,7 @@ export function CoachApprovalPage() {
                       <span className="text-text-muted">Số buổi tập:</span>
                       <span className="font-semibold text-text-primary">{pkg.sessionCount} Buổi</span>
                     </div>
+                    <div className="flex justify-between"><span className="text-text-muted">Thời lượng mỗi buổi:</span><span>{pkg.durationMinutes ?? 60} phút</span></div>
                     <div className="flex justify-between">
                       <span className="text-text-muted">Hạn sử dụng:</span>
                       <span className="font-semibold text-text-primary">{pkg.validityDays} Ngày</span>
@@ -554,7 +568,7 @@ export function CoachApprovalPage() {
                     </div>
                   )}
 
-                  {pkg.approvalStatus === 'APPROVED' && (
+                  {pkg.approvalStatus === 'APPROVED' && !pkg.coachId && (
                     <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-subtle">
                       <Button
                         size="sm"
@@ -570,8 +584,10 @@ export function CoachApprovalPage() {
                         <Power className={`h-3.5 w-3.5 ${processingId === pkg.id ? 'animate-spin' : ''}`} />
                         <span>{pkg.isActive ? 'Tạm dừng mở bán' : 'Kích hoạt mở bán'}</span>
                       </Button>
+                      <Button size="sm" variant="secondary" onClick={() => setSharedDialog(pkg)}>Sửa gói chung</Button>
                     </div>
                   )}
+                  {pkg.approvalStatus === 'APPROVED' && pkg.coachId && <p className="text-xs text-text-muted">Coach quản lý bật/tắt bán gói riêng. Manager chỉ xét duyệt đề xuất.</p>}
                 </div>
               )
             })}
@@ -581,6 +597,9 @@ export function CoachApprovalPage() {
       )}
 
       {/* Modal Rejection with mandatory reason */}
+      {sharedDialog && <PackageOptionDialog shared initial={sharedDialog === 'new' ? undefined : sharedDialog}
+        courses={sharedDialog === 'new' ? courses.data?.filter(c => c.isActive) ?? [] : courses.data ?? []}
+        onClose={() => setSharedDialog(null)} onSaved={() => { setSharedDialog(null); setActiveTab('package'); showSuccess('Đã lưu gói chung. Coach đủ quyền dạy có thể sử dụng gói này.'); void loadApprovals() }} />}
       <Modal
         isOpen={!!rejectItem}
         onClose={() => {
@@ -593,6 +612,7 @@ export function CoachApprovalPage() {
         description="Vui lòng cung cấp lý do từ chối để HLV điều chỉnh và gửi lại"
       >
         <form onSubmit={handleConfirmReject} className="space-y-4">
+          <ErrorBanner message={errorMessage} />
           <Textarea
             label="Lý do từ chối (Bắt buộc)"
             required

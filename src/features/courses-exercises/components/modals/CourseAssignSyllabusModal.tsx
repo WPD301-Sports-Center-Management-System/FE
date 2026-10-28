@@ -44,12 +44,12 @@ export function CourseAssignSyllabusModal({
 
     const newItems: SyllabusItem[] = []
     preset.exercises.forEach((pEx, idx) => {
+      // No arbitrary substitute: an unmatched preset item stays empty for the Manager to choose.
       const matched = findMatchingExercise(pEx.candidateNames, exercises)
-      const exToUse = matched || exercises[0]
-      const note = `[${pEx.roleName}] ${pEx.byLevel.INTERMEDIATE.instructions} (Gợi ý: ${pEx.byLevel.INTERMEDIATE.rpe})`
+      const note = `${matched ? '' : '[Chưa có bài khớp – chọn bài] '}[${pEx.roleName}] ${pEx.byLevel.INTERMEDIATE.instructions} (Gợi ý: ${pEx.byLevel.INTERMEDIATE.rpe})`
 
       newItems.push({
-        exerciseId: exToUse.id,
+        exerciseId: matched?.id ?? '',
         sortOrder: idx + 1,
         coachNote: note,
       })
@@ -79,7 +79,7 @@ export function CourseAssignSyllabusModal({
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
         {/* Quick Presets for Manager */}
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
-          <div className="flex items-center gap-1.5 font-semibold text-text-primary text-[11px]">
+          <div className="flex items-center gap-1.5 font-semibold text-text-primary text-xs">
             <Zap className="h-3.5 w-3.5 text-primary fill-primary/20" />
             <span>Nạp nhanh khung bài tập mẫu 6 pha chuẩn thể hình:</span>
           </div>
@@ -87,21 +87,21 @@ export function CourseAssignSyllabusModal({
             <button
               type="button"
               onClick={() => handleApplyPresetToSyllabus('pull_day_hypertrophy')}
-              className="px-2.5 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-800 dark:text-blue-300 font-medium transition-colors cursor-pointer text-[11px]"
+              className="px-2.5 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-800 dark:text-blue-300 font-medium transition-colors cursor-pointer text-xs"
             >
               🏋️ Mẫu Lưng (Pull Day)
             </button>
             <button
               type="button"
               onClick={() => handleApplyPresetToSyllabus('push_day_strength')}
-              className="px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-medium transition-colors cursor-pointer text-[11px]"
+              className="px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-medium transition-colors cursor-pointer text-xs"
             >
               💪 Mẫu Ngực (Push Day)
             </button>
             <button
               type="button"
               onClick={() => handleApplyPresetToSyllabus('leg_day_power')}
-              className="px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-medium transition-colors cursor-pointer text-[11px]"
+              className="px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-medium transition-colors cursor-pointer text-xs"
             >
               🦵 Mẫu Chân (Leg Day)
             </button>
@@ -117,7 +117,7 @@ export function CourseAssignSyllabusModal({
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="font-bold text-primary text-xs flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px]">
+                  <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs">
                     {idx + 1}
                   </span>
                   <span>Động tác #{idx + 1}</span>
@@ -127,7 +127,7 @@ export function CourseAssignSyllabusModal({
                   onClick={() => {
                     setItems((prev) => prev.filter((_, i) => i !== idx))
                   }}
-                  className="text-danger hover:underline text-[11px] flex items-center gap-1 cursor-pointer"
+                  className="text-danger hover:underline text-xs flex items-center gap-1 cursor-pointer"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   <span>Xóa</span>

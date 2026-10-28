@@ -4,11 +4,10 @@ import {
   ArrowRight, 
   Clock, 
   TrendingUp, 
-  CheckCircle2, 
   Award,
-  Zap,
   Smartphone
 } from 'lucide-react';
+import { useCatalog } from '../api';
 
 interface HeroSectionProps {
   onOpenTrialModal: () => void;
@@ -16,6 +15,7 @@ interface HeroSectionProps {
 }
 
 export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSectionProps) => {
+  const stats = useCatalog().data?.stats;
   return (
     <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden bg-radial-gradient">
       {/* Ambient background glows */}
@@ -35,7 +35,7 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
               </span>
-              <span>🔥 Huấn Luyện 1:1 Chuẩn Quốc Tế • Tích Hợp AI Lộ Trình</span>
+              <span>Huấn luyện 1:1 • Theo dõi tiến độ trên ứng dụng</span>
             </div>
 
             {/* Main Headline */}
@@ -69,29 +69,21 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
               </a>
             </div>
 
-            {/* Trust Badges / Stats Bar */}
-            <div className="pt-6 border-t border-slate-800/80 grid grid-cols-3 gap-4 text-center lg:text-left">
-              <div>
-                <div className="text-2xl sm:text-3xl font-extrabold font-heading text-white">
-                  100<span className="text-orange-500">%</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-1">Coach có bằng quốc tế (NASM, ACE, ISSA)</p>
+            {/* Live numbers from the catalog; hidden until loaded instead of showing invented figures */}
+            {stats && (
+              <div className="pt-6 border-t border-slate-800/80 grid grid-cols-3 gap-4 text-center lg:text-left">
+                {[
+                  { value: stats.coaches, label: 'Huấn luyện viên đang nhận dạy' },
+                  { value: stats.courses, label: 'Khóa tập PT 1:1' },
+                  { value: stats.exercises, label: 'Bài tập có hướng dẫn trong thư viện' },
+                ].map((s) => (
+                  <div key={s.label}>
+                    <div className="text-2xl sm:text-3xl font-extrabold font-heading text-white">{s.value}</div>
+                    <p className="text-sm text-slate-400 mt-1">{s.label}</p>
+                  </div>
+                ))}
               </div>
-
-              <div>
-                <div className="text-2xl sm:text-3xl font-extrabold font-heading text-white">
-                  200<span className="text-orange-500">+</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-1">Bài tập phân loại theo từng nhóm cơ</p>
-              </div>
-
-              <div>
-                <div className="text-2xl sm:text-3xl font-extrabold font-heading text-white">
-                  98.4<span className="text-emerald-400">%</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-1">Hội viên đạt mục tiêu sau 10-20 buổi</p>
-              </div>
-            </div>
+            )}
 
           </div>
 
@@ -105,10 +97,10 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
               <div className="rounded-[30px] bg-[#090d16] p-4 sm:p-5 border border-white/5 space-y-4 text-left overflow-hidden relative">
                 
                 {/* Status Bar */}
-                <div className="flex items-center justify-between text-[11px] text-slate-400 pb-1 border-b border-slate-800/60">
+                <div className="flex items-center justify-between text-xs text-slate-400 pb-1 border-b border-slate-800/60">
                   <span className="font-semibold text-white">09:41</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-medium">5G</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-medium">5G</span>
                     <span>100%</span>
                   </div>
                 </div>
@@ -116,13 +108,13 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
                 {/* Member App Top Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] text-slate-400">Chào buổi sáng,</p>
+                    <p className="text-xs text-slate-400">Chào buổi sáng,</p>
                     <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                      Minh Đức <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">Hội viên PRO</span>
+                      Minh Đức <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">Hội viên PRO</span>
                     </h3>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-slate-400 block">Ví Credit PT</span>
+                    <span className="text-xs text-slate-400 block">Ví Credit PT</span>
                     <span className="text-xs font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
                       8 / 10 Buổi
                     </span>
@@ -134,18 +126,18 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
                   <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-xl pointer-events-none" />
                   
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400 flex items-center gap-1">
+                    <span className="text-xs font-bold uppercase tracking-wider text-orange-400 flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
                       LỊCH TẬP HÔM NAY • 1:1
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
                       CONFIRMED
                     </span>
                   </div>
 
                   <h4 className="text-sm font-bold text-white">Ngực & Tay Sau Cắt Nét (Hypertrophy)</h4>
 
-                  <div className="mt-2.5 pt-2.5 border-t border-slate-700/60 grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                  <div className="mt-2.5 pt-2.5 border-t border-slate-700/60 grid grid-cols-2 gap-2 text-xs text-slate-300">
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-orange-400" />
                       <span>17:30 - 18:30</span>
@@ -164,23 +156,23 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
                       <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
                       Chỉ Số InBody (Tuần 6)
                     </span>
-                    <span className="text-[10px] text-slate-400">Cập nhật 2 ngày trước</span>
+                    <span className="text-xs text-slate-400">Cập nhật 2 ngày trước</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="p-2 rounded-xl bg-slate-800/70 border border-slate-700/50">
-                      <span className="text-[10px] text-slate-400 block">Khối lượng cơ</span>
+                      <span className="text-xs text-slate-400 block">Khối lượng cơ</span>
                       <div className="flex items-baseline gap-1 mt-0.5">
                         <span className="text-sm font-bold text-white">34.8 kg</span>
-                        <span className="text-[10px] font-bold text-emerald-400">+2.4kg</span>
+                        <span className="text-xs font-bold text-emerald-400">+2.4kg</span>
                       </div>
                     </div>
 
                     <div className="p-2 rounded-xl bg-slate-800/70 border border-slate-700/50">
-                      <span className="text-[10px] text-slate-400 block">Tỷ lệ mỡ (Body Fat)</span>
+                      <span className="text-xs text-slate-400 block">Tỷ lệ mỡ (Body Fat)</span>
                       <div className="flex items-baseline gap-1 mt-0.5">
                         <span className="text-sm font-bold text-white">14.2%</span>
-                        <span className="text-[10px] font-bold text-emerald-400">-5.1%</span>
+                        <span className="text-xs font-bold text-emerald-400">-5.1%</span>
                       </div>
                     </div>
                   </div>
@@ -193,9 +185,9 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] font-bold text-sky-300">AI Meal Plan • Đã duyệt</span>
+                      <span className="text-xs font-bold text-sky-300">AI Meal Plan • Đã duyệt</span>
                     </div>
-                    <p className="text-[10px] text-slate-300 mt-0.5 line-clamp-2">
+                    <p className="text-xs text-slate-300 mt-0.5 line-clamp-2">
                       Mục tiêu: 2,150 kcal • Protein: 165g. Uống 1 muỗng Whey Protein sau buổi tập 18:30.
                     </p>
                   </div>
@@ -213,25 +205,8 @@ export const HeroSection = ({ onOpenTrialModal, onOpenDownloadModal }: HeroSecti
               </div>
             </div>
 
-            {/* Floating Highlight Badges */}
-            <div className="hidden sm:flex absolute -bottom-6 -left-6 p-3 rounded-2xl bg-[#0e1626]/95 border border-emerald-500/40 shadow-xl backdrop-blur-md items-center gap-3 animate-float">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white">Chính Sách Hoàn Credit 100%</p>
-                <p className="text-[11px] text-slate-400">Hủy lịch linh hoạt trước 12 tiếng</p>
-              </div>
-            </div>
-
-            <div className="hidden sm:flex absolute -top-4 -right-4 p-3 rounded-2xl bg-[#0e1626]/95 border border-orange-500/40 shadow-xl backdrop-blur-md items-center gap-3 animate-float" style={{ animationDelay: '1.5s' }}>
-              <div className="w-9 h-9 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center">
-                <Zap className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white">Thanh Toán VNPay 1-Chạm</p>
-                <p className="text-[11px] text-slate-400">Nhận Credit & Hóa đơn tức thì</p>
-              </div>
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#0e1626]/95 border border-slate-600 text-xs font-semibold text-slate-300 shadow-lg">
+              Hình minh họa giao diện ứng dụng
             </div>
 
           </div>

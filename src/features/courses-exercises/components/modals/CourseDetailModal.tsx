@@ -66,7 +66,7 @@ export function CourseDetailModal({
                   >
                     <span>{cmg.muscleGroup?.name || 'Nhóm cơ'}</span>
                     {cmg.isPrimary && (
-                      <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                         Nhóm cơ chính
                       </span>
                     )}
@@ -103,12 +103,12 @@ export function CourseDetailModal({
                           <span className="font-semibold text-text-primary">
                             {item.exercise?.name || 'Bài tập'}
                           </span>
-                          <span className="text-[10px] text-text-muted">
+                          <span className="text-xs text-text-muted">
                             Độ khó: {item.exercise?.difficultyLevel || 'N/A'}
                           </span>
                         </div>
                         {item.coachNote && (
-                          <p className="text-[11px] text-primary mt-1 bg-primary/10 rounded p-1.5 border border-primary/20">
+                          <p className="text-xs text-primary mt-1 bg-primary/10 rounded p-1.5 border border-primary/20">
                             <strong>Lưu ý HLV:</strong> {item.coachNote}
                           </p>
                         )}
@@ -129,7 +129,7 @@ export function CourseDetailModal({
               <h6 className="font-semibold text-text-primary flex items-center gap-1">
                 <UserCheck className="h-3.5 w-3.5 text-sky-500" /> HLV được phân công:
               </h6>
-              <div className="text-[11px] text-text-muted">
+              <div className="text-xs text-text-muted">
                 {courseDetail.coachCourseOfferingsCourseId &&
                 courseDetail.coachCourseOfferingsCourseId.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
@@ -149,7 +149,7 @@ export function CourseDetailModal({
               <h6 className="font-semibold text-text-primary flex items-center gap-1">
                 <Package className="h-3.5 w-3.5 text-amber-500" /> Gói PT đang mở bán:
               </h6>
-              <div className="text-[11px] text-text-muted">
+              <div className="text-xs text-text-muted">
                 {courseDetail.ptPackageOptionsCourseId &&
                 courseDetail.ptPackageOptionsCourseId.length > 0 ? (
                   <div className="flex flex-wrap gap-1">

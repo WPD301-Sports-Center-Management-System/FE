@@ -73,7 +73,7 @@ export function CoachStudentsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2.5">
             <Dumbbell className="h-6 w-6 text-orange-500" />
-            <span>Học Viên Của Tôi (WEB-COA-05, 06)</span>
+            <span>Học Viên Của Tôi</span>
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Danh sách hội viên đang theo học các gói huấn luyện PT 1:1 do bạn trực tiếp giảng dạy
@@ -178,7 +178,7 @@ export function CoachStudentsPage() {
                         <h3 className="text-base font-bold text-text-primary leading-tight">
                           {studentName}
                         </h3>
-                        <p className="text-[11px] font-mono text-orange-500 font-semibold mt-0.5">
+                        <p className="text-xs font-mono text-orange-500 font-semibold mt-0.5">
                           {studentCode}
                         </p>
                       </div>
@@ -188,7 +188,7 @@ export function CoachStudentsPage() {
 
                   {/* Contact Snippet */}
                   {(studentPhone || studentEmail) && (
-                    <div className="flex flex-wrap gap-2 text-[11px] text-text-muted">
+                    <div className="flex flex-wrap gap-2 text-xs text-text-muted">
                       {studentPhone && (
                         <span className="inline-flex items-center gap-1 bg-bg-surface-muted px-2 py-0.5 rounded-lg text-text-primary">
                           <Phone className="h-3 w-3 text-primary" />
@@ -222,7 +222,7 @@ export function CoachStudentsPage() {
 
                     {/* Progress Bar */}
                     <div className="space-y-1 pt-1">
-                      <div className="flex justify-between text-[10px] text-text-muted">
+                      <div className="flex justify-between text-xs text-text-muted">
                         <span>Đã hoàn thành: {p.consumedCredits || 0} buổi</span>
                         <span>{progressPercent}%</span>
                       </div>
@@ -235,7 +235,7 @@ export function CoachStudentsPage() {
                     </div>
 
                     {p.expiresAt && (
-                      <div className="flex justify-between items-center pt-1 border-t border-border-subtle text-[11px]">
+                      <div className="flex justify-between items-center pt-1 border-t border-border-subtle text-xs">
                         <span className="text-text-muted flex items-center gap-1">
                           <Calendar className="h-3 w-3 text-text-muted" />
                           Hạn gói tập:
@@ -276,7 +276,7 @@ export function CoachStudentsPage() {
         </div>
       )}
 
-      {/* Student Profile Modal (WEB-COA-06) */}
+      {/* Student Profile Modal */}
       <Modal
         isOpen={!!selectedStudent}
         onClose={() => setSelectedStudent(null)}
@@ -359,7 +359,7 @@ export function CoachStudentsPage() {
                 </span>
               </div>
               {selectedStudent.expiresAt && (
-                <div className="flex justify-between items-center pt-2 border-t border-border-subtle text-[11px]">
+                <div className="flex justify-between items-center pt-2 border-t border-border-subtle text-xs">
                   <span className="text-text-muted">Hạn sử dụng gói:</span>
                   <span className="text-text-primary font-mono">{formatDate(selectedStudent.expiresAt)}</span>
                 </div>
@@ -372,14 +372,14 @@ export function CoachStudentsPage() {
                 <div className="rounded-xl border border-border-subtle bg-bg-surface p-3.5 hover:border-orange-500/40 transition-colors">
                   <Activity className="h-5 w-5 text-orange-500 mb-1.5" />
                   <p className="font-bold text-text-primary">Chỉ số InBody & Thể trạng</p>
-                  <p className="text-[10px] text-text-muted mt-0.5">Cân nặng, % Mỡ, Khối lượng cơ</p>
+                  <p className="text-xs text-text-muted mt-0.5">Cân nặng, % Mỡ, Khối lượng cơ</p>
                 </div>
               </Link>
               <Link to="/coach/training-plans">
                 <div className="rounded-xl border border-border-subtle bg-bg-surface p-3.5 hover:border-orange-500/40 transition-colors">
                   <FileText className="h-5 w-5 text-sky-500 mb-1.5" />
                   <p className="font-bold text-text-primary">Giáo án Tập luyện</p>
-                  <p className="text-[10px] text-text-muted mt-0.5">Lộ trình bài tập & Hiệp tập</p>
+                  <p className="text-xs text-text-muted mt-0.5">Lộ trình bài tập & Hiệp tập</p>
                 </div>
               </Link>
             </div>

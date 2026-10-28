@@ -418,7 +418,7 @@ export function EquipmentPage() {
       accessor: (row) => (
         <div>
           <p className="font-bold text-white">{row.name}</p>
-          <p className="text-[10px] font-mono text-orange-400">
+          <p className="text-xs font-mono text-orange-400">
             {row.equipmentCode} {row.brand ? `• ${row.brand}` : ''} {row.model ? `(${row.model})` : ''}
           </p>
         </div>
@@ -434,7 +434,7 @@ export function EquipmentPage() {
     },
     {
       header: 'Tình trạng',
-      accessor: (row) => <StatusBadge status={row.status || 'AVAILABLE'} />,
+      accessor: (row) => <StatusBadge status={row.status || 'AVAILABLE'} context="equipment" />,
     },
     {
       header: 'Bảo trì lần cuối',
@@ -467,7 +467,7 @@ export function EquipmentPage() {
       accessor: (row) => (
         <div>
           <p className="font-bold text-text-primary">{row.equipmentName || (row as any).equipment?.name || row.equipmentId.slice(0, 8)}</p>
-          <p className="text-[10px] font-mono text-text-muted">{(row as any).equipment?.equipmentCode}</p>
+          <p className="text-xs font-mono text-text-muted">{(row as any).equipment?.equipmentCode}</p>
         </div>
       ),
     },
@@ -481,7 +481,7 @@ export function EquipmentPage() {
     },
     {
       header: 'Trạng thái',
-      accessor: (row) => <StatusBadge status={row.status} />,
+      accessor: (row) => <StatusBadge status={row.status} context="maintenance" />,
     },
   ]
 
@@ -492,7 +492,7 @@ export function EquipmentPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2">
             <Wrench className="h-6 w-6 text-primary" />
-            <span>Quản Lý Thiết Bị & Khu Vực Phòng Gym (WEB-MAN-08)</span>
+            <span>Quản Lý Thiết Bị & Khu Vực Phòng Gym</span>
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Theo dõi máy móc phòng gym, cơ sở vật chất khu vực và lịch trình bảo trì định kỳ
@@ -963,12 +963,12 @@ export function EquipmentPage() {
             <div className="flex items-center justify-between p-3.5 rounded-xl bg-bg-surface-muted border border-border-subtle">
               <div>
                 <p className="text-base font-bold text-text-primary">{viewingEquipment.name}</p>
-                <p className="text-text-muted font-mono text-[11px] mt-0.5">
+                <p className="text-text-muted font-mono text-xs mt-0.5">
                   {viewingEquipment.brand ? `${viewingEquipment.brand} ` : ''}
                   {viewingEquipment.model ? `(${viewingEquipment.model})` : ''}
                 </p>
               </div>
-              <StatusBadge status={viewingEquipment.status || 'AVAILABLE'} />
+              <StatusBadge status={viewingEquipment.status || 'AVAILABLE'} context="equipment" />
             </div>
 
             <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-bg-surface border border-border-subtle">

@@ -25,12 +25,10 @@ export interface CoachCancelBookingPayload {
 export interface CompleteBookingPayload {
   completedAt?: string
   note?: string
-  force?: boolean
 }
 
 export interface NoShowBookingPayload {
   reason?: string
-  force?: boolean
 }
 
 export interface ExerciseResultItem {

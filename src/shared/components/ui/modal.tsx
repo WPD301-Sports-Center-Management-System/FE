@@ -1,4 +1,6 @@
-import { type ReactNode, useEffect } from 'react'
+import { type ReactNode, useId } from 'react'
+import { createPortal } from 'react-dom'
+import { useDialog } from '@/shared/hooks/use-dialog'
 import { X } from 'lucide-react'
 
 export interface ModalProps {
@@ -8,16 +10,12 @@ export interface ModalProps {
   description?: string
   children: ReactNode
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+  placement?: 'center' | 'right'
 }
 
-export function Modal({ isOpen, onClose, title, description, children, maxWidth = 'md' }: ModalProps) {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+export function Modal({ isOpen, onClose, title, description, children, maxWidth = 'md', placement = 'center' }: ModalProps) {
+  const dialog = useDialog(isOpen, onClose)
+  const titleId = useId()
 
   if (!isOpen) return null
 
@@ -29,8 +27,8 @@ export function Modal({ isOpen, onClose, title, description, children, maxWidth 
     '2xl': 'max-w-2xl',
   }[maxWidth]
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className={`fixed inset-0 z-50 flex ${placement === 'right' ? 'items-stretch justify-end' : 'items-center justify-center p-4'}`}>
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
@@ -41,15 +39,19 @@ export function Modal({ isOpen, onClose, title, description, children, maxWidth 
       {/* Modal Dialog */}
       <div
         role="dialog"
+        ref={dialog}
+        tabIndex={-1}
         aria-modal="true"
-        className={`relative w-full ${widthStyles} rounded-2xl border border-border-subtle bg-bg-surface p-6 shadow-2xl text-text-primary transition-all`}
+        aria-labelledby={titleId}
+        className={`relative w-full ${widthStyles} ${placement === 'right' ? 'h-full overflow-y-auto' : 'max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl'} border border-border-subtle bg-bg-surface p-6 shadow-2xl text-text-primary transition-all`}
       >
         <div className="flex items-start justify-between gap-4 border-b border-border-subtle pb-4">
           <div>
-            <h3 className="text-lg font-bold text-text-primary">{title}</h3>
+            <h3 id={titleId} className="text-lg font-bold text-text-primary">{title}</h3>
             {description && <p className="mt-1 text-xs text-text-muted">{description}</p>}
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="rounded-lg p-1 text-text-muted hover:bg-bg-surface-muted hover:text-text-primary transition-colors cursor-pointer"
             aria-label="Đóng"
@@ -60,6 +62,6 @@ export function Modal({ isOpen, onClose, title, description, children, maxWidth 
 
         <div className="mt-4">{children}</div>
       </div>
-    </div>
+    </div>, document.body
   )
 }

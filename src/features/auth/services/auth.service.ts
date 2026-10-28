@@ -1,3 +1,4 @@
+import { refreshSessionTokens } from '@/shared/api/refresh-session'
 import { apiClient } from '@/shared/api/client'
 import type { ApiSuccess } from '@/shared/types/api'
 import type {
@@ -35,11 +36,7 @@ export const authService = {
    * Renew access token and refresh token
    */
   async refreshToken(refreshToken: string): Promise<RefreshTokenResponseData> {
-    const res = await apiClient.post<ApiSuccess<RefreshTokenResponseData>>('/auth/refresh', {
-      refreshToken,
-    })
-    const payload = res as unknown as ApiSuccess<RefreshTokenResponseData>
-    return payload.data
+    return refreshSessionTokens(refreshToken)
   },
 
   /**

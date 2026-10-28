@@ -24,21 +24,6 @@ describe('ptPurchasesService', () => {
     expect(result).toEqual({ success: true, data: [] })
   })
 
-  it('[2] createPurchase calls POST /pt-package-purchases with payload', async () => {
-    const payload = {
-      memberId: 'm-1',
-      courseId: 'c-1',
-      coachId: 'coa-1',
-      packageOptionId: 'pkg-1',
-    }
-    const mockPurchase = { id: 'pur-1', ...payload, status: 'PENDING_PAYMENT' }
-    vi.mocked(apiClient.post).mockResolvedValueOnce({ success: true, data: mockPurchase } as any)
-
-    const result = await ptPurchasesService.createPurchase(payload)
-    expect(apiClient.post).toHaveBeenCalledWith('/pt-package-purchases', payload)
-    expect(result.id).toBe('pur-1')
-  })
-
   it('[3] getPurchaseById calls GET /pt-package-purchases/{id}', async () => {
     const mockDetail = { id: 'pur-1', status: 'ACTIVE', availableCredits: 8 }
     vi.mocked(apiClient.get).mockResolvedValueOnce({ success: true, data: mockDetail } as any)

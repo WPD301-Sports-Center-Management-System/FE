@@ -18,9 +18,9 @@ export function DashboardLayout() {
           </div>
           <div>
             <Link to="/" className="text-sm font-bold tracking-tight text-text-primary hover:text-primary transition-colors">
-              SPORTS CENTER
+              ApexFIT
             </Link>
-            <p className="text-[10px] uppercase tracking-wider text-text-muted">Gym & PT Management</p>
+            <p className="text-xs uppercase tracking-wider text-text-muted">Gym & PT Management</p>
           </div>
         </div>
 
@@ -31,7 +31,7 @@ export function DashboardLayout() {
 
         {/* Footer info */}
         <div className="border-t border-border-subtle p-4 text-center">
-          <p className="text-[10px] text-text-muted">Phiên bản v1.1 • Dual-Mode Mock Ready</p>
+          <p className="text-xs text-text-muted">ApexFIT · Gym & PT</p>
         </div>
       </aside>
 

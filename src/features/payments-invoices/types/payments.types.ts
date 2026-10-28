@@ -35,6 +35,7 @@ export interface VNPayPaymentResponse {
 export interface PaymentStatusResponse {
   id: string
   status: PaymentStatus
+  application?: 'APPLIED' | 'PENDING_REVIEW' | 'UNAPPLIED' | null
   paidAt?: string
 }
 

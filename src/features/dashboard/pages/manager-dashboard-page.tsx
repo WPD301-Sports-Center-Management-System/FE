@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Avatar } from '@/shared/components/ui/avatar'
 import { DollarSign, Users, Calendar, AlertTriangle, TrendingUp, CheckCircle2, RefreshCw, AlertCircle } from 'lucide-react'
 import { StatCard } from '@/shared/components/ui/stat-card'
 import { formatVND } from '@/shared/utils/currency'
@@ -138,7 +139,7 @@ export function ManagerDashboardPage() {
                   <p className="text-xs font-semibold text-text-primary">
                     Lịch tập PT 1:1 hôm nay: {stats?.bookingsToday || 0} buổi
                   </p>
-                  <p className="text-[10px] text-text-muted">Được giám sát và cập nhật trực tiếp theo thời gian thực</p>
+                  <p className="text-xs text-text-muted">Được giám sát và cập nhật trực tiếp theo thời gian thực</p>
                 </div>
               </div>
               <Link to="/receptionist/calendar">
@@ -157,7 +158,7 @@ export function ManagerDashboardPage() {
                   <p className="text-xs font-semibold text-text-primary">
                     Sự cố thiết bị ghi nhận: {stats?.equipmentIssues || 0} mục
                   </p>
-                  <p className="text-[10px] text-text-muted">Thiết bị & cơ sở vật chất phòng tập</p>
+                  <p className="text-xs text-text-muted">Thiết bị & cơ sở vật chất phòng tập</p>
                 </div>
               </div>
               <Link to="/manager/equipment">
@@ -180,19 +181,15 @@ export function ManagerDashboardPage() {
             {coaches.map((c) => (
               <div key={c.id} className="flex items-center justify-between border-b border-border-subtle pb-3 last:border-0">
                 <div className="flex items-center gap-3">
-                  <img
-                    src={c.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
-                    alt={c.fullName}
-                    className="h-9 w-9 rounded-full object-cover border border-border-subtle"
-                  />
+                  <Avatar src={c.avatarUrl} name={c.fullName} size={36} className="rounded-full" />
                   <div>
                     <p className="text-xs font-bold text-text-primary">{c.fullName}</p>
-                    <p className="text-[10px] text-text-muted">{c.specialization || 'HLV Thể hình & PT'}</p>
+                    <p className="text-xs text-text-muted">{c.specialization || 'HLV Thể hình & PT'}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-bold text-warning">★ {c.averageRating || 5.0}</span>
-                  <p className="text-[10px] text-text-muted">{c.reviewCount || 0} đánh giá</p>
+                  <p className="text-xs text-text-muted">{c.reviewCount || 0} đánh giá</p>
                 </div>
               </div>
             ))}

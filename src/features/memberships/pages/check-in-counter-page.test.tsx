@@ -84,7 +84,7 @@ describe('CheckInCounterPage', () => {
       </BrowserRouter>
     )
 
-    expect(screen.getByText(/Quầy Điểm Danh & Check-in/i)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Quầy check-in' })).toBeInTheDocument()
     expect(screen.getByText(/Sẵn sàng điểm danh/i)).toBeInTheDocument()
 
     await waitFor(() => {
@@ -99,7 +99,7 @@ describe('CheckInCounterPage', () => {
       </BrowserRouter>
     )
 
-    const input = screen.getByPlaceholderText(/Nhập mã thẻ/i)
+    const input = screen.getByPlaceholderText(/Mã thẻ, số điện thoại/i)
     fireEvent.change(input, { target: { value: 'MEM-00109' } })
 
     const searchBtn = screen.getByRole('button', { name: /Tìm kiếm/i })
@@ -157,7 +157,7 @@ describe('CheckInCounterPage', () => {
       </BrowserRouter>
     )
 
-    const input = screen.getByPlaceholderText(/Nhập mã thẻ/i)
+    const input = screen.getByPlaceholderText(/Mã thẻ, số điện thoại/i)
     fireEvent.change(input, { target: { value: 'MEM-00200' } })
 
     const searchBtn = screen.getByRole('button', { name: /Tìm kiếm/i })
@@ -165,7 +165,7 @@ describe('CheckInCounterPage', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Pham Thi D' })).toBeInTheDocument()
-      expect(screen.getByText(/Thẻ Đã Hết Hạn/i)).toBeInTheDocument()
+      expect(screen.getByText(/Không có vé gym còn hạn hôm nay/i)).toBeInTheDocument()
       expect(screen.getByText(/Gia hạn vé ngay/i)).toBeInTheDocument()
     })
   })
@@ -186,7 +186,7 @@ describe('CheckInCounterPage', () => {
       </BrowserRouter>
     )
 
-    const input = screen.getByPlaceholderText(/Nhập mã thẻ/i)
+    const input = screen.getByPlaceholderText(/Mã thẻ, số điện thoại/i)
     fireEvent.change(input, { target: { value: 'MEM-00109' } })
 
     const searchBtn = screen.getByRole('button', { name: /Tìm kiếm/i })
@@ -206,5 +206,25 @@ describe('CheckInCounterPage', () => {
       })
       expect(screen.getByText(/Check-in thành công cho hội viên Le Van C!/i)).toBeInTheDocument()
     })
+  })
+
+  it('never reports an expired ticket when the ticket lookup fails', async () => {
+    vi.mocked(subscriptionsService.getSubscriptions).mockRejectedValueOnce(new Error('offline'))
+
+    render(
+      <BrowserRouter>
+        <CheckInCounterPage />
+      </BrowserRouter>
+    )
+
+    fireEvent.change(screen.getByPlaceholderText(/Mã thẻ, số điện thoại/i), { target: { value: 'MEM-00109' } })
+    fireEvent.click(screen.getByRole('button', { name: /Tìm kiếm/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Chưa kiểm tra được vé gym/i)).toBeInTheDocument()
+    })
+    expect(screen.getByRole('button', { name: /Kiểm tra lại/i })).toBeInTheDocument()
+    expect(screen.queryByText(/Không có vé gym còn hạn hôm nay/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Xác nhận Check-in/i })).not.toBeInTheDocument()
   })
 })

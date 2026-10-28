@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Avatar } from '@/shared/components/ui/avatar'
 import {
   CheckCircle2,
   Users,
@@ -18,10 +19,7 @@ import { formatTime } from '@/shared/utils/date'
 import { dashboardService } from '../services/dashboard.service'
 import type { ReceptionistDashboardData } from '../types/dashboard.types'
 import { checkInsService } from '@/features/memberships/services/check-ins.service'
-import { membersService } from '@/features/memberships/services/members.service'
-import { ptBookingsService } from '@/features/pt-bookings-schedule/services/pt-bookings.service'
-import { supportRequestsService } from '@/features/support-reviews-audit/services/support-requests.service'
-import type { CheckIn, MemberSummary, Booking, SupportRequest } from '@/shared/types/api'
+import type { CheckIn } from '@/shared/types/api'
 
 
 export function ReceptionistDashboardPage() {
@@ -29,20 +27,14 @@ export function ReceptionistDashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const [dashData, setDashData] = useState<ReceptionistDashboardData | null>(null)
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
-  const [members, setMembers] = useState<MemberSummary[]>([])
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [supportRequests, setSupportRequests] = useState<SupportRequest[]>([])
 
   const loadData = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const [dashRes, checkInsRes, membersRes, bookingsRes, supportRes] = await Promise.allSettled([
+      const [dashRes, checkInsRes] = await Promise.allSettled([
         dashboardService.getReceptionistDashboard(),
         checkInsService.getCheckIns(),
-        membersService.getMembers(),
-        ptBookingsService.getBookings(),
-        supportRequestsService.getSupportRequests(),
       ])
 
       if (dashRes.status === 'fulfilled') {
@@ -51,21 +43,11 @@ export function ReceptionistDashboardPage() {
       if (checkInsRes.status === 'fulfilled') {
         setCheckIns(checkInsRes.value.data || [])
       }
-      if (membersRes.status === 'fulfilled') {
-        setMembers(membersRes.value.data || [])
-      }
-      if (bookingsRes.status === 'fulfilled') {
-        setBookings(bookingsRes.value.data || [])
-      }
-      if (supportRes.status === 'fulfilled') {
-        setSupportRequests(supportRes.value.data || [])
-      }
 
       // If all major requests failed, report an error
       if (
         dashRes.status === 'rejected' &&
-        checkInsRes.status === 'rejected' &&
-        membersRes.status === 'rejected'
+        checkInsRes.status === 'rejected'
       ) {
         throw new Error('Không thể tải dữ liệu dashboard lễ tân. Vui lòng thử lại.')
       }
@@ -80,16 +62,15 @@ export function ReceptionistDashboardPage() {
     loadData()
   }, [loadData])
 
-  const todayCheckIns = dashData?.checkinsToday ?? checkIns.length
-  const upcomingBookings = bookings.filter((b) => b.status === 'CONFIRMED')
-  const pendingTickets = supportRequests.filter((t) => t.status !== 'RESOLVED').length
+  // Totals come from the server (whole center, today in UTC+7); "—" when they could not be loaded.
+  const count = (value?: number) => (dashData ? value ?? 0 : '—')
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quầy Tiếp Đón Lễ Tân (WEB-REC-01)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quầy Tiếp Đón Lễ Tân</h1>
           <p className="text-xs text-text-muted mt-1">
             Điểm danh hội viên ra vào phòng gym, bán vé tập và điều phối lịch hẹn
           </p>
@@ -138,44 +119,44 @@ export function ReceptionistDashboardPage() {
           {/* KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             <StatCard
-              title="Check-in Hôm Nay"
-              value={todayCheckIns}
-              description="Đang hoạt động"
+              title="Check-in hôm nay"
+              value={count(dashData?.checkinsToday)}
+              description={dashData ? `${dashData.insideGym} người đang trong phòng tập` : 'Chưa tải được số liệu'}
               icon={<CheckCircle2 className="h-5 w-5" />}
               accentColor="emerald"
             />
             <StatCard
-              title="Chờ Thanh Toán"
-              value={dashData?.pendingPayments ?? 0}
-              description="Đơn chưa thanh toán"
+              title="Chờ thanh toán"
+              value={count(dashData?.pendingPayments)}
+              description="Giao dịch chưa hoàn tất"
               icon={<DollarSign className="h-5 w-5" />}
               accentColor="orange"
             />
             <StatCard
-              title="Gói Sắp Hết Hạn"
-              value={dashData?.expiringSubscriptions ?? 0}
-              description="Hết hạn trong 7 ngày"
+              title="Vé gym sắp hết hạn"
+              value={count(dashData?.expiringSubscriptions)}
+              description="Trong 7 ngày tới"
               icon={<Clock className="h-5 w-5" />}
               accentColor="purple"
             />
             <StatCard
-              title="Lịch PT 1:1 Sắp Tới"
-              value={upcomingBookings.length}
-              description="Lịch đã xác nhận"
+              title="Buổi PT hôm nay"
+              value={count(dashData?.ptSessionsToday)}
+              description="Đã đặt trong ngày"
               icon={<Calendar className="h-5 w-5" />}
               accentColor="cyan"
             />
             <StatCard
-              title="Hội Viên Quản Lý"
-              value={members.length}
-              description="Đang lưu trữ hồ sơ"
+              title="Hội viên"
+              value={count(dashData?.activeMembers)}
+              description="Tài khoản đang hoạt động"
               icon={<Users className="h-5 w-5" />}
               accentColor="orange"
             />
             <StatCard
-              title="Ticket Cần Hỗ Trợ"
-              value={pendingTickets}
-              description="Yêu cầu hội viên"
+              title="Yêu cầu hỗ trợ"
+              value={count(dashData?.openSupportRequests)}
+              description="Đang chờ xử lý"
               icon={<HelpCircle className="h-5 w-5" />}
               accentColor="purple"
             />
@@ -191,7 +172,7 @@ export function ReceptionistDashboardPage() {
               >
                 <CheckCircle2 className="h-6 w-6 text-emerald-500 mb-2" />
                 <span className="text-xs font-bold text-text-primary">Check-in Thẻ Gym</span>
-                <span className="text-[10px] text-text-muted">Quét mã / gõ số thẻ</span>
+                <span className="text-xs text-text-muted">Quét mã / gõ số thẻ</span>
               </Link>
 
               <Link
@@ -200,7 +181,7 @@ export function ReceptionistDashboardPage() {
               >
                 <DollarSign className="h-6 w-6 text-primary mb-2" />
                 <span className="text-xs font-bold text-text-primary">Bán / Gia Hạn Vé</span>
-                <span className="text-[10px] text-text-muted">Gói 1 tháng & 3+1 tháng</span>
+                <span className="text-xs text-text-muted">Gói 1 tháng & 3+1 tháng</span>
               </Link>
 
               <Link
@@ -209,7 +190,7 @@ export function ReceptionistDashboardPage() {
               >
                 <Users className="h-6 w-6 text-sky-500 mb-2" />
                 <span className="text-xs font-bold text-text-primary">Bán Gói PT 1:1</span>
-                <span className="text-[10px] text-text-muted">Chọn HLV & Khóa tập</span>
+                <span className="text-xs text-text-muted">Chọn HLV & Khóa tập</span>
               </Link>
 
               <Link
@@ -218,7 +199,7 @@ export function ReceptionistDashboardPage() {
               >
                 <Calendar className="h-6 w-6 text-purple-500 mb-2" />
                 <span className="text-xs font-bold text-text-primary">Đặt Lịch Hộ</span>
-                <span className="text-[10px] text-text-muted">Xếp slot cho hội viên</span>
+                <span className="text-xs text-text-muted">Xếp slot cho hội viên</span>
               </Link>
             </div>
           </div>
@@ -242,19 +223,15 @@ export function ReceptionistDashboardPage() {
                 {checkIns.slice(0, 5).map((chk) => (
                   <div key={chk.id} className="flex items-center justify-between py-3">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={chk.member?.avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80'}
-                        alt={chk.member?.fullName || 'Hội viên'}
-                        className="h-8 w-8 rounded-full object-cover border border-border-subtle"
-                      />
+                      <Avatar src={chk.member?.avatarUrl} name={chk.member?.fullName || 'Hội viên'} size={32} className="rounded-full" />
                       <div>
                         <p className="text-xs font-bold text-text-primary">{chk.member?.fullName || 'Hội viên'}</p>
-                        <p className="text-[10px] font-mono text-text-muted">{chk.member?.memberCode || chk.memberId}</p>
+                        <p className="text-xs font-mono text-text-muted">{chk.member?.memberCode || chk.memberId}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <span className="text-xs font-mono text-success font-semibold">{formatTime(chk.checkedInAt)}</span>
-                      {chk.note && <p className="text-[10px] text-text-muted">{chk.note}</p>}
+                      {chk.note && <p className="text-xs text-text-muted">{chk.note}</p>}
                     </div>
                   </div>
                 ))}

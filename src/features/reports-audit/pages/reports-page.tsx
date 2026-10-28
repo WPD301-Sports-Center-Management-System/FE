@@ -1,4 +1,6 @@
+import { centerDate } from '@/shared/utils/date'
 import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Download,
   RefreshCw,
@@ -15,12 +17,10 @@ import {
 import { formatVND } from '@/shared/utils/currency'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { Button } from '@/shared/components/ui/button'
-import { Modal } from '@/shared/components/ui/modal'
-import { Input } from '@/shared/components/ui/input'
 import { reportsService } from '@/features/reports-audit/services/reports.service'
 import { downloadBlob } from '@/shared/utils/download'
 import { isAppApiError } from '@/shared/api/api-error'
-import type { CoachPayout } from '@/shared/types/api'
+import type { PayoutPeriod } from '@/features/fixed-pt/types'
 import type {
   RevenueReportData,
   PtPackagesReportData,
@@ -38,7 +38,7 @@ export function ReportsPage() {
 
   // Tab Data States
   const [revenue, setRevenue] = useState<RevenueReportData | null>(null)
-  const [payouts, setPayouts] = useState<CoachPayout[]>([])
+  const [payouts, setPayouts] = useState<PayoutPeriod[]>([])
   const [ptPackages, setPtPackages] = useState<PtPackagesReportData | null>(null)
   const [bookings, setBookings] = useState<BookingReportItem[]>([])
   const [coaches, setCoaches] = useState<CoachReportItem[]>([])
@@ -50,10 +50,6 @@ export function ReportsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  // Settle Modal State
-  const [settleItem, setSettleItem] = useState<CoachPayout | null>(null)
-  const [transferRef, setTransferRef] = useState('')
-  const [isSettling, setIsSettling] = useState(false)
 
   const loadTabData = useCallback(async () => {
     setIsLoading(true)
@@ -114,7 +110,7 @@ export function ReportsPage() {
         to: dateTo ? dateTo : undefined,
       })
       const ext = format === 'csv' ? 'csv' : 'xlsx'
-      const filename = `bao_cao_${activeTab}_${new Date().toISOString().slice(0, 10)}.${ext}`
+      const filename = `bao_cao_${activeTab}_${centerDate()}.${ext}`
       await downloadBlob(blob, filename)
       setSuccessMessage(`Đã xuất báo cáo ${filename} thành công!`)
     } catch (err: any) {
@@ -128,34 +124,6 @@ export function ReportsPage() {
     }
   }
 
-  const handleConfirmSettle = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!settleItem || !transferRef.trim()) return
-
-    setIsSettling(true)
-    setErrorMessage(null)
-    try {
-      const updated = await reportsService.markPaid(settleItem.id, { transferRef: transferRef.trim() })
-      setPayouts((prev) =>
-        prev.map((p) =>
-          p.id === settleItem.id
-            ? { ...p, ...updated, status: 'PAID', transferRef: transferRef.trim(), paidAt: new Date().toISOString() }
-            : p
-        )
-      )
-      setSettleItem(null)
-      setTransferRef('')
-      setSuccessMessage('Đã cập nhật trạng thái chi trả thù lao HLV thành công!')
-    } catch (err) {
-      if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không thể cập nhật quyết toán HLV.')
-      } else {
-        setErrorMessage('Lỗi kết nối khi xác nhận quyết toán.')
-      }
-    } finally {
-      setIsSettling(false)
-    }
-  }
 
   const totalPtGross = revenue?.ptGross || 0
   const gymShare = revenue?.ptGymShare || 0
@@ -165,7 +133,7 @@ export function ReportsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Báo Cáo Tài Chính & Quyết Toán HLV (WEB-MAN-10)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Báo Cáo Tài Chính & Quyết Toán HLV</h1>
           <p className="text-xs text-text-muted mt-1">
             Tổng hợp dữ liệu doanh thu, gói PT, lịch tập, HLV, khóa học và thiết bị
           </p>
@@ -330,7 +298,7 @@ export function ReportsPage() {
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-xs text-text-muted">Đang tổng hợp dữ liệu báo cáo từ backend...</p>
+          <p className="text-xs text-text-muted">Đang tổng hợp dữ liệu báo cáo...</p>
         </div>
       ) : activeTab === 'revenue' ? (
         <div className="space-y-6">
@@ -342,7 +310,7 @@ export function ReportsPage() {
                 <DollarSign className="h-4 w-4 text-primary" />
               </div>
               <h3 className="text-2xl font-bold text-text-primary">{formatVND(totalPtGross)}</h3>
-              <p className="text-[11px] text-text-muted">
+              <p className="text-xs text-text-muted">
                 {revenue?.paymentCount || 0} đơn thanh toán • Membership: {formatVND(revenue?.membershipRevenue || 0)}
               </p>
             </div>
@@ -353,7 +321,7 @@ export function ReportsPage() {
                 <TrendingUp className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
               </div>
               <h3 className="text-2xl font-bold text-cyan-600 dark:text-cyan-300">{formatVND(gymShare)}</h3>
-              <p className="text-[11px] text-text-muted">Chi phí vận hành mặt bằng & máy móc</p>
+              <p className="text-xs text-text-muted">Chi phí vận hành mặt bằng & máy móc</p>
             </div>
 
             <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5 space-y-2 shadow-sm">
@@ -362,7 +330,7 @@ export function ReportsPage() {
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">{formatVND(coachPayable)}</h3>
-              <p className="text-[11px] text-text-muted">
+              <p className="text-xs text-text-muted">
                 Còn chờ chi trả: {formatVND(revenue?.coachPending || 0)}
               </p>
             </div>
@@ -370,7 +338,7 @@ export function ReportsPage() {
 
           {/* Payouts Table */}
           <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
-            <h2 className="text-base font-bold text-text-primary">Danh Sách Bảng Kê Quyết Toán Huấn Luyện Viên</h2>
+            <h2 className="text-base font-bold text-text-primary">Kỳ Chi Thù Lao Huấn Luyện Viên</h2>
 
             {payouts.length === 0 ? (
               <div className="text-center py-12 text-text-muted text-xs">
@@ -382,9 +350,10 @@ export function ReportsPage() {
                   <thead className="border-b border-border-subtle text-text-muted uppercase bg-bg-surface-muted">
                     <tr>
                       <th className="py-3 px-4">Huấn Luyện Viên</th>
-                      <th className="py-3 px-4">Tổng tiền đơn</th>
-                      <th className="py-3 px-4 text-cyan-600 dark:text-cyan-400">Gym (40%)</th>
-                      <th className="py-3 px-4 text-emerald-600 dark:text-emerald-400">HLV (60%)</th>
+                      <th className="py-3 px-4">Kỳ</th>
+                      <th className="py-3 px-4">Tổng khoản</th>
+                      <th className="py-3 px-4 text-cyan-600 dark:text-cyan-400">Bù trừ</th>
+                      <th className="py-3 px-4 text-emerald-600 dark:text-emerald-400">Thực chi</th>
                       <th className="py-3 px-4">Trạng thái</th>
                       <th className="py-3 px-4">Mã tham chiếu NH</th>
                       <th className="py-3 px-4 text-right">Thao tác</th>
@@ -394,31 +363,21 @@ export function ReportsPage() {
                     {payouts.map((p) => (
                       <tr key={p.id} className="hover:bg-bg-surface-muted/50">
                         <td className="py-3.5 px-4 font-mono font-semibold text-text-primary">
-                          {p.coachName || p.coachId.slice(0, 8)}
+                          {p.coach?.user.fullName || p.coachId.slice(0, 8)}
                         </td>
+                        <td className="py-3.5 px-4">{p.periodFrom.slice(0, 10)} → {p.periodTo.slice(0, 10)}</td>
                         <td className="py-3.5 px-4">{formatVND(p.grossAmount)}</td>
-                        <td className="py-3.5 px-4 text-cyan-600 dark:text-cyan-300 font-semibold">{formatVND(p.gymAmount)}</td>
-                        <td className="py-3.5 px-4 text-emerald-600 dark:text-emerald-300 font-bold">{formatVND(p.coachAmount)}</td>
+                        <td className="py-3.5 px-4 text-cyan-600 dark:text-cyan-300 font-semibold">{formatVND(p.offsetAmount)}</td>
+                        <td className="py-3.5 px-4 text-emerald-600 dark:text-emerald-300 font-bold">{formatVND(p.netAmount)}</td>
                         <td className="py-3.5 px-4">
-                          <StatusBadge status={p.status} />
+                          <StatusBadge status={p.status} context="payout" />
                         </td>
                         <td className="py-3.5 px-4 font-mono text-text-muted">
                           {p.transferRef ? p.transferRef : '—'}
                         </td>
                         <td className="py-3.5 px-4 text-right">
-                          {p.status === 'PENDING' && (
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              className="text-xs h-7"
-                              onClick={() => {
-                                setSettleItem(p)
-                                setTransferRef('MB-' + Math.floor(Math.random() * 900000 + 100000))
-                              }}
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                              Xác nhận chuyển
-                            </Button>
+                          {p.status === 'LOCKED' && (
+                            <Link to="/manager/coach-ledger" className="text-sm font-semibold text-primary hover:underline">Chi trả tại Đối soát Coach</Link>
                           )}
                         </td>
                       </tr>
@@ -470,7 +429,7 @@ export function ReportsPage() {
                   {bookings.map((b) => (
                     <tr key={b.status} className="hover:bg-bg-surface-muted/50">
                       <td className="py-3.5 px-4">
-                        <StatusBadge status={b.status} />
+                        <StatusBadge status={b.status} context="session" />
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-bold text-text-primary text-sm">
                         {b.count}
@@ -576,7 +535,7 @@ export function ReportsPage() {
                   {equipment.map((eq) => (
                     <tr key={eq.status} className="hover:bg-bg-surface-muted/50">
                       <td className="py-3.5 px-4">
-                        <StatusBadge status={eq.status} />
+                        <StatusBadge status={eq.status} context="equipment" />
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-bold text-text-primary text-sm">
                         {eq._count.id}
@@ -590,36 +549,6 @@ export function ReportsPage() {
         </div>
       ) : null}
 
-      {/* Settle Modal */}
-      <Modal
-        isOpen={!!settleItem}
-        onClose={() => setSettleItem(null)}
-        title="Xác nhận chi trả thù lao HLV (60%)"
-        description={`Số tiền quyết toán: ${formatVND(settleItem?.coachAmount || 0)}`}
-      >
-        <form onSubmit={handleConfirmSettle} className="space-y-4">
-          <Input
-            label="Mã tham chiếu ngân hàng (Transfer Ref)"
-            required
-            value={transferRef}
-            onChange={(e) => setTransferRef(e.target.value)}
-            placeholder="Ví dụ: VCB-20261008-883921"
-          />
-          <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setSettleItem(null)}
-              disabled={isSettling}
-            >
-              Hủy
-            </Button>
-            <Button type="submit" variant="primary" disabled={isSettling}>
-              {isSettling ? 'Đang xác nhận...' : 'Xác nhận Đã Chuyển'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
     </div>
   )
 }

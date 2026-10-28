@@ -210,3 +210,29 @@
 .animate-pulse-glow {
   animation: pulseGlow 3s ease-in-out infinite;
 }
+
+/* Payment receipt: print only the invoice sheet (features/workspace/receipt.tsx). */
+@media print {
+  body:has(.receipt-print-root) > *:not(.receipt-print-root) { display: none !important; }
+  .receipt-print-root { position: static !important; display: block !important; }
+  .receipt-print-root .no-print { display: none !important; }
+  .receipt-print-root .receipt-sheet { max-width: none !important; max-height: none !important; box-shadow: none !important; overflow: visible !important; border-radius: 0 !important; }
+  .receipt-print-root .receipt-paper { padding: 0 !important; overflow: visible !important; }
+  html.dark .receipt-print-root, html.dark .receipt-print-root * { color: #0f172a !important; background-color: transparent !important; }
+}
+
+/* Keep the receipt palette consistent with the payment reference. */
+.receipt-print-root {
+  --primary: #1875ff; --primary-hover: #0864ec; --primary-foreground: #fff;
+  --focus-ring: #1875ff; --bg-surface: #fff; --bg-surface-muted: #f5f8fc;
+  --bg-input: #fff; --text-primary: #202c40; --text-muted: #8496b1;
+  --border-subtle: #e5ecf5; --border-strong: #c6d4e8;
+  color: var(--text-primary); color-scheme: light;
+}
+@media print {
+  body:has(.receipt-print-root) { overflow: visible !important; }
+  .receipt-print-root .receipt-sheet { display: block !important; height: auto !important; }
+  .receipt-print-root .receipt-paper { display: block !important; }
+  .receipt-print-root table, .receipt-print-root header { break-inside: avoid; }
+  .receipt-print-root { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

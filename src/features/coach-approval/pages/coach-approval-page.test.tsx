@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { CoachApprovalPage } from './coach-approval-page'
 import { coachApprovalService } from '@/features/coach-approval/services/coach-approval.service'
+import { coursesExercisesService } from '@/features/courses-exercises/services/courses-exercises.service'
+
+vi.mock('@/features/courses-exercises/services/courses-exercises.service', () => ({ coursesExercisesService: { getTrainingCourses: vi.fn() } }))
 
 vi.mock('@/features/coach-approval/services/coach-approval.service', () => ({
   coachApprovalService: {
@@ -12,12 +15,15 @@ vi.mock('@/features/coach-approval/services/coach-approval.service', () => ({
     getPtPackageOptions: vi.fn(),
     approvePtPackageOption: vi.fn(),
     rejectPtPackageOption: vi.fn(),
+    createPtPackageOption: vi.fn(),
+    updatePtPackageOptionStatus: vi.fn(),
   },
 }))
 
 describe('CoachApprovalPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(coursesExercisesService.getTrainingCourses).mockResolvedValue({ success: true, message: '', data: [{ id: 'course-1', name: 'Giảm mỡ', isActive: true }] })
   })
 
   it('renders offerings from API', async () => {
@@ -43,7 +49,7 @@ describe('CoachApprovalPage', () => {
     render(<CoachApprovalPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Phê Duyệt HLV & Gói Tập (WEB-MAN-07)')).toBeInTheDocument()
+      expect(screen.getByText('Phê Duyệt HLV & Gói Tập')).toBeInTheDocument()
       expect(screen.getByText('Chest Strength Nâng Cao')).toBeInTheDocument()
       expect(screen.getByText(/Coach Hải Thể Hình/i)).toBeInTheDocument()
     })
@@ -166,10 +172,10 @@ describe('CoachApprovalPage', () => {
     render(<CoachApprovalPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Gói PT HLV đề xuất (1)')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Gói PT: đề xuất & gói chung (1)' })).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByText('Gói PT HLV đề xuất (1)'))
+    fireEvent.click(screen.getByRole('button', { name: 'Gói PT: đề xuất & gói chung (1)' }))
 
     expect(screen.getByText('Gói 12 Buổi Siết Mỡ')).toBeInTheDocument()
 
@@ -186,5 +192,30 @@ describe('CoachApprovalPage', () => {
       expect(coachApprovalService.approvePtPackageOption).toHaveBeenCalledWith('pkg-pending-1')
       expect(screen.getByText('Đã phê duyệt gói tập PT thành công!')).toBeInTheDocument()
     })
+  })
+
+  it('creates an immediately approved shared option without assigning a coach', async () => {
+    vi.mocked(coachApprovalService.getCoachCourseOfferings).mockResolvedValue({ success: true, message: '', data: [] })
+    vi.mocked(coachApprovalService.getPtPackageOptions).mockResolvedValue({ success: true, message: '', data: [] })
+    vi.mocked(coachApprovalService.createPtPackageOption).mockResolvedValue({ id: 'shared', name: 'Gói chung', courseId: 'course-1', sessionCount: 12, validityDays: 60, price: '3000000', approvalStatus: 'APPROVED', isActive: true })
+    render(<CoachApprovalPage />)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Tạo gói PT chung' })).toBeEnabled())
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo gói PT chung' }))
+    fireEvent.change(screen.getByLabelText('Tên gói tập'), { target: { value: 'Gói chung' } })
+    fireEvent.change(screen.getByLabelText('Số buổi tập'), { target: { value: '12' } })
+    fireEvent.change(screen.getByLabelText('Hạn sử dụng (ngày)'), { target: { value: '60' } })
+    fireEvent.change(screen.getByLabelText('Học phí (VND)'), { target: { value: '3000000' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu gói chung' }))
+    await waitFor(() => expect(coachApprovalService.createPtPackageOption).toHaveBeenCalledWith(expect.objectContaining({ courseId: 'course-1', name: 'Gói chung', durationMinutes: 60 })))
+    expect(vi.mocked(coachApprovalService.createPtPackageOption).mock.calls[0][0]).not.toHaveProperty('coachId')
+  })
+
+  it('does not offer Manager a toggle for coach-owned options rejected by the API', async () => {
+    vi.mocked(coachApprovalService.getCoachCourseOfferings).mockResolvedValue({ success: true, message: '', data: [] })
+    vi.mocked(coachApprovalService.getPtPackageOptions).mockResolvedValue({ success: true, message: '', data: [{ id: 'p', coachId: 'coach', courseId: 'course-1', name: 'Gói riêng', sessionCount: 12, validityDays: 60, price: '3000000', approvalStatus: 'APPROVED', isActive: true }] })
+    render(<CoachApprovalPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Gói PT: đề xuất & gói chung (1)' }))
+    expect(screen.queryByRole('button', { name: 'Tạm dừng mở bán' })).not.toBeInTheDocument()
+    expect(screen.getByText(/Coach quản lý bật\/tắt bán gói riêng/)).toBeInTheDocument()
   })
 })

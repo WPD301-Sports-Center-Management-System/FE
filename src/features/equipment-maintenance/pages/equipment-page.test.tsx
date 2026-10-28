@@ -45,7 +45,7 @@ describe('EquipmentPage', () => {
     render(<EquipmentPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Quản Lý Thiết Bị & Khu Vực Phòng Gym (WEB-MAN-08)')).toBeInTheDocument()
+      expect(screen.getByText('Quản Lý Thiết Bị & Khu Vực Phòng Gym')).toBeInTheDocument()
       expect(screen.getByText('Ghế đẩy tạ đa năng Adjustable Bench')).toBeInTheDocument()
     })
   })

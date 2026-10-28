@@ -1,3 +1,4 @@
+import { centerDate } from '@/shared/utils/date'
 import { useState, useEffect, useCallback } from 'react'
 import {
   EyeOff,
@@ -150,7 +151,7 @@ export function ReviewsAuditPage() {
         from: auditDateFrom ? auditDateFrom : undefined,
         to: auditDateTo ? auditDateTo : undefined,
       })
-      const filename = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`
+      const filename = `audit-logs-${centerDate()}.csv`
       await downloadBlob(blob, filename)
       setActionSuccessMessage('Đã xuất file nhật ký kiểm toán (CSV) thành công!')
     } catch (err: any) {
@@ -183,7 +184,7 @@ export function ReviewsAuditPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2">
             <ShieldAlert className="h-6 w-6 text-primary" />
-            <span>Kiểm Duyệt Đánh Giá & Audit Log (WEB-MAN-11, 12)</span>
+            <span>Kiểm Duyệt Đánh Giá & Audit Log</span>
           </h1>
           <p className="text-xs text-text-muted mt-1">
             Giám sát tính minh bạch đánh giá HLV và nhật ký thao tác dữ liệu hệ thống
@@ -325,13 +326,13 @@ export function ReviewsAuditPage() {
                     <p className="text-xs font-bold text-text-primary">
                       {rev.memberDisplayName || (rev as any).member?.fullName || 'Học viên ẩn danh'}
                     </p>
-                    <p className="text-[10px] text-text-muted">
+                    <p className="text-xs text-text-muted">
                       {rev.courseNameSnapshot || (rev as any).course?.name || 'Khóa tập PT 1:1'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                         rev.moderationStatus === 'VISIBLE'
                           ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                           : 'bg-danger/10 text-danger border border-danger/20'
@@ -349,10 +350,10 @@ export function ReviewsAuditPage() {
                 <p className="text-xs text-text-primary italic">"{rev.comment || 'Không có nhận xét chi tiết.'}"</p>
 
                 {(rev.hiddenReason || rev.moderationReason) && (
-                  <p className="text-[10px] text-danger">Lý do ẩn: {rev.hiddenReason || rev.moderationReason}</p>
+                  <p className="text-xs text-danger">Lý do ẩn: {rev.hiddenReason || rev.moderationReason}</p>
                 )}
 
-                <div className="flex items-center justify-between border-t border-border-subtle pt-3 text-[10px] text-text-muted">
+                <div className="flex items-center justify-between border-t border-border-subtle pt-3 text-xs text-text-muted">
                   <span>{formatDate(rev.createdAt)}</span>
                   {rev.moderationStatus === 'VISIBLE' ? (
                     <Button
@@ -386,7 +387,7 @@ export function ReviewsAuditPage() {
         </div>
       ) : (
         <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-2 shadow-sm">
-          <p className="text-[11px] text-text-muted">Nhấn vào một bản ghi để xem chi tiết đầy đủ</p>
+          <p className="text-xs text-text-muted">Nhấn vào một bản ghi để xem chi tiết đầy đủ</p>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-text-primary">
               <thead className="border-b border-border-subtle text-text-muted uppercase bg-bg-surface-muted">
@@ -414,7 +415,7 @@ export function ReviewsAuditPage() {
                     <td className="py-3.5 px-4">{log.entityType}</td>
                     <td className="py-3.5 px-4 font-mono text-text-muted">{log.entityId || '—'}</td>
                     <td className="py-3.5 px-4 text-right">
-                      <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px] text-text-muted hover:text-text-primary">
+                      <Button size="sm" variant="ghost" className="h-6 px-2 text-xs text-text-muted hover:text-text-primary">
                         <Info className="h-3 w-3 mr-1" />
                         Xem
                       </Button>
@@ -490,7 +491,7 @@ export function ReviewsAuditPage() {
                 </span>
               </div>
               {((selectedAuditLog as any).ipAddress || (selectedAuditLog as any).userAgent) && (
-                <div className="col-span-2 border-t border-border-subtle pt-2 text-[11px] text-text-muted">
+                <div className="col-span-2 border-t border-border-subtle pt-2 text-xs text-text-muted">
                   <span className="text-text-muted block">Môi trường client:</span>
                   <p className="font-mono truncate">IP: {(selectedAuditLog as any).ipAddress || '—'} • {(selectedAuditLog as any).userAgent || ''}</p>
                 </div>
@@ -500,33 +501,33 @@ export function ReviewsAuditPage() {
             {/* Diff / Change Data Section */}
             {(selectedAuditLog.beforeData || selectedAuditLog.afterData) ? (
               <div className="space-y-2">
-                <p className="text-[11px] font-semibold text-text-primary uppercase tracking-wider">Chi Tiết Biến Động Dữ Liệu (Data Diff):</p>
+                <p className="text-xs font-semibold text-text-primary uppercase tracking-wider">Chi Tiết Biến Động Dữ Liệu (Data Diff):</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="p-3 rounded-xl bg-bg-surface border border-danger/30 space-y-1">
-                    <span className="text-danger font-semibold block text-[11px]">Dữ liệu trước (Before):</span>
+                    <span className="text-danger font-semibold block text-xs">Dữ liệu trước (Before):</span>
                     {selectedAuditLog.beforeData ? (
-                      <pre className="text-[10px] font-mono text-text-primary bg-bg-surface-muted p-2 rounded overflow-x-auto max-h-40 border border-border-subtle">
+                      <pre className="text-xs font-mono text-text-primary bg-bg-surface-muted p-2 rounded overflow-x-auto max-h-40 border border-border-subtle">
                         {JSON.stringify(selectedAuditLog.beforeData, null, 2)}
                       </pre>
                     ) : (
-                      <span className="text-text-muted italic text-[11px]">Không có dữ liệu trước</span>
+                      <span className="text-text-muted italic text-xs">Không có dữ liệu trước</span>
                     )}
                   </div>
 
                   <div className="p-3 rounded-xl bg-bg-surface border border-emerald-500/30 space-y-1">
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold block text-[11px]">Dữ liệu sau (After):</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold block text-xs">Dữ liệu sau (After):</span>
                     {selectedAuditLog.afterData ? (
-                      <pre className="text-[10px] font-mono text-text-primary bg-bg-surface-muted p-2 rounded overflow-x-auto max-h-40 border border-border-subtle">
+                      <pre className="text-xs font-mono text-text-primary bg-bg-surface-muted p-2 rounded overflow-x-auto max-h-40 border border-border-subtle">
                         {JSON.stringify(selectedAuditLog.afterData, null, 2)}
                       </pre>
                     ) : (
-                      <span className="text-text-muted italic text-[11px]">Không có dữ liệu sau</span>
+                      <span className="text-text-muted italic text-xs">Không có dữ liệu sau</span>
                     )}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="p-3 rounded-xl bg-bg-surface-muted border border-border-subtle text-text-muted text-center text-[11px]">
+              <div className="p-3 rounded-xl bg-bg-surface-muted border border-border-subtle text-text-muted text-center text-xs">
                 Bản ghi này ghi nhận sự kiện hệ thống đơn thuần (không có payload biến động dữ liệu).
               </div>
             )}

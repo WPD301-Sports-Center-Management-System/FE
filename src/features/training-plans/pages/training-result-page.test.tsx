@@ -8,7 +8,7 @@ import type { Booking, Exercise } from '@/shared/types/api'
 
 vi.mock('@/features/pt-bookings-schedule/services/pt-bookings.service', () => ({
   ptBookingsService: {
-    getBookings: vi.fn(),
+    getMyCoachBookings: vi.fn(),
     createTrainingResult: vi.fn(),
     publishTrainingResult: vi.fn(),
   },
@@ -46,7 +46,7 @@ describe('TrainingResultPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(ptBookingsService.getBookings).mockResolvedValue({
+    vi.mocked(ptBookingsService.getMyCoachBookings).mockResolvedValue({
       data: [mockBooking],
       total: 1,
       page: 1,
@@ -68,7 +68,7 @@ describe('TrainingResultPage', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Ghi Nhận Kết Quả Buổi Tập (WEB-COA-08)')).toBeInTheDocument()
+      expect(screen.getByText('Ghi Nhận Kết Quả Buổi Tập')).toBeInTheDocument()
       expect(screen.getByText(/Hoi Vien Test/)).toBeInTheDocument()
       expect(screen.getByText(/Bench Press/)).toBeInTheDocument()
     })
@@ -87,7 +87,7 @@ describe('TrainingResultPage', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Xuất Bản Kết Quả (Publish)')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Lưu & công bố' })).toBeInTheDocument()
     })
 
     fireEvent.change(screen.getByLabelText(/Đánh giá & Góp ý của HLV/i), {
@@ -97,7 +97,7 @@ describe('TrainingResultPage', () => {
       target: { value: '90' },
     })
 
-    fireEvent.click(screen.getByText('Xuất Bản Kết Quả (Publish)'))
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu & công bố' }))
 
     await waitFor(() => {
       expect(ptBookingsService.createTrainingResult).toHaveBeenCalledWith(
@@ -114,5 +114,23 @@ describe('TrainingResultPage', () => {
         })
       )
     })
+  })
+
+  it('saves a draft without publishing it to the member', async () => {
+    vi.mocked(ptBookingsService.createTrainingResult).mockResolvedValueOnce({ id: 'tr-draft-1', status: 'DRAFT' } as any)
+
+    render(
+      <BrowserRouter>
+        <TrainingResultPage />
+      </BrowserRouter>
+    )
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Lưu nháp' })).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText(/Đánh giá & Góp ý của HLV/i), { target: { value: 'Ghi tạm, bổ sung sau.' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu nháp' }))
+
+    await waitFor(() => expect(screen.getByText(/Đã lưu nháp/)).toBeInTheDocument())
+    expect(ptBookingsService.createTrainingResult).toHaveBeenCalled()
+    expect(ptBookingsService.publishTrainingResult).not.toHaveBeenCalled()
   })
 })

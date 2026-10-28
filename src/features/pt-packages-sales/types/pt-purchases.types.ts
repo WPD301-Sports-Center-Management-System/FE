@@ -1,12 +1,5 @@
 import type { Purchase, PtPurchaseStatus, PaymentMethod } from '@/shared/types/api'
 
-export interface CreatePtPurchasePayload {
-  memberId?: string
-  courseId: string
-  coachId: string
-  packageOptionId: string
-}
-
 export interface PtPurchaseQueryParams {
   memberId?: string
   coachId?: string

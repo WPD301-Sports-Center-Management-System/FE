@@ -30,9 +30,9 @@ export const HowItWorksSection = ({ onOpenTrialModal }: HowItWorksSectionProps) 
     {
       step: '03',
       title: 'Tự Do Đặt Lịch 1:1 Bằng Credit',
-      description: 'Dùng credit đặt từng slot mở phù hợp với thời gian rảnh của bạn. Hủy lịch trước 12 tiếng được hoàn 100% credit.',
+      description: 'Chọn khung giờ cố định hằng tuần phù hợp với bạn. Cần nghỉ, bạn hủy hoặc đổi buổi ngay trên ứng dụng.',
       icon: CalendarCheck,
-      tag: 'Linh Hoạt 100%'
+      tag: 'Linh hoạt'
     },
     {
       step: '04',
@@ -80,7 +80,7 @@ export const HowItWorksSection = ({ onOpenTrialModal }: HowItWorksSectionProps) 
                     <IconComp className="w-6 h-6" />
                   </div>
 
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400 block">
+                  <span className="text-xs font-bold uppercase tracking-wider text-orange-400 block">
                     {item.tag}
                   </span>
 
