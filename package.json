@@ -10,7 +10,9 @@
     "lint": "oxlint",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:render": "tsc -b && vite build --mode render",
+    "preview:render": "vite preview --mode render --host localhost --port 5173 --strictPort"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.103.1",
