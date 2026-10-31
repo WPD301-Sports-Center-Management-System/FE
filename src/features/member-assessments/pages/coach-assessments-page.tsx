@@ -34,6 +34,16 @@ export function CoachAssessmentsPage() {
   const [form, setForm] = useState(EMPTY_ASSESSMENT)
   const [goalEditing, setGoalEditing] = useState<FitnessGoal | 'new' | null>(null)
   const [goalForm, setGoalForm] = useState(EMPTY_GOAL)
+  const selectedMember = members.find((m) => m.id === selectedMemberId)
+  const orderedAssessments = [...assessments].sort((a, b) => new Date(b.assessedAt).getTime() - new Date(a.assessedAt).getTime())
+  const latestAssessment = orderedAssessments[0]
+  const previousAssessment = orderedAssessments[1]
+  const weightDelta = latestAssessment?.weightKg != null && previousAssessment?.weightKg != null
+    ? Number(latestAssessment.weightKg) - Number(previousAssessment.weightKg)
+    : null
+  const fatDelta = latestAssessment?.bodyFatPercent != null && previousAssessment?.bodyFatPercent != null
+    ? Number(latestAssessment.bodyFatPercent) - Number(previousAssessment.bodyFatPercent)
+    : null
 
   const loadStudents = useCallback(async () => {
     setIsLoading(true)
@@ -242,6 +252,7 @@ export function CoachAssessmentsPage() {
             />
           )}
         </div>
+        {selectedMember && <p className="text-xs text-text-muted sm:border-l sm:border-border-subtle sm:pl-4">Mã học viên: {selectedMember.memberCode || 'Chưa có mã'}</p>}
       </div>
 
       {isLoading ? (
@@ -267,7 +278,11 @@ export function CoachAssessmentsPage() {
             </div>
 
             {goals.length === 0 ? (
-              <p className="text-sm text-text-muted">Chưa có mục tiêu nào cho học viên này.</p>
+              <div className="rounded-xl border border-dashed border-border-subtle bg-bg-surface-muted p-5 text-sm text-text-muted">
+                <p>Chưa có mục tiêu nào cho học viên này.</p>
+                <p className="mt-1 text-xs">Thiết lập mục tiêu cân nặng, tỷ lệ mỡ hoặc vòng eo để theo dõi tiến độ.</p>
+                <Button size="sm" variant="outline" onClick={() => openGoal('new')} className="mt-3">Tạo mục tiêu đầu tiên</Button>
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {goals.map((g) => (
@@ -296,10 +311,19 @@ export function CoachAssessmentsPage() {
           </div>
 
           <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
-            <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Lịch sử đo InBody ({assessments.length})</span>
-            </h2>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span>Lịch sử đo InBody ({assessments.length})</span>
+              </h2>
+              {latestAssessment && <p className="text-xs text-text-muted">Lần đo gần nhất: {formatDate(latestAssessment.assessedAt)}</p>}
+            </div>
+
+            {latestAssessment && <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-bg-surface-muted p-3"><p className="text-xs text-text-muted">Cân nặng hiện tại</p><p className="mt-1 font-bold text-text-primary">{latestAssessment.weightKg != null ? `${latestAssessment.weightKg} kg` : 'Chưa ghi nhận'}</p>{weightDelta !== null && <p className="text-xs text-text-muted">{weightDelta > 0 ? '+' : ''}{weightDelta.toFixed(1)} kg so với lần trước</p>}</div>
+              <div className="rounded-xl bg-bg-surface-muted p-3"><p className="text-xs text-text-muted">Tỷ lệ mỡ hiện tại</p><p className="mt-1 font-bold text-text-primary">{latestAssessment.bodyFatPercent != null ? `${latestAssessment.bodyFatPercent}%` : 'Chưa ghi nhận'}</p>{fatDelta !== null && <p className="text-xs text-text-muted">{fatDelta > 0 ? '+' : ''}{fatDelta.toFixed(1)} điểm % so với lần trước</p>}</div>
+              <div className="rounded-xl bg-bg-surface-muted p-3"><p className="text-xs text-text-muted">Dữ liệu theo dõi</p><p className="mt-1 font-bold text-text-primary">{assessments.length} lần đo</p><p className="text-xs text-text-muted">Cần ít nhất 2 lần đo để xem thay đổi</p></div>
+            </div>}
 
             {assessments.length === 0 ? (
               <p className="text-sm text-text-muted">Chưa có dữ liệu đo InBody nào cho học viên này.</p>
@@ -309,25 +333,25 @@ export function CoachAssessmentsPage() {
                   <thead className="border-b border-border-subtle bg-bg-surface-muted text-xs text-text-muted uppercase">
                     <tr>
                       <th className="py-3 px-4">Ngày đo</th>
-                      <th className="py-3 px-4">Cân nặng</th>
-                      <th className="py-3 px-4">Tỷ lệ mỡ</th>
-                      <th className="py-3 px-4">Cơ nạc</th>
-                      <th className="py-3 px-4">Vòng eo</th>
+                      <th className="py-3 px-4">Cân nặng (kg)</th>
+                      <th className="py-3 px-4">Tỷ lệ mỡ (%)</th>
+                      <th className="py-3 px-4">Cơ nạc (kg)</th>
+                      <th className="py-3 px-4">Vòng eo (cm)</th>
                       <th className="py-3 px-4">Ghi chú</th>
                       <th className="py-3 px-4"><span className="sr-only">Thao tác</span></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-subtle">
-                    {assessments.map((a) => (
+                    {orderedAssessments.map((a) => (
                       <tr key={a.id} className="hover:bg-bg-surface-muted/60 transition-colors">
                         <td className="py-3.5 px-4 font-mono font-bold text-text-primary">{formatDate(a.assessedAt)}</td>
-                        <td className="py-3.5 px-4 font-bold text-emerald-600 dark:text-emerald-400">{a.weightKg ? `${a.weightKg} kg` : '—'}</td>
-                        <td className="py-3.5 px-4 text-primary font-semibold">{a.bodyFatPercent ? `${a.bodyFatPercent}%` : '—'}</td>
-                        <td className="py-3.5 px-4 text-text-primary font-semibold">{a.muscleMassKg ? `${a.muscleMassKg} kg` : '—'}</td>
-                        <td className="py-3.5 px-4">{a.waistCm ? `${a.waistCm} cm` : '—'}</td>
-                        <td className="py-3.5 px-4 text-text-muted">{a.notes || '—'}</td>
+                        <td className="py-3.5 px-4 font-bold text-emerald-600 dark:text-emerald-400">{a.weightKg != null ? `${a.weightKg} kg` : 'Chưa ghi nhận'}</td>
+                        <td className="py-3.5 px-4 text-primary font-semibold">{a.bodyFatPercent != null ? `${a.bodyFatPercent}%` : 'Chưa ghi nhận'}</td>
+                        <td className="py-3.5 px-4 text-text-primary font-semibold">{a.muscleMassKg != null ? `${a.muscleMassKg} kg` : 'Chưa ghi nhận'}</td>
+                        <td className="py-3.5 px-4">{a.waistCm != null ? `${a.waistCm} cm` : 'Chưa ghi nhận'}</td>
+                        <td className="py-3.5 px-4 text-text-muted">{a.notes || 'Không có ghi chú'}</td>
                         <td className="py-3.5 px-4 text-right">
-                          <Button size="sm" variant="ghost" onClick={() => openAssessment(a)} className="gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => openAssessment(a)} className="gap-1" aria-label={`Chỉnh sửa lần đo ${formatDate(a.assessedAt)}`}>
                             <PencilLine className="h-3.5 w-3.5" />
                             Sửa
                           </Button>

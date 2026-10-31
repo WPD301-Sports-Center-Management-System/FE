@@ -55,6 +55,42 @@ const MEAL_TYPE_OPTIONS = [
   { value: 'Bữa phụ tối (21:30)', label: 'Bữa phụ tối (21:30)' },
 ]
 
+const QUICK_FOODS = [
+  { foodName: 'Cơm trắng', quantity: '1 chén (150 g)', estimatedCalories: 195, proteinGrams: 4, carbsGrams: 43, fatGrams: 0.5 },
+  { foodName: 'Ức gà luộc', quantity: '100 g', estimatedCalories: 165, proteinGrams: 31, carbsGrams: 0, fatGrams: 3.6 },
+  { foodName: 'Trứng gà', quantity: '2 quả', estimatedCalories: 155, proteinGrams: 13, carbsGrams: 1, fatGrams: 11 },
+  { foodName: 'Yến mạch', quantity: '50 g', estimatedCalories: 190, proteinGrams: 6.5, carbsGrams: 33, fatGrams: 3.5 },
+  { foodName: 'Khoai lang luộc', quantity: '150 g', estimatedCalories: 130, proteinGrams: 2.4, carbsGrams: 30, fatGrams: 0.2 },
+  { foodName: 'Cá hồi', quantity: '100 g', estimatedCalories: 208, proteinGrams: 20, carbsGrams: 0, fatGrams: 13 },
+  { foodName: 'Thịt bò nạc', quantity: '100 g', estimatedCalories: 190, proteinGrams: 27, carbsGrams: 0, fatGrams: 9 },
+  { foodName: 'Sữa chua không đường', quantity: '1 hũ (100 g)', estimatedCalories: 60, proteinGrams: 3.5, carbsGrams: 4.7, fatGrams: 3.3 },
+  { foodName: 'Chuối', quantity: '1 quả', estimatedCalories: 105, proteinGrams: 1.3, carbsGrams: 27, fatGrams: 0.4 },
+  { foodName: 'Bông cải xanh', quantity: '100 g', estimatedCalories: 35, proteinGrams: 2.8, carbsGrams: 7, fatGrams: 0.4 },
+  { foodName: 'Đậu phụ', quantity: '100 g', estimatedCalories: 76, proteinGrams: 8, carbsGrams: 1.9, fatGrams: 4.8 },
+  { foodName: 'Whey protein', quantity: '1 muỗng (30 g)', estimatedCalories: 120, proteinGrams: 24, carbsGrams: 3, fatGrams: 1.5 },
+]
+
+const TEMPLATE_MEAL_TYPES = [
+  'Bữa sáng (07:00 - 08:30)',
+  'Bữa phụ sáng (10:00)',
+  'Bữa trưa (11:30 - 13:00)',
+  'Bữa phụ chiều / Trước tập (16:00 - 17:00)',
+  'Bữa tối (19:00 - 20:30)',
+  'Bữa phụ tối (21:30)',
+]
+const WEEKLY_TEMPLATES = [
+  { id: 'balanced-7', name: 'Cân bằng 7 ngày · 2.000 kcal', target: 2000, rotation: ['Yến mạch', 'Trứng gà', 'Cơm trắng', 'Ức gà luộc', 'Chuối', 'Sữa chua không đường'] },
+  { id: 'high-protein-7', name: 'Tăng cơ giàu đạm · 2.400 kcal', target: 2400, rotation: ['Yến mạch', 'Trứng gà', 'Cơm trắng', 'Ức gà luộc', 'Thịt bò nạc', 'Whey protein'] },
+  { id: 'weight-control-7', name: 'Kiểm soát cân nặng · 1.600 kcal', target: 1600, rotation: ['Sữa chua không đường', 'Trứng gà', 'Khoai lang luộc', 'Ức gà luộc', 'Bông cải xanh', 'Chuối'] },
+]
+function itemsFromWeeklyTemplate(template: (typeof WEEKLY_TEMPLATES)[number]): MealFormItem[] {
+  return Array.from({ length: 7 }, (_, dayIndex) => TEMPLATE_MEAL_TYPES.map((mealType, mealIndex) => {
+    const name = template.rotation[(dayIndex + mealIndex) % template.rotation.length]!
+    const food = QUICK_FOODS.find(item => item.foodName === name)!
+    return { dayNumber: dayIndex + 1, mealType, foodName: food.foodName, quantity: food.quantity, estimatedCalories: food.estimatedCalories, proteinGrams: food.proteinGrams, carbsGrams: food.carbsGrams, fatGrams: food.fatGrams, note: '', sortOrder: mealIndex }
+  })).flat()
+}
+
 export function CoachMealPlanPage() {
   // Navigation & View mode
   const [activeTab, setActiveTab] = useState<'list' | 'builder'>('list')
@@ -256,6 +292,21 @@ export function CoachMealPlanPage() {
     resetBuilder()
     setErrorMessage(null)
     setActiveTab('builder')
+  }
+
+  const applyWeeklyTemplate = (templateId: string) => {
+    const template = WEEKLY_TEMPLATES.find(item => item.id === templateId)
+    if (!template) return
+    setTitle(template.name)
+    setTargetCalories(String(template.target))
+    const weekEnd = new Date(`${startDate}T00:00:00`)
+    weekEnd.setDate(weekEnd.getDate() + 6)
+    setEndDate(weekEnd.toISOString().slice(0, 10))
+    setMeals(itemsFromWeeklyTemplate(template))
+    setRemovedItemIds([])
+    setEditingPlanId(null)
+    setSelectedDay(1)
+    setSuccessMessage(`Đã điền template 7 ngày: ${template.name}. Coach có thể chỉnh lại trước khi lưu.`)
   }
 
   // Reopen a saved DRAFT in the builder; every change is written back to the same plan.
@@ -865,6 +916,16 @@ export function CoachMealPlanPage() {
                 />
               </div>
 
+              <div className="md:col-span-2">
+                <Select
+                  label="Template thực đơn cả tuần (tùy chọn)"
+                  value=""
+                  onChange={(e) => applyWeeklyTemplate(e.target.value)}
+                  options={[{ value: '', label: '— Chọn template 7 ngày —' }, ...WEEKLY_TEMPLATES.map(template => ({ value: template.id, label: template.name }))]}
+                />
+                <p className="mt-1 text-xs text-text-muted">Tự điền 7 ngày và 6 khung bữa; Coach vẫn chỉnh sửa được trước khi lưu.</p>
+              </div>
+
               <Input
                 label="Mục tiêu Calorie hàng ngày (kcal/ngày)"
                 type="number"
@@ -1173,6 +1234,22 @@ export function CoachMealPlanPage() {
             value={mealFormType}
             onChange={(e) => setMealFormType(e.target.value)}
             options={MEAL_TYPE_OPTIONS}
+          />
+
+          <Select
+            label="Chọn món mẫu để điền nhanh"
+            value=""
+            onChange={(e) => {
+              const food = QUICK_FOODS.find((item) => item.foodName === e.target.value)
+              if (!food) return
+              setMealFormFood(food.foodName)
+              setMealFormQuantity(food.quantity)
+              setMealFormCalories(String(food.estimatedCalories))
+              setMealFormProtein(String(food.proteinGrams))
+              setMealFormCarbs(String(food.carbsGrams))
+              setMealFormFat(String(food.fatGrams))
+            }}
+            options={[{ value: '', label: '— Chọn món mẫu —' }, ...QUICK_FOODS.map((food) => ({ value: food.foodName, label: `${food.foodName} · ${food.quantity}` }))]}
           />
 
           <Input

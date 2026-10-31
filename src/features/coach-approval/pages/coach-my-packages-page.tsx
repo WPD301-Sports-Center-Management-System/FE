@@ -241,6 +241,11 @@ export function CoachMyPackagesPage() {
             </div>
             {tab === 'offering' && (
               <div className="grid gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <Notice>
+                    Tạm dừng nhận học viên chỉ ngăn lượt đăng ký mới; học viên hiện tại và gói đã mua không bị hủy.
+                  </Notice>
+                </div>
                 {!d.courses.length && (
                   <Empty>
                     Chưa có khóa học. Manager cần tạo và mở khóa trong Bài tập &
@@ -249,8 +254,13 @@ export function CoachMyPackagesPage() {
                 )}
                 {d.courses.map((c) => {
                   const offering = d.offerings.find((o) => o.courseId === c.id)
+                  const coursePackages = d.packages.filter((p) => p.courseId === c.id)
+                  const activePackages = coursePackages.filter((p) => p.approvalStatus === 'APPROVED' && p.isActive).length
                   return (
                     <Panel key={c.id} title={c.name}>
+                      <p className="mb-2 text-xs text-text-muted">
+                        {coursePackages.length ? `${coursePackages.length} gói PT · ${activePackages} đang mở bán` : 'Chưa có gói PT'}
+                      </p>
                       <p className="mb-3 text-sm text-text-muted">
                         {c.description ||
                           'Đăng ký năng lực giảng dạy cho khóa này.'}
@@ -298,7 +308,8 @@ export function CoachMyPackagesPage() {
                           <Button
                             variant="secondary"
                             disabled={action.busy || !c.isActive}
-                            onClick={() =>
+                            onClick={() => {
+                              if (offering.isActive && !window.confirm('Tạm dừng nhận học viên mới cho khóa này? Học viên hiện tại và các gói đã mua vẫn được giữ nguyên.')) return
                               void action.run(async () => {
                                 await coachApprovalService.updateOfferingStatus(
                                   offering.id,
@@ -310,11 +321,11 @@ export function CoachMyPackagesPage() {
                                     : 'Đã bật quyền dạy cho khóa.',
                                 )
                               })
-                            }
+                            }}
                           >
                             {offering.isActive
-                              ? 'Tạm dừng dạy khóa'
-                              : 'Bật lại quyền dạy'}
+                              ? 'Tạm dừng nhận học viên'
+                              : 'Bật nhận học viên'}
                           </Button>
                         )}
                       </div>

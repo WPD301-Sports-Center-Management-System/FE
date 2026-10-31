@@ -66,6 +66,7 @@ export function Loadable<T>({ state, empty, children }: { state: { data: T | nul
 }
 
 const LABELS: Record<string, string> = {
+  ACTIVE: 'Đang hoạt động', COMPLETED: 'Đã hoàn thành', EXPIRED: 'Hết hạn', PENDING_PAYMENT: 'Chờ thanh toán', CANCELLED: 'Đã hủy',
   REQUESTED: 'Chờ Coach xác nhận', PROPOSED: 'Chờ Member đồng ý lịch', AWAITING_PAYMENT: 'Đang giữ chỗ – chờ thanh toán', PAID_NEEDS_SCHEDULE: 'Đã thanh toán – cần sắp lại lịch', WITHDRAWN: 'Member đã rút',
   CONFIRMED: 'Đã lên lịch', ARRIVED: 'Đã đến', IN_PROGRESS: 'Đang tập', RESCHEDULED: 'Đã đổi giờ', SENT: 'Đã gửi', SUPERSEDED: 'Phiên bản cũ', DECLINED: 'Bị từ chối', FULFILLED: 'Đã xác nhận',
   PENDING_CONFIRMATION: 'Chờ xác nhận', ELIGIBLE: 'Đủ điều kiện', ON_HOLD: 'Tạm giữ', INCLUDED: 'Trong kỳ chi', SETTLED_BY_ADVANCE: 'Đối trừ khoản ứng', VOIDED: 'Không tính',

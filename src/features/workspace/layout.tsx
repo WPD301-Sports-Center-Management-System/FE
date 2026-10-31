@@ -90,7 +90,7 @@ function Sidebar({ nav, panel, roleLabel, open, onClose }: { nav: WorkspaceNavSe
 function LiveClock() {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t) }, [])
-  return <span className="hidden h-9 items-center gap-2 rounded-lg border border-border-subtle px-3 text-sm font-medium tabular-nums text-text-primary md:inline-flex">
+  return <span title="Giờ hiện tại của trung tâm" aria-label="Giờ hiện tại của trung tâm" className="hidden h-9 items-center gap-2 rounded-lg border border-border-subtle px-3 text-sm font-medium tabular-nums text-text-primary md:inline-flex">
     <Clock aria-hidden className="h-4 w-4 text-text-muted" />
     <time dateTime={now.toISOString()}>{new Intl.DateTimeFormat('vi-VN', { timeZone: CENTER_TIME_ZONE, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(now)}</time>
   </span>

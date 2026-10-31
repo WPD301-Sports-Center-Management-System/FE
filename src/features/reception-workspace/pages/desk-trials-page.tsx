@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { CheckCircle2, Download, Inbox, Pencil, Percent, Phone, PhoneCall, Search, UserPlus } from 'lucide-react'
+import { CalendarPlus, CheckCircle2, Download, Inbox, LogIn, LogOut, Pencil, Percent, Phone, PhoneCall, Search, UserPlus } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import { centerDate } from '@/shared/utils/date'
 import { Async, Badge, Btn, Card, Dot, EmptyBox, Field, InlineError, PageHeader, Pagination, Person, Segmented, StatTile, Table, inputCls, td, textareaCls, useFlash } from '@/features/workspace/ui'
 import { downloadCsv, hhmm, relativeAgo } from '@/features/workspace/utils'
-import { deskApi, type TrialRequest, type TrialStatus } from '../api'
+import { deskApi, type TrialRequest, type TrialSession, type TrialSessionStatus, type TrialStatus } from '../api'
 import { useDeskShell } from '../shell'
 import { dmy, TRIAL_LABEL } from '../labels'
 import { CreateMemberModal } from './desk-members-page'
@@ -59,6 +59,8 @@ export function DeskTrialsPage() {
       </Card>
     </div>
 
+    <TrialSessionsPanel />
+
     <Card flush title="Danh sách hồ sơ tập thử" actions={<Segmented label="Lọc trạng thái" value={tab} onChange={t => { setTab(t); setPage(1) }}
       items={[{ key: 'all' as const, label: 'Tất cả', count: list.length }, ...(Object.keys(TRIAL_LABEL) as TrialStatus[]).map(k => ({ key: k, label: TRIAL_LABEL[k].label, count: list.filter(t => t.status === k).length }))]} />}>
       <div className="border-b border-border-subtle p-4"><label className="relative block max-w-md"><span className="sr-only">Tìm hồ sơ</span><Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
@@ -85,6 +87,46 @@ export function DeskTrialsPage() {
       onDone={async m => { if (convert) await deskApi.updateTrial(convert.id, { status: 'CONVERTED', staffNote: convert.staffNote ?? 'Đã tạo tài khoản hội viên tại quầy.' }).catch(() => undefined); flash(m); void trials.reload(); refresh() }} />
   </div>
 }
+
+function TrialSessionsPanel() {
+  const { node, flash } = useFlash()
+  const sessions = useLoad(() => deskApi.trialSessions(), [])
+  const coaches = useLoad(() => deskApi.coaches(), [])
+  const submit = useSubmit()
+  const [v, setV] = useState<Record<string, string>>({ type: 'GYM', durationMinutes: '60' })
+  const set = (key: string) => (e: { target: { value: string } }) => setV(prev => ({ ...prev, [key]: e.target.value }))
+  const changeStatus = async (session: TrialSession, action: 'in' | 'out') => {
+    const result = await submit.run(() => action === 'in' ? deskApi.checkInTrialSession(session.id) : deskApi.checkOutTrialSession(session.id))
+    if (result) { flash(action === 'in' ? `Đã check-in ${session.fullName}.` : `Đã checkout ${session.fullName}.`); void sessions.reload() }
+  }
+  return <Card flush title="Lịch buổi tập thử" subtitle="Buổi thử gym/PT tách khỏi membership và không trừ credit PT" actions={<CalendarPlus className="h-5 w-5 text-primary" aria-hidden />}>
+    {node}
+    <form className="grid gap-3 border-b border-border-subtle p-5 sm:grid-cols-2 lg:grid-cols-6" onSubmit={async e => {
+      e.preventDefault()
+      if (!v.fullName?.trim() || !v.phone?.trim() || !v.scheduledAt) return
+      const result = await submit.run(() => deskApi.createTrialSession({ type: (v.type || 'GYM') as 'GYM' | 'PT', fullName: v.fullName.trim(), phone: v.phone.trim(), coachId: v.coachId || undefined, scheduledAt: new Date(v.scheduledAt).toISOString(), durationMinutes: Number(v.durationMinutes || 60), note: v.note?.trim() || undefined }))
+      if (result) { setV({ type: 'GYM', durationMinutes: '60' }); flash(`Đã lên lịch buổi thử cho ${result.fullName}.`); void sessions.reload() }
+    }}>
+      <Field label="Họ và tên" required><input required value={v.fullName ?? ''} onChange={set('fullName')} className={inputCls} /></Field>
+      <Field label="Số điện thoại" required><input required type="tel" value={v.phone ?? ''} onChange={set('phone')} className={inputCls} /></Field>
+      <Field label="Loại buổi thử"><select value={v.type ?? 'GYM'} onChange={set('type')} className={inputCls}><option value="GYM">Tập gym</option><option value="PT">Tập PT</option></select></Field>
+      <Field label="Thời gian" required><input required type="datetime-local" value={v.scheduledAt ?? ''} onChange={set('scheduledAt')} className={inputCls} /></Field>
+      <Field label="Coach"><select value={v.coachId ?? ''} onChange={set('coachId')} className={inputCls}><option value="">Chưa chọn</option>{(coaches.data ?? []).map(c => <option key={c.id} value={c.id}>{c.user.fullName}</option>)}</select></Field>
+      <div className="flex items-end"><Btn type="submit" variant="primary" busy={submit.busy} disabled={!v.fullName?.trim() || !v.phone?.trim() || !v.scheduledAt}>Lên lịch</Btn></div>
+      <div className="sm:col-span-2 lg:col-span-6"><InlineError message={submit.error} /></div>
+    </form>
+    <Async state={sessions} rows={3} empty={() => <EmptyBox icon={<CalendarPlus className="h-5 w-5" />} title="Chưa có buổi thử nào" />}>
+      {() => <div className="divide-y divide-border-subtle">{(sessions.data ?? []).slice(0, 10).map(s => <div key={s.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+        <div className="min-w-44 flex-1"><p className="font-semibold">{s.fullName} <Badge tone={s.type === 'PT' ? 'violet' : 'info'}>{s.type === 'PT' ? 'PT' : 'Gym'}</Badge></p><p className="text-xs text-text-muted">{s.phone} · {new Date(s.scheduledAt).toLocaleString('vi-VN')} {s.coachName ? `· ${s.coachName}` : ''}</p></div>
+        <Badge tone={sessionTone(s.status)}>{sessionLabel(s.status)}</Badge>
+        <div className="flex gap-1.5">{(s.status === 'SCHEDULED' || s.status === 'REQUESTED') && <Btn size="sm" variant="soft" icon={<LogIn className="h-3.5 w-3.5" />} onClick={() => void changeStatus(s, 'in')}>Check-in</Btn>}{s.status === 'CHECKED_IN' && <Btn size="sm" variant="soft" icon={<LogOut className="h-3.5 w-3.5" />} onClick={() => void changeStatus(s, 'out')}>Checkout</Btn>}</div>
+      </div>)}</div>}
+    </Async>
+  </Card>
+}
+
+function sessionLabel(status: TrialSessionStatus) { return ({ REQUESTED: 'Chờ xác nhận', SCHEDULED: 'Đã lên lịch', CHECKED_IN: 'Đang tập', COMPLETED: 'Đã hoàn tất', NO_SHOW: 'Không đến', CANCELLED: 'Đã hủy', CONVERTED: 'Đã chuyển đổi' } as Record<TrialSessionStatus, string>)[status] }
+function sessionTone(status: TrialSessionStatus) { return (status === 'COMPLETED' || status === 'CONVERTED' ? 'success' : status === 'CHECKED_IN' ? 'info' : status === 'CANCELLED' || status === 'NO_SHOW' ? 'neutral' : 'warning') as 'success' | 'info' | 'neutral' | 'warning' }
 
 function NewTrialForm({ onDone }: { onDone: (m: string) => void }) {
   const coaches = useLoad(() => deskApi.coaches(), [])

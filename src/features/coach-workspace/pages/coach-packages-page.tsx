@@ -55,7 +55,7 @@ export function CoachPackagesPage() {
             <td className={td}><Badge tone="violet">{p.packageNameSnapshot}</Badge><p className="mt-1 text-xs text-text-muted">{p.courseNameSnapshot} · {p.purchaseCode}</p></td>
             <td className={td}><div className="flex items-center gap-2"><ProgressBar className="w-32" value={p.consumedCredits} max={p.totalCredits} tone={remainingOf(p) <= 2 ? 'warning' : 'primary'} label="Buổi đã dùng" /><span className="text-xs tabular-nums text-text-muted">{p.consumedCredits}/{p.totalCredits}</span></div>
               {p.reservedCredits > 0 && <p className="mt-0.5 text-xs text-text-muted">{p.reservedCredits} buổi đã xếp lịch</p>}</td>
-            <td className={td}>{next ? <><p className="font-semibold">{relativeSlot(next.startsAt)}</p><p className="text-xs text-text-muted">{next.status === 'IN_PROGRESS' ? 'đang diễn ra' : next.arrivedAt ? 'học viên đã đến' : 'đã xác nhận'}</p></> : <span className="text-text-muted">—</span>}</td>
+            <td className={td}>{next ? <><p className="font-semibold">{relativeSlot(next.startsAt)}</p><p className="text-xs text-text-muted">{next.status === 'IN_PROGRESS' ? 'đang diễn ra' : next.arrivedAt ? 'học viên đã đến' : 'đã xác nhận'}</p></> : <span className="text-text-muted">Chưa có lịch sắp tới</span>}</td>
             <td className={`${td} tabular-nums`}>{dmy(p.expiresAt)}</td>
             <td className={td}><Badge tone={st.tone}>{st.label}</Badge></td>
             <td className={`${td} text-right`}><div className="flex justify-end gap-1.5">

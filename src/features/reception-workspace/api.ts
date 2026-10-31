@@ -30,7 +30,7 @@ export interface MemberProfile { id: string; memberCode: string; dateOfBirth?: s
 export interface Plan { id: string; code: string; name: string; description?: string | null; paidMonths: number; bonusMonths: number; price: string; isActive: boolean; benefits?: unknown }
 export interface Subscription { id: string; memberId: string; planId: string; planNameSnapshot: string; paidMonthsSnapshot: number; bonusMonthsSnapshot: number; priceSnapshot: string; startDate: string; endDate: string; status: 'PENDING' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED'; createdAt: string }
 export interface Visit { id: string; memberId: string; status: 'OPEN' | 'CLOSED' | 'AUTO_CLOSED' | 'LEGACY_IMPORTED'; checkedInAt: string; checkedOutAt?: string | null; note?: string | null; member?: { id: string; memberCode: string; fullName: string; phone?: string | null; avatarUrl?: string | null } }
-export interface CheckInResult extends Visit { reused: boolean; todaySessions: { id: string; status: string; plannedStartsAt: string; plannedEndsAt: string; coach?: { user?: { fullName: string } } }[] }
+export interface CheckInResult extends Visit { reused?: boolean; todaySessions: { id: string; status: string; plannedStartsAt: string; plannedEndsAt: string; coach?: { user?: { fullName: string } } }[] }
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'EXPIRED' | 'SUPERSEDED'
 export interface Payment { id: string; paymentCode: string; memberId: string; subscriptionId?: string | null; ptPurchaseId?: string | null; amount: string; method: 'CASH' | 'BANK_TRANSFER' | 'VNPAY'; status: PaymentStatus; application?: string | null; paidAt?: string | null; createdAt: string; expiresAt?: string | null; memberName?: string; memberCode?: string; itemDescription?: string; invoiceId?: string | null }
 export interface Invoice { id: string; invoiceNumber: string; paymentId: string; memberNameSnapshot: string; memberEmailSnapshot: string; itemNameSnapshot: string; subtotal: string; total: string; issuedAt: string }
@@ -39,6 +39,9 @@ export type SupportStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
 export interface SupportRequest { id: string; requestCode: string; memberId: string; memberName?: string | null; subject: string; message: string; status: SupportStatus; response?: string | null; respondedAt?: string | null; category: string; attachmentUrls: string[]; createdAt: string; updatedAt: string }
 export type TrialStatus = 'NEW' | 'CONTACTED' | 'CONVERTED' | 'CLOSED'
 export interface TrialRequest { id: string; fullName: string; phone: string; goal?: string | null; preferredTime?: string | null; coachId?: string | null; coachName?: string | null; interest?: string | null; note?: string | null; status: TrialStatus; staffNote?: string | null; handledAt?: string | null; createdAt: string }
+export type TrialSessionType = 'GYM' | 'PT'
+export type TrialSessionStatus = 'REQUESTED' | 'SCHEDULED' | 'CHECKED_IN' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED' | 'CONVERTED'
+export interface TrialSession { id: string; trialRequestId?: string | null; type: TrialSessionType; status: TrialSessionStatus; fullName: string; phone: string; coachId?: string | null; coachName?: string | null; scheduledAt: string; durationMinutes: number; note?: string | null; checkedInAt?: string | null; checkedOutAt?: string | null; completedAt?: string | null }
 export interface PublicCoach { id: string; user: { fullName: string } }
 
 export const deskApi = {
@@ -82,6 +85,11 @@ export const deskApi = {
   trials: (params: { status?: TrialStatus } = {}) => all<TrialRequest>('/trial-requests', params, 3),
   updateTrial: (id: string, body: { status: TrialStatus; staffNote?: string }) => patch<TrialRequest>(`/trial-requests/${id}`, body),
   createTrial: (body: { fullName: string; phone: string; goal?: string; preferredTime?: string; coachId?: string; interest?: string; note?: string }) => post<{ id: string }>('/trial-requests', body),
+  trialSessions: (params: { status?: TrialSessionStatus; type?: TrialSessionType; phone?: string } = {}) => all<TrialSession>('/trial-sessions', params, 3),
+  createTrialSession: (body: { trialRequestId?: string; type: TrialSessionType; fullName: string; phone: string; coachId?: string; scheduledAt: string; durationMinutes?: number; note?: string }) => post<TrialSession>('/trial-sessions', body),
+  checkInTrialSession: (id: string) => post<TrialSession>(`/trial-sessions/${id}/check-in`),
+  checkOutTrialSession: (id: string) => post<TrialSession>(`/trial-sessions/${id}/check-out`),
+  updateTrialSession: (id: string, body: { status?: TrialSessionStatus; note?: string }) => patch<TrialSession>(`/trial-sessions/${id}`, body),
   coaches: () => get<PublicCoach[]>('/coaches', { limit: 100 }),
   coursesForTrial: () => get<{ id: string; name: string }[]>('/training-courses', { limit: 100 }),
 }

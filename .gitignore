@@ -24,3 +24,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local agent and design skill files
+.agents/
+.taste-skill/

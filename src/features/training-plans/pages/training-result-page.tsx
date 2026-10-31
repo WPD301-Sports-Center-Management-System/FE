@@ -123,6 +123,23 @@ export function TrainingResultPage({ bookingId }: { bookingId?: string } = {}) {
       return
     }
 
+    if (setsData.some((s) => !Number.isInteger(s.reps) || s.reps < 1 || s.reps > 999)) {
+      setErrorMessage('Số reps phải là số nguyên từ 1 đến 999.')
+      return
+    }
+    if (setsData.some((s) => !Number.isFinite(s.weight) || s.weight < 0)) {
+      setErrorMessage('Khối lượng phải lớn hơn hoặc bằng 0 kg.')
+      return
+    }
+    if (setsData.some((s) => !Number.isFinite(s.rpe) || s.rpe < 1 || s.rpe > 10)) {
+      setErrorMessage('RPE phải nằm trong khoảng từ 1 đến 10.')
+      return
+    }
+    if (progressScore !== '' && (!Number.isInteger(progressScore) || progressScore < 0 || progressScore > 100)) {
+      setErrorMessage('Điểm tiến độ phải là số nguyên từ 0 đến 100.')
+      return
+    }
+
     setIsSubmitting(true)
     setErrorMessage(null)
 
@@ -152,7 +169,7 @@ export function TrainingResultPage({ bookingId }: { bookingId?: string } = {}) {
           await ptBookingsService.publishTrainingResult(resId)
         } catch (publishErr) {
           setIsSaved('draft')
-          setErrorMessage(`Đã lưu nháp nhưng chưa công bố: ${isAppApiError(publishErr) ? publishErr.message : 'lỗi kết nối'}. Bấm "Lưu & công bố" lần nữa để thử lại.`)
+          setErrorMessage(`Đã lưu nháp nhưng chưa công bố: ${isAppApiError(publishErr) ? publishErr.message : 'lỗi kết nối'}. Bấm "Lưu & công bố kết quả" lần nữa để thử lại.`)
           return
         }
       }
@@ -169,7 +186,7 @@ export function TrainingResultPage({ bookingId }: { bookingId?: string } = {}) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary">Ghi Nhận Kết Quả Buổi Tập</h1>
@@ -210,7 +227,7 @@ export function TrainingResultPage({ bookingId }: { bookingId?: string } = {}) {
             <span>Thông Tin Buổi Dạy</span>
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-semibold text-text-muted mb-1.5 block">Chọn Buổi Tập PT</label>
               {completedBookings.length === 0 ? (
@@ -230,6 +247,14 @@ export function TrainingResultPage({ bookingId }: { bookingId?: string } = {}) {
                   ))}
                 </select>
               )}
+              {(() => {
+                const booking = completedBookings.find((b) => b.id === selectedBookingId)
+                return booking ? (
+                  <p className="mt-2 text-xs text-text-muted">
+                    Trạng thái: Buổi đã hoàn thành · {formatDateTime(booking.startsAt)}
+                  </p>
+                ) : null
+              })()}
             </div>
 
             <div>
@@ -257,11 +282,12 @@ export function TrainingResultPage({ bookingId }: { bookingId?: string } = {}) {
 
         {/* Sets logging */}
         <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
               <Dumbbell className="h-4 w-4 text-primary" />
               <span>Chi Tiết Hiệp Tập & Mức Gắng Sức (RPE 1-10)</span>
             </h2>
+            <p className="text-xs text-text-muted sm:max-w-xs sm:text-right">RPE: 1–3 nhẹ · 4–6 vừa · 7–8 nặng · 9–10 tối đa</p>
             <Button
               type="button"
               size="sm"
@@ -324,7 +350,8 @@ export function TrainingResultPage({ bookingId }: { bookingId?: string } = {}) {
                     onClick={() => handleRemoveSet(idx)}
                     disabled={setsData.length <= 1}
                     className="text-text-muted hover:text-danger cursor-pointer"
-                    title="Xóa hiệp"
+                    title={`Xóa hiệp ${idx + 1}`}
+                    aria-label={`Xóa hiệp ${idx + 1}`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -350,7 +377,8 @@ export function TrainingResultPage({ bookingId }: { bookingId?: string } = {}) {
                 min={0}
                 max={100}
                 value={progressScore}
-                onChange={(e) => setProgressScore(Number(e.target.value))}
+                onChange={(e) => setProgressScore(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="0–100"
               />
             </div>
           </div>
@@ -372,7 +400,7 @@ export function TrainingResultPage({ bookingId }: { bookingId?: string } = {}) {
               isLoading={isSubmitting && publishOnSave}
               disabled={isSubmitting || completedBookings.length === 0 || exercises.length === 0}
             >
-              Lưu & công bố
+              Lưu & công bố kết quả
             </Button>
           </div>
         </div>

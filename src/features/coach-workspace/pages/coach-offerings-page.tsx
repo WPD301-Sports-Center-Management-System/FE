@@ -25,16 +25,16 @@ export function CoachOfferingsPage() {
   return <div>
     {node}
     <PageHeader title="Khóa đăng ký dạy" subtitle={<><span>Khóa tập bạn được duyệt dạy, khung nhận học viên và gói PT</span><Dot /><span>Manager duyệt khóa và gói trước khi mở bán</span></>}
-      actions={<Btn variant="primary" icon={<Plus aria-hidden className="h-4 w-4" />} onClick={() => setOpen(true)}>Đăng ký khóa mới</Btn>} />
+      actions={<Btn variant="primary" icon={<Plus aria-hidden className="h-4 w-4" />} onClick={() => setOpen(true)}>Đề xuất khóa mới</Btn>} />
     <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <StatTile label="Khóa đang dạy" icon={<BookOpen className="h-[18px] w-[18px]" />} iconTone="info" value={offerings.data ? teaching.length : '—'} hint={offerings.data ? `${list.length} khóa đã đăng ký` : undefined} />
       <StatTile label="Học viên đang học" icon={<Users className="h-[18px] w-[18px]" />} iconTone="violet" value={purchases.data ? new Set(active.map(p => p.memberId)).size : '—'} hint={purchases.data ? `${active.length} gói đang hoạt động` : undefined} />
-      <StatTile label="Gói PT đang bán" icon={<CalendarRange className="h-[18px] w-[18px]" />} iconTone="success" value={options.data ? approvedOptions.filter(o => o.isActive).length : '—'} hint={options.data ? `${approvedOptions.length} gói đã duyệt` : undefined} />
+      <StatTile label="Gói PT đang bán" icon={<CalendarRange className="h-[18px] w-[18px]" />} iconTone="success" value={options.data ? approvedOptions.filter(o => o.isActive).length : '—'} hint={options.data ? `${approvedOptions.filter(o => o.isActive).length} đang mở bán · ${approvedOptions.length} đã duyệt` : undefined} />
       <StatTile label="Chờ duyệt" icon={<Clock3 className="h-[18px] w-[18px]" />} iconTone="warning" tone={pending ? 'warning' : 'neutral'} value={offerings.data && options.data ? pending : '—'} hint="Khóa và gói PT gửi Manager" />
     </div>
     <Card flush>
       {offerings.error ? <ErrorBox message={offerings.error} onRetry={() => void offerings.reload()} /> : !offerings.data ? <Skeleton rows={4} /> : !list.length
-        ? <EmptyBox icon={<BookOpen className="h-5 w-5" />} title="Bạn chưa đăng ký dạy khóa nào" hint="Đăng ký khóa → Manager duyệt → tạo gói PT và khung nhận học viên." action={<Btn variant="primary" onClick={() => setOpen(true)}>Đăng ký khóa mới</Btn>} />
+        ? <EmptyBox icon={<BookOpen className="h-5 w-5" />} title="Bạn chưa đăng ký dạy khóa nào" hint="Đề xuất khóa → Manager duyệt → tạo gói PT và khung nhận học viên." action={<Btn variant="primary" onClick={() => setOpen(true)}>Đề xuất khóa mới</Btn>} />
         : <Table head={['Khóa tập', 'Khung nhận học viên', 'Gói PT', 'Học viên', 'Trạng thái', 'Thao tác']} minWidth={1000}>
           {list.map(o => {
             const courseOptions = (options.data ?? []).filter(x => x.courseId === o.courseId)
@@ -52,7 +52,7 @@ export function CoachOfferingsPage() {
               <td className={`${td} tabular-nums`}>{students.length ? `${new Set(students.map(s => s.memberId)).size} HV · ${students.length} gói` : <span className="text-text-muted">—</span>}</td>
               <td className={td}><Badge tone={o.isActive ? st.tone : 'neutral'}>{o.isActive ? st.label : 'Tạm dừng'}</Badge>{o.rejectionReason && o.status === 'REJECTED' && <p className="mt-1 max-w-56 text-xs text-red-600">Lý do: {o.rejectionReason}</p>}</td>
               <td className={`${td} text-right`}><div className="flex justify-end gap-1.5">
-                {o.status === 'APPROVED' && <LinkBtn size="sm" variant="soft" to="/coach/slots">Khung giờ</LinkBtn>}
+                {o.status === 'APPROVED' && <LinkBtn size="sm" variant="soft" to="/coach/slots">{courseRules.length ? 'Sửa khung giờ' : 'Thiết lập khung giờ'}</LinkBtn>}
                 <LinkBtn size="sm" to="/coach/teaching-rights" icon={<Settings2 aria-hidden className="h-3.5 w-3.5" />}>{o.status === 'REJECTED' ? 'Sửa & gửi lại' : 'Gói PT'}</LinkBtn>
               </div></td>
             </tr>

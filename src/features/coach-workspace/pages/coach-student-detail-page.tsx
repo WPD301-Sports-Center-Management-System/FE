@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { AlertTriangle, Flag, MessageSquareText, Pencil, Phone, Play, Ruler, Target, Utensils } from 'lucide-react'
+import { AlertTriangle, Check, Flag, MessageSquareText, Pencil, Phone, Play, Ruler, Target, Utensils } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import type { Session } from '@/features/fixed-pt/types'
@@ -56,10 +56,10 @@ export function CoachStudentDetailPage() {
           </div>
         </div>
         <dl className="flex flex-wrap gap-6 text-right">
-          <Stat label="Buổi đã tập" value={sessions.data ? String(done) : '—'} />
-          <Stat label="Chuyên cần" value={attendance === null ? '—' : `${attendance}%`} />
-          <Stat label={`Cân nặng · ${assessments.length} lần đo`} value={delta('weightKg') === null ? '—' : `${signed(delta('weightKg')!)} kg`} />
-          <Stat label="% mỡ" value={delta('bodyFatPercent') === null ? '—' : `${signed(delta('bodyFatPercent')!)}%`} />
+          <Stat label="Buổi hoàn thành" value={sessions.data ? String(done) : 'Đang tải'} />
+          <Stat label="Chuyên cần" value={attendance === null ? 'Chưa có dữ liệu' : `${attendance}%`} />
+          <Stat label={`Cân nặng · ${assessments.length} lần đo`} value={delta('weightKg') === null ? 'Chưa có dữ liệu' : `${signed(delta('weightKg')!)} kg`} />
+          <Stat label="% mỡ" value={delta('bodyFatPercent') === null ? 'Chưa có dữ liệu' : `${signed(delta('bodyFatPercent')!)}%`} />
         </dl>
       </div>
       <div className="flex flex-wrap gap-2 border-t border-border-subtle px-5 py-4">
@@ -88,14 +88,15 @@ export function CoachStudentDetailPage() {
           {!purchases.data ? <Skeleton rows={2} className="p-0" /> : !purchases.data.length ? <p className="text-sm text-text-muted">Không có gói nào với bạn.</p> :
             <ul className="space-y-4">{purchases.data.map(p => <li key={p.id}>
               <div className="flex flex-wrap gap-1.5"><Badge tone="success">{p.packageNameSnapshot}</Badge><Badge tone={p.status === 'ACTIVE' ? 'info' : 'neutral'}>{PURCHASE_LABEL[p.status] ?? p.status}</Badge>
-                {p.status === 'ACTIVE' && <Badge tone="info">Còn {p.totalCredits - p.consumedCredits} buổi</Badge>}{p.expiresAt && <Badge tone="warning">Hạn gói {dmy(p.expiresAt)}</Badge>}</div>
-              <div className="mt-2 flex items-center gap-3"><ProgressBar className="flex-1" value={p.consumedCredits} max={p.totalCredits} tone="warning" /><span className="text-xs tabular-nums text-text-muted">{p.consumedCredits}/{p.totalCredits} buổi đã dùng</span></div>
-              <Link to={`/coach/pt-purchases/${p.id}`} className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">Chi tiết gói {p.purchaseCode}</Link>
+                {p.status === 'ACTIVE' && <Badge tone="info">Còn {p.totalCredits - p.consumedCredits} buổi</Badge>}{p.expiresAt && p.status !== 'COMPLETED' && <Badge tone="warning">Hạn gói {dmy(p.expiresAt)}</Badge>}</div>
+              <p className="mt-1 text-xs text-text-muted">Mã gói: {p.purchaseCode} · Tạo ngày {dmy(p.createdAt)}</p>
+              <div className="mt-2 flex items-center gap-3"><ProgressBar className="flex-1" value={p.consumedCredits} max={p.totalCredits} tone="warning" /><span className="text-xs tabular-nums text-text-muted">{p.consumedCredits}/{p.totalCredits} buổi đã dùng · còn {Math.max(0, p.totalCredits - p.consumedCredits)}</span></div>
+              <Link to={`/coach/pt-purchases/${p.id}`} className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">Xem chi tiết gói</Link>
             </li>)}</ul>}
         </Card>
         <Card title="Ghi chú chuyên môn" actions={<Btn size="sm" variant="ghost" icon={<Pencil aria-hidden className="h-3.5 w-3.5" />} onClick={() => setDialog('notes')}>Sửa lưu ý sức khỏe</Btn>}>
           <ul className="space-y-4 text-sm">
-            <NoteRow icon={<AlertTriangle className="h-4 w-4" />} tone="text-red-600 bg-red-50 dark:bg-red-500/10" title="Lưu ý sức khỏe / chấn thương" text={m.medicalNotes || 'Chưa ghi nhận.'} />
+            <NoteRow icon={m.medicalNotes ? <AlertTriangle className="h-4 w-4" /> : <Check className="h-4 w-4" />} tone={m.medicalNotes ? 'text-red-600 bg-red-50 dark:bg-red-500/10' : 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10'} title="Lưu ý sức khỏe / chấn thương" text={m.medicalNotes || 'Chưa ghi nhận lưu ý sức khỏe.'} />
             {goals.map(g => <NoteRow key={g.id} icon={<Flag className="h-4 w-4" />} tone="text-sky-600 bg-sky-50 dark:bg-sky-500/10" title={g.title}
               text={[g.metricName && g.targetValue ? `${g.metricName}: ${g.currentValue ?? g.startValue ?? '?'} → ${g.targetValue} ${g.unit ?? ''}` : null, g.targetDate ? `hạn ${dmy(g.targetDate)}` : null, g.description].filter(Boolean).join(' · ') || 'Mục tiêu đang theo dõi'} />)}
             {(results.data ?? []).filter(r => r.coachComment).slice(0, 3).map(r => <NoteRow key={r.id} icon={<MessageSquareText className="h-4 w-4" />} tone="text-violet-600 bg-violet-50 dark:bg-violet-500/10"

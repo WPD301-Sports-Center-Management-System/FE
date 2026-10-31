@@ -87,7 +87,7 @@ describe('TrainingResultPage', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Lưu & công bố' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Lưu & công bố kết quả' })).toBeInTheDocument()
     })
 
     fireEvent.change(screen.getByLabelText(/Đánh giá & Góp ý của HLV/i), {
@@ -97,7 +97,7 @@ describe('TrainingResultPage', () => {
       target: { value: '90' },
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lưu & công bố' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu & công bố kết quả' }))
 
     await waitFor(() => {
       expect(ptBookingsService.createTrainingResult).toHaveBeenCalledWith(
