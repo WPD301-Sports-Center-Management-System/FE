@@ -10,6 +10,8 @@ import { membersService } from '@/features/memberships/services/members.service'
 import { membershipPlansService } from '@/features/memberships/services/membership-plans.service'
 import { subscriptionsService } from '@/features/memberships/services/subscriptions.service'
 import { paymentsService } from '@/features/payments-invoices/services/payments.service'
+import { VietQrPaymentModal } from '@/features/payments-invoices/components/vietqr-payment-modal'
+import type { VietQRPaymentResponse } from '@/features/payments-invoices/types/payments.types'
 import { isAppApiError } from '@/shared/api/api-error'
 import type { PaymentMethod, MembershipPlan, MemberSummary, Subscription } from '@/shared/types/api'
 
@@ -34,6 +36,8 @@ export function MembershipSalePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [createdSubscription, setCreatedSubscription] = useState<Subscription | null>(null)
   const [paymentIssue, setPaymentIssue] = useState<string | null>(null)
+  const [vietQrPayment, setVietQrPayment] = useState<VietQRPaymentResponse | null>(null)
+  const [vietQrSubscription, setVietQrSubscription] = useState<Subscription | null>(null)
 
   // Load members and plans on mount
   const loadInitialData = useCallback(async () => {
@@ -102,14 +106,12 @@ export function MembershipSalePage() {
         issue = await collectAtCounter(newSub.id, newSub.priceSnapshot)
       } else if (paymentMethod === 'VNPAY') {
         try {
-          const vnpayRes = await paymentsService.createVNPay({ subscriptionId: newSub.id, returnTarget: 'web' })
-          if (vnpayRes.paymentUrl) {
-            window.location.href = vnpayRes.paymentUrl
-            return
-          }
-          issue = 'Đã tạo vé nhưng VNPay chưa trả về đường dẫn thanh toán.'
-        } catch (vnpayErr) {
-          issue = `Đã tạo vé nhưng chưa mở được VNPay: ${isAppApiError(vnpayErr) ? vnpayErr.message : 'lỗi kết nối'}.`
+          const vietQrRes = await paymentsService.createVietQR({ subscriptionId: newSub.id })
+          setVietQrSubscription(newSub)
+          setVietQrPayment(vietQrRes)
+          return
+        } catch (vietQrErr) {
+          issue = `Đã tạo vé nhưng chưa mở được VietQR: ${isAppApiError(vietQrErr) ? vietQrErr.message : 'lỗi kết nối'}.`
         }
       }
       setPaymentIssue(issue)
@@ -154,6 +156,8 @@ export function MembershipSalePage() {
   const handleResetForNextSale = () => {
     setPaymentIssue(null)
     setCreatedSubscription(null)
+    setVietQrPayment(null)
+    setVietQrSubscription(null)
     setStartDate(centerDate())
     setErrorMessage(null)
   }
@@ -169,6 +173,17 @@ export function MembershipSalePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <VietQrPaymentModal
+        payment={vietQrPayment}
+        onClose={() => setVietQrPayment(null)}
+        onSuccess={async () => {
+          if (!vietQrSubscription) return
+          const active = await refreshSubscription(vietQrSubscription)
+          setVietQrPayment(null)
+          setVietQrSubscription(null)
+          setCreatedSubscription({ ...active, status: 'ACTIVE' })
+        }}
+      />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2.5">
@@ -366,7 +381,7 @@ export function MembershipSalePage() {
                       : 'border-border-subtle bg-bg-surface-muted text-text-muted hover:text-text-primary hover:bg-border-subtle'
                   }`}
                 >
-                  {m === 'CASH' ? 'Tiền mặt' : m === 'BANK_TRANSFER' ? 'Chuyển khoản' : 'Cổng VNPay'}
+                  {m === 'CASH' ? 'Tiền mặt' : m === 'BANK_TRANSFER' ? 'Chuyển khoản' : 'VietQR Demo'}
                 </button>
               ))}
             </div>

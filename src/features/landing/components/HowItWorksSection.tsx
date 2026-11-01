@@ -23,7 +23,7 @@ export const HowItWorksSection = ({ onOpenTrialModal }: HowItWorksSectionProps) 
     {
       step: '02',
       title: 'Chọn Huấn Luyện Viên & Gói PT',
-      description: 'Xem chứng chỉ và phong cách dạy của Coach. Mua gói 5, 10 hoặc 20 buổi với thanh toán VNPay / tại quầy nhận credit ngay.',
+      description: 'Xem chứng chỉ và phong cách dạy của Coach. Mua gói 5, 10 hoặc 20 buổi với thanh toán VietQR / tại quầy nhận credit ngay.',
       icon: CreditCard,
       tag: 'Kích Hoạt Gói'
     },

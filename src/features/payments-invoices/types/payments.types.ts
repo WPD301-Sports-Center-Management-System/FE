@@ -32,6 +32,15 @@ export interface VNPayPaymentResponse {
   expiresAt: string
 }
 
+export interface VietQRPaymentResponse {
+  paymentId: string
+  qrUrl: string
+  amount: number
+  memo: string
+  accountName: string
+  expiresAt: string
+}
+
 export interface PaymentStatusResponse {
   id: string
   status: PaymentStatus

@@ -7,6 +7,7 @@ import type {
   CounterPaymentResult,
   VNPayPaymentPayload,
   VNPayPaymentResponse,
+  VietQRPaymentResponse,
   PaymentStatusResponse,
 } from '../types/payments.types'
 
@@ -33,6 +34,12 @@ export const paymentsService = {
     const res = await apiClient.post<ApiSuccess<VNPayPaymentResponse>>('/payments/vnpay', payload)
     const data = res as unknown as ApiSuccess<VNPayPaymentResponse>
     return data.data ?? (data as unknown as VNPayPaymentResponse)
+  },
+
+  async createVietQR(payload: Omit<VNPayPaymentPayload, 'returnTarget'>): Promise<VietQRPaymentResponse> {
+    const res = await apiClient.post<ApiSuccess<VietQRPaymentResponse>>('/payments/vietqr', payload)
+    const data = res as unknown as ApiSuccess<VietQRPaymentResponse>
+    return data.data ?? (data as unknown as VietQRPaymentResponse)
   },
 
   /**
