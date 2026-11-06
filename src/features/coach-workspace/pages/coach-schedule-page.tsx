@@ -2,15 +2,16 @@ import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeftRight, Check, ChevronLeft, ChevronRight, Download, Moon } from 'lucide-react'
 import { useLoad } from '@/features/fixed-pt/hooks'
-import type { Session } from '@/features/fixed-pt/types'
+import { calendarSessions, type CalendarSession as Session } from '../calendar-sessions'
 import { centerDate } from '@/shared/utils/date'
 import { coachWs, type TimeOff } from '../api'
 import { useCoachShell } from '../shell'
 import { Badge, Btn, Card, Dot, ErrorBox, LinkBtn, PageHeader, Segmented, Skeleton, btnCls } from '@/features/workspace/ui'
 import { addDays, dayEnd, dayStart, downloadCsv, hhmm, isoWeek, isScheduled, longDate, minutesBetween, mondayOf, SESSION_LABEL, shortDate, WEEKDAY_NAMES, weekdayOf } from '@/features/workspace/utils'
 
-type Kind = 'pt' | 'makeup' | 'live' | 'done' | 'absent' | 'cancelled'
+type Kind = 'trial' | 'pt' | 'makeup' | 'live' | 'done' | 'absent' | 'cancelled'
 const KIND: Record<Kind, { card: string; time: string; label: string }> = {
+  trial: { card: 'border-dashed border-amber-300 bg-amber-50/80 dark:border-amber-500/40 dark:bg-amber-500/10', time: 'text-amber-800 dark:text-amber-300', label: 'Tập thử PT' },
   pt: { card: 'border-sky-200 bg-sky-50/80 dark:border-sky-500/30 dark:bg-sky-500/10', time: 'text-sky-700 dark:text-sky-300', label: 'PT 1-1' },
   makeup: { card: 'border-violet-200 bg-violet-50/80 dark:border-violet-500/30 dark:bg-violet-500/10', time: 'text-violet-700 dark:text-violet-300', label: 'Học bù' },
   live: { card: 'border-2 border-primary bg-primary/5', time: 'text-primary', label: 'Đang dạy' },
@@ -18,19 +19,23 @@ const KIND: Record<Kind, { card: string; time: string; label: string }> = {
   absent: { card: 'border-red-200 bg-red-50/70 dark:border-red-500/30 dark:bg-red-500/10', time: 'text-red-700 dark:text-red-300', label: 'Vắng / hủy muộn' },
   cancelled: { card: 'border-border-subtle bg-bg-surface-muted/60 opacity-75', time: 'text-text-muted', label: 'Đã hủy / dời' },
 }
-const kindOf = (s: Session): Kind => s.status === 'IN_PROGRESS' ? 'live' : s.status === 'COMPLETED' ? 'done' : s.status === 'NO_SHOW' || s.status === 'CANCELLED_LATE' ? 'absent' : !isScheduled(s) ? 'cancelled' : s.isMakeup ? 'makeup' : 'pt'
+const kindOf = (s: Session): Kind => s.status === 'IN_PROGRESS' ? 'live' : s.status === 'COMPLETED' ? 'done' : s.status === 'NO_SHOW' || s.status === 'CANCELLED_LATE' ? 'absent' : !isScheduled(s) ? 'cancelled' : s.trialPhone ? 'trial' : s.isMakeup ? 'makeup' : 'pt'
 
 export function CoachSchedulePage() {
   const today = centerDate()
   const [params, setParams] = useSearchParams()
   const anchor = /^\d{4}-\d{2}-\d{2}$/.test(params.get('day') ?? '') ? params.get('day')! : today
-  const view = params.get('view') === 'day' ? 'day' : 'week'
+  const view = (params.get('view') ?? (window.matchMedia('(max-width: 767px)').matches ? 'day' : 'week')) === 'day' ? 'day' : 'week'
   const [showCancelled, setShowCancelled] = useState(false)
   const { pendingChanges } = useCoachShell()
   const monday = mondayOf(anchor)
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i))
   const range = view === 'week' ? [monday, days[6]!] : [anchor, anchor]
-  const sessions = useLoad(() => coachWs.sessions({ from: dayStart(range[0]!), to: dayEnd(range[1]!) }, 3), [range[0], range[1]])
+  const sessions = useLoad(async () => {
+    const params = { from: dayStart(range[0]!), to: dayEnd(range[1]!) }
+    const [paid, trials] = await Promise.all([coachWs.sessions(params, 3), coachWs.trialSessions(params)])
+    return calendarSessions(paid, trials)
+  }, [range[0], range[1]])
   const timeOffs = useLoad(() => coachWs.timeOffs(), [])
   const set = (next: { day?: string; view?: string }) => { const p = new URLSearchParams(params); if (next.day) p.set('day', next.day); if (next.view) p.set('view', next.view); setParams(p, { replace: true }) }
   const step = (dir: number) => set({ day: addDays(anchor, dir * (view === 'week' ? 7 : 1)) })
@@ -44,7 +49,7 @@ export function CoachSchedulePage() {
   const cancelledCount = all.length - scheduled.length
 
   const exportCsv = () => downloadCsv(`lich-day-${range[0]}_${range[1]}.csv`, ['Ngày', 'Bắt đầu', 'Kết thúc', 'Học viên', 'Gói', 'Buổi', 'Trạng thái'],
-    all.map(s => [centerDate(s.startsAt), hhmm(s.startsAt), hhmm(s.endsAt), s.memberName ?? '', s.purchase?.packageNameSnapshot ?? '', s.credit ? `${s.credit.creditIndex}/${s.purchase?.totalCredits ?? ''}` : '', SESSION_LABEL[s.status] ?? s.status]))
+    all.map(s => [centerDate(s.startsAt), hhmm(s.startsAt), hhmm(s.endsAt), s.memberName ?? '', s.trialPhone ? s.courseName : s.purchase?.packageNameSnapshot ?? '', s.credit ? `${s.credit.creditIndex}/${s.purchase?.totalCredits ?? ''}` : '', SESSION_LABEL[s.status] ?? s.status]))
 
   const title = view === 'week' ? `Tuần ${shortDate(monday)} – ${shortDate(days[6]!)}/${days[6]!.slice(0, 4)}` : longDate(anchor)
   return <div>
@@ -99,6 +104,11 @@ function DayColumn({ day, today, sessions, offs, onPick }: { day: string; today:
 
 function SessionCard({ s, wide }: { s: Session; wide?: boolean }) {
   const k = KIND[kindOf(s)]
+  if (s.trialPhone) return <div className={`rounded-lg border p-2.5 ${k.card} ${wide ? 'flex flex-wrap items-center gap-x-6 gap-y-1' : ''}`}>
+    <p className={`text-xs font-bold tabular-nums ${k.time}`}>{hhmm(s.startsAt)} – {hhmm(s.endsAt)} · {minutesBetween(s.startsAt, s.endsAt)}'</p>
+    <p className="mt-1 text-sm font-semibold">Tập thử PT · {s.memberName}</p>
+    <p className="mt-0.5 text-xs text-text-muted">{s.trialPhone} · {SESSION_LABEL[s.status] ?? s.status}</p>
+  </div>
   return <Link to={`/coach/sessions/${s.id}`} className={`block rounded-lg border p-2.5 transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/50 ${k.card} ${wide ? 'flex flex-wrap items-center gap-x-6 gap-y-1' : ''}`}>
     <p className={`flex items-center justify-between gap-1 text-xs font-bold tabular-nums ${k.time}`}>
       <span>{hhmm(s.startsAt)} – {hhmm(s.endsAt)} · {minutesBetween(s.startsAt, s.endsAt)}'</span>

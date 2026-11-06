@@ -260,7 +260,7 @@ export function GymCategoriesPage() {
     setErrorMessage(null)
     try {
       await coursesExercisesService.updateCourseExercises(assigningExerciseCourse.id, data)
-      showSuccess(`Đã lưu giáo án bài tập cho khóa "${assigningExerciseCourse.name}"!`)
+      showSuccess(`Đã lưu mẫu buổi của "${assigningExerciseCourse.name}" vào thư viện giáo án chung.`)
       setIsAssignExerciseModalOpen(false)
       setAssigningExerciseCourse(null)
       loadData()

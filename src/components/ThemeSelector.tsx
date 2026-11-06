@@ -43,7 +43,7 @@ export function ThemeSelector({
       onClick={handleToggle}
       aria-label={isDark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
       title={isDark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
-      className={`relative inline-flex items-center justify-center gap-2 rounded-xl border border-border-subtle bg-bg-surface text-text-muted hover:text-text-primary hover:bg-bg-surface-muted transition-all duration-200 cursor-pointer shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring ${padding} ${className}`}
+      className={`relative inline-flex min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 items-center justify-center gap-2 rounded-xl border border-border-subtle bg-bg-surface text-text-muted hover:text-text-primary hover:bg-bg-surface-muted transition-all duration-200 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring ${padding} ${className}`}
     >
       {isDark ? (
         <Sun className={`${iconSize} text-amber-400 transition-transform duration-200 hover:rotate-45 shrink-0`} />

@@ -6,14 +6,16 @@ import { NotificationBell } from '@/features/notifications/components/notificati
 import { ThemeSelector } from '@/components/ThemeSelector'
 import { roleLabel } from '@/shared/constants/labels'
 import { MemberSearch } from './member-search'
+import type { ReactNode } from 'react'
 
-export function Topbar() {
+export function Topbar({ navigation }: { navigation?: ReactNode }) {
   const { user, role, logout } = useAuth()
   const navigate = useNavigate()
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border-subtle bg-bg-surface/80 px-6 backdrop-blur-md">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-border-subtle bg-bg-surface px-4 sm:px-6">
       <div className="flex items-center gap-2">
+        {navigation}
         {(role === 'RECEPTIONIST' || role === 'MANAGER') && <MemberSearch />}
       </div>
 
@@ -45,11 +47,13 @@ export function Topbar() {
             </p>
           </div>
           <button
+            type="button"
+            aria-label="Đăng xuất"
             onClick={async () => {
               await logout()
               navigate('/login')
             }}
-            className="rounded-lg p-1.5 text-text-muted hover:bg-bg-surface-muted hover:text-danger transition-colors cursor-pointer"
+            className="grid h-11 w-11 place-items-center rounded-lg text-text-muted hover:bg-bg-surface-muted hover:text-danger transition-colors cursor-pointer"
             title="Đăng xuất"
           >
             <LogOut className="h-4 w-4" />

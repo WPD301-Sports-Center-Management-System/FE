@@ -17,6 +17,7 @@ import type { AppNotification, NotificationType } from '../types/notifications.t
 import { formatDateTime } from '@/shared/utils/date'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { useNavigate } from 'react-router-dom'
+import { notificationTarget } from '../notification-target'
 
 export function NotificationBell() {
   const navigate = useNavigate()
@@ -107,7 +108,7 @@ export function NotificationBell() {
 
   // Mark single notification as read
   const handleMarkAsRead = async (item: AppNotification) => {
-    const target = item.relatedId && (item.relatedType === 'PtPackagePurchase' ? `/pt-purchases/${item.relatedId}` : item.relatedType === 'PtBooking' ? `/pt-sessions/${item.relatedId}` : item.relatedType === 'PtEnrollment' ? (user?.role === 'COACH' ? '/coach/legacy-intake' : '/receptionist/legacy-enrollments') : null)
+    const target = notificationTarget(item, user?.role)
     if (target) { navigate(target); setIsOpen(false) }
     if (item.readAt) return
     try {
@@ -161,10 +162,12 @@ export function NotificationBell() {
     <div className="relative" ref={containerRef}>
       {/* Bell Trigger */}
       <button
+        type="button"
         onClick={handleToggle}
-        className="relative rounded-xl border border-border-subtle bg-bg-surface p-2 text-text-muted hover:text-text-primary hover:bg-bg-surface-muted transition-colors focus:outline-none cursor-pointer"
+        className="relative inline-grid min-h-11 min-w-11 place-items-center rounded-xl border border-border-subtle bg-bg-surface p-2 text-text-muted hover:text-text-primary hover:bg-bg-surface-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring cursor-pointer sm:min-h-0 sm:min-w-0"
         title="Thông báo hệ thống"
         aria-label="Thông báo"
+        aria-expanded={isOpen}
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
@@ -176,7 +179,7 @@ export function NotificationBell() {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-border-subtle bg-bg-surface shadow-2xl backdrop-blur-xl z-50 overflow-hidden">
+        <div className="fixed inset-x-4 top-16 mt-2 rounded-2xl border border-border-subtle bg-bg-surface shadow-2xl z-50 overflow-hidden sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:w-96">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3 bg-bg-surface">
             <div className="flex items-center gap-2">

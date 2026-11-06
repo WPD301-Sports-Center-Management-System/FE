@@ -69,6 +69,20 @@ describe('LoginPage', () => {
     fireEvent.click(submitBtn)
 
     expect(await screen.findByText(/Vui lòng nhập email hoặc số điện thoại/i)).toBeInTheDocument()
+    expect(identifierInput).toHaveFocus()
+    expect(identifierInput).toHaveAttribute('aria-invalid', 'true')
+    expect(mockLogin).not.toHaveBeenCalled()
+  })
+
+  it('lets people check their password without submitting the form', () => {
+    render(<MemoryRouter><LoginPage /></MemoryRouter>)
+    const password = screen.getByLabelText('Mật khẩu')
+    fireEvent.change(password, { target: { value: 'example-password' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Hiện mật khẩu' }))
+    expect(password).toHaveAttribute('type', 'text')
+    expect(password).toHaveValue('example-password')
+    fireEvent.click(screen.getByRole('button', { name: 'Ẩn mật khẩu' }))
+    expect(password).toHaveAttribute('type', 'password')
     expect(mockLogin).not.toHaveBeenCalled()
   })
 

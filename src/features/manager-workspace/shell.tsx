@@ -1,7 +1,8 @@
+import { hybridGet } from '@/features/fixed-pt/hybrid-api'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  BarChart3, BookOpen, CalendarDays, ClipboardCheck, ConciergeBell, LayoutGrid, Package, ReceiptText, ShieldCheck, SlidersHorizontal, Users, Wallet, WalletCards, Wrench,
+  Apple, BarChart3, BookOpen, CalendarDays, ClipboardCheck, ConciergeBell, LayoutGrid, Package, ReceiptText, ShieldCheck, SlidersHorizontal, Users, Wallet, Wrench,
 } from 'lucide-react'
 import { WorkspaceLayout, type WorkspaceNavSection } from '@/features/workspace/layout'
 import { PersonSearch } from '@/features/workspace/person-search'
@@ -18,24 +19,25 @@ export function ManagerShell() {
   const [pendingApprovals, setPending] = useState<number | null>(null)
   const refresh = useCallback(() => {
     mgrApi.dashboard().then(setCounts).catch(() => setCounts(null))
-    Promise.all([mgrApi.offerings('PENDING'), mgrApi.options('PENDING')]).then(([o, p]) => setPending(o.length + p.filter(x => x.coachId).length)).catch(() => setPending(null))
+    // Pending = submitted Coach applications + custom Coach packages (offerings are auto-approved now).
+    Promise.all([hybridGet<{ cvUrl: string | null }[]>('/coach-applications', { status: 'PENDING_REVIEW' }), mgrApi.options('PENDING')]).then(([a, p]) => setPending(a.filter(x => x.cvUrl).length + p.filter(x => x.coachId).length)).catch(() => setPending(null))
   }, [])
   useEffect(() => { refresh(); const t = setInterval(refresh, 120_000); return () => clearInterval(t) }, [refresh])
   const find = useCallback(async (term: string) => (await deskApi.members({ search: term, limit: 8 })).items
     .map(m => ({ id: m.id, name: m.user.fullName, sub: `${m.memberCode}${m.user.phone ? ` · ${m.user.phone}` : ''}`, avatarUrl: m.user.avatarUrl })), [])
 
   const nav: WorkspaceNavSection[] = [
-    { title: 'Tổng quan', items: [{ to: '/manager', label: 'Dashboard tổng quan', icon: LayoutGrid, end: true }] },
+    { title: 'Tổng quan', items: [{ to: '/manager', label: 'Hôm nay', icon: LayoutGrid, end: true }] },
     { title: 'Vận hành', items: [
       { to: '/manager/members', label: 'Hội viên & vé', icon: Users },
       { to: '/manager/pt-board', label: 'Lịch PT trung tâm', icon: CalendarDays, badge: { count: counts?.sessionsNeedingReview ?? null, tone: 'warning', label: n => `${n} buổi cần kiểm tra` } },
       { to: '/manager/categories', label: 'Chương trình đào tạo', icon: BookOpen },
       { to: '/manager/pt-packages', label: 'Gói PT', icon: Package },
-      { to: '/manager/approvals', label: 'Duyệt Coach', icon: ClipboardCheck, badge: { count: pendingApprovals, label: n => `${n} mục chờ duyệt` } },
+      { to: '/manager/meal-library', label: 'Thư viện dinh dưỡng', icon: Apple },
+      { to: '/manager/approvals', label: 'Duyệt huấn luyện viên', icon: ClipboardCheck, badge: { count: pendingApprovals, label: n => `${n} mục chờ duyệt` } },
     ] },
     { title: 'Tài chính', items: [
-      { to: '/manager/coach-income', label: 'Thu nhập Coach', icon: Wallet },
-      { to: '/manager/coach-ledger', label: 'Kỳ chi & điều chỉnh', icon: WalletCards },
+      { to: '/manager/coach-income', label: 'Thu nhập & chi trả HLV', icon: Wallet },
       { to: '/manager/payments', label: 'Thanh toán', icon: ReceiptText, badge: { count: counts?.openReconciliation ?? null, tone: 'warning', label: n => `${n} hồ sơ đối soát mở` } },
       { to: '/manager/reports', label: 'Báo cáo', icon: BarChart3 },
     ] },
@@ -50,7 +52,7 @@ export function ManagerShell() {
   ]
 
   return <ShellContext.Provider value={{ counts, pendingApprovals, refresh }}>
-    <WorkspaceLayout nav={nav} panel="Manager Console" roleLabel="Quản lý trung tâm"
+    <WorkspaceLayout nav={nav} panel="Quản lý trung tâm" roleLabel="Quản lý trung tâm"
       search={<PersonSearch label="Tìm hội viên" placeholder="Tìm hội viên theo tên / SĐT / email…" find={find} onPick={h => navigate(`/manager/members/${h.id}`)} />} />
   </ShellContext.Provider>
 }

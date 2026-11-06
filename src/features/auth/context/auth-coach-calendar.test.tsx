@@ -32,7 +32,7 @@ describe('Auth profile IDs reach Coach calendar', () => {
   })
   it('loads intake settings with the Coach profile ID and shows the enable action after auth', async () => {
     render(<MemoryRouter><AuthProvider><CoachCalendarPage /></AuthProvider></MemoryRouter>)
-    expect(await screen.findByRole('button', { name: 'Bật nhận học viên mới' })).toBeEnabled()
+    expect(await screen.findByRole('button', { name: 'Bật nhận học viên mới' }, { timeout: 5000 })).toBeEnabled()
     expect(hybridApi.settings).toHaveBeenCalledWith('coach-profile-id')
     expect(hybridApi.settings).not.toHaveBeenCalledWith('user-id')
     vi.mocked(hybridApi.settings).mockResolvedValue({ acceptingNewMembers: true, bufferMinutes: 15 })

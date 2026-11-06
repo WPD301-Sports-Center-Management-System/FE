@@ -28,3 +28,8 @@ dist-ssr
 # Local agent and design skill files
 .agents/
 .taste-skill/
+
+# Local build and verification artifacts
+.tmp/
+dist-codex-old/
+oxlint_out.txt

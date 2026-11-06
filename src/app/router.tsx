@@ -1,4 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { CoachSheetPage } from '@/features/goal-lab/coach-sheet-page'
+import { MemberGoalsPage } from '@/features/goal-lab/member-goals-page'
 import { DashboardLayout } from '@/layouts/dashboard-layout'
 import { LandingPage } from '@/pages/landing-page'
 import { LoginPage } from '@/features/auth/pages/login-page'
@@ -14,6 +16,9 @@ import { MgrHomePage } from '@/features/manager-workspace/pages/mgr-home-page'
 import { MgrMembersPage } from '@/features/manager-workspace/pages/mgr-members-page'
 import { MgrPtBoardPage } from '@/features/manager-workspace/pages/mgr-pt-board-page'
 import { MgrPtPackagesPage } from '@/features/manager-workspace/pages/mgr-pt-packages-page'
+import { MealLibraryPage } from '@/features/training-plans/pages/meal-library-page'
+import { CoachNutritionPage, CoachProgressPage, CoachTeachingPage } from '@/features/coach-workspace/pages/coach-expertise-pages'
+import { TabRedirect } from '@/features/workspace/tabbed-page'
 import { MgrApprovalsPage } from '@/features/manager-workspace/pages/mgr-approvals-page'
 import { MgrCoachIncomePage } from '@/features/manager-workspace/pages/mgr-coach-income-page'
 import { MgrOpsPage } from '@/features/manager-workspace/pages/mgr-ops-page'
@@ -32,28 +37,20 @@ import { DeskMembersPage } from '@/features/reception-workspace/pages/desk-membe
 import { DeskMemberPage } from '@/features/reception-workspace/pages/desk-member-page'
 import { DeskCheckinPage } from '@/features/reception-workspace/pages/desk-checkin-page'
 import { DeskPosPage } from '@/features/reception-workspace/pages/desk-pos-page'
-import { DeskPtCalendarPage } from '@/features/reception-workspace/pages/desk-pt-calendar-page'
-import { DeskScheduleChangesPage } from '@/features/reception-workspace/pages/desk-schedule-changes-page'
-import { DeskPaymentsPage } from '@/features/reception-workspace/pages/desk-payments-page'
+import { DeskPtHubPage, PaymentsHubPage } from '@/features/reception-workspace/pages/desk-hub-pages'
 import { DeskSupportPage } from '@/features/reception-workspace/pages/desk-support-page'
 
 // Coach Pages (workspace shell + redesigned screens; older tools stay reachable inside the shell)
 import { CoachShell } from '@/features/coach-workspace/shell'
 import { CoachHomePage } from '@/features/coach-workspace/pages/coach-home-page'
-import { CoachSchedulePage } from '@/features/coach-workspace/pages/coach-schedule-page'
+import { CoachScheduleHubPage } from '@/features/coach-workspace/pages/coach-schedule-hub-page'
 import { CoachSessionPage } from '@/features/coach-workspace/pages/coach-session-page'
-import { CoachScheduleChangesPage } from '@/features/coach-workspace/pages/coach-schedule-changes-page'
 import { CoachStudentsPage } from '@/features/coach-workspace/pages/coach-students-page'
 import { CoachStudentDetailPage } from '@/features/coach-workspace/pages/coach-student-detail-page'
 import { CoachPackagesPage } from '@/features/coach-workspace/pages/coach-packages-page'
-import { CoachOfferingsPage } from '@/features/coach-workspace/pages/coach-offerings-page'
-import { CoachLibraryPage } from '@/features/coach-workspace/pages/coach-library-page'
-import { CoachEarningsWorkspacePage } from '@/features/coach-workspace/pages/coach-earnings-page'
-import { CoachMyPackagesPage } from '@/features/coach-approval/pages/coach-my-packages-page'
-import { TrainingResultPage } from '@/features/training-plans/pages/training-result-page'
-import { CoachAssessmentsPage } from '@/features/member-assessments/pages/coach-assessments-page'
-import { CoachMealPlanPage } from '@/features/training-plans/pages/coach-meal-plan-page'
-import { CoachAiRecommendationPage } from '@/features/training-plans/pages/coach-ai-recommendation-page'
+import { WalletPage as CoachEarningsWorkspacePage } from '@/features/fixed-pt/pages/wallet-page'
+import { CoachApplicationPage, CoachApplicationGate } from '@/features/fixed-pt/pages/application-page'
+import { PackageCatalogPage as CoachMyPackagesPage } from '@/features/fixed-pt/pages/package-catalog-page'
 
 // Member Pages
 import { MemberDashboardPage } from '@/features/member/pages/member-dashboard-page'
@@ -62,14 +59,8 @@ import { MemberSupportPage } from '@/features/support-reviews-audit/pages/member
 import { VnPayReturnPage } from '@/features/payments-invoices/pages/vnpay-return-page'
 
 // Fixed-schedule PT 1:1
-import { CoachCalendarPage } from '@/features/fixed-pt/pages/coach-calendar-page'
-import { CoachIntakePage } from '@/features/fixed-pt/pages/coach-intake-page'
-import { CoachSessionsPage } from '@/features/fixed-pt/pages/coach-sessions-page'
-import { CoachProgramPage } from '@/features/fixed-pt/pages/coach-program-page'
-import { ReceptionEnrollmentPage } from '@/features/fixed-pt/pages/reception-enrollment-page'
 import { HybridSalePage } from '@/features/fixed-pt/pages/hybrid-sale-page'
 import { LinkedPurchasePage, LinkedSessionPage } from '@/features/fixed-pt/pages/linked-detail-page'
-import { ReconciliationPage } from '@/features/fixed-pt/pages/reconciliation-page'
 import { ManagerPoliciesPage } from '@/features/fixed-pt/pages/manager-policies-page'
 import { ManagerLedgerPage } from '@/features/fixed-pt/pages/manager-ledger-page'
 import { ManagerSessionsPage } from '@/features/fixed-pt/pages/manager-sessions-page'
@@ -111,6 +102,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/member', element: <MemberDashboardPage /> },
           { path: '/member/support', element: <MemberSupportPage /> },
+          { path: '/member/goals', element: <MemberGoalsPage /> },
         ],
       },
 
@@ -129,16 +121,16 @@ export const router = createBrowserRouter([
       { path: '/manager/members', element: <MgrMembersPage /> },
       { path: '/manager/members/:id', element: <DeskMemberPage /> },
       { path: '/manager/pt-board', element: <MgrPtBoardPage /> },
-      { path: '/manager/calendar', element: <Navigate to="/manager/pt-board" replace /> },
       { path: '/manager/sessions/:id', element: <LinkedSessionPage /> },
       { path: '/manager/pt-purchases/:id', element: <LinkedPurchasePage /> },
       { path: '/manager/categories', element: <GymCategoriesPage /> },
       { path: '/manager/pt-packages', element: <MgrPtPackagesPage /> },
+      { path: '/manager/meal-library', element: <MealLibraryPage manager /> },
       { path: '/manager/approvals', element: <MgrApprovalsPage /> },
       { path: '/manager/coach-income', element: <MgrCoachIncomePage /> },
       { path: '/manager/coach-ledger', element: <ManagerLedgerPage /> },
-      { path: '/manager/payments', element: <DeskPaymentsPage /> },
-      { path: '/manager/reconciliation', element: <ReconciliationPage /> },
+      { path: '/manager/payments', element: <PaymentsHubPage /> },
+      { path: '/manager/reconciliation', element: <TabRedirect to="/manager/payments" tab="reconciliation" /> },
       { path: '/manager/reports', element: <ReportsPage /> },
       { path: '/manager/equipment', element: <EquipmentPage /> },
       { path: '/manager/users', element: <UserManagementPage /> },
@@ -166,14 +158,13 @@ export const router = createBrowserRouter([
       { path: '/receptionist/check-in', element: <DeskCheckinPage /> },
       { path: '/receptionist/membership-sale', element: <DeskPosPage /> },
       { path: '/receptionist/pt-sale', element: <HybridSalePage /> },
-      { path: '/receptionist/legacy-enrollments', element: <ReceptionEnrollmentPage /> },
-      { path: '/receptionist/calendar', element: <DeskPtCalendarPage /> },
-      { path: '/receptionist/schedule-changes', element: <DeskScheduleChangesPage /> },
+      { path: '/receptionist/calendar', element: <DeskPtHubPage /> },
+      { path: '/receptionist/schedule-changes', element: <TabRedirect to="/receptionist/calendar" tab="changes" /> },
       { path: '/receptionist/sessions/:id', element: <LinkedSessionPage /> },
       { path: '/receptionist/pt-purchases/:id', element: <LinkedPurchasePage /> },
-      { path: '/receptionist/payments', element: <DeskPaymentsPage /> },
+      { path: '/receptionist/payments', element: <PaymentsHubPage /> },
       { path: '/receptionist/invoices', element: <Navigate to="/receptionist/payments?view=invoices" replace /> },
-      { path: '/receptionist/reconciliation', element: <ReconciliationPage /> },
+      { path: '/receptionist/reconciliation', element: <TabRedirect to="/receptionist/payments" tab="reconciliation" /> },
       { path: '/receptionist/support', element: <DeskSupportPage /> },
     ],
   },
@@ -182,30 +173,34 @@ export const router = createBrowserRouter([
   {
     element: (
       <ProtectedRoute allowedRoles={['COACH']}>
-        <CoachShell />
+        <CoachApplicationGate><CoachShell /></CoachApplicationGate>
       </ProtectedRoute>
     ),
     children: [
+      { path: '/coach/application', element: <CoachApplicationPage /> },
       { path: '/coach', element: <CoachHomePage /> },
-      { path: '/coach/schedule', element: <CoachSchedulePage /> },
+      { path: '/coach/schedule', element: <CoachScheduleHubPage /> },
       { path: '/coach/sessions/:id', element: <CoachSessionPage /> },
-      { path: '/coach/schedule-changes', element: <CoachScheduleChangesPage /> },
+      { path: '/coach/schedule-changes', element: <TabRedirect to="/coach/schedule" tab="changes" /> },
       { path: '/coach/students', element: <CoachStudentsPage /> },
       { path: '/coach/students/:memberId', element: <CoachStudentDetailPage /> },
       { path: '/coach/packages', element: <CoachPackagesPage /> },
       { path: '/coach/pt-purchases/:id', element: <LinkedPurchasePage /> },
-      { path: '/coach/offerings', element: <CoachOfferingsPage /> },
       { path: '/coach/teaching-rights', element: <CoachMyPackagesPage /> },
-      { path: '/coach/library', element: <CoachLibraryPage /> },
+      { path: '/coach/library', element: <CoachTeachingPage /> },
+      { path: '/coach/progress', element: <CoachProgressPage /> },
+      { path: '/coach/goals', element: <TabRedirect to="/coach/progress" tab="goals" /> },
+      { path: '/coach/goals/sheet/:bookingId', element: <CoachSheetPage /> },
       { path: '/coach/earnings', element: <CoachEarningsWorkspacePage /> },
-      { path: '/coach/slots', element: <CoachCalendarPage /> },
-      { path: '/coach/legacy-intake', element: <CoachIntakePage /> },
-      { path: '/coach/bookings', element: <CoachSessionsPage /> },
-      { path: '/coach/training-plans', element: <CoachProgramPage /> },
-      { path: '/coach/training-results', element: <TrainingResultPage /> },
-      { path: '/coach/assessments', element: <CoachAssessmentsPage /> },
-      { path: '/coach/meal-plans', element: <CoachMealPlanPage /> },
-      { path: '/coach/ai-recommendation', element: <CoachAiRecommendationPage /> },
+      { path: '/coach/slots', element: <TabRedirect to="/coach/schedule" tab="hours" /> },
+      { path: '/coach/bookings', element: <Navigate to="/coach/schedule" replace /> },
+      { path: '/coach/meal-plans', element: <CoachNutritionPage /> },
+      // Merged into tabbed pages; old links keep their query (purchaseId, bookingId…).
+      { path: '/coach/training-plans', element: <TabRedirect to="/coach/library" tab="packages" /> },
+      { path: '/coach/training-results', element: <TabRedirect to="/coach/progress" tab="results" /> },
+      { path: '/coach/assessments', element: <TabRedirect to="/coach/progress" tab="metrics" /> },
+      { path: '/coach/meal-templates', element: <TabRedirect to="/coach/meal-plans" tab="templates" /> },
+      { path: '/coach/ai-recommendation', element: <TabRedirect to="/coach/library" tab="ai" /> },
     ],
   },
 

@@ -4,7 +4,6 @@ import { fixedPtApi } from '../api'
 import { useLoad, useSubmit } from '../hooks'
 import type { PolicyRow } from '../types'
 import { ErrorBanner, inputCls, Loadable, Notice, Page, Panel, Table, td } from '../components/ui'
-import { CoachCapacity } from '../components/coach-capacity'
 
 const OPTIONS: Record<string, [string, string][]> = {
   ARRIVAL_MARKERS: [['RECEPTIONIST', 'Chỉ Lễ tân'], ['RECEPTIONIST_AND_COACH', 'Lễ tân và Coach']],
@@ -55,7 +54,7 @@ export function ManagerPoliciesPage() {
       </Panel>
       </fieldset>
       </form>
-      <CoachCapacity />
+
     </Page>
   )
 }

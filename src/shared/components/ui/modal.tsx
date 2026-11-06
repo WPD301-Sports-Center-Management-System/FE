@@ -9,7 +9,7 @@ export interface ModalProps {
   title: ReactNode
   description?: string
   children: ReactNode
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl'
   placement?: 'center' | 'right'
 }
 
@@ -25,6 +25,7 @@ export function Modal({ isOpen, onClose, title, description, children, maxWidth 
     lg: 'max-w-lg',
     xl: 'max-w-xl',
     '2xl': 'max-w-2xl',
+    '4xl': 'max-w-4xl',
   }[maxWidth]
 
   return createPortal(

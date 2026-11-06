@@ -1,11 +1,12 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, BarChart3, CalendarDays, ClipboardCheck, Download, FileSpreadsheet, LifeBuoy, Scale, TrendingDown, TrendingUp, Users, Wallet, Wrench } from 'lucide-react'
-import { useLoad } from '@/features/fixed-pt/hooks'
+import { Modal } from '@/shared/components/ui/modal'
+import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import { centerDate } from '@/shared/utils/date'
 import { downloadBlob } from '@/shared/utils/download'
 import { AreaChart, ChartLegend, SERIES_COLORS, StackedBarChart } from '@/features/workspace/charts'
-import { Badge, Btn, Card, Dot, PageHeader, Skeleton, StatTile } from '@/features/workspace/ui'
+import { Badge, Btn, Card, Dot, InlineError, PageHeader, Skeleton, StatTile, useFlash } from '@/features/workspace/ui'
 import { fmtMoney, fmtNumber, longDate, weekdayOf } from '@/features/workspace/utils'
 import { deskApi } from '@/features/reception-workspace/api'
 import { mgrApi } from '../api'
@@ -17,7 +18,9 @@ const shiftMonth = (ym: string, n: number) => { const [y, m] = ym.split('-').map
 const millions = (v: number) => `${fmtNumber(v / 1_000_000, v >= 10_000_000 ? 0 : 1)}tr`
 
 export function MgrHomePage() {
-  const { counts, pendingApprovals } = useMgrShell()
+  const { counts, pendingApprovals, refresh } = useMgrShell()
+  const { flash, node } = useFlash()
+  const [quickReviewOpen, setQuickReviewOpen] = useState(false)
   const today = centerDate()
   const ym = today.slice(0, 7)
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => shiftMonth(ym, i - 11)), [ym])
@@ -56,12 +59,14 @@ export function MgrHomePage() {
   }, [visits.data])
 
   const pendingEarnings = earnings.data?.byStatus.PENDING_CONFIRMATION
-  return <div>
-    <PageHeader title="Dashboard tổng quan" subtitle={<><span>{longDate(today)}</span><Dot /><span>{counts ? `${fmtNumber(counts.coaches)} Coach · ${fmtNumber(counts.members)} hội viên` : 'Đang tải…'}</span><Dot /><span>Doanh thu tính theo tiền đã thu và áp vào đơn</span></>}
+  return <div className="flex flex-col">
+    {node}
+    <PageHeader title="Hôm nay tại trung tâm" subtitle={<><span>{longDate(today)}</span><Dot /><span>{counts ? `${fmtNumber(counts.coaches)} Coach · ${fmtNumber(counts.members)} hội viên` : 'Đang tải…'}</span><Dot /><span>Doanh thu tính theo tiền đã thu và áp vào đơn</span></>}
       actions={<ExportBtn type="revenue" label="Xuất báo cáo tháng" from={monthStart(ym)} to={today} primary />} />
-    <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+    <div className="order-1 mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
       <StatTile label={`Doanh thu tháng ${ym.slice(5)}`} icon={<Wallet className="h-[18px] w-[18px]" />} iconTone="success" value={monthRev === null ? '—' : fmtNumber(monthRev / 1_000_000, 1)} unit="triệu ₫"
-        hint={mom === null ? (rev ? `${rev.paymentCount} giao dịch` : undefined) : <span className={`inline-flex items-center gap-1 ${mom >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600'}`}>{mom >= 0 ? <TrendingUp aria-hidden className="h-3.5 w-3.5" /> : <TrendingDown aria-hidden className="h-3.5 w-3.5" />}{mom >= 0 ? '+' : ''}{fmtNumber(mom, 1)}% so với cùng kỳ tháng trước</span>} />
+        hint={mom === null ? (rev ? `${rev.paymentCount} giao dịch` : undefined) : <span className={`inline-flex items-center gap-1 ${mom >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600'}`}>{mom >= 0 ? <TrendingUp aria-hidden className="h-3.5 w-3.5" /> : <TrendingDown aria-hidden className="h-3.5 w-3.5" />}{mom >= 0 ? '+' : ''}{fmtNumber(mom, 1)}% so với cả tháng trước</span>} />
       <StatTile label="Hội viên có vé hiệu lực" icon={<Users className="h-[18px] w-[18px]" />} iconTone="info" value={activeMembers === null ? '—' : <>{fmtNumber(activeMembers)}<span className="text-lg font-medium text-text-muted">/{fmtNumber(counts?.members ?? 0)}</span></>}
         hint={activeMembers !== null && counts?.members ? `${fmtNumber((activeMembers / counts.members) * 100, 1)}% tổng hội viên · ${desk.data?.expiringSubscriptions ?? '—'} vé hết hạn ≤ 7 ngày` : undefined} />
       <StatTile label="Buổi PT hôm nay" icon={<CalendarDays className="h-[18px] w-[18px]" />} iconTone="violet" value={counts?.bookingsToday ?? '—'} hint={counts ? `${counts.sessionsNeedingReview} buổi đang chờ kiểm tra` : undefined} />
@@ -69,7 +74,7 @@ export function MgrHomePage() {
         hint={rev ? `Đã chi ${millions(rev.coachPaidOut)} · tạm giữ ${millions(rev.coachOnHold)}` : undefined} />
     </div>
 
-    <div className="mb-6 grid gap-6 xl:grid-cols-2">
+    <div className="order-3 grid gap-6 xl:grid-cols-2">
       <Card title="Doanh thu theo kênh" subtitle="12 tháng gần nhất · tiền đã thu và áp vào đơn" badge={yearly.data ? <Badge>Từ đầu năm {millions(ytd)}</Badge> : null}>
         {yearly.error ? <p role="alert" className="text-sm text-red-600">{yearly.error}</p> : !yearly.data ? <Skeleton rows={6} className="p-0" /> : <>
           <ChartLegend items={[
@@ -84,11 +89,11 @@ export function MgrHomePage() {
           <span>Chờ đối soát: <span className={`font-semibold tabular-nums ${rev.pendingReconciliation ? 'text-amber-700 dark:text-amber-400' : 'text-text-primary'}`}>{fmtMoney(rev.pendingReconciliation)}</span></span>
         </div>}
       </Card>
-      <Card title="Khung giờ tập cao điểm" subtitle="Lượt check-in trung bình mỗi giờ · 28 ngày gần nhất" badge={peak?.total ? <Badge>{fmtNumber(peak.perDay, 0)} lượt/ngày</Badge> : null}>
+      <Card title="Khung giờ tập cao điểm" subtitle="Lượt check-in trung bình mỗi giờ · 28 ngày gần nhất" badge={peak?.total ? <Badge>{fmtNumber(peak.perDay, 1)} lượt/ngày</Badge> : null}>
         {visits.error ? <p role="alert" className="text-sm text-red-600">{visits.error}</p> : !peak ? <Skeleton rows={6} className="p-0" /> : !peak.total ? <p className="py-16 text-center text-sm text-text-muted">Chưa có lượt check-in trong 28 ngày qua.</p> : <>
           <ChartLegend items={[
             { label: 'Ngày thường', color: SERIES_COLORS[0], value: `${peak.top}h`, note: `cao điểm · ${fmtNumber(peak.peakWd, 1)} lượt` },
-            { label: 'Cuối tuần', color: SERIES_COLORS[1], value: `${peak.topWe}h`, note: `cao điểm · ${fmtNumber(peak.peakWe, 1)} lượt` },
+            { label: 'Cuối tuần', color: SERIES_COLORS[1], value: peak.peakWe > 0 ? `${peak.topWe}h` : '—', note: peak.peakWe > 0 ? `cao điểm · ${fmtNumber(peak.peakWe, 1)} lượt` : 'Chưa có lượt vào' },
           ]} />
           <AreaChart title="Lượt check-in trung bình theo giờ, ngày thường và cuối tuần" labels={peak.labels} format={v => fmtNumber(v, v > 0 && v < 10 ? 1 : 0)}
             mark={{ index: peak.topIndex, label: `Cao điểm ${peak.top}h` }}
@@ -98,13 +103,13 @@ export function MgrHomePage() {
       </Card>
     </div>
 
-    <div className="grid gap-6 2xl:grid-cols-2">
+    <div className="order-2 mb-6 grid gap-6 xl:grid-cols-2">
       <Card flush title="Cần xử lý hôm nay" subtitle="Tổng hợp từ các phân hệ">
         <ul className="divide-y divide-border-subtle">
           <Todo to="/manager/pt-board?tab=review" icon={<AlertTriangle className="h-4 w-4" />} tone="text-red-600 bg-red-50 dark:bg-red-500/10" title="Buổi PT cần kiểm tra" n={counts?.sessionsNeedingReview} hint="Qua giờ chưa có kết quả hoặc đang dạy quá giờ" action="Xử lý" />
-          <Todo to="/manager/approvals" icon={<ClipboardCheck className="h-4 w-4" />} tone="text-violet-600 bg-violet-50 dark:bg-violet-500/10" title="Coach chờ duyệt khóa / gói PT" n={pendingApprovals ?? undefined} hint="Đăng ký dạy khóa và đề xuất gói mới" action="Duyệt" />
+          <Todo to="/manager/approvals" icon={<ClipboardCheck className="h-4 w-4" />} tone="text-violet-600 bg-violet-50 dark:bg-violet-500/10" title="Coach chờ duyệt khóa / gói PT" n={pendingApprovals ?? undefined} hint="Đăng ký dạy khóa và đề xuất gói mới" action="Duyệt" onQuickAction={() => setQuickReviewOpen(true)} />
           <Todo to="/manager/coach-income?tab=pending" icon={<Wallet className="h-4 w-4" />} tone="text-amber-600 bg-amber-50 dark:bg-amber-500/10" title="Thu nhập Coach chờ xác nhận" n={pendingEarnings?.count} hint={pendingEarnings ? `${fmtMoney(pendingEarnings.amount)} từ buổi vắng / hủy muộn` : 'Buổi vắng, hủy muộn cần Manager công nhận'} action="Xác nhận" />
-          <Todo to="/manager/reconciliation" icon={<Scale className="h-4 w-4" />} tone="text-sky-600 bg-sky-50 dark:bg-sky-500/10" title="Hồ sơ đối soát tiền nhận" n={counts?.openReconciliation} hint="Tiền đã nhận nhưng chưa áp vào đơn" action="Mở" />
+          <Todo to="/manager/payments?tab=reconciliation" icon={<Scale className="h-4 w-4" />} tone="text-sky-600 bg-sky-50 dark:bg-sky-500/10" title="Hồ sơ đối soát tiền nhận" n={counts?.openReconciliation} hint="Tiền đã nhận nhưng chưa áp vào đơn" action="Mở" />
           <Todo to="/manager/equipment" icon={<Wrench className="h-4 w-4" />} tone="text-orange-600 bg-orange-50 dark:bg-orange-500/10" title="Thiết bị bảo trì / ngưng hoạt động" n={counts?.equipmentIssues} hint="Thiết bị đang không phục vụ hội viên" action="Chi tiết" />
           <Todo to="/manager/support" icon={<LifeBuoy className="h-4 w-4" />} tone="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10" title="Yêu cầu hỗ trợ đang mở" n={desk.data?.openSupportRequests} hint="Lễ tân đang xử lý — theo dõi tồn đọng" action="Xem" />
         </ul>
@@ -124,15 +129,82 @@ export function MgrHomePage() {
         <div className="border-t border-border-subtle px-5 py-3 text-right"><Link to="/manager/reports" className="text-sm font-semibold text-primary hover:underline">Mở trang báo cáo chi tiết</Link></div>
       </Card>
     </div>
+    {quickReviewOpen && <QuickReviewModal open={quickReviewOpen} onClose={() => setQuickReviewOpen(false)} onDone={m => { flash(m); refresh() }} />}
   </div>
 }
 
-function Todo({ to, icon, tone, title, n, hint, action }: { to: string; icon: ReactNode; tone: string; title: string; n?: number; hint: string; action: string }) {
+function Todo({ to, icon, tone, title, n, hint, action, onQuickAction }: { to: string; icon: ReactNode; tone: string; title: string; n?: number; hint: string; action: string; onQuickAction?: () => void }) {
   return <li className="flex items-center gap-3 px-5 py-3.5">
     <span aria-hidden className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${tone}`}>{icon}</span>
     <div className="min-w-0 flex-1"><p className="flex items-center gap-2 font-semibold">{title}<Badge tone={n ? 'warning' : 'neutral'}>{n ?? '—'}</Badge></p><p className="text-xs text-text-muted">{hint}</p></div>
-    <Link to={to} className="rounded-lg border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15">{action}</Link>
+    {onQuickAction && (n ?? 0) > 0 ? (
+      <button type="button" onClick={onQuickAction} className="rounded-lg border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15">Duyệt nhanh</button>
+    ) : (
+      <Link to={to} className="rounded-lg border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15">{action}</Link>
+    )}
   </li>
+}
+
+function QuickReviewModal({ open, onClose, onDone }: { open: boolean; onClose: () => void; onDone: (m: string) => void }) {
+  const options = useLoad(() => mgrApi.options('PENDING'), [open], open)
+  const submit = useSubmit()
+  const pendingOptions = (options.data ?? []).filter(o => o.coachId)
+  return (
+    <Modal isOpen={open} onClose={onClose} title="Duyệt nhanh gói tùy chỉnh của Coach">
+      <div className="space-y-4">
+        {options.error ? (
+          <InlineError message={options.error} />
+        ) : !options.data ? (
+          <Skeleton rows={3} />
+        ) : !pendingOptions.length ? (
+          <div className="py-8 text-center text-sm text-text-muted">Không có gói nào đang chờ duyệt.</div>
+        ) : (
+          <ul className="max-h-96 divide-y divide-border-subtle overflow-y-auto">
+            {pendingOptions.map(p => (
+              <li key={p.id} className="flex items-start justify-between gap-3 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">{p.name}</p>
+                  <p className="text-xs text-text-muted">{p.coach?.user?.fullName ?? 'Coach'} · {p.sessionCount} buổi · {fmtMoney(p.price)} · {p.validityDays} ngày</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Btn
+                    size="sm"
+                    variant="primary"
+                    busy={submit.busy}
+                    onClick={async () => {
+                      await submit.run(() => mgrApi.approveOption(p.id))
+                      onDone(`Đã duyệt gói ${p.name}!`)
+                      void options.reload()
+                    }}
+                  >
+                    Duyệt
+                  </Btn>
+                  <Btn
+                    size="sm"
+                    variant="outline"
+                    busy={submit.busy}
+                    onClick={async () => {
+                      await submit.run(() => mgrApi.rejectOption(p.id, 'Chưa phù hợp với định hướng trung tâm'))
+                      onDone(`Đã từ chối gói ${p.name}.`)
+                      void options.reload()
+                    }}
+                  >
+                    Từ chối
+                  </Btn>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex items-center justify-between border-t border-border-subtle pt-3">
+          <Link to="/manager/approvals" onClick={onClose} className="text-xs font-semibold text-primary hover:underline">
+            Mở toàn bộ trang duyệt hồ sơ Coach & gói →
+          </Link>
+          <Btn size="sm" variant="ghost" onClick={onClose}>Đóng</Btn>
+        </div>
+      </div>
+    </Modal>
+  )
 }
 
 function ExportBtn({ type, label, format = 'csv', from, to, primary }: { type: string; label: string; format?: 'csv' | 'xlsx'; from: string; to: string; primary?: boolean }) {

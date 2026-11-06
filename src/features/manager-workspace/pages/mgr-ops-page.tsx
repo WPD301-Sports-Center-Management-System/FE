@@ -1,3 +1,4 @@
+import { OperationsPanel } from '@/features/fixed-pt/components/operations-panel'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { BarChart3, ChevronRight, FileClock, LifeBuoy, ScrollText, ShieldAlert, Star, Ticket, TriangleAlert, Wallet } from 'lucide-react'
@@ -26,6 +27,7 @@ export function MgrOpsPage() {
 
   return <div>
     <PageHeader title="Vận hành & Kiểm duyệt" subtitle={<><span>Trung tâm điều khiển các phân hệ quản trị</span><Dot /><span>Chọn một khối để mở chi tiết</span></>} />
+    <div className="mb-6"><OperationsPanel /></div>
     <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
       <Block to="/manager/policies" icon={<ShieldAlert className="h-5 w-5" />} tone="bg-primary/10 text-primary" title="Chính sách vận hành" value={v(policies.data?.length, !!policies.data)} unit="chính sách"
         meta={policies.data ? (missing ? `${missing} chính sách đang dùng giá trị tạm hoặc còn thiếu` : 'Tất cả đã được phê duyệt') : '…'} hint="Mốc hủy buổi, học bù, vắng, giữ chỗ, chia doanh thu" warn={missing > 0} />
@@ -37,7 +39,7 @@ export function MgrOpsPage() {
         meta="Ai làm gì, lúc nào, trước và sau" hint="Lọc theo người dùng, hành động, đối tượng; xuất CSV cho kiểm toán" />
       <Block to="/manager/support" icon={<LifeBuoy className="h-5 w-5" />} tone="bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10" title="Yêu cầu hỗ trợ" value={v(openSupport.length, !!support.data)} unit="đang mở"
         meta={support.data ? (late ? `${late} yêu cầu mở quá 24 giờ` : 'Không có yêu cầu tồn quá 24 giờ') : '…'} hint="Lễ tân trả lời hội viên; Manager theo dõi tồn đọng" warn={late > 0} />
-      <Block to="/manager/reconciliation" icon={<Wallet className="h-5 w-5" />} tone="bg-sky-50 text-sky-600 dark:bg-sky-500/10" title="Đối soát tiền nhận" value={v(counts?.openReconciliation, !!counts)} unit="hồ sơ chưa kết luận"
+      <Block to="/manager/payments?tab=reconciliation" icon={<Wallet className="h-5 w-5" />} tone="bg-sky-50 text-sky-600 dark:bg-sky-500/10" title="Đối soát tiền nhận" value={v(counts?.openReconciliation, !!counts)} unit="hồ sơ chưa kết luận"
         meta="Tiền đến muộn, trùng, sai số tiền" hint="Kết luận hồ sơ; hệ thống không tự hoàn tiền" warn={!!counts?.openReconciliation} />
       <Block to="/manager/membership-plans" icon={<Ticket className="h-5 w-5" />} tone="bg-violet-50 text-violet-600 dark:bg-violet-500/10" title="Bảng giá vé gym" value="" unit="" meta="Chỉnh giá, mở / đóng bán vé" hint="Đơn đã bán giữ nguyên giá cũ" />
       <Block to="/manager/reports" icon={<BarChart3 className="h-5 w-5" />} tone="bg-primary/10 text-primary" title="Báo cáo" value="" unit="" meta="Doanh thu, gói PT, buổi tập, Coach, thiết bị" hint="Lọc theo khoảng ngày, xuất CSV / Excel" />

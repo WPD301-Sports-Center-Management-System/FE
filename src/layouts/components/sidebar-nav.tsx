@@ -57,7 +57,7 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
               { to: '/manager/equipment', label: 'Thiết bị & Bảo trì', icon: Wrench },
               { to: '/manager/reports', label: 'Báo cáo', icon: BarChart3 },
               { to: '/manager/coach-ledger', label: 'Đối soát Coach theo kỳ', icon: DollarSign },
-              { to: '/manager/calendar', label: 'Lịch PT toàn trung tâm', icon: Calendar },
+              { to: '/manager/pt-board', label: 'Lịch PT toàn trung tâm', icon: Calendar },
               { to: '/manager/sessions', label: 'Buổi cần xử lý & gián đoạn', icon: Activity },
               { to: '/receptionist/reconciliation', label: 'Đối soát tiền nhận', icon: CreditCard },
               { to: '/receptionist/invoices', label: 'Hóa đơn', icon: FileText },
@@ -106,7 +106,7 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
             title: 'LỊCH TRÌNH & HỌC VIÊN',
             items: [
               { to: '/coach/slots', label: 'Lịch làm việc', icon: Calendar },
-              { to: '/coach/bookings', label: 'Lịch PT 1:1', icon: CheckCircle2 },
+              { to: '/coach/schedule', label: 'Lịch PT 1:1', icon: CheckCircle2 },
               { to: '/coach/students', label: 'Học viên', icon: Users },
             ],
           },
@@ -114,7 +114,7 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
             title: 'GIÁO ÁN & THEO DÕI',
             items: [
               { to: '/coach/training-plans', label: 'Chương trình theo buổi', icon: FileText },
-              { to: '/coach/training-results', label: 'Ghi kết quả tập', icon: Activity },
+              { to: '/coach/training-results', label: 'Đánh giá cuối buổi', icon: Activity },
               { to: '/coach/assessments', label: 'InBody & thể trạng', icon: BarChart3 },
               { to: '/coach/meal-plans', label: 'Thực đơn dinh dưỡng', icon: Utensils },
               { to: '/coach/ai-recommendation', label: 'Gợi ý từ AI', icon: Sparkles },
@@ -134,6 +134,8 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
             title: 'TỔNG QUAN',
             items: [
               { to: '/member', label: 'Hồ sơ hội viên', icon: LayoutDashboard },
+              { to: '/member/goals', label: 'Mục tiêu và phiếu sau buổi', icon: Activity },
+              { to: '/member/support', label: 'Yêu cầu hỗ trợ', icon: HelpCircle },
             ],
           },
         ]
@@ -161,11 +163,11 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
                 <NavLink
                   key={link.to}
                   to={link.to}
-                  end={link.to === '/manager' || link.to === '/receptionist' || link.to === '/coach'}
+                  end={link.to === '/manager' || link.to === '/receptionist' || link.to === '/coach' || link.to === '/member'}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all duration-200 ${
+                    `flex min-h-11 items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-primary text-primary-foreground shadow-md shadow-primary/30'
+                        ? 'bg-primary/10 text-text-primary'
                         : 'text-text-muted hover:bg-bg-surface-muted hover:text-text-primary'
                     }`
                   }

@@ -49,13 +49,14 @@ export function CoachHomePage() {
 
   return <div>
     {node}
-    <PageHeader title="Dashboard Coach"
+    <PageHeader title="Hôm nay của bạn"
       subtitle={<><span>{longDate(today)}</span><Dot /><span className="font-medium text-text-primary">{sessions.data ? (list.length ? `${list.length} ca dạy đã lên lịch` : 'Chưa có ca dạy hôm nay') : 'Đang tải lịch…'}</span></>}
       actions={<>
         <LinkBtn to="/coach/ai-recommendation" icon={<Sparkles aria-hidden className="h-4 w-4 text-violet-600" />}>Gợi ý AI {aiDrafts.data ? <Badge tone="violet">{aiDrafts.data} nháp</Badge> : null}</LinkBtn>
         <Btn title={!list.length ? 'Chưa có ca để xuất' : 'Tải lịch dạy hôm nay dạng CSV'} icon={<Download aria-hidden className="h-4 w-4" />} onClick={exportToday} disabled={!list.length}>Xuất lịch dạy</Btn>
       </>} />
 
+    <CoachNextSteps />
     <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_400px]">
       <div className="min-w-0 space-y-6">
         <div className="grid gap-4 md:grid-cols-3">
@@ -73,7 +74,7 @@ export function CoachHomePage() {
         <Card flush title="Lịch dạy & Điểm danh hôm nay" badge={sessions.data ? <Badge>{list.length} ca</Badge> : null}
           subtitle={<span className="inline-flex items-center gap-1.5"><span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Lễ tân ghi học viên đến; Coach bắt đầu và kết thúc ca để tính buổi.</span>}
           actions={<Segmented label="Lọc ca dạy" value={tab} onChange={setTab} items={TABS.map(t => ({ key: t.key, label: t.label, count: counts[t.key] }))} />}>
-          <Async state={sessions} rows={5} empty={() => rows.length ? false : <EmptyBox title={list.length ? 'Không có ca ở trạng thái này' : 'Hôm nay chưa có ca dạy'} hint={list.length ? undefined : 'Bạn có thể mở lịch tuần hoặc tạo khung giờ để học viên đặt lịch.'} action={!list.length && <div className="flex flex-wrap justify-center gap-2"><LinkBtn to="/coach/schedule" size="sm">Xem lịch tuần</LinkBtn><LinkBtn to="/coach/slots" size="sm" variant="soft">Mở khung giờ làm việc</LinkBtn></div>} />}>
+          <Async state={sessions} rows={5} empty={() => rows.length ? false : <EmptyBox title={list.length ? 'Không có ca ở trạng thái này' : 'Hôm nay chưa có ca dạy'} hint={list.length ? undefined : 'Mở lịch tuần để xem buổi sắp tới, hoặc mở giờ làm việc để học viên chọn khi mua gói.'} action={!list.length && <div className="flex flex-wrap justify-center gap-2"><LinkBtn to="/coach/schedule" size="sm">Xem lịch tuần</LinkBtn><LinkBtn to="/coach/slots" size="sm" variant="soft">Mở khung giờ làm việc</LinkBtn></div>} />}>
             {() => <Table head={['Khung giờ', 'Học viên', 'Gói PT', 'Buổi tập', 'Trạng thái', '']} minWidth={920}>
               {rows.map(x => { const mins = minutesBetween(x.startsAt, x.endsAt); const left = isLive(x) ? minutesBetween(new Date().toISOString(), x.endsAt) : null
                 return <tr key={x.id} className="hover:bg-bg-surface-muted/40">
@@ -122,17 +123,21 @@ function attention(purchases: CoachPurchase[], upcoming: Session[] | null) {
     const next = upcoming?.find(s => s.purchaseId === p.id && isUpcoming(s)) ?? null
     const flags: Flag[] = []
     if (remaining <= 2) flags.push({ label: `Còn ${remaining} buổi`, tone: 'warning' })
-    if (p.expiresAt && centerDate(p.expiresAt) <= addDays(today, 14)) flags.push({ label: `Hạn gói ${centerDate(p.expiresAt).slice(8, 10)}/${centerDate(p.expiresAt).slice(5, 7)}`, tone: 'danger' })
+    if (!p.seriesMode && p.expiresAt && centerDate(p.expiresAt) <= addDays(today, 14)) flags.push({ label: `Hạn gói ${centerDate(p.expiresAt).slice(8, 10)}/${centerDate(p.expiresAt).slice(5, 7)}`, tone: 'danger' })
     if (upcoming && !next && p.availableCredits > 0) flags.push({ label: 'Chưa có buổi sắp tới', tone: 'info' })
     return { p, next, flags, remaining }
   }).filter(x => x.flags.length || x.p.medicalNotes)
     .sort((a, b) => (a.next ? new Date(a.next.startsAt).getTime() : Infinity) - (b.next ? new Date(b.next.startsAt).getTime() : Infinity))
 }
 
+function CoachNextSteps() {
+  return <Card className="mb-6" title="Lộ trình & đánh giá cuối buổi"><div className="flex flex-wrap gap-3"><LinkBtn to="/coach/progress?tab=goals">Mở lộ trình học viên</LinkBtn><LinkBtn to="/coach/progress?tab=results">Ghi số đo và nhận xét cuối buổi</LinkBtn></div></Card>
+}
+
 function AttentionCard({ purchases, upcoming }: { purchases: { data: CoachPurchase[] | null; loading: boolean; error: string | null; reload: () => void }; upcoming: Session[] | null }) {
   const list = useMemo(() => attention(purchases.data ?? [], upcoming), [purchases.data, upcoming])
   return <Card flush title="Việc cần xử lý" badge={purchases.data ? <Badge tone={list.length ? 'warning' : 'success'}>{list.length}</Badge> : null} subtitle="Học viên chưa có lịch, gói sắp hết hoặc có lưu ý sức khỏe">
-    <Async state={purchases} rows={3} empty={() => !list.length && <EmptyBox title="Mọi học viên đều ổn" hint="Không có gói nào sắp hết buổi, sắp hết hạn hay thiếu lịch." icon={<Check className="h-5 w-5" />} />}>
+    <Async state={purchases} rows={3} empty={() => !list.length && <EmptyBox title="Không có gói cần nhắc ở mục này" hint="Xem mục tiêu, phiếu và phản ánh trong danh sách công việc để kiểm tra các việc còn lại." icon={<Check className="h-5 w-5" />} />}>
       {() => <ul className="divide-y divide-border-subtle">{list.slice(0, 4).map(({ p, next, flags }) => <li key={p.id} className="space-y-2.5 px-5 py-4">
         <div className="flex items-start gap-3">
           <Person name={p.memberName} src={p.avatarUrl} size={40} />

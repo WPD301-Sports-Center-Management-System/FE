@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react'
+import { JourneyStartGate } from '@/features/goal-lab/journey-pages'
 import { Link, useParams } from 'react-router-dom'
 import { AlertTriangle, ArrowLeftRight, ArrowRight, ClipboardCheck, Pencil, Plus, Printer, Save, Send, Trash2, User } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
@@ -22,6 +23,13 @@ export function CoachSessionPage() {
   const memberId = s?.memberId
   const progress = useLoad(() => coachWs.progress(memberId!), [memberId], !!memberId)
   const [reschedule, setReschedule] = useState(false)
+  const sessionStatus = s?.status
+  const reloadSession = session.reload
+  useEffect(() => {
+    if (!sessionStatus || !['CONFIRMED', 'ARRIVED', 'IN_PROGRESS'].includes(sessionStatus)) return
+    const timer = window.setInterval(() => { if (!document.hidden) void reloadSession() }, 30_000)
+    return () => window.clearInterval(timer)
+  }, [sessionStatus, reloadSession])
 
   if (session.error) return <ErrorBox message={session.error} onRetry={() => void session.reload()} />
   if (!s) return <Skeleton rows={8} />
@@ -59,11 +67,12 @@ export function CoachSessionPage() {
         <SessionActions size="md" session={s} onDone={after} />
         {s.status === 'CONFIRMED' && <Btn icon={<ArrowLeftRight aria-hidden className="h-4 w-4" />} onClick={() => setReschedule(true)}>Đổi lịch buổi này</Btn>}
         <Btn icon={<Printer aria-hidden className="h-4 w-4" />} onClick={() => window.print()}>In giáo án</Btn>
-        {s.status === 'COMPLETED' && <LinkBtn to="/coach/training-results" icon={<ClipboardCheck aria-hidden className="h-4 w-4" />}>Ghi kết quả tập luyện</LinkBtn>}
+        {s.status === 'COMPLETED' && <LinkBtn to={`/coach/goals/sheet/${s.id}`} variant="primary" icon={<ClipboardCheck aria-hidden className="h-4 w-4" />}>Đánh giá cuối buổi</LinkBtn>}
         <LinkBtn to={`/coach/students/${s.memberId}`} icon={<User aria-hidden className="h-4 w-4" />}>Hồ sơ học viên</LinkBtn>
       </div>
     </section>
 
+    {['CONFIRMED', 'ARRIVED'].includes(s.status) && <div className="mb-6"><JourneyStartGate bookingId={s.id} /></div>}
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
       <ContentEditor key={s.id} bookingId={s.id} started={['IN_PROGRESS', 'COMPLETED'].includes(s.status)} closed={!['CONFIRMED', 'ARRIVED', 'IN_PROGRESS', 'COMPLETED'].includes(s.status)} onFlash={flash} />
       <div className="space-y-6">

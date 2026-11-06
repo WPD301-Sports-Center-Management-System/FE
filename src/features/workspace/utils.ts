@@ -60,7 +60,7 @@ export const isAbsent = (s: Pick<Session, 'status'>) => s.status === 'NO_SHOW' |
 /** Sessions that still occupy the Coach's time (not cancelled or moved). */
 export const isScheduled = (s: Pick<Session, 'status'>) => !['CANCELLED_EARLY', 'COACH_CANCELLED', 'RESCHEDULED'].includes(s.status)
 
-export const PURCHASE_LABEL: Record<string, string> = { ACTIVE: 'Đang dạy', COMPLETED: 'Đã hoàn thành', EXPIRED: 'Hết hạn', PENDING_PAYMENT: 'Chờ thanh toán', CANCELLED: 'Đã hủy', REFUNDED: 'Đã hoàn tiền', SUSPENDED: 'Tạm dừng' }
+export const PURCHASE_LABEL: Record<string, string> = { ACTIVE: 'Đang dạy', COMPLETED: 'Đã hoàn thành', EXPIRED: 'Hết hạn', PENDING_PAYMENT: 'Chờ thanh toán', PAUSED: 'Tạm ngưng', CANCELLED: 'Đã hủy', REFUNDED: 'Đã hoàn tiền', SUSPENDED: 'Tạm dừng' }
 export const CHANGE_TYPE: Record<string, string> = { RESCHEDULE: 'Đổi giờ', MAKEUP: 'Học bù', SCHEDULE_AVAILABLE: 'Xếp buổi còn trống' }
 export const CHANGE_LABEL: Record<string, string> = { REQUESTED: 'Chờ xử lý', PROPOSED: 'Chờ HV đồng ý', ACCEPTED: 'Đã duyệt', DECLINED: 'Đã từ chối', WITHDRAWN: 'Đã rút', EXPIRED: 'Hết hạn' }
 export const CHANGE_TONE: Record<string, Tone> = { REQUESTED: 'warning', PROPOSED: 'info', ACCEPTED: 'success', DECLINED: 'danger', WITHDRAWN: 'neutral', EXPIRED: 'neutral' }

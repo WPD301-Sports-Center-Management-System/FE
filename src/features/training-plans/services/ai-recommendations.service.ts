@@ -1,91 +1,73 @@
 import { apiClient } from '@/shared/api/client'
 import type { ApiSuccess } from '@/shared/types/api'
 
+export type AiKind = 'TRAINING_PLAN' | 'PROGRESS_SUMMARY' | 'MEAL_PLAN'
+export const AI_KIND_LABEL: Record<AiKind, string> = { TRAINING_PLAN: 'Giáo án', PROGRESS_SUMMARY: 'Nhận xét tiến độ', MEAL_PLAN: 'Thực đơn' }
+
 export interface CreateRecommendationPayload {
+  kind: AiKind
   memberId: string
   ptPurchaseId?: string
   goal?: string
+  /** Coach's notes for the AI: injuries, limits, allergies, preferences. */
   context?: string
+  dailyCalorieTarget?: number
+  days?: number
+  durationMinutes?: number
 }
 
-export interface UpdateRecommendationPayload {
-  editedContent: Record<string, unknown>
-}
-
-export interface RecommendationQueryParams {
-  memberId?: string
-  status?: 'DRAFT' | 'APPROVED' | 'REJECTED'
-  page?: number
-  limit?: number
-}
+// Draft content per kind, as validated by the server (library ids only, nutrition recomputed).
+export interface TrainingPlanDraft { title: string; goal: string; notes?: string; exercises: { exerciseId: string; name: string; sets?: number; reps?: number; durationMinutes?: number; restSeconds?: number; instructions?: string }[] }
+export interface ProgressSummaryDraft { title: string; summary: string; highlights: string[]; focusNext: string[] }
+export interface MealPlanDraft { title: string; notes?: string; dailyCalorieTarget: number; averageDailyKcal: number; days: { dayNumber: number; meals: { mealType: string; items: { foodItemId: string; foodName: string; servings: number; quantity: string; estimatedCalories: number; proteinGrams: number }[] }[] }[] }
+export type DraftContent = TrainingPlanDraft | ProgressSummaryDraft | MealPlanDraft
 
 export interface AiRecommendation {
   id: string
+  kind: AiKind
   coachId: string
   memberId: string
-  ptPurchaseId?: string
-  promptContext: any
-  generatedContent: any
-  editedContent?: any
+  ptPurchaseId?: string | null
+  generatedContent: DraftContent
+  editedContent?: DraftContent | null
   status: 'DRAFT' | 'APPROVED' | 'REJECTED'
-  rejectionReason?: string
-  trainingPlanId?: string
+  rejectionReason?: string | null
+  /** Set when an approved training-plan draft became a template in the Coach's library. */
+  sessionTemplateId?: string | null
+  mealPlanId?: string | null
+  progressReportId?: string | null
+  provider?: string | null
+  model?: string | null
   createdAt: string
-  reviewedAt?: string
+  reviewedAt?: string | null
+  member?: { memberCode: string; user: { fullName: string } }
 }
 
+export interface AiStatus { configured: boolean; provider: string; model: string }
+
+const unwrap = <T,>(res: unknown) => ((res as ApiSuccess<T>)?.data ?? res) as T
+
 export const aiRecommendationsService = {
-  /**
-   * [1] POST /ai/recommendations - Generate AI recommendation
-   */
+  async status(): Promise<AiStatus> {
+    return unwrap<AiStatus>(await apiClient.get('/ai/status'))
+  },
   async createRecommendation(payload: CreateRecommendationPayload): Promise<AiRecommendation> {
-    const res = await apiClient.post<ApiSuccess<AiRecommendation>>('/ai/recommendations', payload)
-    const data = res as unknown as ApiSuccess<AiRecommendation>
-    return data.data ?? (data as unknown as AiRecommendation)
+    return unwrap<AiRecommendation>(await apiClient.post('/ai/recommendations', payload, { timeout: 60_000 }))
   },
-
-  /**
-   * [2] GET /ai/recommendations - List coach's AI recommendations
-   */
-  async getRecommendations(params?: RecommendationQueryParams): Promise<ApiSuccess<AiRecommendation[]>> {
-    const res = await apiClient.get<ApiSuccess<AiRecommendation[]>>('/ai/recommendations', { params })
-    return res as unknown as ApiSuccess<AiRecommendation[]>
+  async getRecommendations(params?: { memberId?: string; status?: AiRecommendation['status']; kind?: AiKind; page?: number; limit?: number }): Promise<AiRecommendation[]> {
+    return unwrap<AiRecommendation[]>(await apiClient.get('/ai/recommendations', { params })) ?? []
   },
-
-  /**
-   * [3] GET /ai/recommendations/:id - Get recommendation detail
-   */
   async getRecommendationById(id: string): Promise<AiRecommendation> {
-    const res = await apiClient.get<ApiSuccess<AiRecommendation>>(`/ai/recommendations/${id}`)
-    const data = res as unknown as ApiSuccess<AiRecommendation>
-    return data.data ?? (data as unknown as AiRecommendation)
+    return unwrap<AiRecommendation>(await apiClient.get(`/ai/recommendations/${id}`))
   },
-
-  /**
-   * [4] PATCH /ai/recommendations/:id - Edit draft recommendation
-   */
-  async updateRecommendation(id: string, payload: UpdateRecommendationPayload): Promise<AiRecommendation> {
-    const res = await apiClient.patch<ApiSuccess<AiRecommendation>>(`/ai/recommendations/${id}`, payload)
-    const data = res as unknown as ApiSuccess<AiRecommendation>
-    return data.data ?? (data as unknown as AiRecommendation)
+  async updateRecommendation(id: string, editedContent: DraftContent): Promise<AiRecommendation> {
+    return unwrap<AiRecommendation>(await apiClient.patch(`/ai/recommendations/${id}`, { editedContent }))
   },
-
-  /**
-   * [5] POST /ai/recommendations/:id/approve - Approve recommendation (creates TrainingPlan)
-   */
-  async approveRecommendation(id: string, payload?: { title?: string }): Promise<any> {
-    const res = await apiClient.post(`/ai/recommendations/${id}/approve`, payload || {})
-    return res?.data ?? res
+  /** Creates the real record: DRAFT training plan, DRAFT meal plan, or a progress report (sent when publish). */
+  async approveRecommendation(id: string, payload: { title?: string; publish?: boolean } = {}): Promise<AiRecommendation> {
+    return unwrap<AiRecommendation>(await apiClient.post(`/ai/recommendations/${id}/approve`, payload))
   },
-
-  /**
-   * [6] POST /ai/recommendations/:id/reject - Reject recommendation with reason
-   */
   async rejectRecommendation(id: string, rejectionReason: string): Promise<AiRecommendation> {
-    const res = await apiClient.post<ApiSuccess<AiRecommendation>>(`/ai/recommendations/${id}/reject`, {
-      rejectionReason,
-    })
-    const data = res as unknown as ApiSuccess<AiRecommendation>
-    return data.data ?? (data as unknown as AiRecommendation)
+    return unwrap<AiRecommendation>(await apiClient.post(`/ai/recommendations/${id}/reject`, { rejectionReason }))
   },
 }

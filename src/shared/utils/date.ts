@@ -79,6 +79,21 @@ export function centerDate(value: Date | string = new Date()): string {
 export function centerInstant(day: string, time = '00:00'): Date {
   return new Date(`${day}T${time}:00+07:00`)
 }
+
+/** Value for datetime-local controls, displayed and interpreted in the center timezone. */
+export function centerDateTimeInput(value: Date | string = new Date()): string {
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return ''
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: CENTER_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(date)
+  const part = (name: string) => parts.find(p => p.type === name)?.value ?? ''
+  return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`
+}
+
+export function centerDateTimeToIso(value: string): string {
+  const date = new Date(`${value}:00+07:00`)
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) || !Number.isFinite(date.getTime())) throw new Error('Vui lòng chọn ngày và giờ hợp lệ (giờ Việt Nam).')
+  return date.toISOString()
+}
 export function formatWeekdayDateTime(isoString?: string | null): string {
   if (!isoString) return '-'
   const d = new Date(isoString)

@@ -41,8 +41,16 @@ export type TrialStatus = 'NEW' | 'CONTACTED' | 'CONVERTED' | 'CLOSED'
 export interface TrialRequest { id: string; fullName: string; phone: string; goal?: string | null; preferredTime?: string | null; coachId?: string | null; coachName?: string | null; interest?: string | null; note?: string | null; status: TrialStatus; staffNote?: string | null; handledAt?: string | null; createdAt: string }
 export type TrialSessionType = 'GYM' | 'PT'
 export type TrialSessionStatus = 'REQUESTED' | 'SCHEDULED' | 'CHECKED_IN' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED' | 'CONVERTED'
-export interface TrialSession { id: string; trialRequestId?: string | null; type: TrialSessionType; status: TrialSessionStatus; fullName: string; phone: string; coachId?: string | null; coachName?: string | null; scheduledAt: string; durationMinutes: number; note?: string | null; checkedInAt?: string | null; checkedOutAt?: string | null; completedAt?: string | null }
-export interface PublicCoach { id: string; user: { fullName: string } }
+export interface TrialSession { id: string; trialRequestId?: string | null; type: TrialSessionType; status: TrialSessionStatus; fullName: string; phone: string; coachId?: string | null; coachName?: string | null; coachPhone?: string | null; scheduledAt: string | null; coachDecision?: 'PENDING' | 'ACCEPTED' | 'DECLINED' | null; coachResponse?: string | null; durationMinutes: number; note?: string | null; checkedInAt?: string | null; checkedOutAt?: string | null; completedAt?: string | null; trial?: TrialAllowance }
+export interface GymTrialAllowance { usedDays: number; remainingDays: number; canCheckIn: boolean; canRegister: boolean; days: string[]; startsOn: string | null; expiresOn: string | null }
+export interface PTTrialAllowance { totalSessions: number; usedSessions: number; remainingSessions: number; canCheckIn: boolean }
+export interface TrialAllowance extends GymTrialAllowance { phone: string; mode: 'GYM' | 'PT' | 'BOTH' | null; registeredTypes?: TrialSessionType[]; gym?: GymTrialAllowance; pt?: PTTrialAllowance }
+export interface PublicCoach { id: string; bio?: string | null; specialization?: string | null; certification?: string | null; yearsOfExperience?: number | null; averageRating?: string | number | null; reviewCount?: number; serviceSettings?: { acceptingNewMembers: boolean } | null; user: { fullName: string; avatarUrl?: string | null; phone?: string | null } }
+export interface TrialHistoryItem { id: string; phone: string; fullName: string; mode: 'GYM' | 'PT' | 'BOTH'; createdAt: string; startsOn: string | null; expiresOn: string | null; gym?: GymTrialAllowance; pt?: PTTrialAllowance; types: TrialSessionType[]; visitCount: number; lastVisitAt: string | null; lastCheckoutAt: string | null }
+export interface TrialHistoryDetail extends TrialHistoryItem {
+  sessions: { id: string; type: TrialSessionType; fullName: string; status: TrialSessionStatus; createdAt: string; scheduledAt: string | null; coachName: string | null; note: string | null; coachResponse: string | null; archived: boolean }[]
+  visits: { id: string; type: TrialSessionType; coachName: string | null; checkedInAt: string; checkedOutAt: string | null; archived: boolean; isOpen: boolean }[]
+}
 
 export const deskApi = {
   dashboard: () => get<DeskDashboard>('/dashboard/receptionist'),
@@ -86,10 +94,13 @@ export const deskApi = {
   updateTrial: (id: string, body: { status: TrialStatus; staffNote?: string }) => patch<TrialRequest>(`/trial-requests/${id}`, body),
   createTrial: (body: { fullName: string; phone: string; goal?: string; preferredTime?: string; coachId?: string; interest?: string; note?: string }) => post<{ id: string }>('/trial-requests', body),
   trialSessions: (params: { status?: TrialSessionStatus; type?: TrialSessionType; phone?: string } = {}) => all<TrialSession>('/trial-sessions', params, 3),
-  createTrialSession: (body: { trialRequestId?: string; type: TrialSessionType; fullName: string; phone: string; coachId?: string; scheduledAt: string; durationMinutes?: number; note?: string }) => post<TrialSession>('/trial-sessions', body),
+  trialHistory: (params: { search?: string; page?: number; limit?: number } = {}) => page<TrialHistoryItem>('/trial-history', params),
+  trialHistoryDetail: (phone: string) => get<TrialHistoryDetail>('/trial-history/detail', { phone }),
+  trialAllowance: (phone: string) => get<TrialAllowance>('/trial-sessions/allowance', { phone }),
+  createTrialSession: (body: { trialRequestId?: string; type: TrialSessionType; mode?: 'GYM' | 'PT' | 'BOTH'; fullName: string; phone: string; coachId?: string; scheduledAt?: string; durationMinutes?: number; note?: string }) => post<TrialSession>('/trial-sessions', body),
   checkInTrialSession: (id: string) => post<TrialSession>(`/trial-sessions/${id}/check-in`),
   checkOutTrialSession: (id: string) => post<TrialSession>(`/trial-sessions/${id}/check-out`),
-  updateTrialSession: (id: string, body: { status?: TrialSessionStatus; note?: string }) => patch<TrialSession>(`/trial-sessions/${id}`, body),
-  coaches: () => get<PublicCoach[]>('/coaches', { limit: 100 }),
+  updateTrialSession: (id: string, body: { status?: 'CANCELLED' | 'NO_SHOW' | 'CONVERTED'; note?: string; coachId?: string; coachDecision?: 'ACCEPTED' | 'DECLINED'; coachResponse?: string; scheduledAt?: string }) => patch<TrialSession>(`/trial-sessions/${id}`, body),
+  coaches: () => all<PublicCoach>('/trial-sessions/coaches'),
   coursesForTrial: () => get<{ id: string; name: string }[]>('/training-courses', { limit: 100 }),
 }

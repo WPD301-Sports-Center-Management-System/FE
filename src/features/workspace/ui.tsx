@@ -33,7 +33,7 @@ const BTN: Record<BtnVariant, string> = {
   danger: 'border border-red-200 bg-bg-surface text-red-700 hover:bg-red-50 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/10',
 }
 const btnBase = 'inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/50 disabled:cursor-not-allowed disabled:opacity-50'
-const SIZE = { sm: 'h-8 px-2.5 text-xs', md: 'h-9 px-3.5 text-sm' }
+const SIZE = { sm: 'min-h-11 px-3 text-sm sm:min-h-8 sm:text-xs', md: 'min-h-11 px-3.5 text-sm sm:min-h-10' }
 export const btnCls = (variant: BtnVariant = 'outline', size: 'sm' | 'md' = 'md') => `${btnBase} ${BTN[variant]} ${SIZE[size]}`
 
 export function Btn({ variant = 'outline', size = 'md', icon, busy, children, className = '', type = 'button', ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: BtnVariant; size?: 'sm' | 'md'; icon?: ReactNode; busy?: boolean }) {
@@ -53,19 +53,19 @@ export function PageHeader({ title, subtitle, actions, crumbs }: { title: ReactN
         {c.to ? <Link to={c.to} className="hover:text-primary">{c.label}</Link> : <span aria-current="page" className="font-semibold text-text-primary">{c.label}</span>}
       </span>)}
     </nav>}
-    {!crumbs && <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
         <h1 className="text-2xl font-bold tracking-tight text-text-primary">{title}</h1>
         {subtitle && <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-muted">{subtitle}</div>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
-    </div>}
+    </div>
   </header>
 }
 export const Dot = () => <span aria-hidden className="text-border-strong">•</span>
 
 export function Card({ title, subtitle, badge, actions, children, className = '', flush }: { title?: ReactNode; subtitle?: ReactNode; badge?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; flush?: boolean }) {
-  return <section className={`min-w-0 rounded-xl border border-border-subtle bg-bg-surface shadow-[0_1px_2px_rgba(16,24,40,.04),0_1px_3px_rgba(16,24,40,.03)] ${className}`}>
+  return <section className={`min-w-0 rounded-xl border border-border-subtle bg-bg-surface ${className}`}>
     {(title || actions) && <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border-subtle px-5 py-4">
       <div className="min-w-0">
         <h2 className="flex flex-wrap items-center gap-2 text-base font-semibold text-text-primary">{title}{badge}</h2>
@@ -77,13 +77,12 @@ export function Card({ title, subtitle, badge, actions, children, className = ''
   </section>
 }
 
-export function StatTile({ label, icon, value, unit, hint, tone = 'neutral', progress, iconTone = 'primary' }: { label: string; icon?: ReactNode; value: ReactNode; unit?: string; hint?: ReactNode; tone?: Tone; progress?: { value: number; max: number; tone?: Tone }; iconTone?: Tone }) {
-  return <div className="min-w-0 rounded-xl border border-border-subtle bg-bg-surface p-5 shadow-[0_1px_2px_rgba(16,24,40,.04)]">
+export function StatTile({ label, value, unit, hint, tone = 'neutral', progress }: { label: string; icon?: ReactNode; value: ReactNode; unit?: string; hint?: ReactNode; tone?: Tone; progress?: { value: number; max: number; tone?: Tone }; iconTone?: Tone }) {
+  return <div className="min-w-0 rounded-xl border border-border-subtle bg-bg-surface p-5">
     <div className="flex items-start justify-between gap-2">
       <p className="text-sm font-medium text-text-muted">{label}</p>
-      {icon && <span aria-hidden className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${TONE[iconTone]}`}>{icon}</span>}
     </div>
-    <p className={`mt-2 text-3xl font-bold tabular-nums tracking-tight ${toneText[tone]}`}>{value}{unit && <span className="ml-1 text-sm font-medium text-text-muted">{unit}</span>}</p>
+    <p className={`mt-2 text-2xl font-semibold tabular-nums tracking-tight ${toneText[tone]}`}>{value}{unit && <span className="ml-1 text-sm font-medium text-text-muted">{unit}</span>}</p>
     {(hint || progress) && <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-text-muted">
       {progress && <ProgressBar value={progress.value} max={progress.max} tone={progress.tone} className="w-24" />}
       {hint}
@@ -114,19 +113,25 @@ export function Person({ name, src, size = 36 }: { name?: string | null; src?: s
 
 export function Segmented<K extends string>({ items, value, onChange, label }: { items: { key: K; label: string; count?: number }[]; value: K; onChange: (k: K) => void; label: string }) {
   return <div role="tablist" aria-label={label} className="inline-flex max-w-full flex-wrap gap-0.5 rounded-lg bg-bg-surface-muted p-1">
-    {items.map(it => <button key={it.key} role="tab" type="button" aria-selected={value === it.key} onClick={() => onChange(it.key)}
-      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/50 ${value === it.key ? 'bg-bg-surface text-text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}>
+    {items.map((it,index) => <button key={it.key} role="tab" type="button" tabIndex={value === it.key ? 0 : -1} aria-selected={value === it.key} onClick={() => onChange(it.key)}
+      onKeyDown={event => {
+        const target = event.key === 'ArrowRight' ? (index + 1) % items.length : event.key === 'ArrowLeft' ? (index - 1 + items.length) % items.length : event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : null
+        if (target == null) return
+        event.preventDefault(); onChange(items[target]!.key)
+        event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[target]?.focus()
+      }}
+      className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/50 sm:min-h-9 ${value === it.key ? 'bg-bg-surface text-text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}>
       {it.label}{it.count !== undefined && <span className={`text-xs tabular-nums ${value === it.key ? 'text-primary' : 'text-text-muted'}`}>{it.count}</span>}
     </button>)}
   </div>
 }
 
-export const th = 'whitespace-nowrap px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-text-muted'
+export const th = 'whitespace-nowrap px-4 py-3 text-left text-xs font-medium text-text-muted'
 export const td = 'px-4 py-3 align-middle text-sm text-text-primary'
 export function Table({ head, children, minWidth = 860, alignLast = true }: { head: string[]; children: ReactNode; minWidth?: number; alignLast?: boolean }) {
   return <div className="overflow-x-auto">
     <table className="w-full border-collapse" style={{ minWidth }}>
-      <thead className="border-b border-border-subtle bg-bg-surface-muted/50"><tr>{head.map((h, i) => <th key={h + i} scope="col" className={`${th} ${alignLast && i === head.length - 1 ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
+      <thead className="border-b border-border-subtle"><tr>{head.map((h, i) => <th key={h + i} scope="col" className={`${th} ${alignLast && i === head.length - 1 ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
       <tbody className="divide-y divide-border-subtle">{children}</tbody>
     </table>
   </div>
@@ -175,7 +180,7 @@ export function Async<T>({ state, empty, rows, children }: { state: { data: T | 
   return <>{e || children(state.data)}</>
 }
 
-export const inputCls = 'h-9 w-full rounded-lg border border-border-subtle bg-bg-input px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring/30'
+export const inputCls = 'h-11 w-full rounded-lg border border-border-strong bg-bg-input px-3 text-base sm:text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring/30'
 export const textareaCls = 'w-full rounded-lg border border-border-subtle bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring/30'
 export function Field({ label, hint, error, children, required }: { label: string; hint?: string; error?: string | null; children: ReactNode; required?: boolean }) {
   return <label className="block space-y-1.5">

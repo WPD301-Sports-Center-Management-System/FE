@@ -5,7 +5,6 @@ import type {
   MemberSummary,
   BodyAssessment,
   TrainingResult,
-  FitnessGoal,
 } from '@/shared/types/api'
 import type {
   CreateMemberPayload,
@@ -15,7 +14,6 @@ import type {
   MemberHistoryResponseData,
   MemberProgressResponseData,
   CreateBodyAssessmentPayload,
-  CreateFitnessGoalPayload,
 } from '@/features/memberships/types/members.types'
 
 export const membersService = {
@@ -127,44 +125,6 @@ export const membersService = {
   async updateBodyAssessment(id: string, payload: Partial<CreateBodyAssessmentPayload>): Promise<BodyAssessment> {
     const res = await apiClient.patch<ApiSuccess<BodyAssessment>>(`/body-assessments/${id}`, payload)
     return (res as unknown as ApiSuccess<BodyAssessment>).data
-  },
-
-  /** PATCH /fitness-goals/{id} - Update progress, targets or status of a goal */
-  async updateFitnessGoal(
-    id: string,
-    payload: Partial<CreateFitnessGoalPayload> & { status?: 'ACTIVE' | 'ACHIEVED' | 'CANCELLED' }
-  ): Promise<FitnessGoal> {
-    const res = await apiClient.patch<ApiSuccess<FitnessGoal>>(`/fitness-goals/${id}`, payload)
-    return (res as unknown as ApiSuccess<FitnessGoal>).data
-  },
-
-  /**
-   * [9] GET /members/{memberId}/fitness-goals - Get fitness goals
-   */
-  async getMemberFitnessGoals(
-    memberId: string,
-    params?: { page?: number; limit?: number }
-  ): Promise<ApiSuccess<FitnessGoal[]>> {
-    const res = await apiClient.get<ApiSuccess<FitnessGoal[]>>(
-      `/members/${memberId}/fitness-goals`,
-      { params }
-    )
-    return res as unknown as ApiSuccess<FitnessGoal[]>
-  },
-
-  /**
-   * [10] POST /members/{memberId}/fitness-goals - Create new fitness goal
-   */
-  async createMemberFitnessGoal(
-    memberId: string,
-    payload: CreateFitnessGoalPayload
-  ): Promise<FitnessGoal> {
-    const res = await apiClient.post<ApiSuccess<FitnessGoal>>(
-      `/members/${memberId}/fitness-goals`,
-      payload
-    )
-    const data = res as unknown as ApiSuccess<FitnessGoal>
-    return data.data
   },
 
   /**

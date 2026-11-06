@@ -31,26 +31,6 @@ export interface NoShowBookingPayload {
   reason?: string
 }
 
-export interface ExerciseResultItem {
-  exerciseId: string
-  exerciseName?: string
-  sets: Array<{
-    reps: number
-    weight?: number | string
-    rpe?: number
-  }>
-  completed: boolean
-  note?: string
-}
-
-export interface CreateTrainingResultPayload {
-  trainingPlanId?: string
-  performedAt: string
-  result: ExerciseResultItem[]
-  coachComment?: string
-  progressScore?: number
-}
-
 export interface BookingDetail extends Booking {
   slot?: {
     id: string

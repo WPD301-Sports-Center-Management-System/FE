@@ -1,22 +1,33 @@
 import { useMemo, useState } from 'react'
-import { Archive, BookOpenText, Copy, Dumbbell, Eye, Leaf, Plus, Search, Send, Trash2 } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { Archive, BookOpenText, Copy, Dumbbell, Eye, Pencil, Plus, Search, Send, Trash2 } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
-import { centerDate } from '@/shared/utils/date'
+import { fixedPtApi } from '@/features/fixed-pt/api'
+import { ProgramLibrary } from '@/features/fixed-pt/pages/coach-program-page'
 import { coachWs, type LibraryTemplate } from '../api'
-import { Badge, Btn, Card, Dot, EmptyBox, ErrorBox, Field, InlineError, LinkBtn, PageHeader, Segmented, Skeleton, inputCls, textareaCls, useFlash } from '@/features/workspace/ui'
-import { addDays, dayEnd, isUpcoming, relativeSlot } from '@/features/workspace/utils'
+import { Badge, Btn, Card, EmptyBox, ErrorBox, Field, InlineError, Segmented, Skeleton, inputCls, textareaCls, useFlash } from '@/features/workspace/ui'
 
 const exerciseNames = (t: LibraryTemplate) => t.items.map(i => i.exercise?.name ?? i.candidateNames[0] ?? i.roleName ?? '').filter(Boolean)
 
+/** Session templates (system + own) and A/B/C programmes. Shown as the "Thư viện giáo án" tab of Giáo án. */
 export function CoachLibraryPage() {
   const { flash, node } = useFlash()
   const templates = useLoad(() => coachWs.templates(), [])
   const [tab, setTab] = useState('all')
   const [q, setQ] = useState('')
-  const [view, setView] = useState<LibraryTemplate | null>(null)
+  const [chosenView, setView] = useState<LibraryTemplate | null>(null)
   const [apply, setApply] = useState<LibraryTemplate | null>(null)
   const [create, setCreate] = useState(false)
+  const [params, setParams] = useSearchParams()
+  const templateId = params.get('templateId')
+  const view = chosenView ?? templates.data?.find(t => t.id === templateId) ?? null
+  const closeView = () => {
+    setView(null)
+    const next = new URLSearchParams(params)
+    next.delete('templateId')
+    setParams(next, { replace: true })
+  }
   const list = templates.data ?? []
   const focuses = useMemo(() => [...new Set((templates.data ?? []).map(t => t.focus?.trim()).filter((f): f is string => !!f))].sort(), [templates.data])
   const tabs = [{ key: 'all', label: 'Tất cả', count: list.length }, { key: 'mine', label: 'Của tôi', count: list.filter(t => t.coachId).length }, ...focuses.slice(0, 6).map(f => ({ key: `f:${f}`, label: f, count: list.filter(t => t.focus === f).length }))]
@@ -26,14 +37,12 @@ export function CoachLibraryPage() {
 
   return <div>
     {node}
-    <PageHeader title="Giáo án & thư viện mẫu" subtitle={<><span>{templates.data ? `${list.length} giáo án mẫu (hệ thống và của bạn)` : 'Đang tải…'}</span><Dot /><span>Nhân bản để chỉnh, rồi áp trực tiếp vào ca tập</span></>}
-      actions={<Btn variant="primary" icon={<Plus aria-hidden className="h-4 w-4" />} onClick={() => setCreate(true)}>Tạo giáo án mới</Btn>} />
     <Card flush>
       <div className="flex flex-wrap items-center gap-3 border-b border-border-subtle p-4">
         <Segmented label="Lọc giáo án" value={tab} onChange={setTab} items={tabs} />
         <label className="relative ml-auto min-w-56 flex-1 sm:max-w-xs"><span className="sr-only">Tìm giáo án</span><Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
           <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Tìm giáo án, bài tập…" className={`${inputCls} pl-9`} /></label>
-        <LinkBtn to="/coach/meal-plans" icon={<Leaf aria-hidden className="h-4 w-4" />}>Thực đơn</LinkBtn>
+        <Btn variant="primary" icon={<Plus aria-hidden className="h-4 w-4" />} onClick={() => setCreate(true)}>Tạo giáo án mẫu</Btn>
       </div>
       {templates.error ? <ErrorBox message={templates.error} onRetry={() => void templates.reload()} /> : !templates.data ? <Skeleton rows={4} /> : !rows.length
         ? <EmptyBox icon={<BookOpenText className="h-5 w-5" />} title={list.length ? 'Không có giáo án phù hợp' : 'Thư viện đang trống'} action={<Btn onClick={() => setCreate(true)}>Tạo giáo án mới</Btn>} />
@@ -49,12 +58,13 @@ export function CoachLibraryPage() {
             <div className="mt-auto flex flex-wrap gap-1.5 pt-4">
               <DuplicateBtn t={t} onDone={done} />
               <Btn size="sm" icon={<Eye aria-hidden className="h-3.5 w-3.5" />} onClick={() => setView(t)}>Xem</Btn>
-              <Btn size="sm" variant="soft" icon={<Send aria-hidden className="h-3.5 w-3.5" />} onClick={() => setApply(t)}>Áp vào ca</Btn>
+              <Btn size="sm" variant="soft" icon={<Send aria-hidden className="h-3.5 w-3.5" />} onClick={() => setApply(t)}>Áp cho gói học viên</Btn>
             </div>
           </article>)}
         </div>}
     </Card>
-    {view && <ViewModal t={view} onClose={() => setView(null)} onDone={m => { setView(null); done(m) }} />}
+    <div className="mt-6"><ProgramLibrary /></div>
+    {view && <ViewModal t={view} onClose={closeView} onDone={m => { closeView(); done(m) }} />}
     {apply && <ApplyModal t={apply} onClose={() => setApply(null)} onDone={m => { setApply(null); flash(m) }} />}
     <CreateModal open={create} onClose={() => setCreate(false)} onDone={m => { setCreate(false); done(m) }} />
   </div>
@@ -72,6 +82,7 @@ function DuplicateBtn({ t, onDone }: { t: LibraryTemplate; onDone: (m: string) =
 function ViewModal({ t, onClose, onDone }: { t: LibraryTemplate; onClose: () => void; onDone: (m: string) => void }) {
   const submit = useSubmit()
   const [confirm, setConfirm] = useState(false)
+  const [edit, setEdit] = useState<{ name: string; focus: string } | null>(null)
   return <Modal isOpen onClose={onClose} maxWidth="xl" title={t.name} description={[t.focus, `${t.items.length} bài`, t.coachId ? 'Của tôi' : 'Mẫu hệ thống'].filter(Boolean).join(' · ')}>
     {t.description && <p className="mb-3 text-sm text-text-muted">{t.description}</p>}
     <ol className="divide-y divide-border-subtle rounded-lg border border-border-subtle">{t.items.map((i, k) => <li key={i.id} className="flex gap-3 px-3 py-2.5 text-sm">
@@ -81,7 +92,15 @@ function ViewModal({ t, onClose, onDone }: { t: LibraryTemplate; onClose: () => 
     </li>)}</ol>
     <p className="mt-3 text-xs text-text-muted">Mức tạ/rep không tự điền khi áp vào ca — bạn xác nhận cho từng học viên.</p>
     <InlineError message={submit.error} />
-    {t.coachId && <div className="mt-4 flex justify-end gap-2 border-t border-border-subtle pt-4">
+    {edit && <div className="mt-4 grid gap-3 border-t border-border-subtle pt-4 sm:grid-cols-2">
+      <Field label="Tên giáo án"><input value={edit.name} maxLength={160} onChange={e => setEdit({ ...edit, name: e.target.value })} className={inputCls} /></Field>
+      <Field label="Trọng tâm"><input value={edit.focus} maxLength={160} onChange={e => setEdit({ ...edit, focus: e.target.value })} className={inputCls} /></Field>
+      <p className="text-xs text-text-muted sm:col-span-2">Lưu tạo phiên bản mới; buổi đã áp trước đó giữ nguyên.</p>
+      <div className="flex justify-end gap-2 sm:col-span-2"><Btn onClick={() => setEdit(null)}>Hủy</Btn>
+        <Btn variant="primary" busy={submit.busy} disabled={!edit.name.trim()} onClick={async () => { if (await submit.run(() => fixedPtApi.updateTemplate(t.id, { name: edit.name.trim(), focus: edit.focus.trim() || undefined }))) onDone('Đã lưu giáo án.') }}>Lưu</Btn></div>
+    </div>}
+    {t.coachId && !edit && <div className="mt-4 flex justify-end gap-2 border-t border-border-subtle pt-4">
+      {!confirm && <Btn icon={<Pencil aria-hidden className="h-4 w-4" />} onClick={() => setEdit({ name: t.name, focus: t.focus ?? '' })}>Sửa tên</Btn>}
       {confirm ? <><span className="mr-auto self-center text-sm">Lưu trữ giáo án này? Buổi đã giao không bị ảnh hưởng.</span><Btn onClick={() => setConfirm(false)}>Không</Btn>
         <Btn variant="danger" busy={submit.busy} onClick={async () => { if (await submit.run(() => coachWs.archiveTemplate(t.id))) onDone('Đã lưu trữ giáo án.') }}>Lưu trữ</Btn></>
         : <Btn variant="danger" icon={<Archive aria-hidden className="h-4 w-4" />} onClick={() => setConfirm(true)}>Lưu trữ</Btn>}
@@ -89,23 +108,36 @@ function ViewModal({ t, onClose, onDone }: { t: LibraryTemplate; onClose: () => 
   </Modal>
 }
 
-/** Applies the template to one of the Coach's upcoming sessions (replaces that session's draft). */
+/**
+ * Applies the template to every upcoming session of one package that has no assigned content yet
+ * (the same per-session apply the session editor uses). Assigned or locked sessions are never touched.
+ */
 function ApplyModal({ t, onClose, onDone }: { t: LibraryTemplate; onClose: () => void; onDone: (m: string) => void }) {
-  const today = centerDate()
-  const sessions = useLoad(() => coachWs.sessions({ from: new Date().toISOString(), to: dayEnd(addDays(today, 14)) }, 2), [today])
-  const submit = useSubmit()
+  const packages = useLoad(async () => (await fixedPtApi.coachPackages()).filter(p => p.status === 'ACTIVE'), [])
   const [id, setId] = useState('')
-  const upcoming = (sessions.data ?? []).filter(isUpcoming)
-  return <Modal isOpen onClose={onClose} title={`Áp “${t.name}” vào ca`} description="Chọn một ca trong 14 ngày tới. Giáo án nháp hiện có của ca sẽ được thay bằng mẫu này.">
-    <form className="space-y-4" onSubmit={async e => { e.preventDefault(); if (await submit.run(() => coachWs.applyTemplate(id, t.id))) onDone('Đã áp giáo án — mở ca để xác nhận mức tạ rồi giao cho học viên.') }}>
-      <Field label="Ca tập" required error={sessions.error}>
-        <select required value={id} onChange={e => setId(e.target.value)} className={inputCls} disabled={!sessions.data}>
-          <option value="">{sessions.data ? (upcoming.length ? 'Chọn ca…' : 'Không có ca sắp tới') : 'Đang tải…'}</option>
-          {upcoming.map(s => <option key={s.id} value={s.id}>{relativeSlot(s.startsAt)} · {s.memberName} · {s.credit ? `buổi ${s.credit.creditIndex}` : s.courseName}</option>)}
-        </select>
-      </Field>
-      <InlineError message={submit.error} />
-      <div className="flex justify-end gap-2"><Btn onClick={onClose}>Hủy</Btn><Btn type="submit" variant="primary" busy={submit.busy} disabled={!id}>Áp vào ca</Btn></div>
+  const sessions = useLoad(() => fixedPtApi.purchaseSessions(id), [id], !!id)
+  const submit = useSubmit()
+  const now = Date.now()
+  const targets = (sessions.data ?? []).filter(s => ['CONFIRMED', 'ARRIVED'].includes(s.status) && new Date(s.startsAt).getTime() > now && s.content?.status !== 'ASSIGNED' && s.content?.status !== 'LOCKED')
+  const assigned = (sessions.data ?? []).filter(s => ['CONFIRMED', 'ARRIVED'].includes(s.status) && new Date(s.startsAt).getTime() > now && s.content?.status === 'ASSIGNED').length
+  const list = packages.data ?? []
+  return <Modal isOpen onClose={onClose} title={`Áp “${t.name}” cho gói học viên`} description="Áp vào các buổi sắp tới chưa giao giáo án. Buổi đã giao giữ nguyên; sau đó mở từng buổi để nhập mức tạ rồi giao.">
+    <form className="space-y-4" onSubmit={async e => {
+      e.preventDefault()
+      const ok = await submit.run(async () => { for (const s of targets) await fixedPtApi.applyTemplate(s.id, t.id); return true })
+      if (ok) onDone(`Đã áp vào ${targets.length} buổi. Mở tab “Theo gói học viên” để xác nhận mức tạ và giao.`)
+    }}>
+      {packages.data && !list.length ? <EmptyBox title="Chưa có gói nào đang tập" hint="Khi học viên mua gói của bạn, các buổi sẽ hiện ở đây để áp giáo án." /> : <>
+        <Field label="Gói của học viên" required error={packages.error}>
+          <select required value={id} onChange={e => setId(e.target.value)} className={inputCls} disabled={!packages.data}>
+            <option value="">{packages.data ? 'Chọn gói…' : 'Đang tải…'}</option>
+            {list.map(p => <option key={p.id} value={p.id}>{p.memberName ?? 'Học viên'} · {p.packageNameSnapshot}</option>)}
+          </select>
+        </Field>
+        {id && sessions.data && <p className="text-sm">{targets.length ? <>Sẽ áp vào <strong>{targets.length}</strong> buổi sắp tới.</> : 'Gói không còn buổi sắp tới nào chưa giao giáo án.'}{assigned ? ` ${assigned} buổi đã giao được giữ nguyên.` : ''}</p>}
+      </>}
+      <InlineError message={submit.error ?? sessions.error} />
+      <div className="flex justify-end gap-2"><Btn onClick={onClose}>Hủy</Btn><Btn type="submit" variant="primary" busy={submit.busy} disabled={!targets.length}>Áp {targets.length ? `${targets.length} buổi` : ''}</Btn></div>
     </form>
   </Modal>
 }

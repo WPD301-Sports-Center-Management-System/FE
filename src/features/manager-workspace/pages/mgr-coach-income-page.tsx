@@ -1,3 +1,4 @@
+import { WithdrawalsPanel } from '@/features/fixed-pt/pages/wallet-page'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Check, Clock3, Download, HandCoins, Scale, Wallet, X } from 'lucide-react'
@@ -59,6 +60,8 @@ export function MgrCoachIncomePage() {
         <Btn variant="primary" icon={<Download aria-hidden className="h-4 w-4" />} disabled={!byCoach.length} onClick={() => downloadCsv(`thu-nhap-coach-${month}.csv`, ['Coach', 'Buổi tính', 'Hoàn thành', 'Vắng/hủy muộn', 'Ghi nhận', 'Chờ xác nhận', 'Tạm giữ', 'Đã chi'],
           byCoach.map(([, r]) => [r.name, r.n, r.done, r.other, r.total, r.pending, r.hold, r.paid]))}>Xuất Excel (CSV)</Btn>
       </>} />
+    {/* Withdrawals are the Manager's action queue, so they come first (Docs/UX_AUDIT_IA_2026-11.md §4). */}
+    <div className="mb-6"><WithdrawalsPanel /></div>
     <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <StatTile label={`Ghi nhận tháng ${month.slice(5)}`} icon={<Wallet className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={lines.data ? fmtNumber(total / 1_000_000, 1) : '—'} unit="triệu ₫" hint={lines.data ? `${inMonth.length} buổi được tính` : undefined} />
       <StatTile label="Đủ điều kiện, chờ chi" icon={<HandCoins className="h-[18px] w-[18px]" />} iconTone="info" value={payable === null ? '—' : fmtNumber(payable / 1_000_000, 1)} unit="triệu ₫" hint={s ? `Đã chi tổng cộng ${millions(s.paidOut)}` : undefined} />

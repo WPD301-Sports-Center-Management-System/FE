@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarPlus, Play, Square, UserCheck, UserX, XCircle } from 'lucide-react'
+import { CalendarPlus, Play, Square, UserCheck, UserX } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Modal } from '@/shared/components/ui/modal'
 import { useAuth } from '@/features/auth/context/auth-context'
@@ -37,7 +37,7 @@ export function CoachSessionsPage() {
 
 export function SessionTable({ sessions, onChanged }: { sessions: Session[]; onChanged: () => void }) {
   const act = useSubmit()
-  const [dialog, setDialog] = useState<{ kind: 'noShow' | 'cancel' | 'end' | 'reschedule'; session: Session } | null>(null)
+  const [dialog, setDialog] = useState<{ kind: 'noShow' | 'end' | 'reschedule'; session: Session } | null>(null)
   const run = (work: () => Promise<unknown>) => void act.run(async () => { await work(); setDialog(null); onChanged() })
   return (
     <>
@@ -56,7 +56,6 @@ export function SessionTable({ sessions, onChanged }: { sessions: Session[]; onC
                 {s.allowedActions.start && <Button size="sm" disabled={act.busy} onClick={() => run(() => fixedPtApi.start(s.id))}><Play className="h-3.5 w-3.5" aria-hidden />Bắt đầu</Button>}
                 {s.allowedActions.end && <Button size="sm" disabled={act.busy} onClick={() => new Date() < new Date(s.endsAt) ? setDialog({ kind: 'end', session: s }) : run(() => fixedPtApi.end(s.id, {}))}><Square className="h-3.5 w-3.5" aria-hidden />Kết thúc</Button>}
                 {s.allowedActions.noShow && <Button size="sm" variant="ghost" disabled={act.busy} onClick={() => setDialog({ kind: 'noShow', session: s })}><UserX className="h-3.5 w-3.5" aria-hidden />Vắng</Button>}
-                {s.allowedActions.coachCancel && <Button size="sm" variant="ghost" disabled={act.busy} onClick={() => setDialog({ kind: 'cancel', session: s })}><XCircle className="h-3.5 w-3.5" aria-hidden />Hủy</Button>}
                 {s.status === 'CONFIRMED' && <Button size="sm" variant="ghost" onClick={() => setDialog({ kind: 'reschedule', session: s })}><CalendarPlus className="h-3.5 w-3.5" aria-hidden />Đổi giờ</Button>}
               </div>
             </td>
@@ -65,8 +64,6 @@ export function SessionTable({ sessions, onChanged }: { sessions: Session[]; onC
       </Table>
       <ReasonDialog open={dialog?.kind === 'noShow'} title="Ghi Member vắng mặt" requireReason={false} danger confirmLabel="Ghi vắng (tính buổi)" busy={act.busy} error={act.error}
         description="Buổi sẽ được tính theo chính sách. Hệ thống chặn nếu Member có lượt vào gym trong khung giờ này." onClose={() => { setDialog(null); act.clear() }} onConfirm={reason => run(() => fixedPtApi.noShow(dialog!.session.id, { reason: reason || undefined }))} />
-      <ReasonDialog open={dialog?.kind === 'cancel'} title="Coach/Gym hủy buổi" danger confirmLabel="Hủy buổi" busy={act.busy} error={act.error}
-        description="Buổi được hoàn cho Member và mở quyền học bù với chính bạn; bạn cần đề xuất giờ bù." onClose={() => { setDialog(null); act.clear() }} onConfirm={reason => run(() => fixedPtApi.coachCancel(dialog!.session.id, reason))} />
       <ReasonDialog open={dialog?.kind === 'end'} title="Kết thúc trước giờ dự kiến" confirmLabel="Kết thúc buổi" busy={act.busy} error={act.error}
         description={`Giờ kết thúc dự kiến: ${dialog ? formatTime(dialog.session.endsAt) : ''}. Kết thúc sớm cần ghi lý do.`} onClose={() => { setDialog(null); act.clear() }} onConfirm={reason => run(() => fixedPtApi.end(dialog!.session.id, { earlyEndReason: reason }))} />
       {dialog?.kind === 'reschedule' && <RescheduleModal session={dialog.session} onClose={() => setDialog(null)} onDone={() => { setDialog(null); onChanged() }} />}
@@ -82,8 +79,8 @@ function RescheduleModal({ session, onClose, onDone }: { session: Session; onClo
     <Modal isOpen onClose={onClose} title="Đề xuất đổi giờ buổi tập" maxWidth="lg">
       <div className="space-y-3">
         <p className="text-sm text-text-muted">Buổi hiện tại: {formatDateTime(session.startsAt)}. Lịch cũ giữ nguyên cho tới khi Member đồng ý giờ mới; không đổi credit.</p>
-        {session.cancellationPolicy && new Date() > new Date(session.cancellationPolicy.cutoffAt) && <Notice tone="warning">Đã qua mốc 4 giờ trước buổi: không đổi giờ được nữa.</Notice>}
-        <Field label="Giờ mới (giờ trung tâm)"><input type="datetime-local" className={inputCls} value={start} onChange={e => setStart(e.target.value)} /></Field>
+        <Notice>Chỉ chọn giờ khác trong cùng ngày buổi gốc; giữ nguyên thời lượng.</Notice>
+        <Field label="Giờ mới (giờ trung tâm)"><input type="time" className={inputCls} value={start.slice(11,16)} onChange={e => setStart(isoToLocalInput(session.startsAt).slice(0,11)+e.target.value)} /></Field>
         <ErrorBanner message={save.error} />
         <div className="flex justify-end gap-2"><Button variant="ghost" onClick={onClose}>Hủy</Button>
           <Button isLoading={save.busy} onClick={() => void save.run(async () => { const startsAt = localInputToIso(start); await fixedPtApi.createScheduleChange({ purchaseId: session.purchaseId, items: [{ bookingId: session.id, startsAt, endsAt: new Date(new Date(startsAt).getTime() + duration).toISOString() }] }); onDone() })}>Gửi đề xuất</Button></div>
@@ -117,7 +114,7 @@ function ProposeChangeModal({ change, onClose, onDone }: { change: ScheduleChang
       <div className="space-y-3">
         {change.items.map(i => (
           <Field key={i.id} label={i.sourceBooking ? `Buổi ${formatDateTime(i.sourceBooking.plannedStartsAt)} → giờ mới` : 'Giờ buổi bù/xếp mới'}>
-            <input type="datetime-local" className={inputCls} value={times[i.creditId] ?? ''} onChange={e => setTimes({ ...times, [i.creditId]: e.target.value })} />
+            <input type={i.sourceBooking ? 'time' : 'datetime-local'} className={inputCls} value={i.sourceBooking ? (times[i.creditId] ?? '').slice(11,16) : times[i.creditId] ?? ''} onChange={e => setTimes({ ...times, [i.creditId]: i.sourceBooking ? isoToLocalInput(i.sourceBooking.plannedStartsAt).slice(0,11)+e.target.value : e.target.value })} />
           </Field>
         ))}
         <ErrorBanner message={save.error ?? decline.error} />

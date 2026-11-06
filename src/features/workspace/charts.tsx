@@ -78,8 +78,8 @@ function Tooltip({ x, width, title, rows, footer }: { x: number; width: number; 
 }
 
 function SrTable({ title, labels, series, format }: { title: string; labels: string[]; series: ChartSeries[]; format: (v: number) => string }) {
-  return <table className="sr-only"><caption>{title}</caption><thead><tr><th>Mốc</th>{series.map(s => <th key={s.key}>{s.label}</th>)}</tr></thead>
-    <tbody>{labels.map((lb, i) => <tr key={i}><td>{lb}</td>{series.map(s => <td key={s.key}>{s.values[i] === null ? '—' : format(s.values[i]!)}</td>)}</tr>)}</tbody></table>
+  return <div className="sr-only"><table><caption>{title}</caption><thead><tr><th>Mốc</th>{series.map(s => <th key={s.key}>{s.label}</th>)}</tr></thead>
+    <tbody>{labels.map((lb, i) => <tr key={i}><td>{lb}</td>{series.map(s => <td key={s.key}>{s.values[i] === null ? '—' : format(s.values[i]!)}</td>)}</tr>)}</tbody></table></div>
 }
 
 /** Legend chips: color + label + an optional headline value per series. */

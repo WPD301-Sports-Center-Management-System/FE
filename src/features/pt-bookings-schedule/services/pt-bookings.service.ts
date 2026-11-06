@@ -6,7 +6,6 @@ import type {
   CoachCancelBookingPayload,
   CompleteBookingPayload,
   NoShowBookingPayload,
-  CreateTrainingResultPayload,
   BookingDetail,
 } from '../types/pt-bookings.types'
 
@@ -64,25 +63,9 @@ export const ptBookingsService = {
   },
 
   /**
-   * [8] POST /pt-bookings/{id}/training-result - Coach records training workout result
-   */
-  async createTrainingResult(id: string, payload: CreateTrainingResultPayload): Promise<any> {
-    const res = await apiClient.post(`/pt-bookings/${id}/training-result`, payload)
-    return res?.data ?? res
-  },
-
-  /**
-   * [9] POST /training-results/{id}/publish - Coach publishes training result
-   */
-  async publishTrainingResult(id: string): Promise<any> {
-    const res = await apiClient.post(`/training-results/${id}/publish`, {})
-    return res?.data ?? res
-  },
-
-  /**
    * Helper: GET /coaches/me/pt-bookings - List bookings for logged-in coach
    */
-  async getMyCoachBookings(params?: { status?: string; page?: number; limit?: number }): Promise<ApiSuccess<Booking[]>> {
+  async getMyCoachBookings(params?: { status?: string; page?: number; limit?: number; order?: 'asc' | 'desc' }): Promise<ApiSuccess<Booking[]>> {
     const res = await apiClient.get<ApiSuccess<Booking[]>>('/coaches/me/pt-bookings', { params })
     return res as unknown as ApiSuccess<Booking[]>
   },

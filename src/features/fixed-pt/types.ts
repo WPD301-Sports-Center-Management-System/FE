@@ -33,10 +33,12 @@ export interface Session {
   actualStartedAt?: string | null; actualEndedAt?: string | null; arrivedAt?: string | null
   credit?: { creditIndex: number; status: string } | null; purchase?: { id: string; purchaseCode: string; packageNameSnapshot: string; totalCredits: number } | null
   cancellationPolicy: CancellationPreview | null
-  allowedActions: { arrive: boolean; start: boolean; end: boolean; noShow: boolean; cancel: boolean; coachCancel: boolean; reverse: boolean }
+  allowedActions: { arrive: boolean; start: boolean; end: boolean; noShow: boolean; cancel: boolean; coachCancel: boolean; reverse: boolean; interrupt?: boolean; recordCompleted?: boolean }
+  actionReasons?: { start?: string | null; noShow?: string | null }
+  serverTime?: string
 }
 export interface Credit { id: string; creditIndex: number; status: 'AVAILABLE' | 'SCHEDULED' | 'CONSUMED'; allocationAmount?: string; openMakeup: { id: string; status: string } | null; sessions: { id: string; status: string; plannedStartsAt: string; plannedEndsAt: string; outcomeReversedAt?: string | null; makeupEntitlementId?: string | null }[] }
-export interface ScheduleChange { id: string; code: string; type: 'RESCHEDULE' | 'MAKEUP' | 'SCHEDULE_AVAILABLE'; status: 'REQUESTED' | 'PROPOSED' | 'ACCEPTED' | 'DECLINED' | 'WITHDRAWN' | 'EXPIRED'; note?: string | null; responseNote?: string | null; createdAt: string; purchaseId: string
+export interface ScheduleChange { proposedBy?: string | null; id: string; code: string; type: 'RESCHEDULE' | 'MAKEUP' | 'SCHEDULE_AVAILABLE'; status: 'REQUESTED' | 'PROPOSED' | 'ACCEPTED' | 'DECLINED' | 'WITHDRAWN' | 'EXPIRED'; note?: string | null; responseNote?: string | null; createdAt: string; purchaseId: string
   items: { id: string; creditId: string; sourceBookingId?: string | null; startsAt?: string | null; endsAt?: string | null; sourceBooking?: { plannedStartsAt: string; plannedEndsAt: string } | null }[]
   purchase: { id: string; purchaseCode: string; memberId: string; coachId: string; packageNameSnapshot: string } }
 

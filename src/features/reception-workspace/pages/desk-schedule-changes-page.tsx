@@ -37,7 +37,7 @@ export function DeskScheduleChangesPage() {
 
   return <div>
     {node}
-    <PageHeader title="Đổi lịch & học bù" subtitle={<><span>Lễ tân gửi yêu cầu thay hội viên, Coach đề xuất giờ, hội viên đồng ý thì lịch mới được chốt</span><Dot /><span>Đổi giờ phải trước buổi gốc 4 giờ</span></>} />
+    <PageHeader title="Đổi lịch & học bù" subtitle={<><span>Coach đề xuất lịch mới, hội viên đồng ý thì lịch được chốt</span><Dot /><span>Quầy xác nhận thay hội viên khi có căn cứ đồng ý</span></>} />
     <div className="mb-6 grid gap-4 md:grid-cols-3">
       <StatTile label="Chờ Coach đề xuất giờ" icon={<Hourglass className="h-[18px] w-[18px]" />} iconTone="info" value={changes.data ? list.filter(c => c.status === 'REQUESTED').length : '—'} />
       <StatTile label="Chờ hội viên đồng ý" icon={<CalendarClock className="h-[18px] w-[18px]" />} iconTone="warning" tone="warning" value={changes.data ? list.filter(c => c.status === 'PROPOSED').length : '—'} hint="Gọi xác nhận rồi ghi nhận tại đây" />
@@ -86,7 +86,11 @@ function RequestForm({ onDone }: { onDone: (m: string) => void }) {
   const [note, setNote] = useState('')
   const submit = useSubmit()
   const find = useCallback(async (term: string) => (await deskApi.members({ search: term, limit: 8 })).items.map(m => ({ id: m.id, name: m.user.fullName, sub: `${m.memberCode}${m.user.phone ? ` · ${m.user.phone}` : ''}`, avatarUrl: m.user.avatarUrl })), [])
-  const purchases = useLoad(() => deskApi.purchases({ memberId: member!.id, status: 'ACTIVE' }), [member?.id], !!member)
+  const all = useLoad(() => deskApi.purchases({ memberId: member!.id, status: 'ACTIVE' }), [member?.id], !!member)
+  // Series packages (PRD 2026-11) are rescheduled by their Coach only; the desk can still file requests for
+  // pre-series packages that keep the old rules until they end.
+  const purchases = { ...all, data: all.data ? all.data.filter(p => !(p as { seriesMode?: boolean }).seriesMode) : null }
+  const seriesOnly = !!all.data?.length && !purchases.data?.length
   const sessions = useLoad(() => deskApi.sessions({ purchaseId, from: new Date().toISOString() }, 1), [purchaseId], !!purchaseId)
   const credits = useLoad(() => fixedPtApi.credits(purchaseId), [purchaseId], !!purchaseId)
   const bookable = (sessions.data ?? []).filter(s => s.status === 'CONFIRMED' && isUpcoming(s))
@@ -95,7 +99,7 @@ function RequestForm({ onDone }: { onDone: (m: string) => void }) {
   const minutes = source ? (new Date(source.endsAt).getTime() - new Date(source.startsAt).getTime()) / 60_000 : 60
   const reset = () => { setMember(null); setPurchaseId(''); setTarget(''); setDay(''); setTime(''); setNote('') }
   const valid = useMemo(() => !!purchaseId && !!target && (!day === !time), [purchaseId, target, day, time])
-  return <Card title="Tạo yêu cầu thay hội viên" subtitle="Coach sẽ nhận yêu cầu và đề xuất giờ cụ thể">
+  return <Card title="Yêu cầu đổi lịch (gói cũ)" subtitle="Chỉ áp dụng cho gói mua trước khi có lịch cố định">
     <form className="space-y-4" onSubmit={async e => {
       e.preventDefault()
       const start = day && time ? centerInstant(day, time) : null
@@ -107,8 +111,9 @@ function RequestForm({ onDone }: { onDone: (m: string) => void }) {
         <button type="button" aria-label="Đổi hội viên" onClick={reset} className="rounded-lg p-1.5 text-text-muted hover:bg-bg-surface-muted"><X className="h-4 w-4" /></button></div>
         : <Field label="Hội viên" required><PersonSearch className="" label="Tìm hội viên" placeholder="Tên / SĐT hội viên…" find={find} onPick={setMember} /></Field>}
       {member && <Field label="Gói PT" required error={purchases.error}><select required value={purchaseId} onChange={e => { setPurchaseId(e.target.value); setTarget('') }} className={inputCls}>
-        <option value="">{purchases.data ? (purchases.data.length ? 'Chọn gói…' : 'Hội viên không có gói PT đang hoạt động') : 'Đang tải…'}</option>
+        <option value="">{purchases.data ? (purchases.data.length ? 'Chọn gói…' : seriesOnly ? 'Gói lịch cố định do Coach xếp lịch' : 'Hội viên không có gói PT đang hoạt động') : 'Đang tải…'}</option>
         {(purchases.data ?? []).map(p => <option key={p.id} value={p.id}>{p.packageNameSnapshot} · HLV {p.coachNameSnapshot ?? ''} · {p.consumedCredits}/{p.totalCredits}</option>)}</select></Field>}
+      {seriesOnly && <p className="rounded-lg bg-bg-surface-muted px-3 py-2 text-sm text-text-muted">Gói của hội viên có lịch cố định: hội viên báo nghỉ trong ứng dụng, Coach đề xuất lịch mới. Quầy chỉ xác nhận đề xuất thay hội viên ở danh sách bên cạnh.</p>}
       {purchaseId && <>
         <Segmented label="Loại yêu cầu" value={mode} onChange={m => { setMode(m); setTarget('') }} items={[{ key: 'move', label: 'Đổi giờ buổi đã có' }, { key: 'credit', label: 'Xếp buổi trống / học bù' }]} />
         {mode === 'move'

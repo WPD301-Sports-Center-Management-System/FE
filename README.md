@@ -1,88 +1,28 @@
-# Sports Center Web
+# APEXFIT Web
 
-Web portal dành cho Center Manager, Receptionist và Coach.
+React + TypeScript + Vite. Web phục vụ Manager, Receptionist, Coach; có khu vực Member và các trang test mục tiêu. [Tài liệu hiện hành](../Docs/README.md) · [Chạy local](../Docs/PROJECT_STATUS_AND_RUN_GUIDE.md).
 
-## Cài đặt
-
-```bash
-cp .env.example .env
-npm install
+```powershell
+npm ci
 npm run dev
 ```
 
-Web chạy tại `http://localhost:5173` và gọi API qua `VITE_API_URL`.
+Giữ `.env` hiện có. Chạy với BE local: `VITE_API_URL=/api/v1`, `VITE_API_BASE_URL=/api/v1`, `VITE_PROXY_TARGET=http://localhost:4000`, `VITE_USE_MOCK=false`. Restart Vite khi đổi env. Chọn rõ local/remote; backend remote chưa chắc có code/migration mới.
 
-## Cấu trúc
+## Luồng đang dùng
 
-```text
-FE/
-├── public/                   # Tài nguyên tĩnh
-├── src/
-│   ├── app/                  # Router và global providers
-│   ├── assets/               # Ảnh/font import trong code
-│   ├── features/             # Auth, Manager, Receptionist, Coach và nghiệp vụ
-│   ├── layouts/              # Dashboard/auth layouts
-│   ├── pages/                # Trang hệ thống như 404
-│   ├── shared/
-│   │   ├── api/              # Axios client và API dùng chung
-│   │   ├── components/       # Button, table, modal, input
-│   │   ├── hooks/            # Hooks dùng chung
-│   │   ├── types/            # API response/shared types
-│   │   └── utils/            # Formatter và helper thuần
-│   ├── styles/               # Global CSS/Tailwind
-│   └── main.tsx              # Entry point
-├── .env.example              # Public runtime config; không để secret
-├── vite.config.ts            # Vite plugins và alias `@`
-└── package.json              # Scripts và dependencies
+- Bán gói PT có lịch trước thanh toán; Coach điều phối lịch sau mua. `PAID` chưa đủ xác nhận quyền lợi đã được áp dụng.
+- Coach `/coach/goals`: số đo, đề xuất mục tiêu, tiến độ và phiếu buổi hoàn thành; `/coach/goals/sheet/:bookingId` để xem/ghi phiếu.
+- Member `/member/goals`: mong muốn tùy chọn, xác nhận/yêu cầu sửa đề xuất, tiến độ và phản hồi phiên bản phiếu.
+- Manager `/manager/goals`: phản ánh, timeline và chất lượng phiếu.
+
+Các màn mục tiêu là giao diện test cơ bản. Không dùng form mục tiêu cũ, `progressScore` 0–100 hay nút tự đánh dấu đạt; Backend tính kết quả. [Hướng dẫn test](../Docs/HUONG_DAN_TEST_MUC_TIEU_VA_PHIEU_SAU_BUOI_2026-11-03.md) nêu thao tác và giới hạn từng vai trò.
+
+Source tại `src/`; luồng goal lab tại `src/features/goal-lab/`, API/query theo cấu trúc hiện có. Khi sửa màn, đối chiếu [OpenAPI](../Docs/API_CONTRACT_PT_2026-11.md) và router BE.
+
+```powershell
+npm test
+npm run build
 ```
 
-Mỗi feature dùng cấu trúc `api/`, `components/`, `hooks/`, `pages/`, `schemas/` và `types/`. Không gọi Axios trực tiếp trong component. Server state dùng TanStack Query; form state dùng React Hook Form. AI key và VNPay secret tuyệt đối không đặt trong biến `VITE_*`.
-
-## Ownership
-
-- Member 1: Manager pages, reports và integration review.
-- Member 3: Common Web, Receptionist pages và Coach pages.
-- Member 2 cung cấp Swagger/API contract.
-
-## Scripts
-
-| Lệnh | Chức năng |
-|---|---|
-| `npm run dev` | Chạy Vite dev server |
-| `npm run build` | Type-check và production build |
-| `npm run lint` | Chạy Oxlint |
-| `npm test` | Chạy unit/component tests |
-| `npm run preview` | Xem production build local |
-
-## Ghi chú từ Vite template
-
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+[Bàn giao triển khai](../Docs/GOAL_PROGRESS_HANDOFF_2026-11-03.md) ghi kết quả kiểm chứng và phần còn thiếu. PRD và tài liệu bố cục màn không thay biên bản nghiệm thu UI.

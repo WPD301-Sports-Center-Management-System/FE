@@ -73,15 +73,15 @@ export function CourseAssignSyllabusModal({
     <Modal
       isOpen={isOpen}
       onClose={() => !isSubmitting && onClose()}
-      title="Thiết Lập Giáo Án Chuẩn Của Trung Tâm (Manager Only)"
-      description={`Cấu hình danh sách bài tập khung, thứ tự thực hiện & ghi chú kỹ thuật chuẩn cho khóa "${course?.name}". HLV sẽ kế thừa mẫu này khi giao bài cho học viên.`}
+      title="Mẫu buổi tham khảo của trung tâm"
+      description={`Soạn một buổi mẫu cho khóa "${course?.name}". Lưu xong, mẫu xuất hiện trong thư viện giáo án chung; Coach chủ động áp vào buổi học và điều chỉnh cho học viên. Đây không phải giáo án cố định cho toàn khóa.`}
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
         {/* Quick Presets for Manager */}
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
           <div className="flex items-center gap-1.5 font-semibold text-text-primary text-xs">
             <Zap className="h-3.5 w-3.5 text-primary fill-primary/20" />
-            <span>Nạp nhanh khung bài tập mẫu 6 pha chuẩn thể hình:</span>
+            <span>Thêm nhanh bài tập tham khảo:</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             <button
@@ -157,6 +157,7 @@ export function CourseAssignSyllabusModal({
                   <Info className="h-3.5 w-3.5 text-text-muted mt-2 shrink-0" />
                   <input
                     type="text"
+                    maxLength={2000}
                     value={item.coachNote}
                     onChange={(e) => {
                       const val = e.target.value
@@ -177,6 +178,7 @@ export function CourseAssignSyllabusModal({
           type="button"
           variant="outline"
           size="sm"
+          disabled={items.length >= 40}
           onClick={() => {
             setItems((prev) => [
               ...prev,
@@ -186,7 +188,7 @@ export function CourseAssignSyllabusModal({
           className="w-full gap-1.5 text-xs py-2 cursor-pointer"
         >
           <Plus className="h-4 w-4" />
-          <span>Thêm bài tập vào giáo án khung</span>
+          <span>Thêm bài tập tham khảo</span>
         </Button>
 
         <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
@@ -194,7 +196,7 @@ export function CourseAssignSyllabusModal({
             Hủy
           </Button>
           <Button type="submit" variant="primary" isLoading={isSubmitting} disabled={isSubmitting}>
-            Lưu giáo án chuẩn
+            Lưu vào thư viện mẫu buổi
           </Button>
         </div>
       </form>

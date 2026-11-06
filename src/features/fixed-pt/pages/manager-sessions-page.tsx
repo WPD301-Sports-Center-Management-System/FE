@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from 'react'
+import { Modal } from '@/shared/components/ui/modal'
+import { hybridSend } from '../hybrid-api'
 import { Button } from '@/shared/components/ui/button'
 import { formatDateTime, formatTime, formatWeekdayDateTime } from '@/shared/utils/date'
 import { fixedPtApi } from '../api'
@@ -8,7 +10,7 @@ import { ErrorBanner, Field, inputCls, Loadable, Notice, Page, Panel, Status, Ta
 import { ReasonDialog } from '../components/widgets'
 import { localInputToIso } from './coach-sessions-page'
 
-type Dialog = { kind: 'reverse' | 'override' | 'resolve' | 'noShow' | 'cancel'; session: Session }
+type Dialog = { kind: 'reverse' | 'override' | 'resolve' | 'noShow' | 'cancel' | 'end' | 'interrupt'; session: Session }
 // Manager: sessions that need a decision (no outcome after end, legacy overlaps), corrections of a
 // wrongly counted outcome, and service disruptions (the package always keeps its Coach).
 export function ManagerSessionsPage() {
@@ -17,6 +19,7 @@ export function ManagerSessionsPage() {
   const recent = useLoad(() => fixedPtApi.sessions({ status: recentStatus, order: 'desc', limit: 50 }), [recentStatus])
   const [dialog, setDialog] = useState<Dialog | null>(null)
   const [confirmAbsent, setConfirmAbsent] = useState(false)
+  const [record, setRecord] = useState<Session | null>(null)
   const act = useSubmit()
   const done = async () => { setDialog(null); await Promise.all([review.reload(), recent.reload()]) }
   const row = (s: Session, actions: ReactNode) => <tr key={s.id}>
@@ -33,7 +36,10 @@ export function ManagerSessionsPage() {
               {s.allowedActions.noShow && <Button size="sm" variant="ghost" onClick={() => setDialog({ kind: 'noShow', session: s })}>Ghi vắng</Button>}
               {s.allowedActions.coachCancel && <Button size="sm" variant="ghost" onClick={() => setDialog({ kind: 'cancel', session: s })}>Gym hủy (hoàn buổi)</Button>}
               {s.status === 'CONFIRMED' && <Button size="sm" variant="ghost" onClick={() => setDialog({ kind: 'override', session: s })}>Ngoại lệ vé gym</Button>}
-              <Button size="sm" variant="secondary" onClick={() => setDialog({ kind: 'resolve', session: s })}>Đóng cờ</Button></>))}
+              {s.allowedActions.recordCompleted && <Button size="sm" onClick={() => setRecord(s)}>Xác nhận đã tập (giờ thực)</Button>}
+              {s.allowedActions.end && <Button size="sm" onClick={() => setDialog({ kind: 'end', session: s })}>Kết thúc buổi đang tập</Button>}
+              {s.allowedActions.interrupt && <Button size="sm" variant="danger" onClick={() => setDialog({ kind: 'interrupt', session: s })}>Dừng sự cố, hoàn buổi</Button>}
+              {!['CONFIRMED', 'ARRIVED', 'IN_PROGRESS'].includes(s.status) && <Button size="sm" variant="secondary" onClick={() => setDialog({ kind: 'resolve', session: s })}>Đóng cờ</Button>}</>))}
           </Table>
         )}</Loadable>
       </Panel>
@@ -45,13 +51,16 @@ export function ManagerSessionsPage() {
           </Table>
         )}</Loadable>
       </Panel>
+      {record && <RecordCompleted key={record.id} session={record} onClose={() => setRecord(null)} onDone={() => { setRecord(null); void done() }} />}
       <DisruptionPanel />
       <ReasonDialog open={!!dialog} danger={dialog?.kind === 'reverse' || dialog?.kind === 'noShow'} busy={act.busy} error={act.code === 'MEMBER_PRESENT' ? 'Member có lượt vào gym trong khung giờ. Chỉ ghi vắng khi đã xác minh (D-15) — tích xác nhận bên dưới.' : act.error}
-        title={{ reverse: 'Đảo kết quả buổi', override: 'Duyệt ngoại lệ vé gym cho buổi', resolve: 'Đóng cờ cần xử lý', noShow: 'Ghi Member vắng', cancel: 'Gym hủy buổi (hoàn buổi + học bù)' }[dialog?.kind ?? 'resolve']}
+        title={{ reverse: 'Đảo kết quả buổi', override: 'Duyệt ngoại lệ vé gym cho buổi', resolve: 'Đóng cờ cần xử lý', noShow: 'Ghi Member vắng', cancel: 'Gym hủy buổi (hoàn buổi + học bù)', end: 'Kết thúc buổi đang tập', interrupt: 'Dừng sự cố: hoàn credit, không tạo thu nhập' }[dialog?.kind ?? 'resolve']}
         extra={dialog?.kind === 'noShow' && act.code === 'MEMBER_PRESENT' ? <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={confirmAbsent} onChange={e => setConfirmAbsent(e.target.checked)} />Đã xác minh Member có vào gym nhưng không đến buổi PT</label> : undefined}
         onClose={() => { setDialog(null); setConfirmAbsent(false); act.clear() }}
         onConfirm={reason => void act.run(async () => {
           const id = dialog!.session.id
+          if (dialog!.kind === 'end') await fixedPtApi.end(id, { note: reason, earlyEndReason: reason })
+          if (dialog!.kind === 'interrupt') await hybridSend('post', `/pt-bookings/${id}/interrupt`, { reason })
           if (dialog!.kind === 'reverse') await fixedPtApi.reverseOutcome(id, reason)
           if (dialog!.kind === 'override') await fixedPtApi.membershipOverride(id, reason)
           if (dialog!.kind === 'resolve') await fixedPtApi.resolveReview(id, reason)
@@ -99,4 +108,21 @@ function DisruptionPanel() {
         onClose={() => setProtecting(null)} onConfirm={reason => void act.run(async () => { await fixedPtApi.protectExpiry(protecting!.purchaseId, { days: Number(days), reason, disruptionId: protecting!.id }); setProtecting(null) })} />
     </Panel>
   )
+}
+
+function RecordCompleted({ session, onClose, onDone }: { session: Session; onClose: () => void; onDone: () => void }) {
+  const local = (s: string) => new Date(Date.parse(s) + 7 * 3600000).toISOString().slice(0, 16)
+  const [from, setFrom] = useState(local(session.startsAt)), [to, setTo] = useState(local(session.endsAt))
+  const [reason, setReason] = useState(''), [evidence, setEvidence] = useState('')
+  const act = useSubmit()
+  return <Modal isOpen onClose={onClose} title="Xác nhận buổi đã tập bị thiếu thao tác" description="Ghi đúng giờ thực tế theo giờ Việt Nam. Kết quả sẽ tính credit và thu nhập một lần; mọi căn cứ được lưu audit.">
+    <form className="space-y-4" onSubmit={e => { e.preventDefault(); void act.run(async () => { await hybridSend('post', '/pt-bookings/' + session.id + '/record-completed', { actualStartedAt: localInputToIso(from), actualEndedAt: localInputToIso(to), reason: reason.trim(), evidence: evidence.trim() }); onDone() }) }}>
+      <Field label="Bắt đầu thực tế"><input required type="datetime-local" className={inputCls} value={from} onChange={e => setFrom(e.target.value)} /></Field>
+      <Field label="Kết thúc thực tế"><input required type="datetime-local" className={inputCls} value={to} onChange={e => setTo(e.target.value)} /></Field>
+      <Field label="Lý do thiếu thao tác"><textarea required className={inputCls} value={reason} onChange={e => setReason(e.target.value)} /></Field>
+      <Field label="Căn cứ xác minh (check-in, xác nhận học viên…)"><textarea required className={inputCls} value={evidence} onChange={e => setEvidence(e.target.value)} /></Field>
+      <ErrorBanner message={act.error} />
+      <div className="flex justify-end gap-2"><Button variant="ghost" onClick={onClose}>Quay lại</Button><Button type="submit" isLoading={act.busy} disabled={!from || !to || !reason.trim() || !evidence.trim()}>Xác nhận đã tập</Button></div>
+    </form>
+  </Modal>
 }

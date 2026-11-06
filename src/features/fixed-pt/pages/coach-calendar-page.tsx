@@ -1,6 +1,6 @@
-import { TrainingResultPage } from '@/features/training-plans/pages/training-result-page'
+import { WeeklySchedulePicker } from '@/features/workspace/weekly-schedule-picker'
 import { ContentEditor } from './coach-program-page'
-import { useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Button } from '@/shared/components/ui/button'
 import { Modal } from '@/shared/components/ui/modal'
@@ -43,9 +43,8 @@ import type { ContentItem, Session, SessionWithContent } from '../types'
 
 const dayOf = (iso: string) => centerDate(iso)
 type Filterable = { memberName?: string; courseName?: string; status: string; isMakeup: boolean }
-const dayNames = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
 
-export function CoachCalendarPage() {
+export function CoachCalendarPage({ settingsOnly = false }: { settingsOnly?: boolean } = {}) {
   const [params] = useSearchParams()
   const [first, setFirst] = useState(() => mondayOf(centerDate()))
   const [view, setView] = useState<'week' | 'table'>('week')
@@ -70,9 +69,16 @@ export function CoachCalendarPage() {
   const { user } = useAuth()
   const coachId = user?.coachProfilesUserId?.id ?? ''
   const settings = useLoad(() => hybridApi.settings(coachId), [coachId], !!coachId)
+  const reloadSettings = settings.reload
+  useEffect(() => {
+    const refresh = () => { if (coachId) void reloadSettings() }
+    window.addEventListener('coach-readiness-changed', refresh)
+    return () => window.removeEventListener('coach-readiness-changed', refresh)
+  }, [coachId, reloadSettings])
   const act = useSubmit()
   const reload = () => {
     void state.reload()
+    window.dispatchEvent(new Event('coach-readiness-changed'))
     void rich.reload()
   }
   const byId = new Map((rich.data ?? []).map((s) => [s.id, s]))
@@ -84,15 +90,15 @@ export function CoachCalendarPage() {
   const filtered = !!(filter.member || filter.course || filter.tone)
   return (
     <Page
-      title="Lịch làm việc"
+      title={settingsOnly ? 'Thiết lập giờ làm việc' : 'Lịch làm việc'}
       subtitle="Mọi giờ hiển thị theo giờ Việt Nam. Booking hợp lệ được tự xác nhận."
       actions={
         <>
           <Button variant="secondary" onClick={() => setException(true)}>
             Thêm ngoại lệ
           </Button>
-          <Button onClick={() => setEditing(true)}>Thiết lập / sửa giờ</Button>
-          <ViewToggle value={view} onChange={setView} />
+          {!settingsOnly && <Button onClick={() => setEditing(true)}>Thiết lập / sửa giờ</Button>}
+          {!settingsOnly && <ViewToggle value={view} onChange={setView} />}
         </>
       }
     >
@@ -104,6 +110,7 @@ export function CoachCalendarPage() {
         <div className="mt-3"><Button isLoading={act.busy} onClick={() => void act.run(async () => {
           await hybridApi.setSettings(coachId, { acceptingNewMembers: true })
           await settings.reload()
+          window.dispatchEvent(new Event('coach-readiness-changed'))
           setNotice('Đã bật nhận học viên mới. Member cập nhật màn mua gói để tiếp tục.')
         })}>Bật nhận học viên mới</Button></div>
       </Panel>}
@@ -117,6 +124,7 @@ export function CoachCalendarPage() {
               void act.run(async () => {
                 await hybridApi.setSettings(coachId, { acceptingNewMembers: e.target.checked })
                 await settings.reload()
+                window.dispatchEvent(new Event('coach-readiness-changed'))
               })
             }
           />
@@ -126,9 +134,10 @@ export function CoachCalendarPage() {
       )}
       <ErrorBanner message={settings.error} onRetry={settings.reload} />
       {!coachId && <Notice tone="warning">Chưa tải được hồ sơ Coach. Tải lại trang hoặc đăng nhập lại để quản lý trạng thái nhận học viên.</Notice>}
+      {settingsOnly && <HoursDialog inline onClose={()=>{}} onSaved={count=>{setNotice(`${count} buổi cần rà soát. Giờ làm việc đã được lưu; các lịch đã xác nhận được giữ nguyên.`);reload()}}/>}
       <Panel>
         <div className="space-y-5">
-          <FilterBar>
+          {!settingsOnly && <><FilterBar>
             <FilterSelect label="Học viên" value={filter.member} onChange={set('member')} options={optionsOf(state.data?.sessions ?? [], (s) => s.member.user.fullName)} />
             <FilterSelect label="Khóa học" value={filter.course} onChange={set('course')} options={optionsOf(rich.data ?? [], (s) => s.courseName)} />
             <FilterSelect label="Trạng thái" value={filter.tone} onChange={set('tone')} options={STATUS_OPTIONS} />
@@ -165,6 +174,12 @@ export function CoachCalendarPage() {
               }
             </Loadable>
           )}
+          </>}
+          {settingsOnly && <>
+            <h3 className="font-semibold">Ngoại lệ và ngày nghỉ theo tuần</h3>
+            <WeekToolbar first={first} onChange={setFirst} legend={[]} />
+            <p className="text-sm text-text-muted">Giờ mở thêm là ngoại lệ. Đóng giờ không được ảnh hưởng buổi đã bán; cần đổi giờ trong ngày hoặc nhờ Manager xử lý trước. Xem từng buổi tại tab Lịch dạy.</p>
+          </>}
           {state.data && (state.data.exceptions.length > 0 || state.data.timeOffs.length > 0) && (
             <section className="space-y-2" aria-label="Ngoại lệ và ngày nghỉ">
               <h3 className="text-sm font-semibold text-text-primary">Ngoại lệ & ngày nghỉ trong tuần</h3>
@@ -194,7 +209,7 @@ export function CoachCalendarPage() {
           onSaved={(count) => {
             setEditing(false)
             setNotice(
-              `${count} buổi sắp tới cần rà soát sau thay đổi. Các lịch đã xác nhận được giữ nguyên; dùng quy trình đổi/hủy để xử lý.`,
+              `${count} buổi sắp tới cần rà soát sau thay đổi. Các lịch đã xác nhận được giữ nguyên; đổi giờ trong ngày hoặc nhờ Manager xử lý.`,
             )
             void state.reload()
           }}
@@ -225,7 +240,7 @@ export function CoachCalendarPage() {
           onSaved={(count) => {
             setException(false)
             setNotice(
-              `${count} buổi giao khoảng ngoại lệ. Lịch được giữ nguyên; cần trao đổi với Member để đổi/hủy.`,
+              `${count} buổi giao khoảng ngoại lệ. Lịch được giữ nguyên; cần đổi giờ trong ngày hoặc nhờ Manager xử lý.`,
             )
             void state.reload()
           }}
@@ -296,9 +311,11 @@ function dayNotes(data: CoachCalendar, first: string): DayNote[] {
 
 
 function HoursDialog({
+  inline = false,
   onClose,
   onSaved,
 }: {
+  inline?: boolean
   onClose: () => void
   onSaved: (count: number) => void
 }) {
@@ -307,9 +324,6 @@ function HoursDialog({
   const [impact, setImpact] = useState<{ signature: string; count: number } | null>(null)
   const [initialDate] = useState(() => centerDate())
   const [effective, setEffective] = useState(initialDate)
-  const [selected, setSelected] = useState<number[]>([])
-  const [start, setStart] = useState('')
-  const [end, setEnd] = useState('')
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const save = useSubmit()
   const rows =
@@ -330,7 +344,7 @@ function HoursDialog({
       ),
   )
   const close = () => {
-    if (intervals === null && effective === initialDate && !selected.length && !start && !end) onClose()
+    if (intervals === null && effective === initialDate) onClose()
     else setConfirmDiscard(true)
   }
   return (
@@ -345,10 +359,11 @@ function HoursDialog({
       onConfirm={onClose}
       onCancel={() => setConfirmDiscard(false)}
     />
-    <Modal isOpen={!confirmDiscard} title="Thiết lập giờ làm việc" maxWidth="2xl" onClose={close}>
-      <div className="max-h-[75vh] space-y-4 overflow-y-auto">
+    <HoursContainer inline={inline} isOpen={!confirmDiscard} onClose={close}>
+      <div className={inline ? 'space-y-4' : 'max-h-[75vh] space-y-4 overflow-y-auto'}>
         <ErrorBanner message={rules.error} onRetry={rules.reload} />
-        <Field label="Ngày bắt đầu áp dụng">
+        <div className="rounded-xl bg-text-primary p-4 text-bg-surface"><strong>Giờ bạn nhận tập</strong><p className="mt-1 text-sm opacity-70">Đặt khoảng giờ mở định kỳ. Các buổi đã xác nhận luôn được giữ lại.</p></div>
+        <Panel title="Ngày bắt đầu áp dụng"><Field label="Áp dụng từ ngày">
           <input
             className={inputCls}
             type="date"
@@ -357,85 +372,8 @@ function HoursDialog({
             onChange={(e) => setEffective(e.target.value)}
           />
         </Field>
-        <fieldset>
-          <legend className="mb-2 text-sm">Áp dụng nhanh cho nhiều thứ</legend>
-          <div className="flex flex-wrap gap-2">
-            {dayNames.map((d, i) => (
-              <label key={d} className="flex min-h-11 items-center gap-1">
-                <input
-                  type="checkbox"
-                  checked={selected.includes(i + 1)}
-                  onChange={(e) =>
-                    setSelected(
-                      e.target.checked ? [...selected, i + 1] : selected.filter((n) => n !== i + 1),
-                    )
-                  }
-                />
-                {d}
-              </label>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-end gap-2">
-            <Field label="Từ">
-              <input
-                aria-label="Giờ bắt đầu áp dụng nhanh"
-                type="time"
-                className={inputCls}
-                value={start}
-                onChange={(e) => setStart(e.target.value)}
-              />
-            </Field>
-            <Field label="Đến">
-              <input
-                aria-label="Giờ kết thúc áp dụng nhanh"
-                type="time"
-                className={inputCls}
-                value={end}
-                onChange={(e) => setEnd(e.target.value)}
-              />
-            </Field>
-            <Button
-              variant="secondary"
-              disabled={!selected.length || !start || start >= end}
-              onClick={() =>
-                setIntervals([
-                  ...rows,
-                  ...selected.map((weekday) => ({ weekday, startTime: start, endTime: end })),
-                ])
-              }
-            >
-              Thêm khoảng giờ
-            </Button>
-          </div>
-        </fieldset>
-        {rows.map((r, i) => (
-          <div key={i} className="flex flex-wrap items-center gap-2">
-            <span>{dayNames[r.weekday - 1]}</span>
-            <input
-              aria-label={`Bắt đầu ${dayNames[r.weekday - 1]} khoảng ${i + 1}`}
-              type="time"
-              className={inputCls}
-              value={r.startTime}
-              onChange={(e) =>
-                setIntervals(
-                  rows.map((x, j) => (i === j ? { ...x, startTime: e.target.value } : x)),
-                )
-              }
-            />
-            <input
-              aria-label={`Kết thúc ${dayNames[r.weekday - 1]} khoảng ${i + 1}`}
-              type="time"
-              className={inputCls}
-              value={r.endTime}
-              onChange={(e) =>
-                setIntervals(rows.map((x, j) => (i === j ? { ...x, endTime: e.target.value } : x)))
-              }
-            />
-            <Button variant="ghost" onClick={() => setIntervals(rows.filter((_, j) => i !== j))}>
-              Xóa
-            </Button>
-          </div>
-        ))}
+        </Panel>
+        <WeeklySchedulePicker mode="hours" value={rows} onChange={setIntervals} />
         {invalid && (
           <ErrorBanner message="Có khoảng giờ sai hoặc trùng nhau trong cùng thứ. Sửa trước khi lưu." />
         )}
@@ -460,14 +398,12 @@ function HoursDialog({
         {impact?.signature === JSON.stringify({ effective, rows }) && (
           <Notice>
             {impact.count} buổi nằm ngoài giờ làm việc mới; giữ nguyên các buổi này và xử lý qua
-            đổi/hủy có audit.
+            đổi giờ hoặc ngoại lệ Manager có audit.
           </Notice>
         )}
         <ErrorBanner message={save.error} />
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={close}>
-            Hủy
-          </Button>
+          {!inline && <Button variant="secondary" onClick={close}>Hủy</Button>}
           <Button
             disabled={
               invalid ||
@@ -479,7 +415,7 @@ function HoursDialog({
             isLoading={save.busy}
             onClick={() =>
               void save.run(async () =>
-                onSaved((await hybridApi.saveRules(effective, rows)).affectedCount),
+                { const result = await hybridApi.saveRules(effective, rows); setImpact(null); setIntervals(null); void rules.reload(); onSaved(result.affectedCount) },
               )
             }
           >
@@ -487,11 +423,15 @@ function HoursDialog({
           </Button>
         </div>
       </div>
-    </Modal>
+    </HoursContainer>
     </>
   )
 }
 
+function HoursContainer({inline,isOpen,onClose,children}:{inline:boolean;isOpen:boolean;onClose:()=>void;children:ReactNode}) {
+  if(inline) return <section aria-label="Thiết lập giờ làm việc">{children}</section>
+  return <Modal isOpen={isOpen} title="Thiết lập giờ làm việc" maxWidth="2xl" onClose={onClose}>{children}</Modal>
+}
 function ExceptionDialog({
   onClose,
   onSaved,
@@ -507,7 +447,7 @@ function ExceptionDialog({
   return (
     <Modal isOpen title="Ngoại lệ giờ làm việc" onClose={() => !act.busy && onClose()}>
       <div className="space-y-3">
-        <Notice>Đóng giờ chặn đặt mới trong khoảng này. Các buổi đã xác nhận vẫn giữ nguyên; nếu bị ảnh hưởng, Coach cần xử lý đổi/hủy riêng.</Notice>
+        <Notice>Đóng giờ chặn đặt mới trong khoảng này. Các buổi đã xác nhận vẫn giữ nguyên; nếu bị ảnh hưởng, Coach cần đổi giờ trong ngày hoặc nhờ Manager xử lý.</Notice>
         <Field label="Loại">
           <select
             className={inputCls}
@@ -661,7 +601,6 @@ function SessionDrawer({
           {[
             ['overview', 'Tổng quan'],
             ['plan', 'Giáo án'],
-            ['results', 'Kết quả'],
             ['history', 'Lịch sử'],
           ].map(([v, t]) => (
             <Button key={v} variant={tab === v ? 'primary' : 'secondary'} onClick={() => setTab(v)}>
@@ -717,24 +656,15 @@ function SessionDrawer({
                   <DrawerTemplate id={id} onChanged={() => void content.reload()} />
                   <Link
                     className="inline-block p-2 text-primary underline"
-                    to={`/coach/training-plans?purchaseId=${s.purchaseId}`}
+                    to={`/coach/library?tab=packages&purchaseId=${s.purchaseId}`}
                   >
                     Soạn / sửa giáo án và chọn mẫu A/B/C
                   </Link>
                 </>
               )}
-              {tab === 'results' && s.status === 'COMPLETED' && (
-                <TrainingResultPage bookingId={id} />
-              )}
-              {tab === 'results' && s.status !== 'COMPLETED' && (
-                <Notice>Kết quả sẽ có sau buổi tập.</Notice>
-              )}
-              {tab === 'results' && (
-                <Link
-                  className="text-primary underline"
-                  to={`/coach/training-results?bookingId=${id}`}
-                >
-                  Ghi / xem kết quả buổi đã hoàn thành
+              {tab === 'overview' && s.status === 'COMPLETED' && (
+                <Link className="inline-block text-primary underline" to={`/coach/goals/sheet/${id}`}>
+                  Đánh giá cuối buổi
                 </Link>
               )}
               {tab === 'history' && (

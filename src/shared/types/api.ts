@@ -14,7 +14,6 @@ export type CoachPayoutStatus = 'PENDING' | 'PAID'
 export type MakeupStatus = 'PENDING' | 'BOOKED' | 'COMPLETED' | 'FORFEITED'
 export type TrainingPlanStatus = 'DRAFT' | 'ASSIGNED' | 'COMPLETED' | 'ARCHIVED'
 export type TrainingResultStatus = 'DRAFT' | 'PUBLISHED'
-export type FitnessGoalStatus = 'ACTIVE' | 'ACHIEVED' | 'CANCELLED'
 export type MealPlanStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED'
 export type EquipmentStatus = 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'OUT_OF_SERVICE' | 'OPERATIONAL' | 'UNDER_MAINTENANCE' | 'OUT_OF_ORDER' | 'DECOMMISSIONED'
 export type MaintenanceStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
@@ -227,6 +226,8 @@ export type CoachSlot = {
 }
 
 export type PackageOption = {
+  sessionsPerWeek?: number
+  templateId?: string | null
   durationMinutes?: number
   id: string
   courseId: string
@@ -404,15 +405,19 @@ export type TrainingResult = {
     note?: string
   }>
   coachComment?: string
-  progressScore?: number
   status: TrainingResultStatus
   publishedAt?: string
 }
 
+export type AssessmentMilestone = 'BASELINE' | 'PERIODIC' | 'FINAL'
 export type BodyAssessment = {
   id: string
   memberId: string
   coachId: string
+  ptPurchaseId?: string | null
+  /** Package milestone of a Coach assessment; Member self-logs have none. */
+  milestone?: AssessmentMilestone | null
+  source?: 'COACH' | 'MEMBER'
   assessedAt: string
   weightKg?: string
   heightCm?: string
@@ -425,39 +430,15 @@ export type BodyAssessment = {
   notes?: string
 }
 
-export type FitnessGoal = {
-  id: string
-  memberId: string
-  coachId: string
-  title: string
-  description?: string
-  metricName?: string
-  startValue?: string
-  targetValue?: string
-  currentValue?: string
-  unit?: string
-  targetDate?: string
-  status: FitnessGoalStatus
-}
-
-export type ProgressSeries = {
-  memberId: string
-  from: string
-  to: string
-  metrics: Array<{
-    name: string
-    unit: string
-    points: Array<{ date: string; value: number }>
-  }>
-  goals: FitnessGoal[]
-}
-
 export type MealPlanItem = {
   id: string
   mealPlanId?: string
   dayNumber: number
   mealType: string
   foodName: string
+  /** Set when the line comes from the food library; nutrition = library × servings. */
+  foodItemId?: string | null
+  servings?: number | string | null
   quantity?: string | null
   estimatedCalories?: number | null
   proteinGrams?: number | string | null
@@ -468,6 +449,8 @@ export type MealPlanItem = {
 }
 
 export type MealPlan = {
+  repeatWeekly?: boolean
+  daySettings?: Record<number, { calories: number; mealCount: number }>
   id: string
   memberId: string
   coachId: string

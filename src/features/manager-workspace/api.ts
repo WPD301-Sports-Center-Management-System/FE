@@ -28,7 +28,7 @@ export interface Revenue {
 }
 export interface ManagerDashboard { members: number; coaches: number; revenue: Revenue; bookingsToday: number; sessionsNeedingReview: number; openReconciliation: number; equipmentIssues: number }
 export interface Offering { id: string; coachId: string; courseId: string; status: 'PENDING' | 'APPROVED' | 'REJECTED'; isActive: boolean; experienceNote?: string | null; rejectionReason?: string | null; approvedAt?: string | null; createdAt: string; updatedAt: string; coach: { user: { fullName: string } }; course: { id: string; name: string; difficultyLevel?: string | null } }
-export interface PackageOption { id: string; coachId?: string | null; courseId: string; name: string; sessionCount: number; validityDays: number; price: string; approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED'; isActive: boolean; rejectionReason?: string | null; createdAt: string; updatedAt: string; course?: { name: string }; coach?: { user: { fullName: string } } | null }
+export interface PackageOption { id: string; coachId?: string | null; courseId: string; name: string; sessionCount: number; sessionsPerWeek?: number; validityDays: number; price: string; approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED'; isActive: boolean; rejectionReason?: string | null; createdAt: string; updatedAt: string; course?: { name: string }; coach?: { user: { fullName: string } } | null }
 export interface CoachReview { id: string; coachId: string; rating: number; comment?: string | null; moderationStatus: 'VISIBLE' | 'HIDDEN'; createdAt: string }
 export interface SupportLite { id: string; status: string; createdAt: string }
 
@@ -55,7 +55,7 @@ export const mgrApi = {
   approveOption: (id: string) => patch(`/pt-package-options/${id}/approve`),
   rejectOption: (id: string, rejectionReason: string) => patch(`/pt-package-options/${id}/reject`, { rejectionReason }),
   setOptionActive: (id: string, isActive: boolean) => patch(`/pt-package-options/${id}/status`, { isActive }),
-  createOption: (body: { courseId: string; name: string; sessionCount: number; validityDays: number; price: number; durationMinutes?: 60 | 90 | 120; description?: string }) => post<PackageOption>('/pt-package-options', body),
+  createOption: (body: { courseId: string; name: string; sessionCount: number; sessionsPerWeek: number; validityDays: number; price: number; durationMinutes?: 60 | 90 | 120; description?: string }) => post<PackageOption>('/pt-package-options', body),
   courses: () => get<{ id: string; name: string; isActive?: boolean }[]>('/training-courses', { limit: 100 }),
 
   earningSummary: () => get<EarningSummary>('/coach-earnings/summary'),

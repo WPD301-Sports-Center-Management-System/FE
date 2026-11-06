@@ -23,7 +23,7 @@ describe('shared payment receipt', () => {
     expect(await screen.findByRole('dialog', { name: 'INV-001' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Tải hóa đơn PDF' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'In hóa đơn' })).toBeEnabled()
-    expect(document.body.style.overflow).toBe('hidden')
+    await waitFor(() => expect(document.body.style.overflow).toBe('hidden'))
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(document.body.style.overflow).toBe('')

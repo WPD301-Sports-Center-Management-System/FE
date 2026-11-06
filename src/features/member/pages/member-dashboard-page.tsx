@@ -1,5 +1,8 @@
 import { openReceipt } from '@/features/workspace/receipt-events'
+import { MemberGoalSummary } from '@/features/goal-lab/member-goal-summary'
 import { useState, useEffect, useCallback } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { ErrorBox } from '@/features/workspace/ui'
 import {
   User,
   CreditCard,
@@ -59,7 +62,11 @@ export function MemberDashboardPage() {
 
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'pt' | 'training' | 'billing' | 'support'>('overview')
+  const [params, setParams] = useSearchParams()
+  const requestedTab = params.get('tab')
+  const activeTab = requestedTab && ['overview','pt','training','billing','support'].includes(requestedTab) ? requestedTab : 'overview'
+  const setActiveTab = (tab: string) => { const next = new URLSearchParams(params); next.set('tab',tab); setParams(next) }
+  const [failedSections, setFailedSections] = useState<string[]>([])
 
   const loadMemberData = useCallback(async () => {
     setIsLoading(true)
@@ -77,6 +84,8 @@ export function MemberDashboardPage() {
         meService.getMyMealPlans(),
         meService.getMySupportRequests(),
       ])
+      const groups: Record<string, number[]> = { overview:[0,1,2], pt:[3], training:[6,7,8], billing:[4,5], support:[9] }
+      setFailedSections(Object.keys(groups).filter(key => groups[key]!.some(i => results[i]!.status === 'rejected')))
 
       const extractData = <T,>(res: PromiseSettledResult<any>, fallback: T): T => {
         if (res.status === 'fulfilled') {
@@ -127,7 +136,9 @@ export function MemberDashboardPage() {
         if (isAppApiError(err)) {
           if (err.status === 401) setErrorMessage('Hết phiên đăng nhập. Vui lòng đăng nhập lại.')
           else if (err.status === 403) setErrorMessage('Bạn không có quyền truy cập một số mục (403 Forbidden).')
+          else setErrorMessage('Một số thông tin chưa tải được. Dữ liệu trống bên dưới có thể chưa phản ánh đúng hồ sơ của bạn. Bấm Làm mới dữ liệu để thử lại.')
         }
+        else setErrorMessage('Một số thông tin chưa tải được. Bấm Làm mới dữ liệu để thử lại trước khi thực hiện giao dịch.')
       }
 
     } catch {
@@ -171,6 +182,8 @@ export function MemberDashboardPage() {
         </Button>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-subtle bg-bg-surface p-4"><p className="text-sm text-text-muted">Có mục tiêu hoặc phiếu mới từ Coach? Mở để đọc đề xuất và phản hồi kết quả.</p><Link className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground" to="/member/goals">Mục tiêu và phiếu sau buổi</Link></div>
+
       {/* Error Alert */}
       {errorMessage && (
         <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 text-xs text-danger flex items-center justify-between gap-2">
@@ -206,7 +219,7 @@ export function MemberDashboardPage() {
           }`}
         >
           <Calendar className="h-4 w-4" />
-          <span>Lịch Đặt PT ({ptBookings.length})</span>
+          <span>Lịch tập PT ({failedSections.includes('pt') ? '—' : ptBookings.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('training')}
@@ -248,7 +261,7 @@ export function MemberDashboardPage() {
           <RefreshCw className="h-6 w-6 animate-spin text-primary" />
           <span>Đang tải dữ liệu hồ sơ hội viên từ hệ thống...</span>
         </div>
-      ) : (
+      ) : failedSections.includes(activeTab) ? <ErrorBox message="Chưa tải được đầy đủ thông tin ở mục này. Hãy thử lại để xem đúng hồ sơ của bạn." onRetry={() => void loadMemberData()} /> : (
         <>
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
@@ -335,7 +348,7 @@ export function MemberDashboardPage() {
 
           {/* TAB 2: PT BOOKINGS */}
           {activeTab === 'pt' && (
-            <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
+            <div className="space-y-4"><MemberGoalSummary /><div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
               <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary" />
                 <span>Lịch Đặt Buổi Tập PT 1:1 Của Tôi</span>
@@ -358,7 +371,7 @@ export function MemberDashboardPage() {
                   ))}
                 </div>
               )}
-            </div>
+            </div></div>
           )}
 
           {/* TAB 3: TRAINING & NUTRITION */}
@@ -490,7 +503,7 @@ export function MemberDashboardPage() {
               </div>
 
               {/* Progress & Goals */}
-              {progress && (progress.assessments?.length > 0 || progress.goals?.length > 0) && (
+              {progress && progress.assessments?.length > 0 && (
                 <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
                   <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
                     <Activity className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -520,17 +533,7 @@ export function MemberDashboardPage() {
                       </div>
                     </div>
                   )}
-                  {progress.goals && progress.goals.length > 0 && (
-                    <div className="space-y-2 pt-2 border-t border-border-subtle">
-                      <p className="text-xs font-semibold text-text-primary">Mục tiêu hiện tại:</p>
-                      {progress.goals.map((g) => (
-                        <div key={g.id} className="flex justify-between items-center text-xs text-text-muted bg-bg-surface-muted p-2.5 rounded-lg border border-border-subtle">
-                          <span>{g.title}</span>
-                          <span className="font-bold text-text-primary">{g.targetValue} {g.unit}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <a href="/member/goals" className="block pt-2 text-xs font-semibold text-primary underline">Xem mục tiêu & tiến độ</a>
                 </div>
               )}
             </div>

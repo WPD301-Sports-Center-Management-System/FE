@@ -26,6 +26,7 @@ export interface CoachDashboard { todayBookings: number; pendingRequests: number
 export interface ServiceSettings { acceptingNewMembers: boolean; bufferMinutes: number }
 export interface CoachMember { id: string; memberCode: string; fullName?: string; email?: string | null; phone?: string | null; avatarUrl?: string | null; user?: { fullName: string; avatarUrl?: string | null; phone?: string | null } }
 export interface CoachPurchase {
+  seriesMode?: boolean; expectedCompletionAt?: string | null; autoRescheduleCount?: number;
   id: string; purchaseCode: string; memberId: string; courseId: string; packageOptionId: string; status: string
   packageNameSnapshot: string; courseNameSnapshot: string; priceSnapshot?: string
   totalCredits: number; reservedCredits: number; consumedCredits: number; availableCredits: number
@@ -37,10 +38,9 @@ export interface MemberDetail {
   id: string; memberCode: string; dateOfBirth?: string | null; gender?: string | null; fitnessLevel?: string | null; medicalNotes?: string | null; createdAt: string
   user: { fullName: string; email?: string | null; phone?: string | null; avatarUrl?: string | null }
 }
-export interface Assessment { id: string; assessedAt: string; weightKg?: string | null; heightCm?: string | null; bodyFatPercent?: string | null; muscleMassKg?: string | null; bmi?: string | null; waistCm?: string | null; notes?: string | null }
-export interface FitnessGoal { id: string; title: string; description?: string | null; metricName?: string | null; startValue?: string | null; targetValue?: string | null; currentValue?: string | null; unit?: string | null; targetDate?: string | null; status: 'ACTIVE' | 'ACHIEVED' | 'CANCELLED' }
-export interface MemberProgress { assessments: Assessment[]; goals: FitnessGoal[]; results: { performedAt: string; progressScore?: number | null }[] }
-export interface TrainingResult { id: string; ptBookingId: string; performedAt: string; status: 'DRAFT' | 'PUBLISHED'; coachComment?: string | null; progressScore?: number | null }
+export interface Assessment { id: string; assessedAt: string; milestone?: 'BASELINE' | 'PERIODIC' | 'FINAL' | null; source?: 'COACH' | 'MEMBER'; weightKg?: string | null; heightCm?: string | null; bodyFatPercent?: string | null; muscleMassKg?: string | null; bmi?: string | null; waistCm?: string | null; notes?: string | null }
+export interface MemberProgress { assessments: Assessment[]; results: { performedAt: string; completion?: string | null }[] }
+export interface TrainingResult { id: string; ptBookingId: string; performedAt: string; status: 'DRAFT' | 'PUBLISHED'; coachComment?: string | null; }
 export interface SessionDetail extends Session { completionNote?: string | null; earlyEndReason?: string | null; cancellationReason?: string | null; member?: { id: string; memberCode: string; medicalNotes?: string | null; user: { fullName: string; phone?: string | null } } }
 export interface BookingContent { content: { id: string; status: 'DRAFT' | 'ASSIGNED' | 'LOCKED'; title?: string | null; recoveryWarning?: string | null } | null; items: ContentItem[] }
 export interface LibraryTemplate extends SessionTemplate { description?: string | null; status?: string; items: (SessionTemplate['items'][number] & { phase?: string | null })[] }
@@ -50,6 +50,7 @@ export interface Course { id: string; name: string; difficultyLevel?: string | n
 export interface Exercise { id: string; name: string; difficultyLevel?: string | null }
 export interface AiRecommendation { id: string; status: 'DRAFT' | 'APPROVED' | 'REJECTED'; createdAt: string }
 export interface TimeOff { id: string; startsAt: string; endsAt: string; reason?: string | null }
+export interface CoachTrialSession { id: string; fullName: string; phone: string; scheduledAt: string; durationMinutes: number; status: 'SCHEDULED' | 'CHECKED_IN' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED' | 'CONVERTED' }
 
 export const coachWs = {
   dashboard: () => get<CoachDashboard>('/dashboard/coach'),
@@ -61,18 +62,16 @@ export const coachWs = {
   member: (id: string) => get<MemberDetail>(`/members/${id}`),
   progress: (id: string) => get<MemberProgress>(`/members/${id}/progress`),
   results: (memberId: string) => get<TrainingResult[]>(`/members/${memberId}/training-history`, { limit: 20 }),
-  addAssessment: (memberId: string, body: Record<string, unknown>) => post<Assessment>(`/members/${memberId}/body-assessments`, body),
-  addGoal: (memberId: string, body: Record<string, unknown>) => post<FitnessGoal>(`/members/${memberId}/fitness-goals`, body),
   updateMedicalNotes: (memberId: string, medicalNotes: string) => patch(`/members/${memberId}`, { medicalNotes }),
 
   purchases: () => all<CoachPurchase>('/coaches/me/pt-packages'),
   sessions: (params: { from?: string; to?: string; status?: string; purchaseId?: string; order?: 'asc' | 'desc' }, maxPages = 5) => all<Session>('/coaches/me/pt-bookings', params, maxPages),
+  trialSessions: (params: { from: string; to: string }) => all<CoachTrialSession>('/coaches/me/trial-sessions', params),
   session: (id: string) => get<SessionDetail>(`/pt-bookings/${id}`),
   arrive: (id: string) => post<Session>(`/pt-bookings/${id}/arrive`),
   start: (id: string) => post<Session>(`/pt-bookings/${id}/start`),
   complete: (id: string, body: { note?: string; earlyEndReason?: string }) => post<Session>(`/pt-bookings/${id}/complete`, body),
   noShow: (id: string, body: { reason?: string; confirmAbsentDespiteVisit?: boolean }) => post<Session>(`/pt-bookings/${id}/no-show`, body),
-  coachCancel: (id: string, reason: string) => post(`/pt-bookings/${id}/coach-cancel`, { reason }),
   timeOffs: () => get<TimeOff[]>('/coaches/me/time-offs'),
 
   content: (bookingId: string) => get<BookingContent>(`/pt-bookings/${bookingId}/content`),
@@ -83,6 +82,7 @@ export const coachWs = {
 
   scheduleChanges: () => get<ScheduleChange[]>('/pt-schedule-changes'),
   proposeChange: (body: { purchaseId: string; items: { bookingId: string; startsAt: string; endsAt: string }[]; note?: string }) => post<ScheduleChange>('/pt-schedule-changes', body),
+  confirmChange: (id: string) => post<ScheduleChange>(`/pt-schedule-changes/${id}/accept`, {}),
   answerChange: (id: string, items: { creditId: string; startsAt: string; endsAt: string }[], note?: string) => post<ScheduleChange>(`/pt-schedule-changes/${id}/propose`, { items, note }),
   declineChange: (id: string, reason?: string) => post<ScheduleChange>(`/pt-schedule-changes/${id}/decline`, { reason }),
   withdrawChange: (id: string, reason?: string) => post<ScheduleChange>(`/pt-schedule-changes/${id}/withdraw`, { reason }),

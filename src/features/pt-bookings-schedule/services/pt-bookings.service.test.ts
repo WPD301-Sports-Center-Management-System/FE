@@ -56,17 +56,6 @@ describe('ptBookingsService', () => {
     expect(apiClient.post).toHaveBeenCalledWith('/pt-bookings/b-1/no-show', { reason: 'Không đến' })
   })
 
-  it('[8] createTrainingResult calls POST /pt-bookings/{id}/training-result', async () => {
-    const payload = {
-      performedAt: '2026-10-10T10:00:00Z',
-      result: [{ exerciseId: 'e-1', sets: [{ reps: 10, weight: 50, rpe: 8 }], completed: true }],
-      coachComment: 'Tập tốt',
-      progressScore: 90,
-    }
-    vi.mocked(apiClient.post).mockResolvedValueOnce({ success: true, data: { id: 'tr-1' } } as any)
-    await ptBookingsService.createTrainingResult('b-1', payload)
-    expect(apiClient.post).toHaveBeenCalledWith('/pt-bookings/b-1/training-result', payload)
-  })
 
 
 

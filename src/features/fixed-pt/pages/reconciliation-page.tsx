@@ -17,11 +17,14 @@ export function ReconciliationPage() {
   const [status, setStatus] = useState('OPEN')
   const cases = useLoad(() => fixedPtApi.reconciliationCases({ status: status || undefined, limit: 100 }), [status])
   const [resolving, setResolving] = useState<ReconciliationCase | null>(null)
+  const [retrying, setRetrying] = useState<ReconciliationCase | null>(null)
+  const [result, setResult] = useState('')
   const act = useSubmit()
   const isManager = user?.role === 'MANAGER'
   return (
     <Page title="Đối soát tiền nhận" subtitle="Mọi khoản tiền thực nhận đều được ghi; khoản không áp dụng được cho đơn nằm ở đây chờ xử lý.">
-      <Notice tone="warning">Hệ thống không tự hoàn tiền hay tự cấp buổi cho các khoản này. Phương án xử lý cần theo quyết định của chủ sản phẩm (D-14).</Notice>
+      <Notice tone="info">Khoản đã nhận nhưng áp dụng lỗi có thể phục hồi ở đây. Hoàn phần gói chưa dùng được xử lý tại tab Hoàn tiền PT.</Notice>
+      {result && <Notice tone="info">{result}</Notice>}
       <Panel title="Hồ sơ đối soát" actions={<select aria-label="Lọc" className={inputCls} value={status} onChange={e => setStatus(e.target.value)}><option value="OPEN">Đang mở</option><option value="IN_PROGRESS">Đang xử lý</option><option value="RESOLVED">Đã giải quyết</option><option value="">Tất cả</option></select>}>
         <ErrorBanner message={act.error} />
         <Loadable state={cases} empty="Không có hồ sơ.">{items => (
@@ -35,7 +38,7 @@ export function ReconciliationPage() {
               <td className={td}><Status value={c.status} />{c.resolution && <div className="text-xs text-text-muted">{c.resolution}</div>}</td>
               <td className={td}>{isManager && c.status !== 'RESOLVED' && <div className="flex gap-1.5">
                 {c.status === 'OPEN' && <Button size="sm" variant="ghost" disabled={act.busy} onClick={() => void act.run(async () => { await fixedPtApi.updateReconciliation(c.id, { status: 'IN_PROGRESS' }); await cases.reload() })}>Nhận xử lý</Button>}
-                <Button size="sm" onClick={() => setResolving(c)}>Kết luận</Button></div>}</td>
+                {c.type === 'APPLY_FAILED' ? <Button size="sm" disabled={act.busy} onClick={() => setRetrying(c)}>Phục hồi thanh toán</Button> : <Button size="sm" onClick={() => setResolving(c)}>Kết luận</Button>}</div>}</td>
             </tr>)}
           </Table>
         )}</Loadable>
@@ -43,6 +46,13 @@ export function ReconciliationPage() {
       <ReasonDialog open={!!resolving} title="Kết luận hồ sơ đối soát" confirmLabel="Đóng hồ sơ" busy={act.busy} error={act.error}
         description="Ghi rõ đã làm gì bên ngoài hệ thống (ví dụ: đã chuyển trả theo chứng từ số…, hoặc áp dụng cho gói kế tiếp theo quyết định…)." onClose={() => { setResolving(null); act.clear() }}
         onConfirm={resolution => void act.run(async () => { await fixedPtApi.updateReconciliation(resolving!.id, { status: 'RESOLVED', resolution }); setResolving(null); await cases.reload() })} />
+      <ReasonDialog open={!!retrying} title="Phục hồi thanh toán đã nhận" confirmLabel="Thử áp dụng lại" busy={act.busy} error={act.error}
+        description="Ghi lý do xử lý. Hệ thống thử cấp quyền lợi từ khoản đã nhận; không thu thêm tiền. Hồ sơ chỉ tự đóng khi áp dụng thành công."
+        onClose={() => { setRetrying(null); act.clear() }} onConfirm={reason => void act.run(async () => {
+          const payment = await fixedPtApi.retryPaymentApplication(retrying!.paymentId, reason)
+          setResult(payment.application === 'APPLIED' ? 'Đã phục hồi thanh toán và cấp quyền lợi. Hồ sơ áp dụng lỗi đã được đóng.' : 'Chưa cấp được quyền lợi. Hồ sơ vẫn cần xử lý; xem thông tin mới và nguyên nhân lỗi trước khi thử tiếp.')
+          setRetrying(null); await cases.reload()
+        })} />
     </Page>
   )
 }

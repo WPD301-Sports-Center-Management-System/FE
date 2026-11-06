@@ -1,5 +1,6 @@
+import { useSearchParams } from 'react-router-dom'
 import { centerDate } from '@/shared/utils/date'
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   Utensils,
   Plus,
@@ -14,13 +15,12 @@ import {
   Eye,
   Search,
   Flame,
-  Activity,
   ListFilter,
   CheckCircle2,
   Clock,
 } from 'lucide-react'
 import { coachesService } from '@/features/coaches/services/coaches.service'
-import { mealPlansService } from '../services/meal-plans.service'
+import { foodLine, GOAL_TAG_LABEL, mealPlansService, type CalorieSuggestion, type FoodItem, type MealTemplate, type MealDayRequest } from '../services/meal-plans.service'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Select } from '@/shared/components/ui/input'
 import { Modal } from '@/shared/components/ui/modal'
@@ -35,6 +35,9 @@ interface MealFormItem {
   dayNumber: number
   mealType: string
   foodName: string
+  /** Library food: the server recomputes nutrition from the library × servings. */
+  foodItemId?: string
+  servings?: number
   quantity: string
   estimatedCalories: number
   proteinGrams: number
@@ -46,54 +49,16 @@ interface MealFormItem {
   dirty?: boolean
 }
 
-const MEAL_TYPE_OPTIONS = [
-  { value: 'Bữa sáng (07:00 - 08:30)', label: 'Bữa sáng (07:00 - 08:30)' },
-  { value: 'Bữa phụ sáng (10:00)', label: 'Bữa phụ sáng (10:00)' },
-  { value: 'Bữa trưa (11:30 - 13:00)', label: 'Bữa trưa (11:30 - 13:00)' },
-  { value: 'Bữa phụ chiều / Trước tập (16:00 - 17:00)', label: 'Bữa phụ chiều / Trước tập (16:00 - 17:00)' },
-  { value: 'Bữa tối (19:00 - 20:30)', label: 'Bữa tối (19:00 - 20:30)' },
-  { value: 'Bữa phụ tối (21:30)', label: 'Bữa phụ tối (21:30)' },
-]
-
-const QUICK_FOODS = [
-  { foodName: 'Cơm trắng', quantity: '1 chén (150 g)', estimatedCalories: 195, proteinGrams: 4, carbsGrams: 43, fatGrams: 0.5 },
-  { foodName: 'Ức gà luộc', quantity: '100 g', estimatedCalories: 165, proteinGrams: 31, carbsGrams: 0, fatGrams: 3.6 },
-  { foodName: 'Trứng gà', quantity: '2 quả', estimatedCalories: 155, proteinGrams: 13, carbsGrams: 1, fatGrams: 11 },
-  { foodName: 'Yến mạch', quantity: '50 g', estimatedCalories: 190, proteinGrams: 6.5, carbsGrams: 33, fatGrams: 3.5 },
-  { foodName: 'Khoai lang luộc', quantity: '150 g', estimatedCalories: 130, proteinGrams: 2.4, carbsGrams: 30, fatGrams: 0.2 },
-  { foodName: 'Cá hồi', quantity: '100 g', estimatedCalories: 208, proteinGrams: 20, carbsGrams: 0, fatGrams: 13 },
-  { foodName: 'Thịt bò nạc', quantity: '100 g', estimatedCalories: 190, proteinGrams: 27, carbsGrams: 0, fatGrams: 9 },
-  { foodName: 'Sữa chua không đường', quantity: '1 hũ (100 g)', estimatedCalories: 60, proteinGrams: 3.5, carbsGrams: 4.7, fatGrams: 3.3 },
-  { foodName: 'Chuối', quantity: '1 quả', estimatedCalories: 105, proteinGrams: 1.3, carbsGrams: 27, fatGrams: 0.4 },
-  { foodName: 'Bông cải xanh', quantity: '100 g', estimatedCalories: 35, proteinGrams: 2.8, carbsGrams: 7, fatGrams: 0.4 },
-  { foodName: 'Đậu phụ', quantity: '100 g', estimatedCalories: 76, proteinGrams: 8, carbsGrams: 1.9, fatGrams: 4.8 },
-  { foodName: 'Whey protein', quantity: '1 muỗng (30 g)', estimatedCalories: 120, proteinGrams: 24, carbsGrams: 3, fatGrams: 1.5 },
-]
-
-const TEMPLATE_MEAL_TYPES = [
-  'Bữa sáng (07:00 - 08:30)',
-  'Bữa phụ sáng (10:00)',
-  'Bữa trưa (11:30 - 13:00)',
-  'Bữa phụ chiều / Trước tập (16:00 - 17:00)',
-  'Bữa tối (19:00 - 20:30)',
-  'Bữa phụ tối (21:30)',
-]
-const WEEKLY_TEMPLATES = [
-  { id: 'balanced-7', name: 'Cân bằng 7 ngày · 2.000 kcal', target: 2000, rotation: ['Yến mạch', 'Trứng gà', 'Cơm trắng', 'Ức gà luộc', 'Chuối', 'Sữa chua không đường'] },
-  { id: 'high-protein-7', name: 'Tăng cơ giàu đạm · 2.400 kcal', target: 2400, rotation: ['Yến mạch', 'Trứng gà', 'Cơm trắng', 'Ức gà luộc', 'Thịt bò nạc', 'Whey protein'] },
-  { id: 'weight-control-7', name: 'Kiểm soát cân nặng · 1.600 kcal', target: 1600, rotation: ['Sữa chua không đường', 'Trứng gà', 'Khoai lang luộc', 'Ức gà luộc', 'Bông cải xanh', 'Chuối'] },
-]
-function itemsFromWeeklyTemplate(template: (typeof WEEKLY_TEMPLATES)[number]): MealFormItem[] {
-  return Array.from({ length: 7 }, (_, dayIndex) => TEMPLATE_MEAL_TYPES.map((mealType, mealIndex) => {
-    const name = template.rotation[(dayIndex + mealIndex) % template.rotation.length]!
-    const food = QUICK_FOODS.find(item => item.foodName === name)!
-    return { dayNumber: dayIndex + 1, mealType, foodName: food.foodName, quantity: food.quantity, estimatedCalories: food.estimatedCalories, proteinGrams: food.proteinGrams, carbsGrams: food.carbsGrams, fatGrams: food.fatGrams, note: '', sortOrder: mealIndex }
-  })).flat()
-}
+// Same names as the center templates, so a plan from a template and a hand-built one read alike.
+export const MEAL_TYPES = ['Bữa sáng', 'Bữa phụ sáng', 'Bữa trưa', 'Bữa phụ chiều', 'Bữa tối', 'Bữa phụ tối']
+const mealTypeOptions = (current?: string) =>
+  [...MEAL_TYPES, ...(current && !MEAL_TYPES.includes(current) ? [current] : [])].map(v => ({ value: v, label: v }))
 
 export function CoachMealPlanPage() {
+  const [searchParams] = useSearchParams()
+  const initialMemberId = searchParams.get('memberId') || ''
   // Navigation & View mode
-  const [activeTab, setActiveTab] = useState<'list' | 'builder'>('list')
+  const [activeTab, setActiveTab] = useState<'list' | 'builder'>(initialMemberId ? 'builder' : 'list')
 
   // Real data states from BE
   const [members, setMembers] = useState<MemberSummary[]>([])
@@ -109,7 +74,7 @@ export function CoachMealPlanPage() {
   const [memberFilter, setMemberFilter] = useState('')
 
   // Builder form states
-  const [memberId, setMemberId] = useState('')
+  const [memberId, setMemberId] = useState(initialMemberId)
   const [title, setTitle] = useState('')
   const [targetCalories, setTargetCalories] = useState('2000')
   const [startDate, setStartDate] = useState(centerDate())
@@ -123,11 +88,64 @@ export function CoachMealPlanPage() {
   const [pendingDelete, setPendingDelete] = useState<number | null>(null)
   const [pendingArchive, setPendingArchive] = useState<MealPlan | null>(null)
   const [selectedDay, setSelectedDay] = useState<number>(1)
+  const [repeatWeekly, setRepeatWeekly] = useState(true)
+  const [daySettings, setDaySettings] = useState<Record<number, { calories: number; mealCount: number }>>({})
+  const [pendingSuggestion, setPendingSuggestion] = useState<MealDayRequest | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const suggestionVersion = useRef(0)
+  const mealsRef = useRef(meals)
+  mealsRef.current = meals
+
+  const generateDays = useCallback(async (days: MealDayRequest[]) => {
+    if (!memberId) { setErrorMessage('Chọn học viên trước khi tạo gợi ý AI.'); return }
+    const version = ++suggestionVersion.current
+    const snapshot = mealsRef.current
+    setIsGenerating(true)
+    setErrorMessage(null)
+    try {
+      const generated = await mealPlansService.suggestDays({ memberId, context: notes.trim() || undefined, days })
+      if (version !== suggestionVersion.current) return
+      const dayNumbers = new Set(days.length === 7 ? [...snapshot.map(m => m.dayNumber), ...days.map(d => d.dayNumber)] : days.map(d => d.dayNumber))
+      const original = snapshot.filter(m => dayNumbers.has(m.dayNumber))
+      const current = mealsRef.current.filter(m => dayNumbers.has(m.dayNumber))
+      if (original.length !== current.length || original.some((m, i) => m !== current[i])) {
+        setErrorMessage('Bạn vừa sửa nội dung trong lúc AI đang tạo. Nội dung sửa được giữ lại; bấm tạo lại khi sẵn sàng.')
+        return
+      }
+      setRemovedItemIds(prev => [...new Set([...prev, ...original.flatMap(m => m.id ? [m.id] : [])])])
+      if (days.length === 7) setRepeatWeekly(true)
+      setMeals(prev => [...prev.filter(m => !dayNumbers.has(m.dayNumber)), ...generated.flatMap(d => d.meals.map(m => ({
+        dayNumber: d.dayNumber, mealType: m.mealType, foodName: m.foodName || m.mealType,
+        quantity: m.quantity || '', note: m.note || '', estimatedCalories: m.estimatedCalories || 0,
+        proteinGrams: m.proteinGrams || 0, carbsGrams: m.carbsGrams || 0, fatGrams: m.fatGrams || 0, sortOrder: m.sortOrder || 0,
+      })))])
+      setSuccessMessage('AI đã điền món ăn và khẩu phần. Coach kiểm tra, sửa trực tiếp rồi lưu hoặc giao cho học viên.')
+    } catch (err) {
+      if (version === suggestionVersion.current) setErrorMessage(isAppApiError(err) ? err.message : 'Không tạo được gợi ý AI. Nội dung hiện tại được giữ lại; bạn có thể thử lại hoặc nhập tay.')
+    } finally {
+      if (version === suggestionVersion.current) setIsGenerating(false)
+    }
+  }, [memberId, notes])
+
+  useEffect(() => {
+    if (!pendingSuggestion) return
+    const timer = window.setTimeout(() => { void generateDays([pendingSuggestion]); setPendingSuggestion(null) }, 1200)
+    return () => window.clearTimeout(timer)
+  }, [pendingSuggestion, generateDays])
+
+  useEffect(() => {
+    ++suggestionVersion.current
+    setIsGenerating(false)
+    setPendingSuggestion(null)
+    return () => { ++suggestionVersion.current }
+  }, [memberId, notes])
 
   // Modal states: Add/Edit Meal Item
   const [isMealModalOpen, setIsMealModalOpen] = useState(false)
   const [editingMealIndex, setEditingMealIndex] = useState<number | null>(null)
-  const [mealFormType, setMealFormType] = useState('Bữa sáng (07:00 - 08:30)')
+  const [mealFormType, setMealFormType] = useState(MEAL_TYPES[0]!)
+  const [mealFormFoodId, setMealFormFoodId] = useState('')
+  const [mealFormServings, setMealFormServings] = useState('1')
   const [mealFormFood, setMealFormFood] = useState('')
   const [mealFormQuantity, setMealFormQuantity] = useState('1 phần')
   const [mealFormCalories, setMealFormCalories] = useState('400')
@@ -146,15 +164,28 @@ export function CoachMealPlanPage() {
   const [viewingSelectedDay, setViewingSelectedDay] = useState<number>(1)
   const [isLoadingDetail, setIsLoadingDetail] = useState(false)
 
+  // Center food library and templates (center + this Coach's own)
+  const [foods, setFoods] = useState<FoodItem[]>([])
+  const [templates, setTemplates] = useState<MealTemplate[]>([])
+  const [templateId, setTemplateId] = useState('')
+  const [suggestion, setSuggestion] = useState<CalorieSuggestion | null>(null)
+  const [saveTemplateFor, setSaveTemplateFor] = useState<MealPlan | null>(null)
+  const [templateTitle, setTemplateTitle] = useState('')
+  const foodById = useMemo(() => new Map(foods.map(f => [f.id, f])), [foods])
+
   // Load members and meal plans from Real Backend
   const loadData = useCallback(async () => {
     setIsLoading(true)
     setErrorMessage(null)
     try {
-      const [membersRes, plansRes] = await Promise.allSettled([
+      const [membersRes, plansRes, foodsRes, templatesRes] = await Promise.allSettled([
         coachesService.getMyMembers(),
         mealPlansService.getMealPlans(),
+        mealPlansService.getFoodItems(),
+        mealPlansService.getTemplates(),
       ])
+      if (foodsRes.status === 'fulfilled') setFoods(foodsRes.value)
+      if (templatesRes.status === 'fulfilled') setTemplates(templatesRes.value)
 
       if (membersRes.status === 'fulfilled') {
         const raw = membersRes.value
@@ -181,16 +212,38 @@ export function CoachMealPlanPage() {
     loadData()
   }, [loadData])
 
+  // Starting kcal for the chosen Member, from their latest measurements.
+  useEffect(() => {
+    if (!memberId) return
+    let alive = true
+    mealPlansService.getCalorieSuggestion(memberId).then(s => { if (alive) setSuggestion(s) }).catch(() => { if (alive) setSuggestion(null) })
+    return () => { alive = false; setSuggestion(null) }
+  }, [memberId])
+
   // Get distinct day numbers in current builder meals
   const builderDays = useMemo(() => {
+    if (repeatWeekly) return [1, 2, 3, 4, 5, 6, 7]
     const days = Array.from(new Set(meals.map((m) => m.dayNumber))).sort((a, b) => a - b)
     return days.length > 0 ? days : [1]
-  }, [meals])
+  }, [meals, repeatWeekly])
 
   // Current day meals in builder
   const currentDayMeals = useMemo(() => {
     return meals.filter((m) => m.dayNumber === selectedDay)
   }, [meals, selectedDay])
+
+  const settingsForDay = (day: number) => daySettings[day] || {
+    calories: meals.filter(m => m.dayNumber === day).reduce((n, m) => n + m.estimatedCalories, 0) || Number(targetCalories) || 2000,
+    mealCount: new Set(meals.filter(m => m.dayNumber === day).map(m => m.mealType)).size || 3,
+  }
+
+  const changeDaySettings = (field: 'calories' | 'mealCount', value: number) => {
+    const next = { ...settingsForDay(selectedDay), [field]: value }
+    setDaySettings(prev => ({ ...prev, [selectedDay]: next }))
+    ++suggestionVersion.current
+    setIsGenerating(false)
+    setPendingSuggestion(memberId && Number.isInteger(next.calories) && next.calories >= 800 && next.calories <= 6000 && next.mealCount >= 1 && next.mealCount <= 6 ? { dayNumber: selectedDay, ...next } : null)
+  }
 
   // Live macro calculation for selected day
   const dayMacroSummary = useMemo(() => {
@@ -199,24 +252,81 @@ export function CoachMealPlanPage() {
     const totalC = currentDayMeals.reduce((acc, m) => acc + (Number(m.carbsGrams) || 0), 0)
     const totalF = currentDayMeals.reduce((acc, m) => acc + (Number(m.fatGrams) || 0), 0)
 
-    const target = Number(targetCalories) || 2000
+    const target = daySettings[selectedDay]?.calories || Number(targetCalories) || 2000
     const percentCal = Math.min(Math.round((totalCal / target) * 100), 100)
 
     return { totalCal, totalP, totalC, totalF, target, percentCal }
-  }, [currentDayMeals, targetCalories])
+  }, [currentDayMeals, targetCalories, daySettings, selectedDay])
 
   // Open modal to add meal
   const handleOpenAddMeal = () => {
     setEditingMealIndex(null)
-    setMealFormType('Bữa sáng (07:00 - 08:30)')
+    setMealFormType(MEAL_TYPES[0]!)
+    setMealFormFoodId('')
+    setMealFormServings('1')
     setMealFormFood('')
-    setMealFormQuantity('1 khẩu phần')
-    setMealFormCalories('400')
-    setMealFormProtein('30')
-    setMealFormCarbs('45')
-    setMealFormFat('10')
+    setMealFormQuantity('')
+    setMealFormCalories('')
+    setMealFormProtein('')
+    setMealFormCarbs('')
+    setMealFormFat('')
     setMealFormNote('')
     setIsMealModalOpen(true)
+  }
+
+  // Picking a library food (or changing its servings) fills name, portion and nutrition from the library.
+  const fillFromFood = (foodId: string, servingsText: string) => {
+    setMealFormFoodId(foodId)
+    setMealFormServings(servingsText)
+    const food = foodById.get(foodId)
+    if (!food) return
+    const servings = Number(servingsText) || 1
+    const n = foodLine(food, servings)
+    setMealFormFood(food.name)
+    setMealFormQuantity(servings === 1 ? food.servingLabel : `${String(servings).replace('.', ',')} × ${food.servingLabel}`)
+    setMealFormCalories(String(n.estimatedCalories))
+    setMealFormProtein(String(n.proteinGrams))
+    setMealFormCarbs(String(n.carbsGrams))
+    setMealFormFat(String(n.fatGrams))
+  }
+
+  const applyTemplate = async () => {
+    const template = templates.find(t => t.id === templateId)
+    if (!template) return
+    if (!memberId) { setErrorMessage('Chọn học viên trước khi áp dụng mẫu.'); return }
+    if (editingPlanId || meals.length) { setErrorMessage('Mẫu tạo một bản nháp mới. Hãy lưu hoặc bỏ bản đang soạn trước.'); return }
+    setIsSubmitting(true)
+    setErrorMessage(null)
+    try {
+      const plan = await mealPlansService.createFromTemplate({
+        templateId: template.id, memberId, startDate: startDate || centerDate(), endDate: endDate || undefined,
+        dailyCalorieTarget: Number(targetCalories) || template.dailyCalorieTarget, title: title.trim() || undefined,
+      })
+      setTemplateId('')
+      await loadData()
+      await openDraftForEdit(plan)
+      setSuccessMessage(`Đã tạo bản nháp từ mẫu “${template.title}”, khẩu phần đã co giãn theo ${plan.dailyCalorieTarget} kcal/ngày. Chỉnh rồi giao cho học viên.`)
+    } catch (err) {
+      setErrorMessage(isAppApiError(err) ? err.message : 'Không tạo được thực đơn từ mẫu.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleSaveAsTemplate = async () => {
+    if (!saveTemplateFor || !templateTitle.trim()) return
+    setIsSubmitting(true)
+    setErrorMessage(null)
+    try {
+      await mealPlansService.saveAsTemplate(saveTemplateFor.id, { title: templateTitle.trim() })
+      setTemplates(await mealPlansService.getTemplates())
+      setSuccessMessage(`Đã lưu “${templateTitle.trim()}” vào mẫu của bạn.`)
+      setSaveTemplateFor(null)
+    } catch (err) {
+      setErrorMessage(isAppApiError(err) ? err.message : 'Không lưu được mẫu.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   // Open modal to edit meal
@@ -225,6 +335,8 @@ export function CoachMealPlanPage() {
     if (!item) return
     setEditingMealIndex(indexInAllMeals)
     setMealFormType(item.mealType)
+    setMealFormFoodId(item.foodItemId ?? '')
+    setMealFormServings(String(item.servings ?? 1))
     setMealFormFood(item.foodName)
     setMealFormQuantity(item.quantity || '')
     setMealFormCalories(String(item.estimatedCalories || 0))
@@ -243,6 +355,8 @@ export function CoachMealPlanPage() {
     const newItem: MealFormItem = {
       dayNumber: selectedDay,
       mealType: mealFormType,
+      foodItemId: mealFormFoodId || undefined,
+      servings: mealFormFoodId ? Number(mealFormServings) || 1 : undefined,
       foodName: mealFormFood.trim(),
       quantity: mealFormQuantity.trim(),
       estimatedCalories: Number(mealFormCalories) || 0,
@@ -276,6 +390,11 @@ export function CoachMealPlanPage() {
   }
 
   const resetBuilder = () => {
+    ++suggestionVersion.current
+    setIsGenerating(false)
+    setPendingSuggestion(null)
+    setDaySettings({})
+    setRepeatWeekly(true)
     setEditingPlanId(null)
     setRemovedItemIds([])
     setTitle('')
@@ -294,21 +413,6 @@ export function CoachMealPlanPage() {
     setActiveTab('builder')
   }
 
-  const applyWeeklyTemplate = (templateId: string) => {
-    const template = WEEKLY_TEMPLATES.find(item => item.id === templateId)
-    if (!template) return
-    setTitle(template.name)
-    setTargetCalories(String(template.target))
-    const weekEnd = new Date(`${startDate}T00:00:00`)
-    weekEnd.setDate(weekEnd.getDate() + 6)
-    setEndDate(weekEnd.toISOString().slice(0, 10))
-    setMeals(itemsFromWeeklyTemplate(template))
-    setRemovedItemIds([])
-    setEditingPlanId(null)
-    setSelectedDay(1)
-    setSuccessMessage(`Đã điền template 7 ngày: ${template.name}. Coach có thể chỉnh lại trước khi lưu.`)
-  }
-
   // Reopen a saved DRAFT in the builder; every change is written back to the same plan.
   const openDraftForEdit = async (plan: MealPlan) => {
     setIsSubmitting(true)
@@ -316,6 +420,12 @@ export function CoachMealPlanPage() {
     try {
       const full = await mealPlansService.getMealPlanById(plan.id)
       const items = (full.mealPlanItemsMealPlanId || full.items || []) as MealPlanItem[]
+      ++suggestionVersion.current
+      setIsGenerating(false)
+      setPendingSuggestion(null)
+      setDaySettings({})
+      setRepeatWeekly(full.repeatWeekly ?? false)
+      setDaySettings(full.daySettings ?? {})
       setEditingPlanId(full.id)
       setRemovedItemIds([])
       setMemberId(full.memberId)
@@ -329,6 +439,8 @@ export function CoachMealPlanPage() {
         dayNumber: i.dayNumber,
         mealType: i.mealType,
         foodName: i.foodName,
+        foodItemId: i.foodItemId ?? undefined,
+        servings: i.servings === null || i.servings === undefined ? undefined : Number(i.servings),
         quantity: i.quantity ?? '',
         estimatedCalories: Number(i.estimatedCalories ?? 0),
         proteinGrams: Number(i.proteinGrams ?? 0),
@@ -355,6 +467,8 @@ export function CoachMealPlanPage() {
       setSuccessMessage(`Đã nhân bản "${plan.title}" thành bản nháp mới.`)
       await loadData()
       await openDraftForEdit(copy)
+      setStartDate(centerDate())
+      setEndDate('')
     } catch (err) {
       setErrorMessage(isAppApiError(err) ? err.message : 'Không nhân bản được thực đơn.')
     } finally {
@@ -424,6 +538,9 @@ export function CoachMealPlanPage() {
       setErrorMessage('Vui lòng nhập tên kế hoạch thực đơn dinh dưỡng.')
       return
     }
+    if (repeatWeekly && assignImmediately && ![1,2,3,4,5,6,7].every(d => meals.some(m => m.dayNumber === d))) {
+      setErrorMessage('Hãy lên đủ bữa ăn cho 7 ngày trước khi giao lịch tuần.'); return
+    }
     if (meals.length === 0) {
       setErrorMessage('Thực đơn phải có ít nhất một món ăn.')
       return
@@ -437,11 +554,13 @@ export function CoachMealPlanPage() {
         'Thực đơn và chỉ số dinh dưỡng do Huấn luyện viên thể hình gợi ý nhằm mục tiêu tập luyện, không thay thế cho chỉ định của bác sĩ chuyên khoa hoặc chế độ điều trị y tế.'
 
       const header = {
+        repeatWeekly,
+        daySettings,
         title: title.trim(),
         dailyCalorieTarget: Number(targetCalories) || 2000,
         startDate: startDate || centerDate(),
-        endDate: endDate || undefined,
-        description: notes.trim() || undefined,
+        endDate: endDate || null,
+        description: notes.trim(),
       }
       // Step 1: the draft itself. Remembered right away so a retry continues on the same plan.
       let planId = editingPlanId
@@ -462,6 +581,8 @@ export function CoachMealPlanPage() {
         const body = {
           dayNumber: m.dayNumber,
           mealType: m.mealType,
+          foodItemId: m.foodItemId,
+          servings: m.servings,
           foodName: m.foodName,
           quantity: m.quantity,
           estimatedCalories: m.estimatedCalories,
@@ -595,50 +716,23 @@ export function CoachMealPlanPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-text-primary">
-              Kế Hoạch Dinh Dưỡng Thể Hình
-            </h1>
-          </div>
-          <p className="text-xs text-text-muted mt-1">
-            Soạn thực đơn theo ngày, kiểm soát Calo và cân bằng chỉ số Macro (Đạm, Tinh bột, Chất béo) cho học viên PT.
-          </p>
-        </div>
-
+      {/* Action bar: the page is the "Thực đơn học viên" tab of Thực đơn. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-text-muted">
+          {activeTab === 'list'
+            ? `${plans.length} thực đơn · ${plans.filter((p) => p.status === 'DRAFT').length} bản nháp chưa giao`
+            : editingPlanId ? 'Đang sửa bản nháp. Lưu xong mới giao cho học viên.' : 'Chọn học viên, chọn mẫu hoặc thêm món, rồi lưu và giao.'}
+        </p>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={loadData}
-            disabled={isLoading || isSubmitting}
-            className="gap-1.5"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Làm mới</span>
-          </Button>
-
           {activeTab === 'list' ? (
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={startNewPlan}
-              className="gap-1.5"
-            >
+            <Button size="sm" variant="primary" onClick={startNewPlan} className="gap-1.5">
               <Plus className="h-4 w-4" />
               <span>Soạn thực đơn mới</span>
             </Button>
           ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setActiveTab('list')}
-              className="gap-1.5"
-            >
+            <Button size="sm" variant="outline" onClick={() => setActiveTab('list')} className="gap-1.5">
               <ListFilter className="h-4 w-4" />
-              <span>Danh sách thực đơn</span>
+              <span>Về danh sách</span>
             </Button>
           )}
         </div>
@@ -646,7 +740,7 @@ export function CoachMealPlanPage() {
 
       {/* Global Alerts */}
       {errorMessage && (
-        <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 text-xs text-danger flex items-center justify-between gap-2 shadow-sm animate-in fade-in">
+        <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 text-xs text-danger flex items-center justify-between gap-2 animate-in fade-in">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 shrink-0 text-danger" />
             <span>{errorMessage}</span>
@@ -658,85 +752,16 @@ export function CoachMealPlanPage() {
       )}
 
       {successMessage && (
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2 shadow-sm animate-in fade-in">
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2 animate-in fade-in">
           <Check className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
           <span>{successMessage}</span>
         </div>
       )}
 
-      {/* Mandatory Medical Disclaimer Notice */}
-      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-3 shadow-sm">
-        <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-        <div>
-          <p className="font-bold">Lưu ý Pháp lý / Y tế (Medical Disclaimer):</p>
-          <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5 leading-relaxed">
-            Thực đơn và các chỉ số calo/macro do Huấn luyện viên thể hình gợi ý nhằm mục tiêu tập luyện nâng cao thể lực,
-            không thay thế cho chỉ định của bác sĩ chuyên khoa hoặc chế độ điều trị y tế đối với bệnh lý đặc thù.
-          </p>
-        </div>
-      </div>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4 space-y-1 shadow-sm">
-          <p className="text-xs text-text-muted flex items-center gap-1.5">
-            <Utensils className="h-3.5 w-3.5 text-primary" />
-            <span>Tổng thực đơn</span>
-          </p>
-          <p className="text-2xl font-extrabold text-text-primary">{plans.length}</p>
-        </div>
-        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4 space-y-1 shadow-sm">
-          <p className="text-xs text-text-muted flex items-center gap-1.5">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-            <span>Đang hoạt động (Active)</span>
-          </p>
-          <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
-            {plans.filter((p) => p.status === 'ACTIVE').length}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4 space-y-1 shadow-sm">
-          <p className="text-xs text-text-muted flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 text-amber-500" />
-            <span>Bản nháp (Draft)</span>
-          </p>
-          <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">
-            {plans.filter((p) => p.status === 'DRAFT').length}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4 space-y-1 shadow-sm">
-          <p className="text-xs text-text-muted flex items-center gap-1.5">
-            <Activity className="h-3.5 w-3.5 text-cyan-500" />
-            <span>Học viên phụ trách</span>
-          </p>
-          <p className="text-2xl font-extrabold text-cyan-600 dark:text-cyan-400">{members.length}</p>
-        </div>
-      </div>
-
-      {/* View Switcher Tabs */}
-      <div className="flex border-b border-border-subtle gap-2 text-xs font-semibold">
-        <button
-          onClick={() => setActiveTab('list')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl transition-colors border-b-2 cursor-pointer ${
-            activeTab === 'list'
-              ? 'border-primary text-primary bg-bg-surface'
-              : 'border-transparent text-text-muted hover:text-text-primary'
-          }`}
-        >
-          <ListFilter className="h-4 w-4" />
-          <span>Danh Sách Thực Đơn ({plans.length})</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('builder')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl transition-colors border-b-2 cursor-pointer ${
-            activeTab === 'builder'
-              ? 'border-primary text-primary bg-bg-surface'
-              : 'border-transparent text-text-muted hover:text-text-primary'
-          }`}
-        >
-          <Plus className="h-4 w-4" />
-          <span>{editingPlanId ? 'Đang sửa bản nháp' : 'Soạn thực đơn mới'}</span>
-        </button>
-      </div>
+      <p className="flex items-start gap-1.5 text-xs text-text-muted">
+        <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+        Thực đơn mang tính tham khảo cho tập luyện, không thay thế chỉ định của bác sĩ. Mỗi thực đơn giao đi đều kèm lưu ý này.
+      </p>
 
       {/* ========================================================================= */}
       {/* TAB 1: LIST OF MEAL PLANS                                                 */}
@@ -744,7 +769,7 @@ export function CoachMealPlanPage() {
       {activeTab === 'list' && (
         <div className="space-y-4">
           {/* Filter Bar */}
-          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-4 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
             <div className="relative flex-1">
               <Search className="h-4 w-4 absolute left-3 top-3 text-text-muted" />
               <input
@@ -810,7 +835,7 @@ export function CoachMealPlanPage() {
               {filteredPlans.map((plan) => (
                 <div
                   key={plan.id}
-                  className="rounded-2xl border border-border-subtle bg-bg-surface p-5 space-y-4 shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between"
+                  className="rounded-2xl border border-border-subtle bg-bg-surface p-5 space-y-4 hover:border-primary/40 transition-colors flex flex-col justify-between"
                 >
                   <div className="space-y-2.5">
                     <div className="flex items-start justify-between gap-2">
@@ -850,12 +875,13 @@ export function CoachMealPlanPage() {
                       <span>Chi tiết</span>
                     </Button>
 
+                    {plan.status === 'ACTIVE' && <Button size="sm" variant="outline" onClick={() => void handleDuplicatePlan(plan)} disabled={isSubmitting || isGenerating}>Chỉnh lịch mới</Button>}
                     {plan.status === 'DRAFT' && (
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => void openDraftForEdit(plan)}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isGenerating || !!pendingSuggestion}
                         className="gap-1 text-xs flex-1"
                       >
                         <Edit3 className="h-3.5 w-3.5" />
@@ -899,7 +925,7 @@ export function CoachMealPlanPage() {
       {activeTab === 'builder' && (
         <div className="space-y-6">
           {/* General Information Card */}
-          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
+          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4">
             <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
               <Utensils className="h-4 w-4 text-primary" />
               <span>1. Thông Tin Kế Hoạch Dinh Dưỡng</span>
@@ -917,27 +943,51 @@ export function CoachMealPlanPage() {
               </div>
 
               <div className="md:col-span-2">
-                <Select
-                  label="Template thực đơn cả tuần (tùy chọn)"
-                  value=""
-                  onChange={(e) => applyWeeklyTemplate(e.target.value)}
-                  options={[{ value: '', label: '— Chọn template 7 ngày —' }, ...WEEKLY_TEMPLATES.map(template => ({ value: template.id, label: template.name }))]}
-                />
-                <p className="mt-1 text-xs text-text-muted">Tự điền 7 ngày và 6 khung bữa; Coach vẫn chỉnh sửa được trước khi lưu.</p>
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <Select
+                      label="Bắt đầu từ mẫu (tùy chọn)"
+                      value={templateId}
+                      onChange={(e) => setTemplateId(e.target.value)}
+                      options={[{ value: '', label: '— Chọn mẫu thực đơn —' }, ...templates.map(t => ({
+                        value: t.id,
+                        label: `${t.scope === 'CENTER' ? 'Trung tâm' : 'Của tôi'} · ${t.title} · ${t.dayCount} ngày${t.goalTag && GOAL_TAG_LABEL[t.goalTag] ? ` · ${GOAL_TAG_LABEL[t.goalTag]}` : ''}`,
+                      }))]}
+                    />
+                  </div>
+                  <Button type="button" variant="outline" onClick={() => void applyTemplate()} disabled={!templateId || isSubmitting}>Áp dụng mẫu</Button>
+                </div>
+                <p className="mt-1 text-xs text-text-muted">Chọn học viên và kcal mục tiêu trước: hệ thống tạo bản nháp và co giãn khẩu phần theo kcal đó. Coach chỉnh tiếp rồi mới giao.</p>
               </div>
 
-              <Input
-                label="Mục tiêu Calorie hàng ngày (kcal/ngày)"
-                type="number"
-                required
-                value={targetCalories}
-                onChange={(e) => setTargetCalories(e.target.value)}
-                placeholder="2000"
-              />
+              <div>
+                <Input
+                  label="Mục tiêu Calorie hàng ngày (kcal/ngày)"
+                  type="number"
+                  required
+                  value={targetCalories}
+                  onChange={(e) => setTargetCalories(e.target.value)}
+                  placeholder="2000"
+                />
+                {memberId && suggestion?.suggestion && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5 text-xs">
+                    <span className="text-text-muted">Gợi ý:</span>
+                    {([['Giảm mỡ', suggestion.suggestion.fatLoss], ['Duy trì', suggestion.suggestion.maintain], ['Tăng cơ', suggestion.suggestion.muscleGain]] as const).map(([label, kcal]) => (
+                      <button key={label} type="button" onClick={() => setTargetCalories(String(kcal))} className="rounded-md border border-border-subtle px-1.5 py-0.5 hover:border-primary hover:text-primary cursor-pointer">
+                        {label} {kcal.toLocaleString('vi-VN')}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {memberId && suggestion && !suggestion.suggestion && suggestion.missing.length > 0 && (
+                  <p className="mt-1 text-xs text-text-muted">Chưa gợi ý được kcal: thiếu {suggestion.missing.join(', ')}.</p>
+                )}
+              </div>
 
               <div className="md:col-span-2">
                 <Select
                   label="Học viên nhận thực đơn (Bắt buộc)"
+                  disabled={!!editingPlanId}
                   value={memberId}
                   onChange={(e) => setMemberId(e.target.value)}
                   options={[
@@ -968,16 +1018,29 @@ export function CoachMealPlanPage() {
 
             <div className="pt-2">
               <Input
-                label="Ghi chú tổng quát của HLV cho học viên"
+                label="Sở thích, món kiêng / dị ứng và ghi chú sau khi trao đổi"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ví dụ: Uống tối thiểu 2.5 - 3 lít nước mỗi ngày, ăn trước giờ tập 90 phút..."
+                placeholder="Ví dụ: Thích món Việt, không ăn tôm, tránh sữa; ăn trưa ở văn phòng…"
               />
             </div>
           </div>
 
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-subtle p-4">
+            <div>
+              <p className="text-sm font-semibold">{repeatWeekly ? 'Lịch 7 ngày · lặp lại hằng tuần' : 'Lịch theo ngày'}</p>
+              <p className="text-xs text-text-muted">Ngày 1 tính từ ngày bắt đầu. Coach duyệt món trước khi giao. Khi giao lịch mới, lịch cũ kết thúc vào thời điểm áp dụng.</p>
+            </div>
+            <Button variant="outline" disabled={isGenerating || isSubmitting || !memberId} onClick={() => {
+              setPendingSuggestion(null)
+              const days = [1,2,3,4,5,6,7].map(dayNumber => ({ dayNumber, ...settingsForDay(dayNumber) }))
+              setDaySettings(Object.fromEntries(days.map(d => [d.dayNumber, { calories: d.calories, mealCount: d.mealCount }])))
+              void generateDays(days)
+            }}>{isGenerating ? 'AI đang lên thực đơn…' : 'AI lên thực đơn cả tuần'}</Button>
+          </div>
+
           {/* Day Navigation & Action Bar */}
-          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-6 shadow-sm">
+          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-subtle pb-4">
               <div>
                 <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
@@ -1003,6 +1066,7 @@ export function CoachMealPlanPage() {
                 <Button
                   size="sm"
                   variant="outline"
+                  disabled={repeatWeekly}
                   onClick={handleAddNewDay}
                   className="gap-1.5 text-xs"
                 >
@@ -1021,9 +1085,9 @@ export function CoachMealPlanPage() {
                   <button
                     key={d}
                     onClick={() => setSelectedDay(d)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer border ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 cursor-pointer border ${
                       isSelected
-                        ? 'bg-primary text-white border-primary shadow-sm'
+                        ? 'bg-primary text-white border-primary'
                         : 'bg-bg-surface-muted text-text-muted border-border-subtle hover:text-text-primary'
                     }`}
                   >
@@ -1040,6 +1104,18 @@ export function CoachMealPlanPage() {
               })}
             </div>
 
+            <div className="space-y-3 border-b border-border-subtle pb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 items-end gap-3">
+                <Input label={`Calo ngày ${selectedDay} (kcal)`} type="number" min={800} max={6000} step={1} value={settingsForDay(selectedDay).calories} onChange={e => changeDaySettings('calories', Number(e.target.value))} />
+                <Select label="Số bữa trong ngày" value={String(settingsForDay(selectedDay).mealCount)} onChange={e => changeDaySettings('mealCount', Number(e.target.value))} options={[1,2,3,4,5,6].map(n => ({ value: String(n), label: `${n} bữa` }))} />
+                <Button variant="outline" disabled={isGenerating || isSubmitting || !memberId} onClick={() => {
+                  setPendingSuggestion(null)
+                  void generateDays([{ dayNumber: selectedDay, ...settingsForDay(selectedDay) }])
+                }}>{isGenerating ? 'AI đang gợi ý…' : 'AI gợi ý lại ngày này'}</Button>
+              </div>
+              <p className="text-xs text-text-muted" role="status">{isGenerating ? 'Đang chọn món và tính khẩu phần theo thư viện…' : 'Đổi calo hoặc số bữa để AI tự điền lại ngày này sau khi nhập xong. Có thể sửa mô tả bên dưới; calo là ước tính và cần kiểm tra lại nếu đổi món.'}</p>
+            </div>
+
             {/* Live Macro Distribution Bar */}
             <div className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -1052,13 +1128,13 @@ export function CoachMealPlanPage() {
                   <span className="text-xs text-text-muted">/ mục tiêu {dayMacroSummary.target} kcal</span>
                 </div>
 
-                <span className="text-xs font-mono text-text-muted">{dayMacroSummary.percentCal}% mục tiêu ngày</span>
+                <span className="text-xs text-text-muted">{dayMacroSummary.percentCal}% mục tiêu ngày</span>
               </div>
 
               {/* Progress bar */}
               <div className="w-full bg-border-subtle h-2 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-300 ${
+                  className={`h-full rounded-full transition-colors duration-300 ${
                     dayMacroSummary.percentCal > 105
                       ? 'bg-danger'
                       : dayMacroSummary.percentCal >= 90
@@ -1098,7 +1174,7 @@ export function CoachMealPlanPage() {
             {/* Meals in Selected Day */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
+                <h3 className="text-xs font-bold text-text-primary ">
                   Danh Sách Món Ăn Trong Ngày {selectedDay} ({currentDayMeals.length})
                 </h3>
                 <Button size="sm" variant="primary" onClick={handleOpenAddMeal} className="gap-1 text-xs">
@@ -1153,6 +1229,9 @@ export function CoachMealPlanPage() {
                           </div>
                         </div>
 
+                        <label className="block text-xs text-text-muted">Mô tả đồ ăn · {meal.mealType}
+                          <textarea rows={3} maxLength={5000} className="mt-1 w-full rounded-lg border border-border-subtle bg-bg-surface p-3 text-sm text-text-primary" value={meal.note ?? ''} onChange={e => setMeals(prev => prev.map((m, i) => i === indexInAll ? { ...m, note: e.target.value, dirty: !!m.id } : m))} placeholder="Nhập món ăn, khẩu phần và cách dùng…" />
+                        </label>
                         {meal.quantity && (
                           <p className="text-xs text-text-muted">
                             Định lượng: <span className="text-text-primary">{meal.quantity}</span>
@@ -1195,7 +1274,7 @@ export function CoachMealPlanPage() {
                   type="button"
                   variant="outline"
                   onClick={() => handleSubmitMealPlan(false)}
-                  disabled={isSubmitting || !memberId || !meals.length}
+                  disabled={isSubmitting || isGenerating || !!pendingSuggestion || !memberId || !meals.length}
                   className="w-full sm:w-auto gap-1.5"
                 >
                   {isSubmitting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
@@ -1206,7 +1285,7 @@ export function CoachMealPlanPage() {
                   type="button"
                   variant="primary"
                   onClick={() => handleSubmitMealPlan(true)}
-                  disabled={isSubmitting || !memberId || !meals.length}
+                  disabled={isSubmitting || isGenerating || !!pendingSuggestion || !memberId || !meals.length}
                   className="w-full sm:w-auto gap-1.5"
                 >
                   {isSubmitting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
@@ -1225,7 +1304,7 @@ export function CoachMealPlanPage() {
         isOpen={isMealModalOpen}
         onClose={() => setIsMealModalOpen(false)}
         title={editingMealIndex !== null ? 'Chỉnh Sửa Món Ăn' : `Thêm Món Ăn - Ngày ${selectedDay}`}
-        description="Nhập thông tin món ăn, khối lượng khẩu phần và các chỉ số dinh dưỡng macro."
+        description="Chọn món trong thư viện để hệ thống tự tính dinh dưỡng theo khẩu phần, hoặc tự nhập món ngoài thư viện."
         maxWidth="lg"
       >
         <form onSubmit={handleSaveMealItem} className="space-y-4">
@@ -1233,29 +1312,32 @@ export function CoachMealPlanPage() {
             label="Loại bữa ăn"
             value={mealFormType}
             onChange={(e) => setMealFormType(e.target.value)}
-            options={MEAL_TYPE_OPTIONS}
+            options={mealTypeOptions(mealFormType)}
           />
 
-          <Select
-            label="Chọn món mẫu để điền nhanh"
-            value=""
-            onChange={(e) => {
-              const food = QUICK_FOODS.find((item) => item.foodName === e.target.value)
-              if (!food) return
-              setMealFormFood(food.foodName)
-              setMealFormQuantity(food.quantity)
-              setMealFormCalories(String(food.estimatedCalories))
-              setMealFormProtein(String(food.proteinGrams))
-              setMealFormCarbs(String(food.carbsGrams))
-              setMealFormFat(String(food.fatGrams))
-            }}
-            options={[{ value: '', label: '— Chọn món mẫu —' }, ...QUICK_FOODS.map((food) => ({ value: food.foodName, label: `${food.foodName} · ${food.quantity}` }))]}
-          />
+          <div className="grid grid-cols-[1fr_7rem] gap-3">
+            <Select
+              label="Món trong thư viện"
+              value={mealFormFoodId}
+              onChange={(e) => e.target.value ? fillFromFood(e.target.value, mealFormServings) : setMealFormFoodId('')}
+              options={[{ value: '', label: '— Món ngoài thư viện (tự nhập) —' }, ...foods.map((food) => ({ value: food.id, label: `${food.category ? `${food.category} · ` : ''}${food.name} · ${food.servingLabel} · ${food.calories} kcal` }))]}
+            />
+            <Input
+              label="Số khẩu phần"
+              type="number"
+              min={0.25}
+              step={0.25}
+              value={mealFormServings}
+              disabled={!mealFormFoodId}
+              onChange={(e) => fillFromFood(mealFormFoodId, e.target.value)}
+            />
+          </div>
 
           <Input
             label="Tên món ăn & nguyên liệu"
             required
             value={mealFormFood}
+            disabled={!!mealFormFoodId}
             onChange={(e) => setMealFormFood(e.target.value)}
             placeholder="Ví dụ: 200g Ức gà áp chảo + Cơm gạo lứt + Bông cải xanh"
           />
@@ -1263,6 +1345,7 @@ export function CoachMealPlanPage() {
           <Input
             label="Khẩu phần / Định lượng"
             value={mealFormQuantity}
+            disabled={!!mealFormFoodId}
             onChange={(e) => setMealFormQuantity(e.target.value)}
             placeholder="Ví dụ: 1 phần (400g), 1 muỗng 30g..."
           />
@@ -1272,28 +1355,33 @@ export function CoachMealPlanPage() {
               label="Calo (kcal)"
               type="number"
               required
+              disabled={!!mealFormFoodId}
               value={mealFormCalories}
               onChange={(e) => setMealFormCalories(e.target.value)}
             />
             <Input
               label="Đạm (Protein g)"
               type="number"
+              disabled={!!mealFormFoodId}
               value={mealFormProtein}
               onChange={(e) => setMealFormProtein(e.target.value)}
             />
             <Input
               label="Tinh bột (Carb g)"
               type="number"
+              disabled={!!mealFormFoodId}
               value={mealFormCarbs}
               onChange={(e) => setMealFormCarbs(e.target.value)}
             />
             <Input
               label="Béo (Fat g)"
               type="number"
+              disabled={!!mealFormFoodId}
               value={mealFormFat}
               onChange={(e) => setMealFormFat(e.target.value)}
             />
           </div>
+          {mealFormFoodId && <p className="text-xs text-text-muted">Dinh dưỡng tính từ thư viện × số khẩu phần. Muốn sửa số liệu tay, chọn “Món ngoài thư viện”.</p>}
 
           <Input
             label="Ghi chú chế biến / Cách dùng"
@@ -1333,9 +1421,9 @@ export function CoachMealPlanPage() {
             label="Ngày đích (Số thứ tự ngày)"
             type="number"
             min={1}
-            max={365}
+            max={repeatWeekly ? 7 : 365}
             value={targetDuplicateDay}
-            onChange={(e) => setTargetDuplicateDay(Math.max(1, Number(e.target.value) || 1))}
+            onChange={(e) => setTargetDuplicateDay(Math.min(repeatWeekly ? 7 : 365, Math.max(1, Number(e.target.value) || 1)))}
           />
 
           <div className="flex justify-end gap-2 pt-3 border-t border-border-subtle">
@@ -1472,6 +1560,13 @@ export function CoachMealPlanPage() {
                 Đóng
               </Button>
 
+              {viewingPlanItems.length > 0 && (
+                <Button variant="outline" onClick={() => { setTemplateTitle(viewingPlan.title); setSaveTemplateFor(viewingPlan) }} disabled={isSubmitting} className="gap-1.5">
+                  <Copy className="h-4 w-4" />
+                  <span>Lưu thành mẫu</span>
+                </Button>
+              )}
+              {viewingPlan.status === 'ACTIVE' && <Button variant="outline" onClick={() => void handleDuplicatePlan(viewingPlan)} disabled={isSubmitting || isGenerating}>Chỉnh lịch ăn mới</Button>}
               {viewingPlan.status === 'DRAFT' && (
                 <Button variant="outline" onClick={() => void openDraftForEdit(viewingPlan)} disabled={isSubmitting} className="gap-1.5">
                   <Edit3 className="h-4 w-4" />
@@ -1492,6 +1587,22 @@ export function CoachMealPlanPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        isOpen={!!saveTemplateFor}
+        onClose={() => setSaveTemplateFor(null)}
+        title="Lưu thành mẫu của tôi"
+        description="Mẫu chỉ mình bạn thấy. Lần sau chọn mẫu này để tạo thực đơn cho học viên khác, khẩu phần tự co giãn theo kcal."
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <Input label="Tên mẫu" required value={templateTitle} onChange={(e) => setTemplateTitle(e.target.value)} />
+          <div className="flex justify-end gap-2 pt-3 border-t border-border-subtle">
+            <Button variant="outline" onClick={() => setSaveTemplateFor(null)}>Hủy</Button>
+            <Button variant="primary" onClick={() => void handleSaveAsTemplate()} disabled={!templateTitle.trim() || isSubmitting}>Lưu mẫu</Button>
+          </div>
+        </div>
       </Modal>
 
       <ConfirmDialog

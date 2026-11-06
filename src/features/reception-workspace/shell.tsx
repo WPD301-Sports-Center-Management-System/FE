@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ArrowLeftRight, CalendarCheck, CreditCard, Dumbbell, LayoutGrid, LifeBuoy, ReceiptText, Scale, ScanLine, Shield, Ticket, UserPlus, Users,
+  CalendarCheck, CreditCard, Dumbbell, LayoutGrid, LifeBuoy, ReceiptText, ScanLine, Shield, Ticket, UserPlus, Users,
 } from 'lucide-react'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { WorkspaceLayout, type WorkspaceNavSection } from '@/features/workspace/layout'
@@ -32,22 +32,20 @@ export function ReceptionShell() {
   const nav: WorkspaceNavSection[] = [
     { title: 'Tổng quan', items: [
       ...(user?.role === 'MANAGER' ? [{ to: '/manager', label: 'Về trang Manager', icon: Shield, end: true }] : []),
-      { to: '/receptionist', label: 'Dashboard quầy', icon: LayoutGrid, end: true },
+      { to: '/receptionist', label: 'Hôm nay tại quầy', icon: LayoutGrid, end: true },
     ] },
     { title: 'Quản lý hội viên', items: [
       { to: '/receptionist/trial-requests', label: 'Đăng ký tập thử', icon: UserPlus, badge: { count: newTrials, tone: 'warning', label: n => `${n} khách mới chưa gọi` } },
       { to: '/receptionist/members', label: 'Danh sách hội viên', icon: Users },
-      { to: '/receptionist/check-in', label: 'Check-in tại quầy', icon: ScanLine, badge: { count: counts?.insideGym ?? null, label: n => `${n} người đang trong phòng` } },
+      { to: '/receptionist/check-in', label: 'Vào / ra phòng tập', icon: ScanLine, badge: { count: counts?.insideGym ?? null, label: n => `${n} người đang trong phòng` } },
     ] },
     { title: 'Giao dịch & lịch hẹn', items: [
       { to: '/receptionist/membership-sale', label: 'Bán vé gym', icon: Ticket },
-      { to: '/receptionist/pt-sale', label: 'Bán gói PT & đặt lịch', icon: Dumbbell },
-      { to: '/receptionist/calendar', label: 'Lịch PT & điểm danh', icon: CalendarCheck },
-      { to: '/receptionist/schedule-changes', label: 'Đổi lịch & học bù', icon: ArrowLeftRight, badge: { count: proposedChanges, tone: 'warning', label: n => `${n} đề xuất chờ hội viên đồng ý` } },
+      { to: '/receptionist/pt-sale', label: 'Bán gói PT có lịch', icon: Dumbbell },
+      { to: '/receptionist/calendar', label: 'Lịch PT & đổi lịch', icon: CalendarCheck, badge: { count: proposedChanges, tone: 'warning', label: n => `${n} đề xuất chờ hội viên đồng ý` } },
     ] },
     { title: 'Thanh toán', items: [
       { to: '/receptionist/payments', label: 'Thanh toán', icon: ReceiptText, badge: { count: counts?.pendingPayments ?? null, tone: 'warning', label: n => `${n} giao dịch chờ` } },
-      { to: '/receptionist/reconciliation', label: 'Đối soát tiền nhận', icon: Scale },
     ] },
     { title: 'Hỗ trợ', items: [
       { to: '/receptionist/support', label: 'Hỗ trợ hội viên', icon: LifeBuoy, badge: { count: counts?.openSupportRequests ?? null, tone: 'warning', label: n => `${n} yêu cầu đang mở` } },
@@ -58,7 +56,7 @@ export function ReceptionShell() {
     <WorkspaceLayout nav={nav} panel="Quầy lễ tân" roleLabel={user?.role === 'MANAGER' ? 'Quản lý' : 'Lễ tân'}
       search={<PersonSearch label="Tìm hội viên" placeholder="Tìm hội viên theo tên / SĐT / email…" find={find} onPick={h => navigate(`/receptionist/members/${h.id}`)} />}
       actions={<>
-        <span className="hidden sm:contents"><LinkBtn to="/receptionist/check-in" variant="soft" icon={<ScanLine aria-hidden className="h-4 w-4" />}>Check-in nhanh</LinkBtn></span>
+        <span className="hidden sm:contents"><LinkBtn to="/receptionist/check-in" variant="soft" icon={<ScanLine aria-hidden className="h-4 w-4" />}>Ghi nhận vào tập</LinkBtn></span>
         <span className="hidden xl:contents"><LinkBtn to="/receptionist/membership-sale" variant="primary" icon={<CreditCard aria-hidden className="h-4 w-4" />}>Bán vé</LinkBtn></span>
       </>} />
   </ShellContext.Provider>

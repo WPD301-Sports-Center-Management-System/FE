@@ -42,7 +42,7 @@ export function DeskPtCalendarPage() {
   return <div>
     {node}
     <PageHeader title="Lịch PT & điểm danh" subtitle={<><span>Tuần {isoWeek(monday)} · {shortDate(monday)} – {shortDate(sunday)}/{sunday.slice(0, 4)}</span><Dot /><span>Ghi “Đã đến” khi hội viên tới quầy trước buổi tập</span></>}
-      actions={<><LinkBtn to="/receptionist/schedule-changes" icon={<ArrowLeftRight aria-hidden className="h-4 w-4" />}>Đổi lịch & học bù</LinkBtn>
+      actions={<><LinkBtn to="/receptionist/calendar?tab=changes" icon={<ArrowLeftRight aria-hidden className="h-4 w-4" />}>Đổi lịch & học bù</LinkBtn>
         <Btn icon={<Download aria-hidden className="h-4 w-4" />} disabled={!rows.length} onClick={() => downloadCsv(`lich-pt-${monday}.csv`, ['Ngày', 'Giờ', 'Hội viên', 'HLV', 'Khóa', 'Buổi', 'Trạng thái'],
           rows.map(s => [centerDate(s.startsAt), `${hhmm(s.startsAt)}-${hhmm(s.endsAt)}`, s.memberName ?? '', s.coachName ?? '', s.courseName ?? '', s.credit ? `${s.credit.creditIndex}/${s.purchase?.totalCredits ?? ''}` : '', SESSION_LABEL[s.status] ?? s.status]))}>Xuất CSV</Btn></>} />
     <div className="mb-6 grid gap-4 md:grid-cols-3">
@@ -102,7 +102,7 @@ function CancelModal({ s, onClose, onDone }: { s: Session; onClose: () => void; 
   return <Modal isOpen onClose={onClose} title="Báo nghỉ buổi PT" description={`${s.memberName} · ${hhmm(s.startsAt)} ${shortDate(centerDate(s.startsAt))} với ${s.coachName}`}>
     <form className="space-y-4" onSubmit={async e => { e.preventDefault(); if (await submit.run(() => deskApi.cancelSession(s.id, { reason: reason.trim() || undefined, expectedEffect: effect }))) onDone(effect === 'RETURN' ? 'Đã báo nghỉ — buổi được hoàn cho hội viên.' : 'Đã báo nghỉ — buổi vẫn bị tính theo quy định.') }}>
       <div className={`rounded-lg border p-3 text-sm ${effect === 'RETURN' ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200' : 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200'}`}>
-        {effect === 'RETURN' ? <><p className="font-semibold">Hoàn buổi cho hội viên</p><p>Báo trước mốc {p ? `${hhmm(p.cutoffAt)} ${shortDate(centerDate(p.cutoffAt))}` : '4 giờ'}; hội viên có thể xếp buổi khác.</p></>
+        {effect === 'RETURN' ? <><p className="font-semibold">Hoàn buổi cho hội viên</p><p>Báo trước mốc {p ? `${hhmm(p.cutoffAt)} ${shortDate(centerDate(p.cutoffAt))}` : '4 giờ'}; hệ thống tự nối buổi cuối gói nếu còn lượt trong hạn mức 6 buổi nghỉ hợp lệ.</p></>
           : <><p className="font-semibold">Buổi vẫn bị tính</p><p>Đã qua mốc báo nghỉ {p ? `${hhmm(p.cutoffAt)}` : '4 giờ trước buổi'}.{p?.makeupEligible ? ' Hội viên vẫn được xếp học bù.' : ''}</p></>}
       </div>
       <Field label="Lý do"><textarea rows={2} value={reason} onChange={e => setReason(e.target.value)} className={textareaCls} placeholder="Khách gọi báo bận công việc…" /></Field>

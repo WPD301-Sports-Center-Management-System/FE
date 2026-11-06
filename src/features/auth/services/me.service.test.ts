@@ -86,7 +86,7 @@ describe('meService', () => {
   })
 
   it('[7] calls GET /me/progress', async () => {
-    const mockProg = { assessments: [{ id: 'a-1', weightKg: '70' }], results: [], goals: [] }
+    const mockProg = { assessments: [{ id: 'a-1', weightKg: '70' }], results: [] }
     vi.mocked(apiClient.get).mockResolvedValueOnce({
       success: true,
       data: mockProg,

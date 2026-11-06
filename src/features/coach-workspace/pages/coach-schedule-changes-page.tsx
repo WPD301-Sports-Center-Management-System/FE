@@ -1,20 +1,25 @@
+import { ScheduleTools } from '@/features/fixed-pt/components/schedule-tools'
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { CheckCircle2, Clock3, Check, Hourglass, Undo2, X, CalendarClock } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { SessionWorkQueue } from '../components/session-work-queue'
+import { Check, Undo2, X, CalendarClock } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import type { ScheduleChange } from '@/features/fixed-pt/types'
 import { centerDate, centerInstant } from '@/shared/utils/date'
 import { coachWs, type CoachPurchase } from '../api'
 import { useCoachShell } from '../shell'
-import { Async, Badge, Btn, Card, Dot, EmptyBox, Field, InlineError, PageHeader, Person, Segmented, StatTile, Table, inputCls, td, textareaCls, useFlash } from '@/features/workspace/ui'
-import { CHANGE_LABEL, CHANGE_TONE, CHANGE_TYPE, hhmm, mondayOf, relativeAgo, shortDate, WEEKDAY_SHORT, weekdayOf } from '@/features/workspace/utils'
+import { Async, Badge, Btn, Card, EmptyBox, Field, InlineError, Person, Segmented, Table, inputCls, td, textareaCls, useFlash } from '@/features/workspace/ui'
+import { CHANGE_LABEL, CHANGE_TONE, CHANGE_TYPE, hhmm, relativeAgo, shortDate, WEEKDAY_SHORT, weekdayOf } from '@/features/workspace/utils'
 
 type Change = Omit<ScheduleChange, 'items'> & { decidedAt?: string | null; items: (ScheduleChange['items'][number] & { credit?: { creditIndex: number } | null })[] }
 type Tab = 'all' | 'REQUESTED' | 'PROPOSED' | 'ACCEPTED' | 'closed'
 const slot = (iso?: string | null) => iso ? `${WEEKDAY_SHORT[weekdayOf(centerDate(iso))]} ${shortDate(centerDate(iso))} ${hhmm(iso)}` : 'chưa chọn giờ'
 
 export function CoachScheduleChangesPage() {
+  const [params] = useSearchParams()
+  const purchaseId = params.get('purchaseId') ?? ''
+  const absenceId = params.get('absenceId') ?? ''
   const { refreshBadges } = useCoachShell()
   const { flash, node } = useFlash()
   const changes = useLoad(() => coachWs.scheduleChanges() as Promise<Change[]>, [])
@@ -22,29 +27,21 @@ export function CoachScheduleChangesPage() {
   const [tab, setTab] = useState<Tab>('all')
   const [answer, setAnswer] = useState<Change | null>(null)
   const [decline, setDecline] = useState<Change | null>(null)
+  const [revision, setRevision] = useState(0)
   const byPurchase = useMemo(() => new Map((purchases.data ?? []).map(p => [p.id, p])), [purchases.data])
   const list = changes.data ?? []
-  const week = mondayOf(centerDate())
   const pending = list.filter(c => c.status === 'REQUESTED')
-  const old = pending.filter(c => Date.now() - new Date(c.createdAt).getTime() > 12 * 3600_000).length
-  const decided = list.filter(c => c.decidedAt && centerDate(c.decidedAt) >= week)
   const tabs: { key: Tab; label: string; test: (c: Change) => boolean }[] = [
     { key: 'all', label: 'Tất cả', test: () => true }, { key: 'REQUESTED', label: 'Chờ xử lý', test: c => c.status === 'REQUESTED' },
     { key: 'PROPOSED', label: 'Chờ HV đồng ý', test: c => c.status === 'PROPOSED' }, { key: 'ACCEPTED', label: 'Đã duyệt', test: c => c.status === 'ACCEPTED' },
     { key: 'closed', label: 'Đã đóng', test: c => ['DECLINED', 'WITHDRAWN', 'EXPIRED'].includes(c.status) },
   ]
   const rows = list.filter(tabs.find(t => t.key === tab)!.test)
-  const done = (m: string) => { flash(m); setAnswer(null); setDecline(null); void changes.reload(); refreshBadges() }
+  const refresh = () => { setRevision(v => v + 1); void changes.reload(); void purchases.reload(); refreshBadges() }
+  const done = (m: string) => { flash(m); setAnswer(null); setDecline(null); refresh() }
 
-  return <div>
+  return <div className="space-y-6"><SessionWorkQueue key={revision} /><details key={`${purchaseId}:${absenceId}`} open={!!purchaseId} className="rounded-xl border border-border-subtle p-4"><summary className="cursor-pointer font-semibold">Công cụ xếp / đổi lịch nâng cao</summary><div className="mt-4"><ScheduleTools key={`${purchaseId}:${absenceId}`} initialPurchaseId={purchaseId} initialAbsenceId={absenceId} initialTool={params.get('tool') === 'SCHEDULE_PENDING' ? 'SCHEDULE_PENDING' : undefined} onChanged={refresh} /></div></details>
     {node}
-    <PageHeader title="Yêu cầu đổi lịch & học bù" subtitle={<><span>Từ học viên và lễ tân chuyển tới</span><Dot /><span>Đổi giờ chỉ được trước buổi gốc 4 giờ</span></>} />
-    <div className="mb-6 grid gap-4 md:grid-cols-3">
-      <StatTile label="Chờ xử lý" icon={<Clock3 className="h-[18px] w-[18px]" />} iconTone="warning" tone="warning" value={changes.data ? pending.length : '—'} hint={changes.data ? `${old} yêu cầu gửi hơn 12 giờ trước` : undefined} />
-      <StatTile label="Chờ học viên đồng ý" icon={<Hourglass className="h-[18px] w-[18px]" />} iconTone="info" tone="info" value={changes.data ? list.filter(c => c.status === 'PROPOSED').length : '—'} hint="Bạn đã đề xuất giờ, chờ học viên xác nhận" />
-      <StatTile label="Đã xử lý tuần này" icon={<CheckCircle2 className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={changes.data ? decided.length : '—'}
-        hint={changes.data ? `${decided.filter(c => c.status === 'ACCEPTED').length} đồng ý · ${decided.filter(c => c.status === 'DECLINED').length} từ chối` : undefined} />
-    </div>
     <Card flush title="Hộp thư yêu cầu" badge={changes.data ? <Badge tone="warning">{pending.length} chờ</Badge> : null}
       actions={<Segmented label="Lọc yêu cầu" value={tab} onChange={setTab} items={tabs.map(t => ({ key: t.key, label: t.label, count: list.filter(t.test).length }))} />}>
       <Async state={changes} rows={5} empty={() => !rows.length && <EmptyBox icon={<CalendarClock className="h-5 w-5" />} title="Không có yêu cầu nào" hint="Khi học viên xin đổi giờ, học bù hoặc xếp buổi còn trống, yêu cầu sẽ hiện ở đây." />}>
@@ -57,6 +54,7 @@ export function CoachScheduleChangesPage() {
             <td className={td}><p className="font-semibold tabular-nums">{hhmm(c.createdAt)}</p><p className="text-xs text-text-muted">{relativeAgo(c.createdAt)}</p></td>
             <td className={td}><Badge tone={CHANGE_TONE[c.status]}>{CHANGE_LABEL[c.status]}</Badge></td>
             <td className={`${td} text-right`}>
+              {c.status === 'REQUESTED' && !c.proposedBy && c.type === 'RESCHEDULE' && c.items.every(i => i.startsAt && i.endsAt) && <Btn size="sm" variant="primary" onClick={() => { void coachWs.confirmChange(c.id).then(() => done('Đã xác nhận giờ mới và nhả slot cũ.')).catch(e => flash(e instanceof Error ? e.message : 'Không thể xác nhận giờ mới.')) }}>Xác nhận giờ đã chọn</Btn>}
               {c.status === 'REQUESTED' && <div className="flex justify-end gap-1.5"><Btn size="sm" variant="soft" icon={<Check aria-hidden className="h-4 w-4" />} onClick={() => setAnswer(c)}>Đề xuất giờ</Btn><Btn size="sm" icon={<X aria-hidden className="h-4 w-4" />} onClick={() => setDecline(c)}>Từ chối</Btn></div>}
               {c.status === 'PROPOSED' && <WithdrawButton id={c.id} onDone={done} />}
             </td>
@@ -95,9 +93,9 @@ function AnswerModal({ change, purchase, onClose, onDone }: { change: Change; pu
       {times.map((t, k) => { const item = change.items[k]!; return <fieldset key={t.creditId} className="rounded-lg border border-border-subtle p-3">
         <legend className="px-1 text-sm font-semibold">{item.credit ? `Buổi ${item.credit.creditIndex}` : `Buổi ${k + 1}`}{item.sourceBooking ? ` · đang ở ${slot(item.sourceBooking.plannedStartsAt)}` : ''}</legend>
         <div className="grid grid-cols-3 gap-3">
-          <Field label="Ngày"><input type="date" required min={centerDate()} value={t.day} onChange={e => set(k, { day: e.target.value })} className={inputCls} /></Field>
+          <Field label="Ngày buổi gốc"><input type="date" disabled={!!item.sourceBooking} required min={centerDate()} value={t.day} onChange={e => set(k, { day: e.target.value })} className={inputCls} /></Field>
           <Field label="Giờ bắt đầu"><input type="time" required value={t.time} onChange={e => set(k, { time: e.target.value })} className={inputCls} /></Field>
-          <Field label="Thời lượng (phút)"><input type="number" required min={15} max={300} step={15} value={t.minutes} onChange={e => set(k, { minutes: Number(e.target.value) })} className={inputCls} /></Field>
+          <Field label="Thời lượng (phút)"><input type="number" disabled={!!item.sourceBooking} required min={15} max={300} step={15} value={t.minutes} onChange={e => set(k, { minutes: Number(e.target.value) })} className={inputCls} /></Field>
         </div>
       </fieldset> })}
       <Field label="Lời nhắn cho học viên"><textarea rows={2} value={note} onChange={e => setNote(e.target.value)} className={textareaCls} /></Field>

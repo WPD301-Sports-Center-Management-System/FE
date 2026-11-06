@@ -13,7 +13,6 @@ import type {
   TrainingPlan,
   TrainingResult,
   BodyAssessment,
-  FitnessGoal,
   GymArea,
   Equipment,
   Maintenance,
@@ -563,7 +562,6 @@ export const mockTrainingResults: TrainingResult[] = [
       },
     ],
     coachComment: 'Kiệt tập trung rất tốt, hiệp cuối đẩy ổn định.',
-    progressScore: 90,
     status: 'PUBLISHED',
     publishedAt: '2026-10-06T10:15:00Z',
   },
@@ -599,22 +597,6 @@ export const mockAssessments: BodyAssessment[] = [
     hipCm: '97.00',
     restingHeartRate: 68,
     notes: 'Giảm 1.5kg mỡ, tăng 0.8kg cơ nạc!',
-  },
-]
-
-export const mockFitnessGoals: FitnessGoal[] = [
-  {
-    id: 'gol-01',
-    memberId: 'mem-01',
-    coachId: 'coa-01',
-    title: 'Giảm tỷ lệ mỡ dưới 17%',
-    metricName: 'bodyFatPercent',
-    startValue: '21.50',
-    currentValue: '19.80',
-    targetValue: '16.50',
-    unit: '%',
-    targetDate: '2026-12-31',
-    status: 'ACTIVE',
   },
 ]
 

@@ -5,7 +5,6 @@ import type {
   Booking,
   BodyAssessment,
   TrainingResult,
-  FitnessGoal,
 } from '@/shared/types/api'
 
 export interface CreateMemberPayload {
@@ -51,10 +50,12 @@ export interface MemberHistoryResponseData {
 export interface MemberProgressResponseData {
   assessments: BodyAssessment[]
   results: TrainingResult[]
-  goals: FitnessGoal[]
 }
 
 export interface CreateBodyAssessmentPayload {
+  /** Ties the assessment to a PT package so it can carry a milestone. */
+  ptPurchaseId?: string
+  milestone?: 'BASELINE' | 'PERIODIC' | 'FINAL'
   assessedAt: string
   weightKg?: string
   heightCm?: string
@@ -65,17 +66,6 @@ export interface CreateBodyAssessmentPayload {
   hipCm?: string
   restingHeartRate?: number
   notes?: string
-}
-
-export interface CreateFitnessGoalPayload {
-  title: string
-  description?: string
-  metricName?: string
-  startValue?: string
-  targetValue?: string
-  currentValue?: string
-  unit?: string
-  targetDate?: string
 }
 
 export type { MemberDetail, MemberSummary }

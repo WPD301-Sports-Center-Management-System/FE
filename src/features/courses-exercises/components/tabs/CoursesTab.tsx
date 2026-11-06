@@ -251,7 +251,7 @@ export function CoursesTab({
                       className="text-xs h-7 px-2.5 gap-1"
                     >
                       <ListOrdered className="h-3 w-3 text-purple-500" />
-                      <span>Giáo án</span>
+                      <span>Mẫu buổi</span>
                     </Button>
                   </div>
 

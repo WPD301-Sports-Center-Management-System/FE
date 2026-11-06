@@ -140,36 +140,8 @@ describe('membersService', () => {
     expect(result).toEqual(mockAssess)
   })
 
-  it('[9] calls GET /members/:id/fitness-goals', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce({
-      success: true,
-      data: [],
-      meta: { page: 1, limit: 10, total: 0, totalPages: 0 },
-    } as any)
-
-    const result = await membersService.getMemberFitnessGoals('m-1')
-    expect(apiClient.get).toHaveBeenCalledWith('/members/m-1/fitness-goals', { params: undefined })
-    expect(result.data).toEqual([])
-  })
-
-  it('[10] calls POST /members/:id/fitness-goals', async () => {
-    const mockGoal = { id: 'g-1', title: 'Goal 1' }
-    vi.mocked(apiClient.post).mockResolvedValueOnce({
-      success: true,
-      data: mockGoal,
-    } as any)
-
-    const result = await membersService.createMemberFitnessGoal('m-1', {
-      title: 'Goal 1',
-    })
-    expect(apiClient.post).toHaveBeenCalledWith('/members/m-1/fitness-goals', {
-      title: 'Goal 1',
-    })
-    expect(result).toEqual(mockGoal)
-  })
-
   it('[11] calls GET /members/:id/progress', async () => {
-    const mockProgress = { assessments: [], results: [], goals: [] }
+    const mockProgress = { assessments: [], results: [] }
     vi.mocked(apiClient.get).mockResolvedValueOnce({
       success: true,
       data: mockProgress,

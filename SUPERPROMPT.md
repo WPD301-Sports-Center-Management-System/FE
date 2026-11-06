@@ -1,3 +1,5 @@
+> **Nghiệp vụ hiện hành 03/11/2026:** ưu tiên [danh mục tài liệu](../Docs/README.md), hai PRD và API hiện hành. File này hướng dẫn cách làm UI, không thay hợp đồng nghiệp vụ hoặc xác nhận triển khai.
+
 # UNIVERSAL MASTER PROMPT: PRODUCTION-GRADE BACKEND API INTEGRATION FOR FRONTEND
 
 ## 1. ROLE & MISSION
@@ -942,6 +944,3 @@ Prioritize correctness, type safety, security, business-rule consistency, and ma
 **Do not stop after generating a plan. Implement the changes, verify them, and report the actual results.**
 
 If the required endpoint or contract is missing, implement only the parts that can be verified and clearly document the remaining blocker. Never fabricate backend behavior to make the integration appear complete.
-
-
-

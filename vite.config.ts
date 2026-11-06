@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
   // Local dev/preview forwards same-origin /api calls to this backend, so Render CORS does not apply.
   const apiProxy = {
     '/api': {
-      target: env.VITE_PROXY_TARGET || 'https://wpd301-be.onrender.com',
+      target: env.VITE_PROXY_TARGET || 'https://apexfit-be.onrender.com',
       changeOrigin: true,
       secure: true,
       configure: (proxy: { on: (event: 'proxyReq', listener: (req: { removeHeader: (name: string) => void }) => void) => void }) => {
@@ -20,7 +20,6 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    cacheDir: '.vite-cache',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

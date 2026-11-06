@@ -32,8 +32,8 @@
   --text-inverse: #ffffff;
   --border-subtle: #e2e8f0;
   --border-strong: #cbd5e1;
-  --primary: #ea580c;
-  --primary-hover: #c2410c;
+  --primary: #c2410c;
+  --primary-hover: #9a3412;
   --primary-foreground: #ffffff;
   --focus-ring: #ea580c;
   --success: #16a34a;
@@ -61,9 +61,9 @@
   --text-inverse: #0f172a;
   --border-subtle: #1e293b;
   --border-strong: #334155;
-  --primary: #ff5722;
-  --primary-hover: #f4511e;
-  --primary-foreground: #ffffff;
+  --primary: #fb923c;
+  --primary-hover: #fdba74;
+  --primary-foreground: #0f172a;
   --focus-ring: #ff5722;
   --success: #10b981;
   --warning: #f59e0b;

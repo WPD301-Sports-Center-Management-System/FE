@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  ArrowLeftRight, BookOpenText, CalendarDays, CalendarPlus, CalendarRange, ChevronDown, ClipboardList, ExternalLink,
-  LayoutGrid, NotebookPen, Package, Ruler, Sparkles, Users, Utensils, Wallet,
+  BookOpenText, CalendarDays, CalendarPlus, ChevronDown, ExternalLink,
+  LayoutGrid, Package, Ruler, Users, Utensils, Wallet,
 } from 'lucide-react'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { centerDate } from '@/shared/utils/date'
@@ -36,38 +36,40 @@ export function CoachShell() {
     coachWs.scheduleChanges().then(c => setPending(c.filter(x => x.status === 'REQUESTED').length)).catch(() => setPending(null))
   }, [])
   useEffect(() => { if (user?.role === 'COACH') refreshBadges() }, [refreshBadges, user?.role])
-  useEffect(() => { if (coachId) coachWs.settings(coachId).then(setSettings).catch(() => setSettings(null)) }, [coachId])
+  useEffect(() => {
+    const refresh = () => { if (coachId) void coachWs.settings(coachId).then(setSettings).catch(() => setSettings(null)) }
+    refresh()
+    window.addEventListener('coach-readiness-changed', refresh)
+    return () => window.removeEventListener('coach-readiness-changed', refresh)
+  }, [coachId])
   const setAccepting = useCallback(async (value: boolean) => {
     if (!coachId) return
     const next = await coachWs.updateSettings(coachId, { acceptingNewMembers: value })
+    window.dispatchEvent(new Event('coach-readiness-changed'))
     setSettings(s => ({ ...(s ?? { bufferMinutes: 0 }), ...next, acceptingNewMembers: next?.acceptingNewMembers ?? value }))
   }, [coachId])
 
   const nav: WorkspaceNavSection[] = [
-    { title: 'Tổng quan', items: [{ to: '/coach', label: 'Dashboard Coach', icon: LayoutGrid, end: true }] },
+    { title: 'Tổng quan', items: [{ to: '/coach', label: 'Hôm nay', icon: LayoutGrid, end: true }] },
     { title: 'Lịch & buổi dạy', items: [
-      { to: '/coach/schedule', label: 'Lịch dạy', icon: CalendarDays, badge: { count: todaySessions, label: n => `${n} ca hôm nay` } },
-      { to: '/coach/schedule-changes', label: 'Đổi lịch & học bù', icon: ArrowLeftRight, badge: { count: pendingChanges, tone: 'warning', label: n => `${n} yêu cầu chờ` } },
-      { to: '/coach/slots', label: 'Khung giờ làm việc', icon: CalendarRange },
+      { to: '/coach/schedule', label: 'Lịch dạy & giờ làm', icon: CalendarDays, badge: { count: pendingChanges, tone: 'warning', label: n => `${n} yêu cầu đổi lịch chờ` } },
     ] },
-    { title: 'Học viên', items: [
-      { to: '/coach/students', label: 'Danh sách học viên', icon: Users },
-      { to: '/coach/packages', label: 'Gói PT của tôi', icon: Package },
-      { to: '/coach/offerings', label: 'Khóa đăng ký dạy', icon: CalendarPlus },
+    // IA (Docs/UX_AUDIT_IA_2026-11.md §4): students and their packages first, the wallet next to them.
+    { title: 'Học viên & thu nhập', items: [
+      { to: '/coach/students', label: 'Học viên', icon: Users },
+      { to: '/coach/packages', label: 'Gói PT', icon: Package },
+      { to: '/coach/earnings', label: 'Thu nhập của tôi', icon: Wallet },
     ] },
     { title: 'Chuyên môn', items: [
-      { to: '/coach/library', label: 'Giáo án & Thư viện', icon: BookOpenText },
-      { to: '/coach/training-plans', label: 'Chương trình theo gói', icon: NotebookPen },
-      { to: '/coach/training-results', label: 'Kết quả tập luyện', icon: ClipboardList },
-      { to: '/coach/assessments', label: 'InBody & thể trạng', icon: Ruler },
-      { to: '/coach/meal-plans', label: 'Thực đơn dinh dưỡng', icon: Utensils },
-      { to: '/coach/ai-recommendation', label: 'Gợi ý AI', icon: Sparkles },
+      { to: '/coach/library', label: 'Giáo án', icon: BookOpenText },
+      { to: '/coach/progress', label: 'Mục tiêu & tiến độ', icon: Ruler },
+      { to: '/coach/meal-plans', label: 'Thực đơn', icon: Utensils },
     ] },
-    { title: 'Tài chính', items: [{ to: '/coach/earnings', label: 'Thu nhập Coach', icon: Wallet }] },
+    { title: 'Tài khoản', items: [{ to: '/coach/application', label: 'Hồ sơ của tôi', icon: CalendarPlus }] },
   ]
 
   return <ShellContext.Provider value={{ coachId, todaySessions, pendingChanges, settings, refreshBadges, setAccepting }}>
-    <WorkspaceLayout nav={nav} panel="Coach Panel" roleLabel="Huấn luyện viên / PT" search={<StudentSearch />}
+    <WorkspaceLayout nav={nav} panel="Huấn luyện viên" roleLabel="Huấn luyện viên / PT" search={<StudentSearch />}
       actions={<>
         <ReadyToggle />
         {coachId && <Link to={`/coaches/${coachId}`} target="_blank" title="Hồ sơ công khai" aria-label="Hồ sơ công khai (mở tab mới)" className="hidden h-9 w-9 place-items-center rounded-lg border border-border-subtle text-text-muted hover:text-primary sm:grid"><ExternalLink className="h-4 w-4" /></Link>}

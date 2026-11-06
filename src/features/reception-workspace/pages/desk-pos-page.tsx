@@ -1,7 +1,7 @@
 import { openReceipt } from '@/features/workspace/receipt-events'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Banknote, Check, CheckCircle2, CreditCard, FileDown, Landmark, QrCode, RotateCcw, Ticket, UserPlus, X } from 'lucide-react'
+import { Banknote, Check, CheckCircle2, CreditCard, FileDown, RotateCcw, Ticket, UserPlus, X } from 'lucide-react'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import { centerDate } from '@/shared/utils/date'
 import { PersonSearch, type PersonHit } from '@/features/workspace/person-search'
@@ -9,11 +9,16 @@ import { Badge, Btn, Card, Dot, EmptyBox, ErrorBox, Field, InlineError, LinkBtn,
 import { fmtMoney, fmtNumber } from '@/features/workspace/utils'
 import { deskApi, type Plan, type Subscription } from '../api'
 import { useDeskShell } from '../shell'
+import { useAuth } from '@/features/auth/context/auth-context'
 import { dmy, memberState } from '../labels'
 import { CreateMemberModal } from './desk-members-page'
 
-type Method = 'CASH' | 'BANK_TRANSFER' | 'VNPAY'
-const METHODS: { key: Method; label: string; icon: typeof Banknote }[] = [{ key: 'CASH', label: 'Tiền mặt', icon: Banknote }, { key: 'BANK_TRANSFER', label: 'Chuyển khoản', icon: Landmark }, { key: 'VNPAY', label: 'VNPay QR', icon: QrCode }]
+// Counter collects cash only; online payment is VNPay (PRD 2026-11 §5.7).
+type Method = 'CASH' | 'VNPAY'
+const METHODS: { key: Method; label: string; icon: typeof Banknote }[] = [
+  { key: 'CASH', label: 'Tiền mặt', icon: Banknote },
+  { key: 'VNPAY', label: 'VNPay', icon: CreditCard },
+]
 type Done = { memberId: string; name: string; plan: string; amount: number; method: Method; change: number; paymentId: string; application?: string | null }
 
 export function DeskPosPage() {
@@ -26,10 +31,11 @@ export function DeskPosPage() {
   const [startDate, setStartDate] = useState('')
   const [method, setMethod] = useState<Method>('CASH')
   const [received, setReceived] = useState('')
-  const [ref, setRef] = useState('')
   const [create, setCreate] = useState(false)
   const [done, setDone] = useState<Done | null>(null)
   const submit = useSubmit()
+  // BE: POST /payments/counter is Receptionist-only; a Manager browsing the desk must not be offered it.
+  const desk = useAuth().role !== 'MANAGER'
   const memberId = params.get('memberId')
   useEffect(() => {
     let active = true
@@ -50,8 +56,9 @@ export function DeskPosPage() {
   const amount = pending ? Number(pending.priceSnapshot) : plan ? Number(plan.price) : 0
   const cash = Number(received.replace(/\D/g, '')) || 0
   const ready = !!customer && amount > 0 && (method !== 'CASH' || cash >= amount)
+  const nextStep = !customer ? 'Chọn hội viên để tiếp tục.' : amount <= 0 ? 'Chọn vé gym muốn mua.' : method === 'CASH' && cash < amount ? `Cần nhập đủ tiền khách đưa. Còn thiếu ${fmtMoney(amount - cash)}.` : null
   const pick = (h: PersonHit | null) => { setCustomer(h); setPending(null); const p = new URLSearchParams(params); if (h) p.set('memberId', h.id); else p.delete('memberId'); setParams(p, { replace: true }) }
-  const reset = () => { setDone(null); setPlan(null); setPending(null); setReceived(''); setRef(''); setStartDate(''); submit.clear(); void subs.reload() }
+  const reset = () => { setDone(null); setPlan(null); setPending(null); setReceived(''); setStartDate(''); submit.clear(); void subs.reload() }
 
   const pay = async () => {
     if (!customer) return
@@ -59,7 +66,7 @@ export function DeskPosPage() {
       const sub = pending ?? await deskApi.createSubscription({ memberId: customer.id, planId: plan!.id, startDate: startDate || undefined })
       setPending(sub)
       if (method === 'VNPAY') { const v = await deskApi.payVnpay({ subscriptionId: sub.id }); window.location.href = v.paymentUrl; return null }
-      const p = await deskApi.payCounter({ subscriptionId: sub.id, method, receivedAmount: method === 'CASH' ? cash : Number(sub.priceSnapshot), externalRef: ref.trim() || undefined })
+      const p = await deskApi.payCounter({ subscriptionId: sub.id, method, receivedAmount: cash })
       return { memberId: customer.id, name: customer.name, plan: sub.planNameSnapshot, amount: Number(sub.priceSnapshot), method, change: p.changeAmount ?? 0, paymentId: p.id, application: p.application }
     })
     if (r) { setDone(r); refresh() }
@@ -69,7 +76,7 @@ export function DeskPosPage() {
     <PageHeader title="Bán vé gym" subtitle={<><span>Quầy bán hàng</span><Dot /><span>Giá đã gồm thuế · tạo vé rồi thu tiền ngay tại quầy</span></>}
       actions={<><LinkBtn to="/receptionist/pt-sale">Bán gói PT</LinkBtn><LinkBtn to="/receptionist/payments">Giao dịch hôm nay</LinkBtn></>} />
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
-      <Card title="Danh mục vé gym" subtitle="Vé đang mở bán do Manager thiết lập">
+      <Card title="1. Chọn vé gym" subtitle="Các vé đang được trung tâm mở bán">
         {plans.error ? <ErrorBox message={plans.error} onRetry={() => void plans.reload()} /> : !plans.data ? <Skeleton rows={4} className="p-0" /> : !plans.data.length ? <EmptyBox title="Chưa có vé nào mở bán" /> :
           <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">{plans.data.map(p => { const sel = plan?.id === p.id && !pending; return <button key={p.id} type="button" disabled={submit.busy} aria-pressed={sel} onClick={() => { setPlan(p); setPending(null) }}
             className={`relative rounded-xl border p-4 text-left transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/50 ${sel ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border-subtle bg-bg-surface'}`}>
@@ -82,7 +89,7 @@ export function DeskPosPage() {
           </button> })}</div>}
       </Card>
 
-      <Card title="Hóa đơn tạm tính" subtitle="Một vé mỗi hóa đơn" className="xl:sticky xl:top-20 xl:self-start">
+      <Card title="2. Hội viên & thanh toán" subtitle="Kiểm tra thông tin trước khi thu tiền" className="xl:sticky xl:top-20 xl:self-start">
         {done ? <Receipt done={done} onNew={reset} /> : <fieldset disabled={submit.busy} className="min-w-0 space-y-4">
           <div>
             <p className="mb-1.5 text-sm font-medium">Khách hàng <span className="text-red-600" aria-hidden>*</span></p>
@@ -106,18 +113,19 @@ export function DeskPosPage() {
             <input type="date" min={centerDate()} value={startDate} onChange={e => setStartDate(e.target.value)} className={inputCls} /></Field>}
           <div className="flex items-end justify-between border-t border-border-subtle pt-3"><span className="text-sm text-text-muted">Tổng cộng</span><span className="text-2xl font-bold tabular-nums">{fmtMoney(amount)}</span></div>
           <fieldset><legend className="mb-1.5 text-sm font-medium">Phương thức thanh toán</legend>
-            <div className="grid grid-cols-3 gap-2">{METHODS.map(x => <label key={x.key} className={`flex cursor-pointer flex-col items-center gap-1 rounded-lg border px-2 py-2.5 text-xs font-semibold ${method === x.key ? 'border-primary bg-primary/5 text-primary' : 'border-border-subtle hover:bg-bg-surface-muted'}`}>
-              <input type="radio" name="method" value={x.key} checked={method === x.key} onChange={() => setMethod(x.key)} className="sr-only" /><x.icon aria-hidden className="h-5 w-5" />{x.label}</label>)}</div>
+            <div className="flex flex-wrap gap-2">{METHODS.map(x => <label key={x.key} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium ${method === x.key ? 'border-primary bg-primary/5 text-text-primary' : 'border-border-subtle hover:bg-bg-surface-muted'}`}>
+              <input type="radio" name="method" value={x.key} checked={method === x.key} onChange={() => setMethod(x.key)} className="accent-[var(--primary)]" /><x.icon aria-hidden className="h-4 w-4" />{x.label}</label>)}</div>
           </fieldset>
           {method === 'CASH' && <Field label="Tiền khách đưa" required hint={cash >= amount && amount ? `Tiền thối: ${fmtMoney(cash - amount)}` : undefined}>
             <input inputMode="numeric" value={received ? fmtNumber(cash) : ''} onChange={e => setReceived(e.target.value)} className={`${inputCls} tabular-nums`} placeholder={amount ? fmtNumber(amount) : '0'} />
             {amount > 0 && <div className="mt-2 flex flex-wrap gap-1.5">{[amount, Math.ceil(amount / 100_000) * 100_000, Math.ceil(amount / 500_000) * 500_000].filter((v, i, a) => a.indexOf(v) === i).map(v => <Btn key={v} size="sm" onClick={() => setReceived(String(v))}>{fmtNumber(v)}</Btn>)}</div>}
           </Field>}
-          {method === 'BANK_TRANSFER' && <Field label="Mã giao dịch ngân hàng" hint="Đối chiếu khi đối soát cuối ca."><input value={ref} maxLength={120} onChange={e => setRef(e.target.value)} className={inputCls} /></Field>}
-          {method === 'VNPAY' && <p className="rounded-lg bg-bg-surface-muted px-3 py-2 text-xs text-text-muted">Mở cổng VNPay để khách quét mã. Vé chỉ kích hoạt khi VNPay báo thanh toán thành công.</p>}
-          <InlineError message={submit.code === 'VNPAY_UNCONFIGURED' ? 'VNPay chưa được cấu hình trên máy chủ. Hãy thu tiền mặt hoặc chuyển khoản.' : submit.error} />
-          <Btn variant="primary" className="h-11 w-full text-base" busy={submit.busy} disabled={!ready} icon={<CreditCard aria-hidden className="h-5 w-5" />} onClick={() => void pay()}>
-            {method === 'VNPAY' ? 'Tạo mã VNPay' : `Thu ${fmtMoney(amount)}`}</Btn>
+          {method === 'VNPAY' && <p className="rounded-lg bg-bg-surface-muted px-3 py-2 text-xs text-text-muted">Chuyển đến VNPay để chọn ngân hàng hoặc quét mã thanh toán. Vé chỉ kích hoạt sau khi hệ thống xác nhận thanh toán và áp dụng thành công.</p>}
+          <InlineError message={submit.code === 'VNPAY_UNCONFIGURED' ? 'VNPay chưa được cấu hình. Hãy kiểm tra giao dịch trước khi chuyển sang thu tiền mặt tại quầy.' : submit.error} />
+          {nextStep && <p id="payment-next-step" role="status" className="text-sm text-text-muted">{nextStep}</p>}
+          <Btn variant="primary" className="h-11 w-full text-base" busy={submit.busy} disabled={!ready || !desk} aria-describedby={nextStep ? 'payment-next-step' : undefined} title={desk ? undefined : 'Chỉ tài khoản Lễ tân được thu tiền tại quầy. Manager xem được quầy nhưng không thu tiền; hãy đăng nhập bằng tài khoản Lễ tân.'} icon={<CreditCard aria-hidden className="h-5 w-5" />} onClick={() => void pay()}>
+            {method === 'VNPAY' ? 'Thanh toán VNPay' : `Thu ${fmtMoney(amount)}`}</Btn>
+          {!desk && <p role="note" className="text-xs text-text-muted">Chỉ tài khoản Lễ tân được thu tiền tại quầy. Hãy đăng nhập bằng tài khoản Lễ tân để thu.</p>}
         </fieldset>}
       </Card>
     </div>

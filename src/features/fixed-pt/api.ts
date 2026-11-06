@@ -13,6 +13,7 @@ const patch = async <T>(url: string, body: object = {}) => ((await apiClient.pat
 const del = async <T>(url: string) => ((await apiClient.delete(url)) as unknown as Body<T>).data
 
 export const fixedPtApi = {
+  retryPaymentApplication: (id: string, reason: string) => post<{ application: string | null }>(`/payments/${id}/retry-application`, { reason }),
   policies: () => get<PolicyRow[]>('/policy-settings'),
   setPolicies: (settings: { key: string; value: unknown; note?: string }[]) => patch('/policy-settings', { settings }),
 

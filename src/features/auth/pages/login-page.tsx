@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Dumbbell, AlertCircle } from 'lucide-react'
 import { useAuth } from '@/features/auth/context/auth-context'
@@ -15,7 +15,10 @@ export function LoginPage() {
 
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
-  const [rememberMe, setRememberMe] = useState(true)
+  const [showPassword, setShowPassword] = useState(false)
+  const identifierRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
+  const [invalidField, setInvalidField] = useState<'identifier' | 'password' | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -51,16 +54,21 @@ export function LoginPage() {
     const trimmedIdentifier = identifier.trim()
     if (!trimmedIdentifier) {
       setErrorMessage('Vui lòng nhập email hoặc số điện thoại.')
+      setInvalidField('identifier')
+      identifierRef.current?.focus()
       return
     }
 
     if (!password) {
       setErrorMessage('Vui lòng nhập mật khẩu.')
+      setInvalidField('password')
+      passwordRef.current?.focus()
       return
     }
 
     setIsLoading(true)
     setErrorMessage(null)
+    setInvalidField(null)
 
     try {
       const session = await login({
@@ -92,104 +100,68 @@ export function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2 bg-bg-app text-text-primary">
-      {/* Left Column: Hero Banner */}
-      <div className="relative hidden flex-col justify-between p-12 lg:flex overflow-hidden bg-bg-surface border-r border-border-subtle">
-        <div className="absolute inset-0 bg-radial-gradient pointer-events-none" />
-        <div className="absolute inset-0 bg-radial-blue pointer-events-none" />
-
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/40">
-            <Dumbbell className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-text-primary">ApexFIT</h2>
-            <p className="text-xs uppercase tracking-widest text-text-muted">Hệ Thống Quản Lý Phòng Gym & PT 1:1</p>
-          </div>
+    <div className="grid min-h-dvh grid-cols-1 bg-bg-app text-text-primary lg:grid-cols-2">
+      <aside className="hidden flex-col justify-between border-r border-border-subtle bg-bg-surface p-12 lg:flex">
+        <Link to="/" className="flex items-center gap-3 text-xl font-bold"><Dumbbell aria-hidden className="h-8 w-8 text-primary" />ApexFIT</Link>
+        <div className="max-w-lg space-y-5">
+          <h2 className="text-3xl font-semibold leading-tight tracking-tight">Mỗi buổi tập,<br />một bước tiến.</h2>
+          <p className="text-base leading-relaxed text-text-muted">Lịch tập, học viên và công việc tại trung tâm — cùng một nơi.</p>
         </div>
-
-        <div className="relative z-10 max-w-lg space-y-4">
-          <h1 className="text-4xl font-extrabold tracking-tight text-text-primary">
-            Nền tảng vận hành tập luyện <span className="text-gradient-orange">Chuẩn Chuyên Nghiệp</span>
-          </h1>
-          <p className="text-sm text-text-muted leading-relaxed">
-            Hỗ trợ quản lý thẻ tập Gym, điều phối lịch hẹn PT 1:1 theo thời gian thực với quy tắc cắt giờ 4 tiếng,
-            soạn giáo án điện tử và quyết toán hoa hồng HLV tự động.
-          </p>
-        </div>
-
-        <div className="relative z-10 text-xs text-text-muted">
-          © 2026 ApexFIT. All rights reserved.
-        </div>
-      </div>
-
-      {/* Right Column: Form */}
-      <div className="flex items-center justify-center p-8 sm:p-12">
+        <p className="text-sm text-text-muted">ApexFIT · Phòng gym & huấn luyện cá nhân</p>
+      </aside>
+      <main className="flex items-center justify-center px-5 py-10 sm:p-12">
         <div className="w-full max-w-md space-y-6">
+          <Link to="/" className="inline-flex min-h-11 items-center gap-2 font-bold lg:hidden"><Dumbbell aria-hidden className="h-6 w-6 text-primary" />ApexFIT</Link>
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-text-primary">Đăng nhập tài khoản</h2>
-            <p className="mt-1 text-xs text-text-muted">
-              Nhập thông tin xác thực để truy cập bảng điều khiển nội bộ
-            </p>
+            <h1 className="text-2xl font-semibold tracking-tight">Đăng nhập tài khoản</h1>
+            <p className="mt-2 text-sm text-text-muted">Dùng email hoặc số điện thoại đã đăng ký tại trung tâm.</p>
           </div>
-
           {errorMessage && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-950/40 p-3 text-xs text-red-300 animate-in fade-in duration-200">
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+            <div id="login-error" role="alert" className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+              <AlertCircle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
-
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <Input
-              label="Email hoặc Số điện thoại"
+              ref={identifierRef}
+              label="Email hoặc số điện thoại"
               type="text"
               required
               value={identifier}
-              onChange={(e) => {
-                setIdentifier(e.target.value)
-                if (errorMessage) setErrorMessage(null)
-              }}
-              placeholder="Email công việc của bạn"
+              onChange={e => { setIdentifier(e.target.value); setErrorMessage(null); setInvalidField(null) }}
+              placeholder="Ví dụ: ten@email.com hoặc 0912 345 678"
               disabled={isLoading}
               autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              aria-invalid={invalidField === 'identifier' || undefined}
+              aria-describedby={invalidField === 'identifier' ? 'login-error' : undefined}
             />
-            <Input
-              label="Mật khẩu"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value)
-                if (errorMessage) setErrorMessage(null)
-              }}
-              placeholder="••••••••"
-              disabled={isLoading}
-              autoComplete="current-password"
-            />
-
-            <div className="flex items-center justify-between text-xs">
-              <label className="flex items-center gap-2 cursor-pointer text-text-muted hover:text-text-primary select-none">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-border-subtle bg-bg-input text-primary focus:ring-focus-ring"
-                />
-                Ghi nhớ đăng nhập
-              </label>
-              <Link to="/forgot-password" className="text-primary hover:text-primary-hover transition-colors font-medium">
-                Quên mật khẩu?
-              </Link>
+            <div className="space-y-2">
+              <Input
+                ref={passwordRef}
+                id="login-password"
+                label="Mật khẩu"
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={e => { setPassword(e.target.value); setErrorMessage(null); setInvalidField(null) }}
+                disabled={isLoading}
+                autoComplete="current-password"
+                aria-invalid={invalidField === 'password' || undefined}
+                aria-describedby={invalidField === 'password' ? 'login-error' : undefined}
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <button type="button" aria-controls="login-password" aria-pressed={showPassword} onClick={() => setShowPassword(v => !v)} className="min-h-11 rounded-lg px-2 text-text-muted hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus-ring">{showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}</button>
+                <Link to="/forgot-password" className="inline-flex min-h-11 items-center rounded-lg px-2 font-medium text-primary hover:underline">Quên mật khẩu?</Link>
+              </div>
             </div>
-
-            <Button type="submit" className="w-full" isLoading={isLoading} disabled={isLoading}>
-              Đăng nhập ngay
-            </Button>
+            <Button type="submit" className="min-h-11 w-full" isLoading={isLoading} disabled={isLoading}>Đăng nhập ngay</Button>
           </form>
-
+          <Link to="/" className="inline-flex min-h-11 items-center text-sm text-text-muted hover:text-text-primary">← Về trang chủ</Link>
         </div>
-      </div>
+      </main>
     </div>
   )
 }
