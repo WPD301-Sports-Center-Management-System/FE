@@ -8,6 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.vite-cache
 dist
 dist-ssr
 .env
@@ -23,3 +24,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local agent and design skill files
+.agents/
+.taste-skill/
+
+# Local build and verification artifacts
+.tmp/
+dist-codex-old/
+oxlint_out.txt

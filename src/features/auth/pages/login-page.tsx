@@ -1,26 +1,167 @@
-import { Link } from 'react-router-dom'
+import { useRef, useState, type FormEvent } from 'react'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { Dumbbell, AlertCircle } from 'lucide-react'
+import { useAuth } from '@/features/auth/context/auth-context'
+import { Input } from '@/shared/components/ui/input'
+import { Button } from '@/shared/components/ui/button'
+import { isAppApiError } from '@/shared/api/api-error'
+import { isPathAllowedForRole } from '@/features/auth/guards/auth-guards'
+import type { UserRole } from '@/shared/types/api'
 
 export function LoginPage() {
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const [identifier, setIdentifier] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const identifierRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
+  const [invalidField, setInvalidField] = useState<'identifier' | 'password' | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const handleRedirectAfterLogin = (role: UserRole) => {
+    const target = (location.state as { from?: { pathname: string; search?: string } })?.from
+    const from = target?.pathname
+    if (from && isPathAllowedForRole(from, role)) {
+      navigate({ pathname: from, search: target?.search?.startsWith('?') ? target.search : '' }, { replace: true })
+      return
+    }
+
+    switch (role) {
+      case 'RECEPTIONIST':
+        navigate('/receptionist', { replace: true })
+        break
+      case 'COACH':
+        navigate('/coach', { replace: true })
+        break
+      case 'MEMBER':
+        navigate('/member', { replace: true })
+        break
+      case 'MANAGER':
+      default:
+        navigate('/manager', { replace: true })
+        break
+    }
+  }
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    if (isLoading) return
+
+    const trimmedIdentifier = identifier.trim()
+    if (!trimmedIdentifier) {
+      setErrorMessage('Vui lòng nhập email hoặc số điện thoại.')
+      setInvalidField('identifier')
+      identifierRef.current?.focus()
+      return
+    }
+
+    if (!password) {
+      setErrorMessage('Vui lòng nhập mật khẩu.')
+      setInvalidField('password')
+      passwordRef.current?.focus()
+      return
+    }
+
+    setIsLoading(true)
+    setErrorMessage(null)
+    setInvalidField(null)
+
+    try {
+      const session = await login({
+        identifier: trimmedIdentifier,
+        password,
+      })
+
+      handleRedirectAfterLogin(session.user.role)
+    } catch (err) {
+      if (isAppApiError(err)) {
+        if (err.code === 'INVALID_CREDENTIALS') {
+          setErrorMessage('Tài khoản hoặc mật khẩu không chính xác.')
+        } else if (err.code === 'VALIDATION_ERROR') {
+          const fieldErr = err.errors?.[0]?.message
+          setErrorMessage(fieldErr || err.message || 'Thông tin nhập vào không hợp lệ.')
+        } else if (err.code === 'USER_INACTIVE' || err.code === 'ACCOUNT_DISABLED') {
+          setErrorMessage('Tài khoản đã bị tạm khóa hoặc chưa kích hoạt.')
+        } else if (err.code === 'RATE_LIMIT_EXCEEDED' || err.status === 429) {
+          setErrorMessage('Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau.')
+        } else {
+          setErrorMessage(err.message || 'Đăng nhập thất bại. Vui lòng thử lại.')
+        }
+      } else {
+        setErrorMessage('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
-    <main className="grid min-h-screen place-items-center bg-slate-100 p-6">
-      <section className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">Sports Center</p>
-        <h1 className="mt-2 text-3xl font-bold text-slate-900">Đăng nhập</h1>
-        <p className="mt-2 text-slate-500">Skeleton giao diện đã sẵn sàng để kết nối API.</p>
-        <form className="mt-8 space-y-4">
-          <label className="block text-sm font-medium text-slate-700">
-            Email
-            <input className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" type="email" placeholder="manager@sports.local" />
-          </label>
-          <label className="block text-sm font-medium text-slate-700">
-            Mật khẩu
-            <input className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" type="password" placeholder="••••••••" />
-          </label>
-          <Link className="block rounded-lg bg-blue-600 px-4 py-2.5 text-center font-semibold text-white" to="/manager">
-            Vào dashboard demo
-          </Link>
-        </form>
-      </section>
-    </main>
+    <div className="grid min-h-dvh grid-cols-1 bg-bg-app text-text-primary lg:grid-cols-2">
+      <aside className="hidden flex-col justify-between border-r border-border-subtle bg-bg-surface p-12 lg:flex">
+        <Link to="/" className="flex items-center gap-3 text-xl font-bold"><Dumbbell aria-hidden className="h-8 w-8 text-primary" />ApexFIT</Link>
+        <div className="max-w-lg space-y-5">
+          <h2 className="text-3xl font-semibold leading-tight tracking-tight">Mỗi buổi tập,<br />một bước tiến.</h2>
+          <p className="text-base leading-relaxed text-text-muted">Lịch tập, học viên và công việc tại trung tâm — cùng một nơi.</p>
+        </div>
+        <p className="text-sm text-text-muted">ApexFIT · Phòng gym & huấn luyện cá nhân</p>
+      </aside>
+      <main className="flex items-center justify-center px-5 py-10 sm:p-12">
+        <div className="w-full max-w-md space-y-6">
+          <Link to="/" className="inline-flex min-h-11 items-center gap-2 font-bold lg:hidden"><Dumbbell aria-hidden className="h-6 w-6 text-primary" />ApexFIT</Link>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Đăng nhập tài khoản</h1>
+            <p className="mt-2 text-sm text-text-muted">Dùng email hoặc số điện thoại đã đăng ký tại trung tâm.</p>
+          </div>
+          {errorMessage && (
+            <div id="login-error" role="alert" className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+              <AlertCircle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+            <Input
+              ref={identifierRef}
+              label="Email hoặc số điện thoại"
+              type="text"
+              required
+              value={identifier}
+              onChange={e => { setIdentifier(e.target.value); setErrorMessage(null); setInvalidField(null) }}
+              placeholder="Ví dụ: ten@email.com hoặc 0912 345 678"
+              disabled={isLoading}
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              aria-invalid={invalidField === 'identifier' || undefined}
+              aria-describedby={invalidField === 'identifier' ? 'login-error' : undefined}
+            />
+            <div className="space-y-2">
+              <Input
+                ref={passwordRef}
+                id="login-password"
+                label="Mật khẩu"
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={e => { setPassword(e.target.value); setErrorMessage(null); setInvalidField(null) }}
+                disabled={isLoading}
+                autoComplete="current-password"
+                aria-invalid={invalidField === 'password' || undefined}
+                aria-describedby={invalidField === 'password' ? 'login-error' : undefined}
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <button type="button" aria-controls="login-password" aria-pressed={showPassword} onClick={() => setShowPassword(v => !v)} className="min-h-11 rounded-lg px-2 text-text-muted hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus-ring">{showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}</button>
+                <Link to="/forgot-password" className="inline-flex min-h-11 items-center rounded-lg px-2 font-medium text-primary hover:underline">Quên mật khẩu?</Link>
+              </div>
+            </div>
+            <Button type="submit" className="min-h-11 w-full" isLoading={isLoading} disabled={isLoading}>Đăng nhập ngay</Button>
+          </form>
+          <Link to="/" className="inline-flex min-h-11 items-center text-sm text-text-muted hover:text-text-primary">← Về trang chủ</Link>
+        </div>
+      </main>
+    </div>
   )
 }

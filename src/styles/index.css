@@ -1,20 +1,88 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --bg-main: #070a11;
-    --bg-card: #0f172a;
-    --bg-surface: #1e293b;
-    --primary: #ff5722;
-    --primary-glow: rgba(255, 87, 34, 0.35);
-    --secondary: #10b981;
-    --accent: #38bdf8;
-    --font-heading: 'Outfit', 'Inter', sans-serif;
-    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  }
+@custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-bg-app: var(--bg-app);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-surface-muted: var(--bg-surface-muted);
+  --color-bg-input: var(--bg-input);
+  --color-text-primary: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --color-text-inverse: var(--text-inverse);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-focus-ring: var(--focus-ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+}
+
+:root {
+  --bg-app: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-muted: #f1f5f9;
+  --bg-input: #ffffff;
+  --text-primary: #0f172a;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+  --border-subtle: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --primary: #c2410c;
+  --primary-hover: #9a3412;
+  --primary-foreground: #ffffff;
+  --focus-ring: #ea580c;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #0284c7;
+
+  /* Backward compatibility tokens */
+  --bg-main: var(--bg-app);
+  --bg-card: var(--bg-surface);
+  --primary-glow: rgba(234, 88, 12, 0.25);
+  --secondary: #10b981;
+  --accent: #38bdf8;
+  --font-heading: 'Outfit', 'Inter', sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.dark {
+  --bg-app: #070a11;
+  --bg-surface: #0f172a;
+  --bg-surface-muted: #1e293b;
+  --bg-input: #0f172a;
+  --text-primary: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-inverse: #0f172a;
+  --border-subtle: #1e293b;
+  --border-strong: #334155;
+  --primary: #fb923c;
+  --primary-hover: #fdba74;
+  --primary-foreground: #0f172a;
+  --focus-ring: #ff5722;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #38bdf8;
+
+  /* Backward compatibility tokens */
+  --bg-main: #070a11;
+  --bg-card: #0f172a;
+  --primary-glow: rgba(255, 87, 34, 0.35);
+}
+
+@layer base {
   html {
     scroll-behavior: smooth;
+    color-scheme: light;
+  }
+
+  html.dark {
     color-scheme: dark;
   }
 
@@ -22,8 +90,8 @@
     margin: 0;
     min-width: 320px;
     min-height: 100vh;
-    background-color: var(--bg-main);
-    color: #f1f5f9;
+    background-color: var(--bg-app);
+    color: var(--text-primary);
     font-family: var(--font-sans);
     overflow-x: hidden;
   }
@@ -32,35 +100,58 @@
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #070a11;
+  background: var(--bg-app);
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--border-strong);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #ff5722;
+  background: var(--primary);
 }
 
-/* Background Gradients & Glows */
+/* Custom scrollbar utility for horizontal scroll boxes */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--bg-surface-muted);
+  border-radius: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Background Gradients & Glows (Theme-aware) */
 .bg-radial-gradient {
-  background: radial-gradient(circle at 50% 0%, rgba(255, 87, 34, 0.15) 0%, rgba(7, 10, 17, 0) 70%);
+  background: radial-gradient(circle at 50% 0%, rgba(255, 87, 34, 0.15) 0%, transparent 70%);
 }
 
 .bg-radial-blue {
-  background: radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.12) 0%, rgba(7, 10, 17, 0) 60%);
+  background: radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.12) 0%, transparent 60%);
 }
 
 .bg-radial-green {
-  background: radial-gradient(circle at 20% 80%, rgba(16, 185, 129, 0.1) 0%, rgba(7, 10, 17, 0) 60%);
+  background: radial-gradient(circle at 20% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 60%);
 }
 
 .glass-panel {
-  background: rgba(15, 23, 42, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--border-subtle);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -118,4 +209,30 @@
 
 .animate-pulse-glow {
   animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* Payment receipt: print only the invoice sheet (features/workspace/receipt.tsx). */
+@media print {
+  body:has(.receipt-print-root) > *:not(.receipt-print-root) { display: none !important; }
+  .receipt-print-root { position: static !important; display: block !important; }
+  .receipt-print-root .no-print { display: none !important; }
+  .receipt-print-root .receipt-sheet { max-width: none !important; max-height: none !important; box-shadow: none !important; overflow: visible !important; border-radius: 0 !important; }
+  .receipt-print-root .receipt-paper { padding: 0 !important; overflow: visible !important; }
+  html.dark .receipt-print-root, html.dark .receipt-print-root * { color: #0f172a !important; background-color: transparent !important; }
+}
+
+/* Keep the receipt palette consistent with the payment reference. */
+.receipt-print-root {
+  --primary: #1875ff; --primary-hover: #0864ec; --primary-foreground: #fff;
+  --focus-ring: #1875ff; --bg-surface: #fff; --bg-surface-muted: #f5f8fc;
+  --bg-input: #fff; --text-primary: #202c40; --text-muted: #8496b1;
+  --border-subtle: #e5ecf5; --border-strong: #c6d4e8;
+  color: var(--text-primary); color-scheme: light;
+}
+@media print {
+  body:has(.receipt-print-root) { overflow: visible !important; }
+  .receipt-print-root .receipt-sheet { display: block !important; height: auto !important; }
+  .receipt-print-root .receipt-paper { display: block !important; }
+  .receipt-print-root table, .receipt-print-root header { break-inside: avoid; }
+  .receipt-print-root { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
