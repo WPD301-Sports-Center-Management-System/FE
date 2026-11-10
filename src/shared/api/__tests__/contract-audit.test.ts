@@ -23,9 +23,6 @@ describe('FE and BE Contract Audit', () => {
       'GET /check-ins',
       'POST /check-ins',
       'GET /coaches/me/members',
-      'POST /training-plans',
-      'POST /training-plans/{id}/exercises',
-      'POST /training-plans/{id}/assign',
       'POST /meal-plans',
       'POST /meal-plans/{id}/items',
       'POST /meal-plans/{id}/assign',
@@ -38,19 +35,24 @@ describe('FE and BE Contract Audit', () => {
       'PATCH /coach-reviews/{id}/moderation',
       'GET /invoices/{id}',
       'GET /invoices/{id}/pdf',
-      'POST /pt-enrollments',
-      'GET /coaches/{coachId}/intake-rules',
-      'POST /pt-enrollments/{id}/proposals',
-      'POST /pt-enrollments/{id}/accept',
       'POST /pt-bookings/{id}/arrive',
       'POST /pt-bookings/{id}/start',
       'POST /pt-bookings/{id}/complete',
       'POST /pt-schedule-changes',
-      'POST /coach-payout-periods',
+      'GET /pt-bookings/{id}/cancel-preview',
       'GET /pt-purchases/{id}/journey',
       'POST /pt-purchases/{id}/journey',
       'POST /pt-bookings/{id}/journey-result',
-      'POST /members/{memberId}/body-assessments',
+      'GET /coaches/me/wallet',
+      'POST /coaches/me/withdrawals',
+      'GET /coach-withdrawals',
+      'POST /coach-withdrawals/{id}/mark-paid',
+      'POST /coach-withdrawals/{id}/reject',
+      'POST /trial-sessions/{id}/convert',
+      'POST /coaches/me/trial-sessions/{id}/decision',
+      'POST /pt-package-purchases/{id}/pause',
+      'POST /pt-package-purchases/{id}/resume',
+      'GET /pt-operations',
       'GET /me/subscriptions',
       'GET /me/pt-packages',
       'GET /me/pt-bookings',
@@ -63,6 +65,7 @@ describe('FE and BE Contract Audit', () => {
     for (const call of criticalFeCalls) {
       expect(backendEndpoints.has(call), `Expected endpoint "${call}" to exist in contract`).toBe(true)
     }
+    for (const retired of ["POST /training-plans","POST /training-plans/{id}/exercises","POST /training-plans/{id}/assign","POST /coach-payouts","POST /coach-payouts/{id}/approve","POST /coach-payouts/{id}/mark-paid","POST /pt-schedule-changes/{id}/request-edit","POST /members/{memberId}/body-assessments"]) expect(backendEndpoints.has(retired), retired).toBe(false)
     // Retired slot-based writes must not silently return to the product contract.
     expect(backendEndpoints.has('POST /pt-bookings')).toBe(false)
     expect(backendEndpoints.has('POST /coach-slots/{slotId}/book')).toBe(false)

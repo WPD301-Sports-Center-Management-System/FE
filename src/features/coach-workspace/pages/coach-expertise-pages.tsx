@@ -19,10 +19,10 @@ export function CoachTeachingPage() {
 }
 
 export function CoachProgressPage() {
-  return <TabbedPage title="Tiến độ học viên" tabs={[
+  return <div className="[&_[role=tab]]:text-text-primary"><TabbedPage title="Tiến độ học viên" tabs={[
     { key: 'goals', label: 'Lộ trình & tiến độ', render: () => <CoachGoalsPage embedded /> },
     { key: 'results', label: 'Đánh giá cuối buổi', render: () => <CoachSheetsPage /> },
-  ]} />
+  ]} /></div>
 }
 
 export function CoachNutritionPage() {

@@ -4,11 +4,8 @@ import type {
   CoachSummary,
   CoachDetail,
   Offering,
-  CoachSlot,
-  PackageOption,
   Purchase,
   Booking,
-  CoachPayout,
   CoachReview,
   MemberSummary,
 } from '@/shared/types/api'
@@ -102,24 +99,6 @@ export const coachesService = {
   },
 
   /**
-   * [7] GET /coaches/me/slots - Get schedule slots for logged-in coach
-   */
-  async getMySlots(params?: { from?: string; to?: string }): Promise<ApiSuccess<CoachSlot[]>> {
-    const res = await apiClient.get<ApiSuccess<CoachSlot[]>>('/coaches/me/slots', { params })
-    return res as unknown as ApiSuccess<CoachSlot[]>
-  },
-
-  /**
-   * [8] GET /coaches/me/pt-package-options - Get package options for logged-in coach
-   */
-  async getMyPackageOptions(params?: { page?: number; limit?: number }): Promise<ApiSuccess<PackageOption[]>> {
-    const res = await apiClient.get<ApiSuccess<PackageOption[]>>('/coaches/me/pt-package-options', {
-      params,
-    })
-    return res as unknown as ApiSuccess<PackageOption[]>
-  },
-
-  /**
    * [9] GET /coaches/me/pt-packages - Get active & past student packages
    */
   async getMyPackages(params?: { page?: number; limit?: number }): Promise<ApiSuccess<Purchase[]>> {
@@ -133,14 +112,6 @@ export const coachesService = {
   async getMyBookings(params?: { from?: string; to?: string }): Promise<ApiSuccess<Booking[]>> {
     const res = await apiClient.get<ApiSuccess<Booking[]>>('/coaches/me/pt-bookings', { params })
     return res as unknown as ApiSuccess<Booking[]>
-  },
-
-  /**
-   * [11] GET /coaches/me/payouts - Get coach commission payout history
-   */
-  async getMyPayouts(params?: { page?: number; limit?: number }): Promise<ApiSuccess<CoachPayout[]>> {
-    const res = await apiClient.get<ApiSuccess<CoachPayout[]>>('/coaches/me/payouts', { params })
-    return res as unknown as ApiSuccess<CoachPayout[]>
   },
 
   /**

@@ -1,4 +1,4 @@
-// Types of the fixed-schedule PT API (BE/src/modules/fixed-pt, pt-bookings, billing).
+// Types of the fixed-schedule PT API (BE/src/v2/http).
 export interface WeeklySlot { weekday: number; startTime: string; durationMinutes: number }
 export interface TimeItem { startsAt: string; endsAt: string }
 export interface PreviewItem extends TimeItem { seq: number; coachBusy: boolean; memberBusy: boolean; coachTimeOff: boolean; available: boolean }
@@ -11,18 +11,7 @@ export interface IntakeRule {
 }
 export interface PublicIntakeRule { id: string; title: string; courseId: string; courseName: string; slots: WeeklySlot[]; packageOptions: { id: string; name: string; sessionCount: number; validityDays: number; price: string }[] }
 
-export type EnrollmentStatus = 'REQUESTED' | 'PROPOSED' | 'AWAITING_PAYMENT' | 'CONFIRMED' | 'PAID_NEEDS_SCHEDULE' | 'REJECTED' | 'EXPIRED' | 'WITHDRAWN'
-export interface Proposal { id: string; version: number; status: string; sessionCount: number; priceSnapshot: string; validityDaysSnapshot: number; packageNameSnapshot: string; courseNameSnapshot: string; coachNameSnapshot: string; startDate: string; endDate: string; acceptBy?: string | null; note?: string | null; policySnapshot: Record<string, string | number>; items: (TimeItem & { seq: number })[] }
-export interface Hold { id: string; status: string; expiresAt: string }
 export interface PaymentRow { id: string; paymentCode: string; method: string; status: string; application?: string | null; amount: string; expiresAt?: string | null; paidAt?: string | null; createdAt: string }
-export interface Enrollment {
-  id: string; code: string; status: EnrollmentStatus; memberId: string; coachId: string; courseId: string; packageOptionId: string; isConsultation: boolean; preferredStartDate: string; goal?: string | null; note?: string | null; purchaseId?: string | null; createdAt: string; updatedAt: string
-  proposals: Proposal[]; currentProposal: Proposal | null; activeHold: Hold | null
-  purchase?: { id: string; purchaseCode: string; status: string; priceSnapshot: string; paymentsPtPurchaseId: PaymentRow[] } | null
-  coach: { id: string; user: { fullName: string } }; member: { id: string; memberCode: string; user: { fullName: string; phone: string; email: string } }
-  course: { id: string; name: string }; packageOption: { id: string; name: string; sessionCount: number; validityDays: number; price: string }
-  cancellationPolicy: Record<string, string | number>
-}
 
 export type SessionStatus = 'CONFIRMED' | 'ARRIVED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED_EARLY' | 'CANCELLED_LATE' | 'COACH_CANCELLED' | 'NO_SHOW' | 'RESCHEDULED'
 export interface CancellationPreview { cutoffAt: string; creditEffect: 'RETURN' | 'CONSUME'; makeupEligible: boolean; evaluatedAt: string }
@@ -55,7 +44,7 @@ export interface EarningLine { id: string; coachId: string; amount: string; outc
   booking: { bookingCode: string; plannedStartsAt: string; status: string; outcomeReversedAt?: string | null }; credit: { creditIndex: number }
   purchase: { purchaseCode: string; packageNameSnapshot: string; member: { memberCode: string; user: { fullName: string } } }; coach?: { user: { fullName: string } }
   disputes: { id: string; status: string; afterPayment: boolean; reason: string }[] }
-export interface EarningSummary { byStatus: Record<string, { amount: number; count: number }>; advanceAmount: number; advanceRemaining: number; recoveryOutstanding: number; paidOut: number }
+export interface EarningSummary { byStatus: Record<string, { amount: number; count: number }>; recoveryOutstanding: number; paidOut: number }
 export interface PayoutPeriod { id: string; code: string; coachId: string; periodFrom: string; periodTo: string; status: 'DRAFT' | 'LOCKED' | 'PAID' | 'CANCELLED'; grossAmount: string; offsetAmount: string; netAmount: string; transferRef?: string | null; paidAt?: string | null; coach?: { user: { fullName: string } }
   items: { id: string; itemType: 'EARNING' | 'ADJUSTMENT'; amount: string; status: string; earningLine?: { booking: { bookingCode: string; plannedStartsAt: string }; credit: { creditIndex: number }; purchase: { purchaseCode: string } } | null; adjustment?: { code: string; type: string; reason: string } | null }[] }
 export interface Adjustment { id: string; code: string; coachId: string; type: 'RECOVERY' | 'ADDITION'; status: string; amount: string; remaining: string; reason: string; createdAt: string; coach?: { user: { fullName: string } }; settlements: { id: string; amount: string; method: string; reference?: string | null; createdAt: string }[] }
@@ -65,4 +54,4 @@ export interface ReconciliationCase { id: string; code: string; type: string; st
 export interface Disruption { id: string; code: string; status: string; reason: string; scopeFrom: string; scopeTo: string; resolution?: string | null; purchaseId: string; purchase: { purchaseCode: string; packageNameSnapshot: string; coachNameSnapshot: string; expiresAt?: string | null }; bookings: { id: string; plannedStartsAt: string; status: string }[] }
 export interface GymVisit { id: string; memberId: string; status: 'OPEN' | 'CLOSED' | 'AUTO_CLOSED' | 'LEGACY_IMPORTED'; checkedInAt: string; checkedOutAt?: string | null; reused?: boolean
   todaySessions?: { id: string; status: string; plannedStartsAt: string; plannedEndsAt: string; coach?: { user: { fullName: string } } }[] }
-export interface CoachPackage { id: string; purchaseCode: string; memberId: string; memberName?: string; memberCode?: string; packageNameSnapshot: string; courseNameSnapshot: string; status: string; totalCredits: number; reservedCredits: number; consumedCredits: number; availableCredits: number; expiresAt?: string | null }
+export interface CoachPackage { id: string; purchaseCode: string; memberId: string; memberName?: string; memberCode?: string; packageNameSnapshot: string; courseNameSnapshot: string | null; status: string; totalCredits: number; reservedCredits: number; consumedCredits: number; availableCredits: number; expiresAt?: string | null }

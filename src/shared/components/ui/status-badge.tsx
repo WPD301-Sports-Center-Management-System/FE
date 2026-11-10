@@ -21,6 +21,10 @@ type Entry = [label: string, tone: Tone]
 
 /** Default meaning of every status value the API can return (all Prisma status enums). */
 export const statusLabels: Record<string, Entry> = {
+  TERMINATED: ['Đã chấm dứt', 'neutral'],
+  INTERRUPTED: ['Buổi bị gián đoạn', 'warning'],
+  PROTECTED_ABSENCE: ['Nghỉ được bảo toàn buổi', 'neutral'],
+  AI_DRAFT: ['Bản nháp AI', 'neutral'],
   ACTIVE: ['Đang hoạt động', 'success'],
   INACTIVE: ['Tạm dừng', 'neutral'],
   SUSPENDED: ['Bị tạm khóa', 'danger'],

@@ -34,35 +34,12 @@ describe('reportsService', () => {
     expect(res).toEqual(mockRev)
   })
 
-  it('[2] calls GET /coach-payout-periods', async () => {
-    const mockPayouts = [
-      { id: 'cp-1', grossAmount: '1080000', offsetAmount: '0', netAmount: '1080000', status: 'PAID' },
-    ]
-    vi.mocked(apiClient.get).mockResolvedValueOnce({
-      success: true,
-      data: mockPayouts,
-    } as any)
+  it('[2] calls GET /coach-withdrawals', async () => {
+    const mockWithdrawals = [{ id: 'wd-1', code: 'WD-1', amount: 1080000, status: 'PAID' }]
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ success: true, data: mockWithdrawals } as any)
 
-    const res = await reportsService.getCoachPayouts({ status: 'PAID' })
-    expect(apiClient.get).toHaveBeenCalledWith('/coach-payout-periods', { params: { status: 'PAID' } })
-    expect(res.data).toEqual(mockPayouts)
-  })
-
-  it('[3] calls POST /coach-payout-periods/{id}/mark-paid', async () => {
-    const mockPayout = {
-      id: 'cp-1',
-      status: 'PAID',
-      transferRef: 'REF-TXN-123',
-    }
-    vi.mocked(apiClient.post).mockResolvedValueOnce({
-      success: true,
-      data: mockPayout,
-    } as any)
-
-    const res = await reportsService.markPaid('cp-1', { transferRef: 'REF-TXN-123' })
-    expect(apiClient.post).toHaveBeenCalledWith('/coach-payout-periods/cp-1/mark-paid', {
-      transferRef: 'REF-TXN-123',
-    })
-    expect(res).toEqual(mockPayout)
+    const res = await reportsService.getCoachWithdrawals({ status: 'PAID' })
+    expect(apiClient.get).toHaveBeenCalledWith('/coach-withdrawals', { params: { status: 'PAID' } })
+    expect(res.data).toEqual(mockWithdrawals)
   })
 })

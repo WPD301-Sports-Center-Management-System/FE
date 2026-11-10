@@ -1,3 +1,5 @@
+import { MemberGymSalePage } from '@/features/member/pages/member-gym-sale-page'
+import { DemoPage, demoVisible } from '@/features/demo/demo-page'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { CoachSheetPage } from '@/features/goal-lab/coach-sheet-page'
 import { MemberGoalsPage } from '@/features/goal-lab/member-goals-page'
@@ -25,7 +27,6 @@ import { MgrOpsPage } from '@/features/manager-workspace/pages/mgr-ops-page'
 import { UserManagementPage } from '@/features/users-accounts/pages/user-management-page'
 import { MembershipPlansPage } from '@/features/memberships/pages/membership-plans-page'
 import { GymCategoriesPage } from '@/features/courses-exercises/pages/gym-categories-page'
-import { EquipmentPage } from '@/features/equipment-maintenance/pages/equipment-page'
 import { ReportsPage } from '@/features/reports-audit/pages/reports-page'
 import { ReviewsAuditPage } from '@/features/support-reviews-audit/pages/reviews-audit-page'
 
@@ -101,6 +102,8 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={['MEMBER']} />,
         children: [
           { path: '/member', element: <MemberDashboardPage /> },
+          { path: '/member/membership-sale', element: <MemberGymSalePage /> },
+          { path: '/member/pt-sale', element: <HybridSalePage /> },
           { path: '/member/support', element: <MemberSupportPage /> },
           { path: '/member/goals', element: <MemberGoalsPage /> },
         ],
@@ -118,6 +121,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       { path: '/manager', element: <MgrHomePage /> },
+      ...(demoVisible ? [{ path: '/manager/demo', element: <DemoPage /> }] : []),
       { path: '/manager/members', element: <MgrMembersPage /> },
       { path: '/manager/members/:id', element: <DeskMemberPage /> },
       { path: '/manager/pt-board', element: <MgrPtBoardPage /> },
@@ -132,7 +136,7 @@ export const router = createBrowserRouter([
       { path: '/manager/payments', element: <PaymentsHubPage /> },
       { path: '/manager/reconciliation', element: <TabRedirect to="/manager/payments" tab="reconciliation" /> },
       { path: '/manager/reports', element: <ReportsPage /> },
-      { path: '/manager/equipment', element: <EquipmentPage /> },
+      { path: '/manager/equipment', element: <Navigate to="/manager/ops" replace /> },
       { path: '/manager/users', element: <UserManagementPage /> },
       { path: '/manager/ops', element: <MgrOpsPage /> },
       { path: '/manager/policies', element: <ManagerPoliciesPage /> },

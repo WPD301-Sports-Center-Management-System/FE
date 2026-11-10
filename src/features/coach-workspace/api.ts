@@ -1,5 +1,5 @@
 import { apiClient } from '@/shared/api/client'
-import type { ContentItem, EarningLine, EarningSummary, IntakeRule, PayoutPeriod, ScheduleChange, Session, SessionTemplate } from '@/features/fixed-pt/types'
+import type { ContentItem, EarningLine, EarningSummary, ScheduleChange, Session, SessionTemplate } from '@/features/fixed-pt/types'
 
 // Coach workspace API. Every call maps to a BE route the COACH role may use (BE/src/contract/endpoints.json).
 // The axios interceptor unwraps the HTTP body to { success, data, meta }.
@@ -28,7 +28,7 @@ export interface CoachMember { id: string; memberCode: string; fullName?: string
 export interface CoachPurchase {
   seriesMode?: boolean; expectedCompletionAt?: string | null; autoRescheduleCount?: number;
   id: string; purchaseCode: string; memberId: string; courseId: string; packageOptionId: string; status: string
-  packageNameSnapshot: string; courseNameSnapshot: string; priceSnapshot?: string
+  packageNameSnapshot: string; courseNameSnapshot: string | null; priceSnapshot?: string
   totalCredits: number; reservedCredits: number; consumedCredits: number; availableCredits: number
   activatedAt?: string | null; expiresAt?: string | null; createdAt: string
   memberName: string; memberCode: string; phone?: string | null; email?: string | null; avatarUrl?: string | null
@@ -75,7 +75,7 @@ export const coachWs = {
   timeOffs: () => get<TimeOff[]>('/coaches/me/time-offs'),
 
   content: (bookingId: string) => get<BookingContent>(`/pt-bookings/${bookingId}/content`),
-  saveContent: (bookingId: string, body: { title?: string; items: ContentItem[] }) => post(`/pt-bookings/${bookingId}/content`, body),
+  saveContent: (bookingId: string, body: { title?: string; items: ContentItem[]; assign?: boolean }) => post(`/pt-bookings/${bookingId}/content`, body),
   saveActual: (bookingId: string, items: ContentItem[], reason: string) => post(`/pt-bookings/${bookingId}/content/actual`, { items, reason }),
   assignContent: (bookingId: string) => post(`/pt-bookings/${bookingId}/content/assign`),
   applyTemplate: (bookingId: string, sessionTemplateId: string) => post(`/pt-bookings/${bookingId}/content/apply-template`, { sessionTemplateId }),
@@ -94,8 +94,6 @@ export const coachWs = {
   exercises: () => all<Exercise>('/exercises', {}, 3),
 
   offerings: () => all<Offering>('/coaches/me/offerings'),
-  packageOptions: () => all<PackageOption>('/coaches/me/pt-package-options'),
-  intakeRules: () => get<IntakeRule[]>('/coaches/me/intake-rules'),
   courses: () => get<Course[]>('/training-courses', { limit: 100 }),
   registerOffering: (body: { courseId: string; experienceNote?: string }) => post<Offering>('/coach-course-offerings', body),
 
@@ -103,5 +101,4 @@ export const coachWs = {
 
   earningSummary: () => get<EarningSummary>('/coaches/me/earnings/summary'),
   earnings: () => all<EarningLine>('/coaches/me/earnings', {}, 5),
-  payoutPeriods: () => get<PayoutPeriod[]>('/coaches/me/payout-periods', { limit: 20 }),
 }

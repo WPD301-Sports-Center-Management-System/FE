@@ -1,62 +1,27 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { CalendarClock, Hourglass, PauseCircle } from 'lucide-react'
 import { hybridGet, hybridSend } from '../hybrid-api'
 import { useLoad, useSubmit } from '../hooks'
-import { Async, Badge, Btn, Card, EmptyBox, Field, InlineError, Segmented, Table, inputCls, td, useFlash } from '@/features/workspace/ui'
-
-type Purchase = { id: string; purchaseCode: string; packageNameSnapshot: string; pauseNote?: string | null; pausedAt?: string | null; coachNameSnapshot?: string }
-type Ops = { longPaused: Purchase[]; pendingSchedule: Purchase[]; absences: { id: string; purchase: Purchase; fromDate: string; toDate: string; note: string }[] }
-type Tab = 'absences' | 'paused' | 'pending'
-const dmy = (iso?: string | null) => iso ? iso.slice(0, 10).split('-').reverse().join('/') : '—'
-
-/**
- * Manager exceptions of the PT series (PRD §5.6): long leaves to approve, packages paused long enough to review
- * (credits are never deleted) and packages with sessions waiting for the Coach to schedule.
- */
+import { Async, Badge, Btn, Card, EmptyBox, Field, InlineError, LinkBtn, Segmented, inputCls } from '@/features/workspace/ui'
+import { FlowSteps } from '@/features/workspace/flow-steps'
+type Purchase = { id: string; purchaseCode: string; packageNameSnapshot: string; pauseNote?: string | null; coachNameSnapshot?: string; availableCredits?: number }
+type Ops = { longPaused: Purchase[]; pendingSchedule: Purchase[] }
 export function OperationsPanel() {
   const state = useLoad(() => hybridGet<Ops>('/pt-operations'))
-  const [tab, setTab] = useState<Tab>('absences')
-  const [notes, setNotes] = useState<Record<string, string>>({})
+  const [tab, setTab] = useState<'pending' | 'paused'>('pending')
+  return <Card title="Tiếp tục phục vụ học viên" subtitle="Báo nghỉ được áp dụng ngay. Tập trung vào gói đang cần lịch mới hoặc cần xem lại bảo lưu." actions={<div className="[&_[role=tab]]:text-text-primary"><Segmented label="Việc cần làm" value={tab} onChange={setTab} items={[{ key: 'pending', label: 'Chờ xếp lịch', count: state.data?.pendingSchedule.length }, { key: 'paused', label: 'Bảo lưu cần xem lại', count: state.data?.longPaused.length }]} /></div>}>
+    <Async state={state} rows={3}>{data => { const rows = tab === 'pending' ? data.pendingSchedule : data.longPaused; return !rows.length ? <EmptyBox title={tab === 'pending' ? 'Không có gói chờ xếp lịch' : 'Không có bảo lưu cần rà soát'} /> : <ul className="divide-y divide-border-subtle">{rows.map(p => <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"><div><p className="font-medium">{p.packageNameSnapshot} · {p.purchaseCode}</p><p className="mt-1 text-sm text-text-muted">{p.coachNameSnapshot}{tab === 'paused' ? ` · ${p.pauseNote ?? 'Đang bảo lưu'}` : ` · ${p.availableCredits ?? 0} buổi tập chờ Coach đề xuất`}</p></div><div className="flex items-center gap-3"><Badge tone={tab === 'paused' ? 'neutral' : 'warning'}>{tab === 'paused' ? 'Buổi tập được giữ lại' : 'Cần lịch mới'}</Badge><LinkBtn size="sm" to={`/manager/pt-purchases/${p.id}`}>Tiếp tục xử lý</LinkBtn></div></li>)}</ul> }}</Async>
+  </Card>
+}
+/** Manager's lifecycle action lives on the purchase it changes. */
+export function PurchaseLifecycle({ id, status, onChanged }: { id: string; status: string; onChanged: () => void }) {
+  const [open, setOpen] = useState(false), [note, setNote] = useState(''), [until, setUntil] = useState('')
   const act = useSubmit()
-  const { flash, node } = useFlash()
-  const d = state.data
-  const review = (id: string, approve: boolean) => void act.run(async () => { await hybridSend('patch', `/member-absences/${id}/review`, { approve, note: notes[id]!.trim() }); flash(approve ? 'Đã duyệt bảo lưu; gói chuyển tạm ngưng, credit giữ nguyên.' : 'Đã từ chối bảo lưu.'); await state.reload() })
-  return <Card flush title="Gói PT cần xử lý" subtitle="Ngoại lệ của lịch cố định: bảo lưu dài ngày, tạm ngưng lâu, buổi chờ xếp."
-    actions={<Segmented label="Loại việc" value={tab} onChange={setTab} items={[
-      { key: 'absences' as const, label: 'Bảo lưu > 30 ngày', count: d?.absences.length },
-      { key: 'paused' as const, label: 'Tạm ngưng cần rà soát', count: d?.longPaused.length },
-      { key: 'pending' as const, label: 'Buổi chờ xếp', count: d?.pendingSchedule.length },
-    ]} />}>
-    {node}
-    <Async state={state} rows={3}>{data => <>
-      {tab === 'absences' && (data.absences.length === 0 ? <EmptyBox icon={<Hourglass className="h-5 w-5" />} title="Không có yêu cầu bảo lưu dài ngày" /> : <Table head={['Gói', 'Khoảng nghỉ', 'Lý do của học viên', 'Quyết định']} minWidth={820}>
-        {data.absences.map(a => <tr key={a.id} className="align-top">
-          <td className={td}><Link to={`/manager/pt-purchases/${a.purchase.id}`} className="font-semibold hover:text-primary">{a.purchase.purchaseCode}</Link><p className="text-xs text-text-muted">{a.purchase.packageNameSnapshot}</p></td>
-          <td className={`${td} tabular-nums`}>{dmy(a.fromDate)} – {dmy(a.toDate)}</td>
-          <td className={`${td} max-w-64`}>{a.note}</td>
-          <td className={td}><div className="flex min-w-72 flex-col gap-2">
-            <Field label="Ghi chú quyết định"><input className={inputCls} value={notes[a.id] ?? ''} onChange={e => setNotes({ ...notes, [a.id]: e.target.value })} placeholder="VD: Có giấy khám bệnh" /></Field>
-            <div className="flex justify-end gap-2"><Btn size="sm" variant="danger" busy={act.busy} disabled={!notes[a.id]?.trim()} onClick={() => review(a.id, false)}>Từ chối</Btn><Btn size="sm" variant="primary" busy={act.busy} disabled={!notes[a.id]?.trim()} onClick={() => review(a.id, true)}>Duyệt bảo lưu</Btn></div>
-          </div></td>
-        </tr>)}
-      </Table>)}
-      {tab === 'paused' && (data.longPaused.length === 0 ? <EmptyBox icon={<PauseCircle className="h-5 w-5" />} title="Không có gói tạm ngưng quá hạn" /> : <Table head={['Gói', 'Tạm ngưng từ', 'Ghi chú', '']} minWidth={640} alignLast={false}>
-        {data.longPaused.map(p => <tr key={p.id}>
-          <td className={td}><Link to={`/manager/pt-purchases/${p.id}`} className="font-semibold hover:text-primary">{p.purchaseCode}</Link><p className="text-xs text-text-muted">{p.packageNameSnapshot}</p></td>
-          <td className={`${td} tabular-nums`}>{dmy(p.pausedAt)}</td>
-          <td className={td}>{p.pauseNote ?? '—'}</td>
-          <td className={td}><Badge tone="info">Credit được giữ</Badge></td>
-        </tr>)}
-      </Table>)}
-      {tab === 'pending' && (data.pendingSchedule.length === 0 ? <EmptyBox icon={<CalendarClock className="h-5 w-5" />} title="Không có buổi chờ xếp" /> : <Table head={['Gói', 'Coach', '']} minWidth={560} alignLast={false}>
-        {data.pendingSchedule.map(p => <tr key={p.id}>
-          <td className={td}><Link to={`/manager/pt-purchases/${p.id}`} className="font-semibold hover:text-primary">{p.purchaseCode}</Link><p className="text-xs text-text-muted">{p.packageNameSnapshot}</p></td>
-          <td className={td}>{p.coachNameSnapshot ?? '—'}</td>
-          <td className={td}><Badge tone="warning">Coach cần đề xuất lịch</Badge></td>
-        </tr>)}
-      </Table>)}
-      <div className="px-5 pb-4"><InlineError message={act.error} /></div>
-    </>}</Async>
+  if (!['ACTIVE', 'PAUSED'].includes(status)) return null
+  const resume = status === 'PAUSED'
+  return <Card title={resume ? 'Tiếp tục gói PT' : 'Bảo lưu gói'}>
+    <FlowSteps steps={['Đang phục vụ', 'Bảo lưu và giữ lại buổi tập', 'Mở lại, Coach xếp lịch']} current={resume ? 1 : 0} />
+    <p className="my-3 text-sm text-text-muted">{resume ? 'Mở lại sẽ báo Coach đề xuất lịch theo giờ trống hiện tại.' : 'Bảo lưu hủy các buổi tương lai, giữ lại buổi tập và không trừ lượt nghỉ của học viên.'}</p>
+    {resume ? <Btn busy={act.busy} onClick={() => void act.run(async () => { await hybridSend('post', `/pt-package-purchases/${id}/resume`, {}); onChanged() })}>Mở lại và báo Coach xếp lịch</Btn> : !open ? <Btn onClick={() => setOpen(true)}>Bảo lưu gói này</Btn> : <form className="space-y-3" onSubmit={e => { e.preventDefault(); if (note.trim()) void act.run(async () => { await hybridSend('post', `/pt-package-purchases/${id}/pause`, { note: note.trim(), ...(until ? { until } : {}) }); setOpen(false); onChanged() }) }}><Field label="Lý do bảo lưu"><textarea required maxLength={1000} value={note} onChange={e => setNote(e.target.value)} className={inputCls} /></Field><Field label="Dự kiến đến ngày (không bắt buộc)"><input type="date" value={until} onChange={e => setUntil(e.target.value)} className={inputCls} /></Field><div className="flex gap-2"><Btn type="submit" busy={act.busy} disabled={!note.trim()}>Xác nhận bảo lưu</Btn><Btn disabled={act.busy} onClick={() => setOpen(false)}>Để sau</Btn></div></form>}
+    <InlineError message={act.error} />
   </Card>
 }

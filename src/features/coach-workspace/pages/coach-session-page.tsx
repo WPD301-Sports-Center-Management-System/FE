@@ -130,6 +130,16 @@ function ContentEditor({ bookingId, started, closed, onFlash }: { bookingId: str
   const act = async (work: () => Promise<unknown>, message: string) => { const ok = await submit.run(async () => { await work(); return true }); if (ok) { onFlash(message); setReason(''); setEditing(false); await content.reload() } }
   const clean = (list: ContentItem[]) => list.filter(i => i.name.trim()).map(i => ({ ...i, name: i.name.trim(), confirmed: true }))
   const save = () => act(() => started ? coachWs.saveActual(bookingId, clean(items!), reason.trim()) : coachWs.saveContent(bookingId, { title: title.trim() || undefined, items: clean(items!) }), started ? 'Đã ghi nội dung thực tế của buổi.' : 'Đã lưu nháp giáo án.')
+  const saveAndAssign = async () => {
+    const ok = await submit.run(async () => {
+      try { await coachWs.saveContent(bookingId, { title: title.trim() || undefined, items: clean(items!), assign: true }); return true }
+      catch (error) {
+        if ((error as { details?: { draftSaved?: boolean } }).details?.draftSaved) { onFlash('Đã lưu nháp; chưa giao được giáo án. Kiểm tra nội dung rồi giao lại.'); await content.reload() }
+        throw error
+      }
+    })
+    if (ok) { onFlash('Đã lưu và giao giáo án.'); setEditing(false); await content.reload() }
+  }
   const update = (i: number, patch: Partial<ContentItem>) => setItems(list => list!.map((x, k) => k === i ? { ...x, ...patch } : x))
 
   return <Card flush title={content.data?.content?.title || 'Giáo án buổi tập'} badge={items ? <Badge>{items.length} bài</Badge> : null}
@@ -169,8 +179,8 @@ function ContentEditor({ bookingId, started, closed, onFlash }: { bookingId: str
         <div className="flex flex-wrap justify-end gap-2">
           {(editing || items.length > 0) && <Btn variant="ghost" onClick={reset}>Hủy chỉnh sửa</Btn>}
           <Btn icon={<Save aria-hidden className="h-4 w-4" />} busy={submit.busy} disabled={!dirty || !items.some(i => i.name.trim()) || (started && !reason.trim())} onClick={() => void save()}>{started ? 'Lưu nội dung thực tế' : 'Lưu nháp'}</Btn>
-          {!started && <Btn variant="primary" icon={<Send aria-hidden className="h-4 w-4" />} busy={submit.busy} disabled={dirty || !items.length || status === 'ASSIGNED'} title={dirty ? 'Lưu nháp trước khi giao' : undefined}
-            onClick={() => void act(() => coachWs.assignContent(bookingId), 'Đã giao giáo án cho học viên.')}>{status === 'ASSIGNED' ? 'Đã giao' : 'Giao cho học viên'}</Btn>}
+          {!started && <Btn variant="primary" icon={<Send aria-hidden className="h-4 w-4" />} busy={submit.busy} disabled={!items.length || items.some(i => !i.exerciseId || !i.name.trim()) || (!dirty && status === 'ASSIGNED')}
+            onClick={() => void (dirty ? saveAndAssign() : act(() => coachWs.assignContent(bookingId), 'Đã giao giáo án cho học viên.'))}>{!dirty && status === 'ASSIGNED' ? 'Đã giao' : dirty ? 'Lưu và giao' : 'Giao cho học viên'}</Btn>}
         </div>
       </div>}
     </>}

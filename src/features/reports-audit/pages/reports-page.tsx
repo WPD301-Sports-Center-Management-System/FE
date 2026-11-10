@@ -11,7 +11,6 @@ import {
   Package,
   Calendar,
   Users,
-  Dumbbell,
   BookOpen,
 } from 'lucide-react'
 import { formatVND } from '@/shared/utils/currency'
@@ -20,14 +19,13 @@ import { Button } from '@/shared/components/ui/button'
 import { reportsService } from '@/features/reports-audit/services/reports.service'
 import { downloadBlob } from '@/shared/utils/download'
 import { isAppApiError } from '@/shared/api/api-error'
-import type { PayoutPeriod } from '@/features/fixed-pt/types'
+import { withdrawalLabel, type Withdrawal } from '@/features/fixed-pt/wallet-api'
 import type {
   RevenueReportData,
   PtPackagesReportData,
   BookingReportItem,
   CoachReportItem,
   CourseReportItem,
-  EquipmentReportItem,
   ReportType,
 } from '@/features/reports-audit/types/reports.types'
 
@@ -38,12 +36,11 @@ export function ReportsPage() {
 
   // Tab Data States
   const [revenue, setRevenue] = useState<RevenueReportData | null>(null)
-  const [payouts, setPayouts] = useState<PayoutPeriod[]>([])
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
   const [ptPackages, setPtPackages] = useState<PtPackagesReportData | null>(null)
   const [bookings, setBookings] = useState<BookingReportItem[]>([])
   const [coaches, setCoaches] = useState<CoachReportItem[]>([])
   const [courses, setCourses] = useState<CourseReportItem[]>([])
-  const [equipment, setEquipment] = useState<EquipmentReportItem[]>([])
 
   const [isLoading, setIsLoading] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
@@ -64,10 +61,10 @@ export function ReportsPage() {
       if (activeTab === 'revenue') {
         const [revData, payoutsRes] = await Promise.all([
           reportsService.getRevenueReport(dateParams),
-          reportsService.getCoachPayouts(),
+          reportsService.getCoachWithdrawals({ limit: 50 }),
         ])
         setRevenue(revData)
-        setPayouts(payoutsRes.data || [])
+        setWithdrawals(payoutsRes.data || [])
       } else if (activeTab === 'pt-packages') {
         const ptData = await reportsService.getPtPackagesReport(dateParams)
         setPtPackages(ptData)
@@ -80,9 +77,6 @@ export function ReportsPage() {
       } else if (activeTab === 'courses') {
         const coursesData = await reportsService.getCoursesReport()
         setCourses(coursesData)
-      } else if (activeTab === 'equipment') {
-        const equipData = await reportsService.getEquipmentReport()
-        setEquipment(equipData)
       }
     } catch (err) {
       if (isAppApiError(err)) {
@@ -243,17 +237,6 @@ export function ReportsPage() {
           <BookOpen className="h-4 w-4" />
           <span>Khóa tập</span>
         </button>
-        <button
-          onClick={() => setActiveTab('equipment')}
-          className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-colors ${
-            activeTab === 'equipment'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-text-muted hover:text-text-primary'
-          }`}
-        >
-          <Dumbbell className="h-4 w-4" />
-          <span>Thiết bị</span>
-        </button>
       </div>
 
       {/* Date Filter Bar (Applies to time-filtered reports) */}
@@ -336,13 +319,13 @@ export function ReportsPage() {
             </div>
           </div>
 
-          {/* Payouts Table */}
+          {/* Coach withdrawals */}
           <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
-            <h2 className="text-base font-bold text-text-primary">Kỳ Chi Thù Lao Huấn Luyện Viên</h2>
+            <h2 className="text-base font-bold text-text-primary">Yêu cầu rút tiền của Huấn Luyện Viên</h2>
 
-            {payouts.length === 0 ? (
+            {withdrawals.length === 0 ? (
               <div className="text-center py-12 text-text-muted text-xs">
-                Chưa có khoản quyết toán nào được ghi nhận.
+                Chưa có yêu cầu rút tiền nào.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -350,34 +333,26 @@ export function ReportsPage() {
                   <thead className="border-b border-border-subtle text-text-muted uppercase bg-bg-surface-muted">
                     <tr>
                       <th className="py-3 px-4">Huấn Luyện Viên</th>
-                      <th className="py-3 px-4">Kỳ</th>
-                      <th className="py-3 px-4">Tổng khoản</th>
-                      <th className="py-3 px-4 text-cyan-600 dark:text-cyan-400">Bù trừ</th>
-                      <th className="py-3 px-4 text-emerald-600 dark:text-emerald-400">Thực chi</th>
+                      <th className="py-3 px-4">Mã</th>
+                      <th className="py-3 px-4">Ngày yêu cầu</th>
+                      <th className="py-3 px-4 text-emerald-600 dark:text-emerald-400">Số tiền</th>
                       <th className="py-3 px-4">Trạng thái</th>
                       <th className="py-3 px-4">Mã tham chiếu NH</th>
                       <th className="py-3 px-4 text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-subtle">
-                    {payouts.map((p) => (
-                      <tr key={p.id} className="hover:bg-bg-surface-muted/50">
-                        <td className="py-3.5 px-4 font-mono font-semibold text-text-primary">
-                          {p.coach?.user.fullName || p.coachId.slice(0, 8)}
-                        </td>
-                        <td className="py-3.5 px-4">{p.periodFrom.slice(0, 10)} → {p.periodTo.slice(0, 10)}</td>
-                        <td className="py-3.5 px-4">{formatVND(p.grossAmount)}</td>
-                        <td className="py-3.5 px-4 text-cyan-600 dark:text-cyan-300 font-semibold">{formatVND(p.offsetAmount)}</td>
-                        <td className="py-3.5 px-4 text-emerald-600 dark:text-emerald-300 font-bold">{formatVND(p.netAmount)}</td>
-                        <td className="py-3.5 px-4">
-                          <StatusBadge status={p.status} context="payout" />
-                        </td>
-                        <td className="py-3.5 px-4 font-mono text-text-muted">
-                          {p.transferRef ? p.transferRef : '—'}
-                        </td>
+                    {withdrawals.map((w) => (
+                      <tr key={w.id} className="hover:bg-bg-surface-muted/50">
+                        <td className="py-3.5 px-4 font-semibold text-text-primary">{w.coach?.user.fullName || w.coachId.slice(0, 8)}</td>
+                        <td className="py-3.5 px-4 font-mono">{w.code}</td>
+                        <td className="py-3.5 px-4">{w.createdAt.slice(0, 10)}</td>
+                        <td className="py-3.5 px-4 text-emerald-600 dark:text-emerald-300 font-bold">{formatVND(w.amount)}</td>
+                        <td className="py-3.5 px-4">{withdrawalLabel[w.status] ?? w.status}</td>
+                        <td className="py-3.5 px-4 font-mono text-text-muted">{w.transferRef ? w.transferRef : '—'}</td>
                         <td className="py-3.5 px-4 text-right">
-                          {p.status === 'LOCKED' && (
-                            <Link to="/manager/coach-ledger" className="text-sm font-semibold text-primary hover:underline">Chi trả tại Đối soát Coach</Link>
+                          {w.status === 'REQUESTED' && (
+                            <Link to="/manager/coach-ledger" className="text-sm font-semibold text-primary hover:underline">Xác nhận tại Đối soát Coach</Link>
                           )}
                         </td>
                       </tr>
@@ -507,38 +482,6 @@ export function ReportsPage() {
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-300">
                         {cr._count?.ptBookingsCourseId ?? 0}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      ) : activeTab === 'equipment' ? (
-        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">
-          <h2 className="text-base font-bold text-text-primary">Phân bổ Trạng thái Thiết bị Phòng Gym</h2>
-          {equipment.length === 0 ? (
-            <div className="text-center py-12 text-text-muted text-xs">
-              Chưa có dữ liệu thiết bị.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-text-primary">
-                <thead className="border-b border-border-subtle text-text-muted uppercase bg-bg-surface-muted">
-                  <tr>
-                    <th className="py-3 px-4">Trạng thái thiết bị</th>
-                    <th className="py-3 px-4 text-right">Số lượng thiết bị</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-subtle">
-                  {equipment.map((eq) => (
-                    <tr key={eq.status} className="hover:bg-bg-surface-muted/50">
-                      <td className="py-3.5 px-4">
-                        <StatusBadge status={eq.status} context="equipment" />
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-text-primary text-sm">
-                        {eq._count.id}
                       </td>
                     </tr>
                   ))}

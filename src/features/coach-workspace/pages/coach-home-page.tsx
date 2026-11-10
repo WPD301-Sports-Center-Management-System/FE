@@ -1,3 +1,4 @@
+import { CoachTrialRequests } from '../components/trial-requests'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, CalendarDays, Check, Copy, Download, Eye, HeartPulse, Sparkles, TrendingDown, TrendingUp, Users, Wallet } from 'lucide-react'
@@ -48,6 +49,7 @@ export function CoachHomePage() {
     list.map(x => [hhmm(x.startsAt), hhmm(x.endsAt), x.memberName ?? '', x.purchase?.packageNameSnapshot ?? '', x.credit ? `${x.credit.creditIndex}/${x.purchase?.totalCredits ?? ''}` : '', SESSION_LABEL[x.status] ?? x.status]))
 
   return <div>
+    <div className="mb-5"><CoachTrialRequests compact /></div>
     {node}
     <PageHeader title="Hôm nay của bạn"
       subtitle={<><span>{longDate(today)}</span><Dot /><span className="font-medium text-text-primary">{sessions.data ? (list.length ? `${list.length} ca dạy đã lên lịch` : 'Chưa có ca dạy hôm nay') : 'Đang tải lịch…'}</span></>}

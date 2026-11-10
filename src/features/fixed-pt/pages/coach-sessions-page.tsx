@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom'
 import { CalendarPlus, Play, Square, UserCheck, UserX } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Modal } from '@/shared/components/ui/modal'
-import { useAuth } from '@/features/auth/context/auth-context'
-import { centerDate, formatDateTime, formatTime, formatWeekdayDateTime } from '@/shared/utils/date'
+import { ScheduleTools } from '../components/schedule-tools'
+import { formatDateTime, formatTime, formatWeekdayDateTime } from '@/shared/utils/date'
 import { fixedPtApi } from '../api'
 import { useLoad, useSubmit } from '../hooks'
-import type { Credit, PreviewItem, ScheduleChange, Session, WeeklySlot } from '../types'
+import type { ScheduleChange, Session } from '../types'
 import { ErrorBanner, Field, inputCls, label, Loadable, Notice, Page, Panel, Status, Table, td } from '../components/ui'
-import { ReasonDialog, ScheduleList, SlotsEditor } from '../components/widgets'
+import { ReasonDialog } from '../components/widgets'
 
 export const localInputToIso = (v: string) => new Date(`${v}:00+07:00`).toISOString()
 export const isoToLocalInput = (iso: string) => {
@@ -150,28 +150,5 @@ function ScheduleCredits({ onDone }: { onDone: () => void }) {
 }
 
 function ScheduleCreditsModal({ purchase, onClose, onDone }: { purchase: { id: string; memberId: string; memberName?: string }; onClose: () => void; onDone: () => void }) {
-  const { user } = useAuth()
-  const credits = useLoad(() => fixedPtApi.credits(purchase.id), [])
-  const available = (credits.data ?? []).filter((c: Credit) => c.status === 'AVAILABLE')
-  const [slots, setSlots] = useState<WeeklySlot[]>([{ weekday: 1, startTime: '18:00', durationMinutes: 60 }])
-  const [startDate, setStartDate] = useState(centerDate())
-  const [preview, setPreview] = useState<PreviewItem[] | null>(null)
-  const check = useSubmit(); const save = useSubmit()
-  const coachId = user?.coachProfilesUserId?.id
-  return (
-    <Modal isOpen onClose={onClose} title={`Xếp lịch cho ${purchase.memberName ?? 'Member'}`} maxWidth="2xl">
-      <div className="space-y-3">
-        <Loadable state={credits}>{() => <p className="text-sm">{available.length} buổi chưa xếp ({available.filter(c => c.openMakeup).length} buổi bù, cùng Coach của gói).</p>}</Loadable>
-        <SlotsEditor value={slots} onChange={s => { setSlots(s); setPreview(null) }} />
-        <Field label="Từ ngày"><input type="date" className={inputCls} value={startDate} min={centerDate()} onChange={e => { setStartDate(e.target.value); setPreview(null) }} /></Field>
-        <Button variant="secondary" isLoading={check.busy} disabled={!coachId || !available.length} onClick={() => void check.run(async () => setPreview((await fixedPtApi.preview({ coachId: coachId!, memberId: purchase.memberId, slots, startDate, count: available.length })).items))}>Xem trước</Button>
-        <ErrorBanner message={check.error ?? save.error} />
-        {preview && <ScheduleList items={preview} />}
-        <div className="flex justify-end gap-2"><Button variant="ghost" onClick={onClose}>Đóng</Button>
-          <Button isLoading={save.busy} disabled={!preview || preview.length < available.length || preview.some(p => !p.available)} onClick={() => void save.run(async () => {
-            await fixedPtApi.createScheduleChange({ purchaseId: purchase.id, items: available.map((c, i) => ({ creditId: c.id, startsAt: preview![i]!.startsAt, endsAt: preview![i]!.endsAt })) }); onDone()
-          })}>Gửi đề xuất cho Member</Button></div>
-      </div>
-    </Modal>
-  )
+  return <Modal isOpen onClose={onClose} title={'Xếp lịch cho ' + (purchase.memberName ?? 'Member')} maxWidth="2xl"><ScheduleTools initialPurchaseId={purchase.id} initialTool="SCHEDULE_PENDING" onChanged={onDone} /></Modal>
 }

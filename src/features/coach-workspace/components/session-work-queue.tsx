@@ -1,8 +1,9 @@
+import { CoachTrialRequests } from './trial-requests'
 import { Link } from 'react-router-dom'
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { hybridGet } from '@/features/fixed-pt/hybrid-api'
 import { useLoad } from '@/features/fixed-pt/hooks'
-import { Async, Card, LinkBtn } from '@/features/workspace/ui'
+import { Async, Card, LinkBtn, Segmented } from '@/features/workspace/ui'
 import { formatDateTime } from '@/shared/utils/date'
 
 type Person = { user: { fullName: string } }
@@ -26,33 +27,24 @@ export function CoachReadiness() {
   </div>
 }
 
-const arrange = (purchaseId: string, absenceId?: string) => `/coach/schedule?tab=changes&purchaseId=${purchaseId}&tool=SCHEDULE_PENDING${absenceId ? `&absenceId=${absenceId}` : ''}`
-export function SessionWorkQueue() {
-  const state = useLoad(() => hybridGet<SessionTasks>('/coaches/me/session-tasks'))
-  return <Card title="Việc cần xử lý" subtitle="Chọn đúng việc bên dưới; công cụ đổi lịch nâng cao nằm trong mục riêng." actions={<LinkBtn to="/coach/schedule?tab=calendar">Về lịch dạy</LinkBtn>}>
-    <Async state={state} rows={3}>{() => state.data && <div className="grid gap-5 md:grid-cols-2">
-      <TaskGroup title="Buổi quá giờ chưa chốt" empty={!state.data.overdue.length}>
-        {state.data.overdue.map(b => <TaskRow key={b.id} title={`${b.member.user.fullName} · ${formatDateTime(b.plannedStartsAt)}`} hint={b.status === 'IN_PROGRESS' ? 'Kết thúc hoặc dừng do sự cố theo thực tế.' : 'Đã quá giờ Start. Nhờ Manager xác minh giờ thực hoặc hủy hoàn buổi.'} to={`/coach/sessions/${b.id}`} label="Xem buổi" />)}
-      </TaskGroup>
-      <TaskGroup title="Phiếu sau buổi chưa ghi" empty={!state.data.missingSheets.length}>
-        {state.data.missingSheets.map(b => <TaskRow key={b.id} title={`${b.member.user.fullName} · ${formatDateTime(b.plannedStartsAt)}`} to={`/coach/goals/sheet/${b.id}`} label="Ghi phiếu" />)}
-      </TaskGroup>
-      <TaskGroup title="Gói chưa có Form 1" empty={!state.data.missingJourney.length}>
-        {state.data.missingJourney.map(b => <TaskRow key={b.id} title={b.member.user.fullName} hint="Khởi tạo lộ trình trước buổi đầu." to={`/coach/sessions/${b.id}`} label="Khởi tạo" />)}
-      </TaskGroup>
-      <TaskGroup title="Buổi chờ xếp lại" empty={!state.data.pendingScheduling.length}>
-        {state.data.pendingScheduling.map(p => <TaskRow key={p.id} title={`${p.member.user.fullName} · ${p._count.credits} buổi`} hint={`${p.packageNameSnapshot}${p.status === 'PAUSED' ? ' · Cần mở lại gói trước khi xếp.' : ''}`} to={arrange(p.id)} label="Xử lý gói" />)}
-      </TaskGroup>
-      <TaskGroup title="Báo nghỉ cần theo dõi" empty={!state.data.absences.length}>
-        {state.data.absences.map(a => <TaskRow key={a.id} title={a.purchase.member.user.fullName} hint={`${a.fromDate.slice(0, 10)} → ${a.toDate.slice(0, 10)}${a.status === 'NEEDS_MANAGER' ? ' · Chờ Manager duyệt nghỉ dài.' : ' · Chỉ đóng khi đã xếp đủ buổi được giữ.'}`} to={arrange(a.purchaseId, a.id)} label="Xếp buổi đã giữ" />)}
-      </TaskGroup>
-    </div>}</Async>
-  </Card>
+export interface CoachTodo { id: string; kind: string; label: string; waitingOn: 'COACH' | 'MEMBER' | 'DONE'; memberName?: string; packageName?: string; purchaseId: string; bookingId?: string; scheduleRequestId?: string; absenceId?: string; creditCount?: number; at?: string }
+function todoLink(t: CoachTodo) {
+  if (t.kind === 'FORM2_MISSING') return '/coach/goals/sheet/' + t.bookingId
+  if (t.bookingId) return '/coach/sessions/' + t.bookingId
+  const q = new URLSearchParams({ tab: 'changes', purchaseId: t.purchaseId })
+  if (t.absenceId) q.set('absenceId', t.absenceId)
+  if (t.scheduleRequestId) q.set('requestId', t.scheduleRequestId)
+  if (t.kind === 'SCHEDULE_PENDING' || t.kind === 'ABSENCE_RESCHEDULE') q.set('tool', 'SCHEDULE_PENDING')
+  return '/coach/schedule?' + q
 }
-
-function TaskGroup({ title, empty, children }: { title: string; empty: boolean; children: ReactNode }) {
-  return <section><h3 className="mb-2 font-semibold">{title}</h3>{empty ? <p className="text-sm text-text-muted">Không có việc chờ.</p> : <ul className="max-h-80 space-y-3 overflow-y-auto">{children}</ul>}</section>
-}
-function TaskRow({ title, hint, to, label }: { title: string; hint?: string; to: string; label: string }) {
-  return <li className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-3 text-sm"><div className="min-w-0 flex-1"><p className="font-medium">{title}</p>{hint && <p className="text-text-muted">{hint}</p>}</div><LinkBtn size="sm" to={to}>{label}</LinkBtn></li>
+export function SessionWorkQueue({ additional = [] }: { additional?: CoachTodo[] } = {}) {
+  const state = useLoad(() => hybridGet<SessionTasks & { todo?: CoachTodo[] }>('/coaches/me/session-tasks'))
+  const [view, setView] = useState<'COACH' | 'MEMBER' | 'DONE'>('COACH')
+  const tasks = state.data?.todo ?? []
+  const rows = [...tasks, ...additional.filter(t => !tasks.some(x => x.scheduleRequestId && x.scheduleRequestId === t.scheduleRequestId))].filter(t => t.waitingOn === view)
+  return <div className="space-y-5"><Card title="Việc cần xử lý" subtitle="Mỗi việc dẫn tới đúng học viên, gói hoặc buổi tập." actions={<LinkBtn to="/coach/schedule?tab=calendar">Về lịch dạy</LinkBtn>}>
+    <Segmented label="Trạng thái công việc" value={view} onChange={setView} items={[{ key: 'COACH', label: 'Cần bạn làm' }, { key: 'MEMBER', label: 'Chờ người khác' }, { key: 'DONE', label: 'Đã xử lý' }]} />
+    {view !== 'DONE' && <div className="mt-4"><CoachTrialRequests compact waiting={view === 'MEMBER'} /></div>}
+    {view === 'DONE' && <p className="mt-4 text-sm text-text-muted">Lịch sử xử lý yêu cầu lịch tập. Kết quả buổi và phiếu đã lưu nằm trong từng buổi tập.</p>}<Async state={state} rows={3}>{() => !state.data?.todo ? <p className="mt-4 text-sm text-text-muted">Chưa có dữ liệu phân công công việc. Xem lịch và hộp thư để xử lý từng hồ sơ.</p> : !rows.length ? <p className="mt-4 text-sm text-text-muted">Không có việc chờ trong danh sách này.</p> : <ul className="mt-4 divide-y divide-border-subtle">{rows.map(t => <li key={t.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><div className="min-w-0 flex-1"><p className="font-semibold">{t.memberName ?? 'Học viên'} · {t.packageName}</p><p>{t.label}{t.creditCount != null ? ' · ' + t.creditCount + ' buổi' : ''}</p>{t.at && <p className="text-text-muted">{formatDateTime(t.at)}</p>}</div><LinkBtn size="sm" to={todoLink(t)}>{t.waitingOn === 'MEMBER' ? 'Xem đề xuất' : t.kind === 'FORM2_MISSING' ? 'Ghi phiếu' : 'Mở xử lý'}</LinkBtn></li>)}</ul>}</Async>
+  </Card></div>
 }

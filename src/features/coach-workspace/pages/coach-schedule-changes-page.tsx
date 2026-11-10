@@ -1,7 +1,7 @@
 import { ScheduleTools } from '@/features/fixed-pt/components/schedule-tools'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { SessionWorkQueue } from '../components/session-work-queue'
+import { SessionWorkQueue, type CoachTodo } from '../components/session-work-queue'
 import { Check, Undo2, X, CalendarClock } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
@@ -24,7 +24,13 @@ export function CoachScheduleChangesPage() {
   const { flash, node } = useFlash()
   const changes = useLoad(() => coachWs.scheduleChanges() as Promise<Change[]>, [])
   const purchases = useLoad(() => coachWs.purchases(), [])
-  const [tab, setTab] = useState<Tab>('all')
+  const requestId = params.get('requestId') ?? ''
+  const [filter, setFilter] = useState<{ requestId: string; tab: Tab }>({ requestId, tab: requestId ? 'all' : 'REQUESTED' })
+  // A newly targeted request must be visible even when this page is already mounted.
+  const tab = filter.requestId === requestId ? filter.tab : requestId ? 'all' : 'REQUESTED'
+  const setTab = (tab: Tab) => setFilter({ requestId, tab })
+  const selectedRow = useRef<HTMLTableRowElement | null>(null)
+  const focusedRequest = useRef('')
   const [answer, setAnswer] = useState<Change | null>(null)
   const [decline, setDecline] = useState<Change | null>(null)
   const [revision, setRevision] = useState(0)
@@ -37,16 +43,25 @@ export function CoachScheduleChangesPage() {
     { key: 'closed', label: 'Đã đóng', test: c => ['DECLINED', 'WITHDRAWN', 'EXPIRED'].includes(c.status) },
   ]
   const rows = list.filter(tabs.find(t => t.key === tab)!.test)
+  useEffect(() => {
+    if (!requestId) { focusedRequest.current = ''; return }
+    if (selectedRow.current && focusedRequest.current !== requestId) {
+      selectedRow.current.scrollIntoView?.({ block: 'center', behavior: 'instant' })
+      selectedRow.current.focus({ preventScroll: true })
+      focusedRequest.current = requestId
+    }
+  }, [requestId, changes.data, tab])
   const refresh = () => { setRevision(v => v + 1); void changes.reload(); void purchases.reload(); refreshBadges() }
   const done = (m: string) => { flash(m); setAnswer(null); setDecline(null); refresh() }
 
-  return <div className="space-y-6"><SessionWorkQueue key={revision} /><details key={`${purchaseId}:${absenceId}`} open={!!purchaseId} className="rounded-xl border border-border-subtle p-4"><summary className="cursor-pointer font-semibold">Công cụ xếp / đổi lịch nâng cao</summary><div className="mt-4"><ScheduleTools key={`${purchaseId}:${absenceId}`} initialPurchaseId={purchaseId} initialAbsenceId={absenceId} initialTool={params.get('tool') === 'SCHEDULE_PENDING' ? 'SCHEDULE_PENDING' : undefined} onChanged={refresh} /></div></details>
+  const queueChanges: CoachTodo[] = list.map(c => ({ id: 'CHANGE:' + c.id, kind: 'CHANGE', label: c.status === 'PROPOSED' ? 'Đề xuất lịch đang chờ học viên xác nhận' : c.status === 'REQUESTED' ? 'Trả lời yêu cầu lịch tập' : CHANGE_LABEL[c.status], waitingOn: c.status === 'REQUESTED' ? 'COACH' : c.status === 'PROPOSED' ? 'MEMBER' : 'DONE', purchaseId: c.purchaseId, scheduleRequestId: c.id, packageName: c.purchase.packageNameSnapshot, memberName: byPurchase.get(c.purchaseId)?.memberName, at: c.createdAt }))
+  return <div className="space-y-6"><SessionWorkQueue key={revision} additional={queueChanges} /><details key={`${purchaseId}:${absenceId}`} open={!!params.get('tool') || !!absenceId} className="rounded-xl border border-border-subtle p-4"><summary className="cursor-pointer font-semibold">Công cụ xếp / đổi lịch nâng cao</summary><div className="mt-4"><ScheduleTools key={`${purchaseId}:${absenceId}`} initialPurchaseId={purchaseId} initialAbsenceId={absenceId} initialTool={params.get('tool') === 'SCHEDULE_PENDING' ? 'SCHEDULE_PENDING' : undefined} onChanged={refresh} /></div></details>
     {node}
-    <Card flush title="Hộp thư yêu cầu" badge={changes.data ? <Badge tone="warning">{pending.length} chờ</Badge> : null}
+    <details open={!!params.get('requestId')}><summary className="cursor-pointer font-semibold">Hộp thư và lịch sử đổi lịch</summary><Card flush title="Hộp thư yêu cầu" badge={changes.data ? <Badge tone="warning">{pending.length} chờ</Badge> : null}
       actions={<Segmented label="Lọc yêu cầu" value={tab} onChange={setTab} items={tabs.map(t => ({ key: t.key, label: t.label, count: list.filter(t.test).length }))} />}>
       <Async state={changes} rows={5} empty={() => !rows.length && <EmptyBox icon={<CalendarClock className="h-5 w-5" />} title="Không có yêu cầu nào" hint="Khi học viên xin đổi giờ, học bù hoặc xếp buổi còn trống, yêu cầu sẽ hiện ở đây." />}>
         {() => <Table head={['Học viên', 'Yêu cầu', 'Lời nhắn', 'Gửi lúc', 'Trạng thái', 'Phản hồi']} minWidth={1000}>
-          {rows.map(c => { const p = byPurchase.get(c.purchaseId); return <tr key={c.id} className="align-top">
+          {rows.map(c => { const p = byPurchase.get(c.purchaseId); return <tr key={c.id} ref={c.id === requestId ? selectedRow : undefined} tabIndex={c.id === requestId ? -1 : undefined} aria-label={`Yêu cầu ${c.code}`} className={`align-top ${requestId === c.id ? 'bg-bg-surface-muted' : ''}`}>
             <td className={td}><div className="flex items-center gap-3"><Person name={p?.memberName} src={p?.avatarUrl} /><div><Link to={p ? `/coach/students/${p.memberId}` : '#'} className="font-semibold hover:text-primary">{p?.memberName ?? c.purchase.purchaseCode}</Link><p className="text-xs text-text-muted">{p?.memberCode ?? c.code}</p></div></div></td>
             <td className={td}><p className="font-medium">{CHANGE_TYPE[c.type]} · {c.purchase.packageNameSnapshot}</p>
               <ul className="mt-0.5 space-y-0.5 text-xs text-text-muted">{c.items.map(i => <li key={i.id}>{i.credit ? `Buổi ${i.credit.creditIndex}: ` : ''}{i.sourceBooking ? <>{slot(i.sourceBooking.plannedStartsAt)} → </> : null}<span className="font-semibold text-text-primary">{slot(i.startsAt)}</span></li>)}</ul></td>
@@ -62,6 +77,7 @@ export function CoachScheduleChangesPage() {
         </Table>}
       </Async>
     </Card>
+    </details>
     {answer && <AnswerModal change={answer} purchase={byPurchase.get(answer.purchaseId)} onClose={() => setAnswer(null)} onDone={done} />}
     {decline && <DeclineModal change={decline} onClose={() => setDecline(null)} onDone={done} />}
   </div>

@@ -18,6 +18,7 @@ import { Button } from '@/shared/components/ui/button'
 import { isAppApiError } from '@/shared/api/api-error'
 import { useAuth } from '@/features/auth/context/auth-context'
 import type { Payment, Invoice, PaymentStatus } from '@/shared/types/api'
+import { readPtContinuation, type PtContinuation } from '@/shared/utils/pt-continuation'
 
 export function VnPayReturnPage() {
   const [searchParams] = useSearchParams()
@@ -36,6 +37,7 @@ export function VnPayReturnPage() {
   const [isPolling, setIsPolling] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
+  const [continuation, setContinuation] = useState<PtContinuation | null>(null)
 
   const shownReceipt = useRef<string | null>(null)
   const generation = useRef(0)
@@ -52,10 +54,14 @@ export function VnPayReturnPage() {
       const result = await paymentsService.getPaymentStatus(paymentId)
       if (current !== generation.current) return true
       setStatus(result.status); setApplication(result.application ?? null)
+      // Only expose a saved draft after this account has successfully read this exact payment.
+      const next = readPtContinuation(user.id, paymentId, user.role, user.memberProfilesUserId?.id)
+      setContinuation(next)
       if (result.status === 'PAID') {
         const full = await paymentsService.getPaymentById(paymentId)
         if (current !== generation.current) return true
         setPayment(full)
+        if (next && full.subscriptionId && full.subscriptionId !== next.subscriptionId) setContinuation(null)
         if (full.invoiceId) {
           const inv = await paymentsService.getInvoiceById(full.invoiceId)
           if (current !== generation.current) return true
@@ -76,7 +82,7 @@ export function VnPayReturnPage() {
     if (isInitializing) return
     let active = true
     let polls = 0
-    setStatus('PENDING'); setPayment(null); setInvoice(null); setApplication(null); setPollCount(0); setIsPolling(true)
+    setStatus('PENDING'); setPayment(null); setInvoice(null); setApplication(null); setPollCount(0); setIsPolling(true); setContinuation(null)
     shownReceipt.current = null
     const poll = async () => {
       const terminal = await fetchStatusAndPayment()
@@ -266,6 +272,12 @@ export function VnPayReturnPage() {
         )}
 
         {/* Action Buttons */}
+        {continuation && continuation.ownerId === user?.id && continuation.role === user.role && continuation.paymentId === paymentId && <section className="space-y-3 rounded-lg bg-bg-surface-muted p-4 text-sm">
+          <h2 className="font-semibold">Tiếp tục phương án PT</h2>
+          <p>{applied ? 'Vé gym đã được áp dụng. Xem lại phương án PT trước khi tạo hoặc thanh toán đơn PT.' : status === 'PAID' ? 'Tiền vé đã được nhận nhưng quyền lợi còn đang xử lý. Không thanh toán lại vé; phương án PT vẫn cần kiểm tra lại.' : 'Thanh toán vé chưa hoàn tất. Bạn có thể xem lại phương án PT; vé gym và đơn PT được xử lý riêng.'}</p>
+          <Button onClick={() => navigate(continuation.role === 'MEMBER' ? '/member/pt-sale' : '/receptionist/pt-sale', { state: { ptDraft: continuation.draft } })}>Tiếp tục chọn lịch PT</Button>
+          <p>Giá, lịch trống và giữ chỗ sẽ được kiểm tra lại. Cần xác nhận lại phương án trước khi tạo đơn.</p>
+        </section>}
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           {(status === 'PENDING' || (status === 'PAID' && !invoice)) && (
             <Button

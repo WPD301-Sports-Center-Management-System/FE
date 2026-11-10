@@ -3,7 +3,7 @@ import { openReceipt } from './receipt-events'
 
 /** All counter sale entry points show the same server-confirmed receipt. */
 export async function counterPayment<T extends { id: string; changeAmount?: number }>(body: {
-  subscriptionId?: string; ptPurchaseId?: string; method: string; receivedAmount: number; externalRef?: string
+  subscriptionId?: string; ptPurchaseId?: string; method: string; receivedAmount: number; externalRef?: string; overrideReason?: string
 }): Promise<T> {
   const settle = async (ref?: string) => {
     const payload = ref ? { ...body, externalRef: ref } : body

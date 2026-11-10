@@ -1,126 +1,56 @@
 import { useState } from 'react'
-import { ArrowDownToLine, CheckCircle2, Clock3, Hourglass, Landmark, Wallet } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
-import { centerDate } from '@/shared/utils/date'
-import { hybridGet, hybridSend } from '../hybrid-api'
 import { useLoad, useSubmit } from '../hooks'
-import { label, money } from '../components/ui'
-import { Async, Badge, Btn, Card, EmptyBox, ErrorBox, Field, InlineError, PageHeader, Person, Skeleton, StatTile, Table, inputCls, td, useFlash } from '@/features/workspace/ui'
+import { walletApi, withdrawalLabel, type CoachWallet, type Withdrawal } from '../wallet-api'
+import { FlowSteps } from '@/features/workspace/flow-steps'
+import { Async, Badge, Btn, Card, EmptyBox, Field, InlineError, LinkBtn, PageHeader, inputCls, useFlash } from '@/features/workspace/ui'
+import { fmtMoney } from '@/features/workspace/utils'
+import { formatDateTime } from '@/shared/utils/date'
 
-type Withdrawal = { id: string; code: string; amount: string; status: 'PENDING' | 'APPROVED' | 'REJECTED'; bankName: string; accountNumber: string; accountName: string; transferRef?: string | null; rejectReason?: string | null; createdAt?: string; coach?: { user: { fullName: string } } }
-type Wallet = { pending: number; available: number; reserved: number; withdrawn: number; recovery?: number; minimumWithdrawal: number; holdDays: number; withdrawals: Withdrawal[]; statement: { id: string; amount: string; paidAmount: string; createdAt: string; status: string; outcome?: string }[] }
-const W_STATUS: Record<Withdrawal['status'], { label: string; tone: 'warning' | 'success' | 'danger' }> = {
-  PENDING: { label: 'Chờ Manager chi', tone: 'warning' }, APPROVED: { label: 'Đã chuyển khoản', tone: 'success' }, REJECTED: { label: 'Bị từ chối', tone: 'danger' },
-}
-const LINE_TONE: Record<string, 'success' | 'warning' | 'info' | 'neutral' | 'danger'> = { ELIGIBLE: 'success', PAID: 'neutral', INCLUDED: 'info', PENDING_CONFIRMATION: 'warning', ON_HOLD: 'warning', VOIDED: 'danger' }
-const OUTCOME: Record<string, string> = { COMPLETED: 'Buổi đã dạy', NO_SHOW: 'Học viên vắng', CANCELLED_LATE: 'Báo nghỉ muộn' }
-const dmy = (iso: string) => centerDate(iso).split('-').reverse().join('/')
-
-/** Coach virtual wallet (PRD §5.8): pending → available after the hold days → withdrawal → Manager pays. */
 export function WalletPage() {
-  const [month, setMonth] = useState(centerDate().slice(0, 7))
-  const state = useLoad(() => hybridGet<Wallet>('/coaches/me/wallet', { month }), [month])
-  return <div>
-    <PageHeader title="Ví Coach" subtitle="Thu nhập từ các buổi được tính. Manager chuyển khoản rồi xác nhận lệnh rút." />
-    {state.error ? <ErrorBox message={state.error} onRetry={() => void state.reload()} /> : !state.data ? <Skeleton rows={4} /> : <WalletBody w={state.data} month={month} setMonth={setMonth} reload={() => void state.reload()} />}
+  const state = useLoad(walletApi.mine)
+  return <div className="space-y-5"><PageHeader title="Ví thu nhập" subtitle="Thu nhập được ghi sau buổi tập. Tiền của gói đã kết thúc mới có thể rút." />
+    <Async state={state} rows={4}>{wallet => <>
+      <Card><div className="grid items-start gap-6 lg:grid-cols-2"><div><p className="text-sm text-text-muted">Có thể yêu cầu rút</p><p className="mt-2 text-3xl font-semibold tabular-nums">{fmtMoney(Math.max(0, wallet.available))}</p><dl className="mt-5 space-y-3 text-sm">{[['Đang tích lũy từ gói chưa kết thúc', wallet.accruing], ['Đang chờ chuyển khoản', wallet.requested], ['Đã nhận', wallet.withdrawn]].map(([label, value]) => <div key={label} className="flex justify-between gap-3"><dt>{label}</dt><dd className="tabular-nums">{fmtMoney(Number(value))}</dd></div>)}</dl></div>
+        <div><FlowSteps steps={['Ghi thu nhập', 'Yêu cầu rút', 'Nhận chuyển khoản']} current={wallet.requested > 0 ? 2 : wallet.available > 0 ? 1 : 0} /><div className="mt-5">{wallet.withdrawals.some(w => w.status === 'REQUESTED') ? <div role="status"><h2 className="font-semibold">Yêu cầu đã gửi</h2><p className="mt-2 text-sm text-text-muted">Manager đang xử lý chuyển khoản. Theo dõi kết quả và mã giao dịch bên dưới.</p></div> : wallet.available > 0 ? <RequestWithdrawal key={wallet.available} wallet={wallet} onDone={state.reload} /> : <p className="text-sm text-text-muted">{wallet.available < 0 ? 'Số dư đang được đối chiếu sau thay đổi kết quả buổi. Liên hệ Manager trước khi rút.' : 'Khi một gói kết thúc, tiền đủ điều kiện sẽ chuyển sang số dư có thể rút.'}</p>}</div></div>
+      </div></Card>
+      <div className={wallet.withdrawals.length ? "grid items-start gap-5 xl:grid-cols-2" : "grid gap-5"}><Card title="Thu nhập từ các gói">{!wallet.packages.length ? <EmptyBox title="Chưa có thu nhập" hint="Thu nhập xuất hiện sau khi có kết quả buổi được tính." /> : <ul className="divide-y divide-border-subtle">{wallet.packages.map(p => <li key={p.purchaseId} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"><div><p className="font-medium">{p.packageNameSnapshot}</p><p className="mt-1 text-sm text-text-muted">{p.purchaseCode} · {p.finished ? 'Gói đã kết thúc' : 'Đang tích lũy'}</p></div><div className="flex items-center gap-3"><span className="tabular-nums">{fmtMoney(p.earned)}</span><LinkBtn size="sm" to={`/coach/pt-purchases/${p.purchaseId}`}>Xem gói</LinkBtn></div></li>)}</ul>}</Card><Card title="Lịch sử rút tiền"><WithdrawalHistory rows={wallet.withdrawals} /></Card></div>
+    </>}</Async>
   </div>
 }
 
-function WalletBody({ w, month, setMonth, reload }: { w: Wallet; month: string; setMonth: (m: string) => void; reload: () => void }) {
-  const [form, setForm] = useState({ amount: '', bankName: '', accountNumber: '', accountName: '' })
+function RequestWithdrawal({ wallet, onDone }: { wallet: CoachWallet; onDone: () => Promise<void> }) {
+  const last = wallet.withdrawals.find(w => w.bankName && w.accountNumber && w.accountName)
+  const [amount, setAmount] = useState(String(Math.floor(wallet.available)))
+  const [bank, setBank] = useState(last?.bankName ?? ''), [number, setNumber] = useState(last?.accountNumber ?? ''), [name, setName] = useState(last?.accountName ?? '')
   const act = useSubmit()
-  const { flash, node } = useFlash()
-  const pending = w.withdrawals.find(x => x.status === 'PENDING')
-  const canWithdraw = !pending && w.available >= w.minimumWithdrawal
-  const amount = Number(form.amount)
-  const set = (key: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [key]: e.target.value })
-  const submit = () => void act.run(async () => { await hybridSend('post', '/coaches/me/withdrawals', { ...form, amount }); flash('Đã gửi lệnh rút. Manager sẽ chuyển khoản và xác nhận.'); setForm({ ...form, amount: '' }); reload() })
-  return <>
-    {node}
-    <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <StatTile label="Khả dụng" icon={<Wallet className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={money(w.available)} hint={`Rút tối thiểu ${money(w.minimumWithdrawal)}`} />
-      <StatTile label="Đang chờ" icon={<Hourglass className="h-[18px] w-[18px]" />} iconTone="warning" value={money(w.pending)} hint={`Khả dụng sau ${w.holdDays} ngày nếu không có khiếu nại`} />
-      <StatTile label="Đang rút" icon={<Clock3 className="h-[18px] w-[18px]" />} iconTone="info" value={money(w.reserved)} hint={pending ? `Lệnh ${pending.code}` : 'Không có lệnh chờ'} />
-      <StatTile label="Đã rút" icon={<CheckCircle2 className="h-[18px] w-[18px]" />} iconTone="primary" value={money(w.withdrawn)} hint={w.recovery ? `Đang thu hồi ${money(w.recovery)}` : undefined} />
-    </div>
-    <div className="grid gap-6 xl:grid-cols-[400px_minmax(0,1fr)]">
-      <Card title="Tạo lệnh rút" subtitle={pending ? 'Mỗi lúc chỉ có một lệnh chờ duyệt.' : 'Tiền được chuyển vào tài khoản ngân hàng của bạn.'}>
-        <form className="space-y-4" onSubmit={e => { e.preventDefault(); submit() }}>
-          <fieldset disabled={!canWithdraw || act.busy} className="space-y-4">
-            <Field label="Số tiền (đ)" required hint={canWithdraw ? `Tối đa ${money(w.available)}` : pending ? 'Chờ lệnh hiện tại được xử lý.' : `Cần tối thiểu ${money(w.minimumWithdrawal)} khả dụng.`}>
-              <div className="flex gap-2"><input required type="number" min={w.minimumWithdrawal} max={w.available} className={inputCls} value={form.amount} onChange={set('amount')} />
-                <Btn onClick={() => setForm({ ...form, amount: String(Math.floor(w.available)) })}>Rút hết</Btn></div>
-            </Field>
-            <Field label="Ngân hàng" required><input required className={inputCls} value={form.bankName} onChange={set('bankName')} placeholder="VD: Vietcombank" /></Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Số tài khoản" required><input required inputMode="numeric" className={inputCls} value={form.accountNumber} onChange={set('accountNumber')} /></Field>
-              <Field label="Chủ tài khoản" required><input required className={inputCls} value={form.accountName} onChange={set('accountName')} /></Field>
-            </div>
-          </fieldset>
-          <InlineError message={act.error} />
-          <Btn type="submit" variant="primary" className="w-full" busy={act.busy} disabled={!canWithdraw || amount < w.minimumWithdrawal || amount > w.available} icon={<ArrowDownToLine aria-hidden className="h-4 w-4" />}>Gửi lệnh rút</Btn>
-        </form>
-      </Card>
-      <div className="space-y-6">
-        <Card flush title="Lệnh rút">
-          {w.withdrawals.length === 0 ? <EmptyBox icon={<Landmark className="h-5 w-5" />} title="Chưa có lệnh rút" /> : <Table head={['Mã', 'Số tiền', 'Tài khoản', 'Trạng thái']} minWidth={560} alignLast={false}>
-            {w.withdrawals.map(x => <tr key={x.id}>
-              <td className={`${td} font-medium`}>{x.code}{x.createdAt && <p className="text-xs text-text-muted">{dmy(x.createdAt)}</p>}</td>
-              <td className={`${td} tabular-nums font-semibold`}>{money(x.amount)}</td>
-              <td className={td}>{x.bankName}<p className="text-xs text-text-muted">{x.accountNumber}</p></td>
-              <td className={td}><Badge tone={W_STATUS[x.status].tone}>{W_STATUS[x.status].label}</Badge>{(x.transferRef || x.rejectReason) && <p className="mt-1 text-xs text-text-muted">{x.transferRef ? `Mã GD: ${x.transferRef}` : x.rejectReason}</p>}</td>
-            </tr>)}
-          </Table>}
-        </Card>
-        <Card flush title="Sao kê theo buổi" actions={<label><span className="sr-only">Tháng sao kê</span><input type="month" className={`${inputCls} w-40`} value={month} onChange={e => setMonth(e.target.value)} /></label>}>
-          {w.statement.length === 0 ? <EmptyBox title="Không có khoản thu trong tháng" /> : <Table head={['Ngày', 'Khoản', 'Số tiền', 'Trạng thái']} minWidth={560} alignLast={false}>
-            {w.statement.map(x => <tr key={x.id}>
-              <td className={`${td} tabular-nums`}>{dmy(x.createdAt)}</td>
-              <td className={td}>{OUTCOME[x.outcome ?? ''] ?? 'Buổi PT'}</td>
-              <td className={`${td} tabular-nums`}>{money(x.amount)}{Number(x.paidAmount) > 0 && Number(x.paidAmount) < Number(x.amount) && <p className="text-xs text-text-muted">đã rút {money(x.paidAmount)}</p>}</td>
-              <td className={td}><Badge tone={LINE_TONE[x.status] ?? 'neutral'}>{label(x.status)}</Badge></td>
-            </tr>)}
-          </Table>}
-        </Card>
-      </div>
-    </div>
-  </>
+  const valid = Number.isSafeInteger(Number(amount)) && Number(amount) > 0 && Number(amount) <= wallet.available && !!bank.trim() && /^[0-9 ]{4,40}$/.test(number.trim()) && !!name.trim()
+  return <form className="space-y-3" onSubmit={e => { e.preventDefault(); if (valid) void act.run(async () => { await walletApi.request({ amount: Number(amount), bankName: bank.trim(), accountNumber: number.trim(), accountName: name.trim() }); await onDone() }) }}>
+    <Field label="Số tiền muốn rút" hint={`Tối đa ${fmtMoney(wallet.available)}`}><input inputMode="numeric" type="number" min={1} max={wallet.available} step={1} required className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} /></Field>
+    <Field label="Ngân hàng"><input required maxLength={120} className={inputCls} value={bank} onChange={e => setBank(e.target.value)} /></Field>
+    <div className="grid gap-3 sm:grid-cols-2"><Field label="Số tài khoản"><input required inputMode="numeric" maxLength={40} className={inputCls} value={number} onChange={e => setNumber(e.target.value)} /></Field><Field label="Chủ tài khoản"><input required maxLength={120} className={inputCls} value={name} onChange={e => setName(e.target.value)} /></Field></div>
+    <InlineError message={act.error} /><Btn type="submit" variant="primary" busy={act.busy} disabled={!valid}>Gửi yêu cầu rút tiền</Btn>
+  </form>
 }
-
-/** Manager queue: pay outside the system, then confirm with the transfer reference (or reject with a reason). */
-export function WithdrawalsPanel() {
-  const state = useLoad(() => hybridGet<Withdrawal[]>('/coach-withdrawals', { status: 'PENDING' }))
-  const [open, setOpen] = useState<Withdrawal | null>(null)
+function WithdrawalHistory({ rows }: { rows: Withdrawal[] }) {
+  return !rows.length ? <p className="text-sm text-text-muted">Chưa có yêu cầu rút.</p> : <ul className="divide-y divide-border-subtle">{rows.map(w => <li key={w.id} className="space-y-1 py-3 first:pt-0 last:pb-0"><div className="flex flex-wrap justify-between gap-2"><span className="font-semibold tabular-nums">{fmtMoney(w.amount)}</span><Badge tone={w.status === 'PAID' ? 'success' : w.status === 'REQUESTED' ? 'warning' : 'neutral'}>{withdrawalLabel[w.status]}</Badge></div><p className="text-sm text-text-muted">{w.code} · {formatDateTime(w.createdAt)}</p>{w.transferRef && <p className="break-words text-sm">Mã chuyển khoản: {w.transferRef}</p>}{w.closedReason && <p className="text-sm">Lý do: {w.closedReason}</p>}</li>)}</ul>
+}
+export function WithdrawalsPanel({ coachId }: { coachId?: string }) {
+  const state = useLoad(() => walletApi.list(coachId), [coachId])
+  const [selected, setSelected] = useState<Withdrawal | null>(null), [history, setHistory] = useState(false)
   const { flash, node } = useFlash()
-  return <Card flush title="Lệnh rút chờ chi" badge={state.data ? <Badge tone="warning">{state.data.length}</Badge> : null} subtitle="Chuyển khoản ngoài hệ thống rồi nhập mã giao dịch để xác nhận.">
-    {node}
-    <Async state={state} rows={3} empty={rows => !rows.length && <EmptyBox icon={<CheckCircle2 className="h-5 w-5" />} title="Không có lệnh rút chờ chi" />}>
-      {rows => <Table head={['Coach', 'Số tiền', 'Tài khoản nhận', '']} minWidth={720}>
-        {rows.map(w => <tr key={w.id} className="hover:bg-bg-surface-muted/40">
-          <td className={td}><span className="flex items-center gap-3"><Person name={w.coach?.user.fullName} /><span><span className="block font-semibold">{w.coach?.user.fullName}</span><span className="text-xs text-text-muted">{w.code}</span></span></span></td>
-          <td className={`${td} font-semibold tabular-nums`}>{money(w.amount)}</td>
-          <td className={td}>{w.bankName} · {w.accountNumber}<p className="text-xs text-text-muted">{w.accountName}</p></td>
-          <td className={`${td} text-right`}><Btn size="sm" variant="soft" onClick={() => setOpen(w)}>Xử lý</Btn></td>
-        </tr>)}
-      </Table>}
-    </Async>
-    {open && <ReviewWithdrawal w={open} onClose={() => setOpen(null)} onDone={m => { flash(m); setOpen(null); void state.reload() }} />}
+  return <Card title="Yêu cầu rút tiền" subtitle="Đối chiếu tài khoản, chuyển tiền, rồi ghi nhận mã giao dịch." actions={<Btn size="sm" onClick={() => setHistory(v => !v)}>{history ? 'Xem yêu cầu đang chờ' : 'Xem lịch sử'}</Btn>}>
+    {node}<Async state={state} rows={3}>{rows => { const shown = rows.filter(w => history ? w.status !== 'REQUESTED' : w.status === 'REQUESTED'); return !shown.length ? <EmptyBox title={history ? 'Chưa có lịch sử chuyển tiền' : 'Không có yêu cầu chờ chuyển'} /> : <ul className="divide-y divide-border-subtle">{shown.map(w => <li key={w.id} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"><div><p className="font-semibold">{w.coach?.user.fullName ?? 'Coach'}</p><p className="mt-1 text-sm text-text-muted">{w.code} · {formatDateTime(w.createdAt)}</p><p className="mt-1 text-sm">{w.bankName} · {w.accountNumber}</p></div><div className="flex flex-wrap items-center gap-4"><strong className="tabular-nums">{fmtMoney(w.amount)}</strong>{w.status === 'REQUESTED' ? <Btn size="sm" onClick={() => setSelected(w)}>Xử lý chuyển khoản</Btn> : <Badge tone={w.status === 'PAID' ? 'success' : 'neutral'}>{withdrawalLabel[w.status]}</Badge>}</div></li>)}</ul> }}</Async>
+    {selected && <TransferDialog request={selected} onClose={() => setSelected(null)} onDone={message => { setSelected(null); flash(message); void state.reload() }} />}
   </Card>
 }
-
-function ReviewWithdrawal({ w, onClose, onDone }: { w: Withdrawal; onClose: () => void; onDone: (m: string) => void }) {
-  const [text, setText] = useState('')
-  const act = useSubmit()
-  const review = (approve: boolean) => void act.run(async () => { await hybridSend('patch', `/coach-withdrawals/${w.id}/review`, { approve, ...(approve ? { transferRef: text.trim() } : { reason: text.trim() }) }); onDone(approve ? 'Đã xác nhận chi.' : 'Đã từ chối lệnh rút.') })
-  return <Modal isOpen onClose={onClose} title={`Lệnh rút ${w.code}`} description={`${w.coach?.user.fullName ?? ''} · ${money(w.amount)}`}>
-    <div className="space-y-4">
-      <div className="rounded-lg bg-bg-surface-muted px-3 py-2 text-sm"><p className="font-medium">{w.bankName}</p><p className="tabular-nums">{w.accountNumber}</p><p>{w.accountName}</p></div>
-      <Field label="Mã giao dịch đã chuyển (khi duyệt) / lý do (khi từ chối)" required><input className={inputCls} value={text} onChange={e => setText(e.target.value)} /></Field>
-      <InlineError message={act.error} />
-      <div className="flex justify-end gap-2">
-        <Btn variant="danger" busy={act.busy} disabled={!text.trim()} onClick={() => review(false)}>Từ chối</Btn>
-        <Btn variant="primary" busy={act.busy} disabled={!text.trim()} onClick={() => review(true)}>Đã chuyển khoản — xác nhận</Btn>
-      </div>
-    </div>
-  </Modal>
+function TransferDialog({ request: w, onClose, onDone }: { request: Withdrawal; onClose: () => void; onDone: (message: string) => void }) {
+  const [reject, setReject] = useState(false), [text, setText] = useState('')
+  const act = useSubmit(), shortfall = (w.coachAvailable ?? 0) < 0
+  return <Modal isOpen onClose={() => { if (!act.busy) onClose() }} title={reject ? 'Từ chối yêu cầu rút' : 'Ghi nhận chuyển khoản'} description={`${w.coach?.user.fullName ?? 'Coach'} · ${w.code}`}><form className="space-y-4" onSubmit={e => { e.preventDefault(); if (text.trim() && (reject || !shortfall)) void act.run(async () => { if (reject) await walletApi.reject(w.id, text.trim()); else await walletApi.paid(w.id, text.trim()); onDone(reject ? 'Đã từ chối và báo lý do cho Coach.' : 'Đã ghi nhận chuyển khoản và cập nhật ví Coach.') }) }}>
+    <FlowSteps steps={['Yêu cầu đã gửi', 'Chuyển khoản', 'Coach nhận tiền']} current={1} /><p className="text-2xl font-semibold tabular-nums">{fmtMoney(w.amount)}</p><dl className="space-y-2 text-sm">{[['Ngân hàng', w.bankName], ['Số tài khoản', w.accountNumber], ['Chủ tài khoản', w.accountName]].map(([label, value]) => <div key={label} className="flex flex-wrap justify-between gap-2"><dt className="text-text-muted">{label}</dt><dd className="break-all font-medium">{value ?? 'Cần đối chiếu với Coach'}</dd></div>)}</dl>
+    {shortfall && <p role="alert" className="text-sm text-red-700">Số dư đã thay đổi. Từ chối để Coach gửi lại số tiền phù hợp.</p>}
+    <Field label={reject ? 'Lý do từ chối' : 'Mã giao dịch đã chuyển'} hint={reject ? 'Coach sẽ nhận được lý do này.' : 'Chỉ xác nhận sau khi chuyển tiền thành công.'}><input required maxLength={reject ? 1000 : 120} className={inputCls} value={text} onChange={e => setText(e.target.value)} /></Field>
+    <InlineError message={act.error} /><div className="flex flex-wrap justify-between gap-2"><Btn disabled={act.busy} variant="ghost" onClick={() => { setReject(v => !v); setText(''); act.clear() }}>{reject ? 'Quay lại chuyển khoản' : 'Từ chối yêu cầu'}</Btn><Btn type="submit" variant={reject ? 'danger' : 'primary'} busy={act.busy} disabled={!text.trim() || !reject && shortfall}>{reject ? 'Gửi lý do từ chối' : 'Xác nhận đã chuyển tiền'}</Btn></div>
+  </form></Modal>
 }

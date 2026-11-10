@@ -1,3 +1,4 @@
+import { SupportLinks } from '../components/support-links'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CheckCircle2, Clock3, Inbox, LifeBuoy, MessageSquareReply, RotateCcw, Timer } from 'lucide-react'
@@ -70,7 +71,9 @@ function TicketModal({ t, onClose, onDone }: { t: SupportRequest; onClose: () =>
   const [response, setResponse] = useState(t.response ?? '')
   return <Modal isOpen onClose={onClose} maxWidth="xl" title={`${t.requestCode} · ${t.subject}`} description={`${t.memberName ?? ''} · ${SUPPORT_CATEGORY[t.category] ?? t.category} · gửi ${dmy(t.createdAt)} ${hhmm(t.createdAt)}`}>
     <div className="space-y-4">
+      <div className="flex flex-wrap gap-3 text-sm font-semibold"><Link className="underline" to={(readOnly ? '/manager' : '/receptionist') + '/members/' + t.memberId + '?ticketId=' + t.id}>Mở hồ sơ học viên</Link>{t.ptPurchaseId && <Link className="underline" to={(readOnly ? '/manager' : '/receptionist') + '/pt-purchases/' + t.ptPurchaseId + '?ticketId=' + t.id}>Mở gói liên quan</Link>}{t.bookingId && <Link className="underline" to={'/pt-sessions/' + t.bookingId + '?ticketId=' + t.id}>Mở buổi liên quan</Link>}</div>
       <p className="whitespace-pre-line rounded-lg bg-bg-surface-muted p-3 text-sm">{t.message}</p>
+      <SupportLinks ticketId={t.id} manager={readOnly} />
       {t.attachmentUrls.length > 0 && <div className="flex flex-wrap gap-2">{t.attachmentUrls.map((u, i) => <a key={u} href={u} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-border-subtle"><img src={u} alt={`Ảnh đính kèm ${i + 1}`} className="h-24 w-24 object-cover" /></a>)}</div>}
       {t.response && <div className="rounded-lg border border-border-subtle p-3 text-sm"><p className="text-xs font-semibold text-text-muted">Phản hồi trước{t.respondedAt ? ` · ${dmy(t.respondedAt)} ${hhmm(t.respondedAt)}` : ''}</p><p className="mt-1 whitespace-pre-line">{t.response}</p></div>}
       {readOnly ? <p className="border-t border-border-subtle pt-4 text-sm text-text-muted">Lễ tân phản hồi và chuyển trạng thái yêu cầu; Manager theo dõi tại đây.</p> : closed ? <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-4">

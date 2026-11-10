@@ -4,8 +4,6 @@ import type {
   OfferingDetail,
   CoachCourseOfferingQueryParams,
   CreateCoachCourseOfferingPayload,
-  RejectOfferingPayload,
-  ResubmitOfferingPayload,
   UpdateOfferingStatusPayload,
 } from '../types/coach-approval.types'
 
@@ -49,47 +47,6 @@ export const coachApprovalService = {
   ): Promise<OfferingDetail> {
     const res = await apiClient.post<ApiSuccess<OfferingDetail>>(
       '/coach-course-offerings',
-      payload
-    )
-    const data = res as unknown as ApiSuccess<OfferingDetail>
-    return data.data ?? (data as unknown as OfferingDetail)
-  },
-
-  /**
-   * [3] PATCH /coach-course-offerings/{id}/approve - Manager approves teaching offering
-   */
-  async approveCoachCourseOffering(id: string): Promise<OfferingDetail> {
-    const res = await apiClient.patch<ApiSuccess<OfferingDetail>>(
-      `/coach-course-offerings/${id}/approve`
-    )
-    const data = res as unknown as ApiSuccess<OfferingDetail>
-    return data.data ?? (data as unknown as OfferingDetail)
-  },
-
-  /**
-   * [4] PATCH /coach-course-offerings/{id}/reject - Manager rejects offering with reason
-   */
-  async rejectCoachCourseOffering(
-    id: string,
-    payload: RejectOfferingPayload
-  ): Promise<OfferingDetail> {
-    const res = await apiClient.patch<ApiSuccess<OfferingDetail>>(
-      `/coach-course-offerings/${id}/reject`,
-      payload
-    )
-    const data = res as unknown as ApiSuccess<OfferingDetail>
-    return data.data ?? (data as unknown as OfferingDetail)
-  },
-
-  /**
-   * [5] PATCH /coach-course-offerings/{id}/resubmit - Coach updates experience notes and resubmits rejected offering
-   */
-  async resubmitCoachCourseOffering(
-    id: string,
-    payload: ResubmitOfferingPayload
-  ): Promise<OfferingDetail> {
-    const res = await apiClient.patch<ApiSuccess<OfferingDetail>>(
-      `/coach-course-offerings/${id}/resubmit`,
       payload
     )
     const data = res as unknown as ApiSuccess<OfferingDetail>
@@ -143,32 +100,6 @@ export const coachApprovalService = {
     payload: CreatePtPackageOptionPayload
   ): Promise<PackageOption> {
     const res = await apiClient.post<ApiSuccess<PackageOption>>('/pt-package-options', payload)
-    const data = res as unknown as ApiSuccess<PackageOption>
-    return data.data ?? (data as unknown as PackageOption)
-  },
-
-  /**
-   * [10] PATCH /pt-package-options/{id}/approve - Manager approves coach proposed package
-   */
-  async approvePtPackageOption(id: string): Promise<PackageOption> {
-    const res = await apiClient.patch<ApiSuccess<PackageOption>>(
-      `/pt-package-options/${id}/approve`
-    )
-    const data = res as unknown as ApiSuccess<PackageOption>
-    return data.data ?? (data as unknown as PackageOption)
-  },
-
-  /**
-   * [11] PATCH /pt-package-options/{id}/reject - Manager rejects package with reason
-   */
-  async rejectPtPackageOption(
-    id: string,
-    payload: { rejectionReason: string }
-  ): Promise<PackageOption> {
-    const res = await apiClient.patch<ApiSuccess<PackageOption>>(
-      `/pt-package-options/${id}/reject`,
-      payload
-    )
     const data = res as unknown as ApiSuccess<PackageOption>
     return data.data ?? (data as unknown as PackageOption)
   },

@@ -15,7 +15,7 @@ afterEach(cleanup);
 it('prefills wishes and profile before the coach initializes, without inventing measured baselines', () => {
   render(<JourneyInitialize data={{ ...journey, initial: null, prefill: { dateOfBirth: '1995-01-01', gender: 'MALE', heightCm: 170, medicalNotes: 'Không', goalType: 'WEIGHT_LOSS', targetMetric: 'weightKg', targetValue: 70, note: 'Muốn giảm cân', deadline: '2027-01-01' } }} done={() => {}} />);
   expect(screen.getByLabelText('Mong muốn cân nặng')).toHaveValue(70);
-  expect(screen.getByLabelText('Mốc đầu cân nặng *')).toHaveValue(null);
+  expect(screen.getByLabelText('Cân nặng *')).toHaveValue(null);
   expect(screen.getByRole('button', { name: 'Lưu khởi tạo lộ trình' })).toBeDisabled();
 });
 it('saves actual values and comment only; leaves unmeasured optional metrics absent', async () => {

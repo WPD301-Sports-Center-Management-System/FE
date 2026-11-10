@@ -288,8 +288,8 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
     const id = url.split('/')[1]
     const opt = db.packageOptions.find((p) => p.id === id)
     if (opt) {
-      opt.approvalStatus = data.approvalStatus
-      if (data.rejectionReason) opt.rejectionReason = data.rejectionReason
+      if (data.isActive !== undefined) opt.isActive = data.isActive
+      if (data.prices) opt.prices = { ...opt.prices, ...data.prices }
     }
     resData = opt
   } else if (url === 'pt-purchases' && method === 'get') {

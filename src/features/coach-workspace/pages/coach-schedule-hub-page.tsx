@@ -12,7 +12,7 @@ import { CoachReadiness } from '../components/session-work-queue'
 export function CoachScheduleHubPage() {
   const [params] = useSearchParams()
   const [revision,setRevision]=useState(0)
-  return <div className="[&_[role=tab]]:text-text-primary"><CoachReadiness /><TabbedPage bare title="Lịch dạy & giờ làm" tabs={[
+  return <div className="[&_[role=tab]]:text-text-primary"><PageHeader title="Lịch dạy" subtitle="Theo dõi buổi tập, hoàn tất việc chờ và quản lý giờ nhận học viên." /><CoachReadiness /><TabbedPage bare title="Lịch dạy & giờ làm" tabs={[
     {key:'calendar',label:'Lịch dạy',render:()=> <CoachSchedulePage/>},
     {key:'changes',label:'Việc cần xử lý',render:()=> <CoachScheduleChangesPage key={revision}/>},
     {key:'shift',label:'Nghỉ / nối cuối gói',render:()=> <div><PageHeader title="Theo dõi nghỉ và nối cuối gói" subtitle="Tối đa 6 lượt nghỉ hợp lệ; hệ thống tự nối buổi thay thế."/><ScheduleTools key={params.get('purchaseId')??''} initialTool="ABSENCES" initialPurchaseId={params.get('purchaseId')??''} onChanged={()=>setRevision(v=>v+1)}/></div>},

@@ -1,3 +1,4 @@
+import { clearPtContinuations } from './pt-continuation'
 import type { UserDetail } from '@/shared/types/api'
 
 const TOKEN_KEY = 'sc_access_token'
@@ -32,6 +33,7 @@ export const authStorage = {
   },
 
   setSession: (params: { accessToken: string; refreshToken: string; user: UserDetail }) => {
+    clearPtContinuations(params.user.id)
     try {
       localStorage.setItem(TOKEN_KEY, params.accessToken)
       localStorage.setItem(REFRESH_KEY, params.refreshToken)
@@ -61,6 +63,7 @@ export const authStorage = {
   },
 
   clearSession: () => {
+    clearPtContinuations()
     try {
       localStorage.removeItem(TOKEN_KEY)
       localStorage.removeItem(REFRESH_KEY)

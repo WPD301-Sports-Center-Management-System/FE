@@ -1,3 +1,4 @@
+import type { CoachTier } from '@/shared/utils/coach-tier'
 // Common API and DTO Types directly derived from Gym_Center_API_Contract_BE_FE_Mobile.docx
 
 export type UserRole = 'MANAGER' | 'RECEPTIONIST' | 'COACH' | 'MEMBER'
@@ -100,6 +101,7 @@ export type MemberDetail = MemberSummary & {
 }
 
 export type CoachSummary = {
+  tier?: CoachTier
   id: string
   fullName: string
   avatarUrl?: string
@@ -226,31 +228,28 @@ export type CoachSlot = {
 }
 
 export type PackageOption = {
-  sessionsPerWeek?: number
-  templateId?: string | null
+  minCoachTier: CoachTier
+  eligible?: boolean
   durationMinutes?: number
   id: string
-  courseId: string
-  coachId?: string
   name: string
   description?: string
   sessionCount: number
-  validityDays: number
   price: string
-  approvalStatus: OptionApprovalStatus
-  rejectionReason?: string
+  prices?: Partial<Record<CoachTier, string>> | null
+  priceFrom?: string | null
+  coachTier?: CoachTier | null
   isActive: boolean
-  courseName?: string
-  coachName?: string
 }
 
 export type Purchase = {
+  coachTierSnapshot?: CoachTier | null
   id: string
   memberId: string
   coachId: string
-  courseId: string
+  courseId: string | null
   packageOptionId: string
-  courseNameSnapshot: string
+  courseNameSnapshot: string | null
   coachNameSnapshot: string
   priceSnapshot: string
   gymSharePercentSnapshot: number
@@ -519,8 +518,8 @@ export type CoachReview = {
   memberId?: string
   memberDisplayName: string
   coachId: string
-  courseId: string
-  courseNameSnapshot: string
+  courseId: string | null
+  courseNameSnapshot: string | null
   rating: number
   comment?: string
   createdAt: string

@@ -43,13 +43,6 @@ export interface CourseReportItem {
   }
 }
 
-export interface EquipmentReportItem {
-  status: string
-  _count: {
-    id: number
-  }
-}
-
-export type ReportType = 'revenue' | 'pt-packages' | 'bookings' | 'coaches' | 'courses' | 'equipment'
+export type ReportType = 'revenue' | 'pt-packages' | 'bookings' | 'coaches' | 'courses'
 
 export type { CoachPayout, ApiSuccess }

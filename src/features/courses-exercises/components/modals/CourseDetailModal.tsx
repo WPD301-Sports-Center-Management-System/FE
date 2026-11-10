@@ -1,3 +1,4 @@
+import { tierLabel } from '@/shared/utils/coach-tier'
 import { RefreshCw, Layers, ListOrdered, UserCheck, Package } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
@@ -155,7 +156,7 @@ export function CourseDetailModal({
                   <div className="flex flex-wrap gap-1">
                     {courseDetail.ptPackageOptionsCourseId.map((pkg, idx) => (
                       <span key={idx} className="rounded bg-bg-surface-muted border border-border-subtle px-2 py-0.5 text-text-primary">
-                        {pkg.name} ({pkg.sessionCount} buổi)
+                        {pkg.name} ({pkg.sessionCount} buổi) · Giá từ {Number(pkg.priceFrom ?? pkg.price).toLocaleString('vi-VN')} ₫{pkg.minCoachTier && pkg.minCoachTier !== 'STANDARD' ? ' · Từ bậc ' + tierLabel(pkg.minCoachTier) : ''}
                       </span>
                     ))}
                   </div>

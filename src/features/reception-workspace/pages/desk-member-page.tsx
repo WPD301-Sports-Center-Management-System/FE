@@ -92,7 +92,7 @@ export function DeskMemberPage() {
         {purchases.error ? <ErrorBox message={purchases.error} /> : !purchases.data ? <Skeleton rows={3} /> : !purchases.data.length ? <EmptyBox title="Chưa có gói PT" /> :
           <ul className="divide-y divide-border-subtle">{purchases.data.map(p => <li key={p.id} className="px-5 py-3">
             <div className="flex flex-wrap items-center gap-2"><Link to={`${base}/pt-purchases/${p.id}`} className="font-semibold hover:text-primary">{p.packageNameSnapshot}</Link><Badge tone={p.status === 'ACTIVE' ? 'info' : p.status === 'PENDING_PAYMENT' ? 'warning' : 'neutral'}>{PURCHASE_LABEL[p.status] ?? p.status}</Badge></div>
-            <p className="text-xs text-text-muted">{p.courseNameSnapshot}{p.coachNameSnapshot ? ` · HLV ${p.coachNameSnapshot}` : ''}{p.expiresAt ? ` · hạn ${dmy(p.expiresAt)}` : ''}</p>
+            <p className="text-xs text-text-muted">{p.courseNameSnapshot ?? 'PT 1:1'}{p.coachNameSnapshot ? ` · HLV ${p.coachNameSnapshot}` : ''}{p.expiresAt ? ` · hạn ${dmy(p.expiresAt)}` : ''}</p>
             <div className="mt-2 flex items-center gap-3"><ProgressBar className="flex-1" value={p.consumedCredits} max={p.totalCredits} /><span className="text-xs tabular-nums text-text-muted">{p.consumedCredits}/{p.totalCredits} buổi</span></div>
           </li>)}</ul>}
       </Card>

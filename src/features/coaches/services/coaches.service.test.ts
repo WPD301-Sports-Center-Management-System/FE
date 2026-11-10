@@ -90,32 +90,6 @@ describe('coachesService', () => {
     expect(result.data).toEqual(mockOfferings)
   })
 
-  it('[7] calls GET /coaches/me/slots', async () => {
-    const mockSlots = [{ id: 's-1', slotIndex: 1 }]
-    vi.mocked(apiClient.get).mockResolvedValueOnce({
-      success: true,
-      data: mockSlots,
-    } as any)
-
-    const result = await coachesService.getMySlots({ from: '2026-10-10', to: '2026-10-17' })
-    expect(apiClient.get).toHaveBeenCalledWith('/coaches/me/slots', {
-      params: { from: '2026-10-10', to: '2026-10-17' },
-    })
-    expect(result.data).toEqual(mockSlots)
-  })
-
-  it('[8] calls GET /coaches/me/pt-package-options', async () => {
-    const mockOptions = [{ id: 'opt-1', name: 'Pack 12 Sessions' }]
-    vi.mocked(apiClient.get).mockResolvedValueOnce({
-      success: true,
-      data: mockOptions,
-    } as any)
-
-    const result = await coachesService.getMyPackageOptions()
-    expect(apiClient.get).toHaveBeenCalledWith('/coaches/me/pt-package-options', { params: undefined })
-    expect(result.data).toEqual(mockOptions)
-  })
-
   it('[9] calls GET /coaches/me/pt-packages', async () => {
     const mockPackages = [{ id: 'pkg-1', remainingSessions: 8 }]
     vi.mocked(apiClient.get).mockResolvedValueOnce({
@@ -138,18 +112,6 @@ describe('coachesService', () => {
     const result = await coachesService.getMyBookings()
     expect(apiClient.get).toHaveBeenCalledWith('/coaches/me/pt-bookings', { params: undefined })
     expect(result.data).toEqual(mockBookings)
-  })
-
-  it('[11] calls GET /coaches/me/payouts', async () => {
-    const mockPayouts = [{ id: 'pay-1', amount: '5000000', status: 'PAID' }]
-    vi.mocked(apiClient.get).mockResolvedValueOnce({
-      success: true,
-      data: mockPayouts,
-    } as any)
-
-    const result = await coachesService.getMyPayouts()
-    expect(apiClient.get).toHaveBeenCalledWith('/coaches/me/payouts', { params: undefined })
-    expect(result.data).toEqual(mockPayouts)
   })
 
   it('[12] calls GET /coaches/:coachId/reviews', async () => {

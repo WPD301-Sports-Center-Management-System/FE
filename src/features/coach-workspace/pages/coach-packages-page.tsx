@@ -27,7 +27,7 @@ export function CoachPackagesPage() {
   const view: View = params.get('view') === 'catalog' ? 'catalog' : 'sold'
   const switcher = <Segmented label="Chế độ xem" value={view} onChange={v => setParams(v === 'catalog' ? { view: v } : {}, { replace: true })} items={[{ key: 'sold' as const, label: 'Học viên đã mua' }, { key: 'catalog' as const, label: 'Gói mở bán' }]} />
   if (view === 'catalog') return <div>
-    <PageHeader title="Gói PT" subtitle="Tạo và theo dõi các gói học viên có thể mua." actions={switcher} />
+    <PageHeader title="Gói PT" subtitle="Các gói trung tâm đang mở bán theo bậc Coach của bạn." actions={switcher} />
     <CoachCatalog />
   </div>
   return <SoldPackages switcher={switcher} />
@@ -45,14 +45,14 @@ function SoldPackages({ switcher }: { switcher: React.ReactNode }) {
   const low = active.filter(p => remainingOf(p) <= 2)
   const totalRemaining = active.reduce((n, p) => n + remainingOf(p), 0)
   const consumed = all.reduce((n, p) => n + p.consumedCredits, 0)
-  const byCourse = Object.entries(active.reduce<Record<string, number>>((m, p) => ({ ...m, [p.courseNameSnapshot]: (m[p.courseNameSnapshot] ?? 0) + 1 }), {})).sort((a, b) => b[1] - a[1])
+  const byCourse = Object.entries(active.reduce<Record<string, number>>((m, p) => ({ ...m, [p.courseNameSnapshot ?? 'PT 1:1']: (m[p.courseNameSnapshot ?? 'PT 1:1'] ?? 0) + 1 }), {})).sort((a, b) => b[1] - a[1])
   const nextOf = useMemo(() => { const m = new Map<string, NonNullable<typeof upcoming.data>[number]>(); for (const s of upcoming.data ?? []) if ((isUpcoming(s) || s.status === 'IN_PROGRESS') && !m.has(s.purchaseId)) m.set(s.purchaseId, s); return m }, [upcoming.data])
   const rows = all.filter(TABS.find(t => t.key === tab)!.test)
   const shown = rows.slice((page - 1) * PAGE, page * PAGE)
   const statusOf = (p: CoachPurchase): { label: string; tone: Tone } => p.status !== 'ACTIVE' ? { label: PURCHASE_LABEL[p.status] ?? p.status, tone: p.status === 'PENDING_PAYMENT' ? 'warning' : 'neutral' }
     : remainingOf(p) <= 2 ? { label: 'Sắp hết buổi', tone: 'warning' } : p.expiresAt && centerDate(p.expiresAt) <= addDays(today, 14) ? { label: 'Sắp hết hạn', tone: 'danger' } : { label: 'Đang dạy', tone: 'info' }
   const exportCsv = () => downloadCsv('goi-pt.csv', ['Mã gói', 'Học viên', 'Mã HV', 'Gói', 'Khóa', 'Đã dùng', 'Tổng', 'Dự kiến hoàn thành', 'Trạng thái'],
-    rows.map(p => [p.purchaseCode, p.memberName, p.memberCode, p.packageNameSnapshot, p.courseNameSnapshot, p.consumedCredits, p.totalCredits, dmy(p.expiresAt), statusOf(p).label]))
+    rows.map(p => [p.purchaseCode, p.memberName, p.memberCode, p.packageNameSnapshot, p.courseNameSnapshot ?? 'PT 1:1', p.consumedCredits, p.totalCredits, dmy(p.expiresAt), statusOf(p).label]))
 
   return <div>
     <PageHeader title="Gói PT" subtitle={<><span>Các gói học viên đã mua và số buổi còn lại</span><Dot /><span>Cập nhật sau mỗi buổi kết thúc</span></>}
@@ -68,7 +68,7 @@ function SoldPackages({ switcher }: { switcher: React.ReactNode }) {
         {() => <><Table head={['Học viên', 'Gói PT', 'Tiến độ buổi', 'Buổi tiếp theo', 'Hoàn thành / hạn', 'Trạng thái', 'Thao tác']} minWidth={1000}>
           {shown.map(p => { const next = nextOf.get(p.id); const st = statusOf(p); return <tr key={p.id} className="hover:bg-bg-surface-muted/40">
             <td className={td}><Link to={`/coach/students/${p.memberId}`} className="flex items-center gap-3 hover:text-primary"><Person name={p.memberName} src={p.avatarUrl} /><span><span className="block font-semibold">{p.memberName}</span><span className="text-xs text-text-muted">{p.memberCode}</span></span></Link></td>
-            <td className={td}><Badge tone="violet">{p.packageNameSnapshot}</Badge><p className="mt-1 text-xs text-text-muted">{p.courseNameSnapshot} · {p.purchaseCode}</p></td>
+            <td className={td}><Badge tone="violet">{p.packageNameSnapshot}</Badge><p className="mt-1 text-xs text-text-muted">{p.courseNameSnapshot ?? 'PT 1:1'} · {p.purchaseCode}</p></td>
             <td className={td}><div className="flex items-center gap-2"><ProgressBar className="w-32" value={p.consumedCredits} max={p.totalCredits} tone={remainingOf(p) <= 2 ? 'warning' : 'primary'} label="Buổi đã dùng" /><span className="text-xs tabular-nums text-text-muted">{p.consumedCredits}/{p.totalCredits}</span></div>
               {p.reservedCredits > 0 && <p className="mt-0.5 text-xs text-text-muted">{p.reservedCredits} buổi đã xếp lịch</p>}</td>
             <td className={td}>{next ? <><p className="font-semibold">{relativeSlot(next.startsAt)}</p><p className="text-xs text-text-muted">{next.status === 'IN_PROGRESS' ? 'đang diễn ra' : next.arrivedAt ? 'học viên đã đến' : 'đã xác nhận'}</p></> : <span className="text-text-muted">Chưa có lịch sắp tới</span>}</td>

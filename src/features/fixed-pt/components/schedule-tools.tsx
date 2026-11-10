@@ -40,13 +40,6 @@ export function ScheduleTools({ initialPurchaseId = '', initialAbsenceId = '', i
         <InlineError message={act.error} />
       </div>
     </Card>
-    {pkg && <Card title="Bảo lưu / mất liên lạc" subtitle="Bảo lưu theo nhu cầu nghỉ do Manager xử lý; không thay thế giới hạn 6 lượt nghỉ."><ContactTools key={pkg.id} pkg={pkg} onDone={() => { void packages.reload(); onChanged?.() }} /></Card>}
+    {pkg?.status === 'PAUSED' && <Card title="Gói đang bảo lưu"><p className="mb-3 text-sm text-text-muted">Mở lại trước khi đề xuất lịch mới. Các quyền buổi vẫn được giữ.</p><Btn busy={act.busy} onClick={() => void act.run(async () => { await hybridSend('post', '/pt-package-purchases/' + pkg.id + '/resume', {}); await packages.reload(); await status.reload(); onChanged?.() })}>Mở lại để xếp lịch</Btn><InlineError message={act.error} /></Card>}
   </div>
-}
-function ContactTools({ pkg, onDone }: { pkg: Pkg; onDone: () => void }) {
-  const [note, setNote] = useState('')
-  const act = useSubmit()
-  const contact = useLoad(() => hybridGet<{ hasNoShow: boolean; canPause: boolean; eligibleAt: string | null }>(`/pt-package-purchases/${pkg.id}/contact-status`), [pkg.id])
-  const run = (path: string, body: object) => void act.run(async () => { await hybridSend('post', `/pt-package-purchases/${pkg.id}/${path}`, body); await contact.reload(); onDone() })
-  return <div className="space-y-3"><p className="text-sm text-text-muted">{pkg.status === 'PAUSED' ? 'Gói đang bảo lưu. Mở lại để xếp buổi chờ theo lịch trống hiện tại.' : 'Chỉ tạm ngưng mất liên lạc khi hệ thống xác nhận đủ điều kiện.'}</p>{pkg.status === 'PAUSED' ? <Btn busy={act.busy} onClick={() => run('resume', {})}>Mở lại gói</Btn> : <><Field label="Căn cứ liên hệ"><input className={inputCls} value={note} onChange={e => setNote(e.target.value)} /></Field><div className="flex flex-wrap gap-2"><Btn busy={act.busy} disabled={!note.trim() || !contact.data?.hasNoShow} onClick={() => run('contact-attempts', { outcome: 'NO_RESPONSE', note: note.trim() })}>Đã liên hệ, chưa phản hồi</Btn><Btn busy={act.busy} disabled={!note.trim()} onClick={() => run('contact-attempts', { outcome: 'CONTACTED', note: note.trim() })}>Đã liên lạc được</Btn><Btn busy={act.busy} disabled={!note.trim() || !contact.data?.canPause} onClick={() => run('pause', { kind: 'UNREACHABLE', note: note.trim() })}>Tạm ngưng do mất liên lạc</Btn></div></>}<InlineError message={act.error || contact.error} /></div>
 }

@@ -1,12 +1,12 @@
+import { walletApi } from '@/features/fixed-pt/wallet-api'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, BarChart3, CalendarDays, ClipboardCheck, Download, FileSpreadsheet, LifeBuoy, Scale, TrendingDown, TrendingUp, Users, Wallet, Wrench } from 'lucide-react'
-import { Modal } from '@/shared/components/ui/modal'
-import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
+import { AlertTriangle, BarChart3, CalendarDays, ClipboardCheck, Download, FileSpreadsheet, LifeBuoy, Scale, TrendingDown, TrendingUp, Users, Wallet } from 'lucide-react'
+import { useLoad } from '@/features/fixed-pt/hooks'
 import { centerDate } from '@/shared/utils/date'
 import { downloadBlob } from '@/shared/utils/download'
 import { AreaChart, ChartLegend, SERIES_COLORS, StackedBarChart } from '@/features/workspace/charts'
-import { Badge, Btn, Card, Dot, InlineError, PageHeader, Skeleton, StatTile, useFlash } from '@/features/workspace/ui'
+import { Badge, Btn, Card, Dot, PageHeader, Skeleton, StatTile } from '@/features/workspace/ui'
 import { fmtMoney, fmtNumber, longDate, weekdayOf } from '@/features/workspace/utils'
 import { deskApi } from '@/features/reception-workspace/api'
 import { mgrApi } from '../api'
@@ -18,9 +18,7 @@ const shiftMonth = (ym: string, n: number) => { const [y, m] = ym.split('-').map
 const millions = (v: number) => `${fmtNumber(v / 1_000_000, v >= 10_000_000 ? 0 : 1)}tr`
 
 export function MgrHomePage() {
-  const { counts, pendingApprovals, refresh } = useMgrShell()
-  const { flash, node } = useFlash()
-  const [quickReviewOpen, setQuickReviewOpen] = useState(false)
+  const { counts, pendingApprovals } = useMgrShell()
   const today = centerDate()
   const ym = today.slice(0, 7)
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => shiftMonth(ym, i - 11)), [ym])
@@ -30,7 +28,7 @@ export function MgrHomePage() {
   const activeSubs = useLoad(() => mgrApi.subscriptions({ status: 'ACTIVE' }), [])
   const visits = useLoad(() => mgrApi.visits(10), [])
   const desk = useLoad(() => deskApi.dashboard(), [])
-  const earnings = useLoad(() => mgrApi.earningSummary(), [])
+  const withdrawals = useLoad(() => walletApi.list(), [])
 
   const rev = thisMonth.data, prev = lastMonth.data
   const monthRev = rev ? rev.membershipRevenue + rev.ptGross : null
@@ -58,9 +56,8 @@ export function MgrHomePage() {
     return { labels: hours.map(h => `${h}h`), wd, we, total: recent.length, perDay: recent.length / 28, topIndex: topWd, top: hours[topWd]!, topWe: hours[topWe]!, peakWd: wd[topWd]!, peakWe: we[topWe]! }
   }, [visits.data])
 
-  const pendingEarnings = earnings.data?.byStatus.PENDING_CONFIRMATION
+  const pendingWithdrawals = withdrawals.data?.filter(w => w.status === 'REQUESTED')
   return <div className="flex flex-col">
-    {node}
     <PageHeader title="Hôm nay tại trung tâm" subtitle={<><span>{longDate(today)}</span><Dot /><span>{counts ? `${fmtNumber(counts.coaches)} Coach · ${fmtNumber(counts.members)} hội viên` : 'Đang tải…'}</span><Dot /><span>Doanh thu tính theo tiền đã thu và áp vào đơn</span></>}
       actions={<ExportBtn type="revenue" label="Xuất báo cáo tháng" from={monthStart(ym)} to={today} primary />} />
 
@@ -107,10 +104,9 @@ export function MgrHomePage() {
       <Card flush title="Cần xử lý hôm nay" subtitle="Tổng hợp từ các phân hệ">
         <ul className="divide-y divide-border-subtle">
           <Todo to="/manager/pt-board?tab=review" icon={<AlertTriangle className="h-4 w-4" />} tone="text-red-600 bg-red-50 dark:bg-red-500/10" title="Buổi PT cần kiểm tra" n={counts?.sessionsNeedingReview} hint="Qua giờ chưa có kết quả hoặc đang dạy quá giờ" action="Xử lý" />
-          <Todo to="/manager/approvals" icon={<ClipboardCheck className="h-4 w-4" />} tone="text-violet-600 bg-violet-50 dark:bg-violet-500/10" title="Coach chờ duyệt khóa / gói PT" n={pendingApprovals ?? undefined} hint="Đăng ký dạy khóa và đề xuất gói mới" action="Duyệt" onQuickAction={() => setQuickReviewOpen(true)} />
-          <Todo to="/manager/coach-income?tab=pending" icon={<Wallet className="h-4 w-4" />} tone="text-amber-600 bg-amber-50 dark:bg-amber-500/10" title="Thu nhập Coach chờ xác nhận" n={pendingEarnings?.count} hint={pendingEarnings ? `${fmtMoney(pendingEarnings.amount)} từ buổi vắng / hủy muộn` : 'Buổi vắng, hủy muộn cần Manager công nhận'} action="Xác nhận" />
+          <Todo to="/manager/approvals" icon={<ClipboardCheck className="h-4 w-4" />} tone="text-violet-600 bg-violet-50 dark:bg-violet-500/10" title="Hồ sơ Coach chờ duyệt" n={pendingApprovals ?? undefined} hint="Xem năng lực và phản hồi hồ sơ một lần" action="Duyệt" />
+          <Todo to="/manager/coach-income" icon={<Wallet className="h-4 w-4" />} tone="text-amber-600 bg-amber-50 dark:bg-amber-500/10" title="Yêu cầu rút tiền Coach" n={pendingWithdrawals?.length} hint={pendingWithdrawals ? fmtMoney(pendingWithdrawals.reduce((n, w) => n + w.amount, 0)) + ' đang chờ chuyển khoản' : 'Coach gửi yêu cầu, Manager chuyển và xác nhận'} action="Chuyển tiền" />
           <Todo to="/manager/payments?tab=reconciliation" icon={<Scale className="h-4 w-4" />} tone="text-sky-600 bg-sky-50 dark:bg-sky-500/10" title="Hồ sơ đối soát tiền nhận" n={counts?.openReconciliation} hint="Tiền đã nhận nhưng chưa áp vào đơn" action="Mở" />
-          <Todo to="/manager/equipment" icon={<Wrench className="h-4 w-4" />} tone="text-orange-600 bg-orange-50 dark:bg-orange-500/10" title="Thiết bị bảo trì / ngưng hoạt động" n={counts?.equipmentIssues} hint="Thiết bị đang không phục vụ hội viên" action="Chi tiết" />
           <Todo to="/manager/support" icon={<LifeBuoy className="h-4 w-4" />} tone="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10" title="Yêu cầu hỗ trợ đang mở" n={desk.data?.openSupportRequests} hint="Lễ tân đang xử lý — theo dõi tồn đọng" action="Xem" />
         </ul>
       </Card>
@@ -119,8 +115,7 @@ export function MgrHomePage() {
           {[['revenue', 'Báo cáo doanh thu', rev ? `Đã thu ${millions(rev.totalReceived)} · áp vào đơn ${millions(rev.appliedToOrders)}` : 'Theo kênh và trạng thái áp đơn'],
             ['pt-packages', 'Gói PT & số buổi', 'Gói đã bán, buổi đã dùng / còn lại'],
             ['bookings', 'Buổi PT theo kết quả', 'Hoàn thành / vắng / hủy'],
-            ['coaches', 'Hiệu suất Coach', 'Số buổi, đánh giá trung bình'],
-            ['equipment', 'Thiết bị theo trạng thái', 'Hoạt động / bảo trì / ngưng']].map(([type, title, hint]) => <li key={type} className="flex flex-wrap items-center gap-3 px-5 py-3">
+            ['coaches', 'Hiệu suất Coach', 'Số buổi, đánh giá trung bình']].map(([type, title, hint]) => <li key={type} className="flex flex-wrap items-center gap-3 px-5 py-3">
             <span aria-hidden className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 text-primary"><BarChart3 className="h-4 w-4" /></span>
             <div className="min-w-0 flex-1"><p className="font-semibold">{title}</p><p className="text-xs text-text-muted">{hint}</p></div>
             <ExportBtn type={type!} label="CSV" from={monthStart(ym)} to={today} /><ExportBtn type={type!} label="Excel" format="xlsx" from={monthStart(ym)} to={today} />
@@ -129,7 +124,6 @@ export function MgrHomePage() {
         <div className="border-t border-border-subtle px-5 py-3 text-right"><Link to="/manager/reports" className="text-sm font-semibold text-primary hover:underline">Mở trang báo cáo chi tiết</Link></div>
       </Card>
     </div>
-    {quickReviewOpen && <QuickReviewModal open={quickReviewOpen} onClose={() => setQuickReviewOpen(false)} onDone={m => { flash(m); refresh() }} />}
   </div>
 }
 
@@ -143,68 +137,6 @@ function Todo({ to, icon, tone, title, n, hint, action, onQuickAction }: { to: s
       <Link to={to} className="rounded-lg border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15">{action}</Link>
     )}
   </li>
-}
-
-function QuickReviewModal({ open, onClose, onDone }: { open: boolean; onClose: () => void; onDone: (m: string) => void }) {
-  const options = useLoad(() => mgrApi.options('PENDING'), [open], open)
-  const submit = useSubmit()
-  const pendingOptions = (options.data ?? []).filter(o => o.coachId)
-  return (
-    <Modal isOpen={open} onClose={onClose} title="Duyệt nhanh gói tùy chỉnh của Coach">
-      <div className="space-y-4">
-        {options.error ? (
-          <InlineError message={options.error} />
-        ) : !options.data ? (
-          <Skeleton rows={3} />
-        ) : !pendingOptions.length ? (
-          <div className="py-8 text-center text-sm text-text-muted">Không có gói nào đang chờ duyệt.</div>
-        ) : (
-          <ul className="max-h-96 divide-y divide-border-subtle overflow-y-auto">
-            {pendingOptions.map(p => (
-              <li key={p.id} className="flex items-start justify-between gap-3 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">{p.name}</p>
-                  <p className="text-xs text-text-muted">{p.coach?.user?.fullName ?? 'Coach'} · {p.sessionCount} buổi · {fmtMoney(p.price)} · {p.validityDays} ngày</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Btn
-                    size="sm"
-                    variant="primary"
-                    busy={submit.busy}
-                    onClick={async () => {
-                      await submit.run(() => mgrApi.approveOption(p.id))
-                      onDone(`Đã duyệt gói ${p.name}!`)
-                      void options.reload()
-                    }}
-                  >
-                    Duyệt
-                  </Btn>
-                  <Btn
-                    size="sm"
-                    variant="outline"
-                    busy={submit.busy}
-                    onClick={async () => {
-                      await submit.run(() => mgrApi.rejectOption(p.id, 'Chưa phù hợp với định hướng trung tâm'))
-                      onDone(`Đã từ chối gói ${p.name}.`)
-                      void options.reload()
-                    }}
-                  >
-                    Từ chối
-                  </Btn>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="flex items-center justify-between border-t border-border-subtle pt-3">
-          <Link to="/manager/approvals" onClick={onClose} className="text-xs font-semibold text-primary hover:underline">
-            Mở toàn bộ trang duyệt hồ sơ Coach & gói →
-          </Link>
-          <Btn size="sm" variant="ghost" onClick={onClose}>Đóng</Btn>
-        </div>
-      </div>
-    </Modal>
-  )
 }
 
 function ExportBtn({ type, label, format = 'csv', from, to, primary }: { type: string; label: string; format?: 'csv' | 'xlsx'; from: string; to: string; primary?: boolean }) {

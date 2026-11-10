@@ -44,7 +44,7 @@ describe('coachApprovalService', () => {
       courseId: 'course-123',
       experienceNote: '3 năm dạy kickboxing',
     }
-    const created = { id: 'off-created', ...payload, status: 'PENDING', isActive: false }
+    const created = { id: 'off-created', ...payload, status: 'APPROVED', isActive: true }
     vi.mocked(apiClient.post).mockResolvedValueOnce({
       success: true,
       data: created,
@@ -55,43 +55,8 @@ describe('coachApprovalService', () => {
     expect(res).toEqual(created)
   })
 
-  it('[3] calls PATCH /coach-course-offerings/:id/approve to approve offering', async () => {
-    const approved = { id: 'off-1', status: 'APPROVED', isActive: true }
-    vi.mocked(apiClient.patch).mockResolvedValueOnce({
-      success: true,
-      data: approved,
-    } as any)
 
-    const res = await coachApprovalService.approveCoachCourseOffering('off-1')
-    expect(apiClient.patch).toHaveBeenCalledWith('/coach-course-offerings/off-1/approve')
-    expect(res).toEqual(approved)
-  })
 
-  it('[4] calls PATCH /coach-course-offerings/:id/reject with reason', async () => {
-    const payload = { rejectionReason: 'Chưa đủ chứng chỉ yêu cầu' }
-    const rejected = { id: 'off-1', status: 'REJECTED', isActive: false, rejectionReason: payload.rejectionReason }
-    vi.mocked(apiClient.patch).mockResolvedValueOnce({
-      success: true,
-      data: rejected,
-    } as any)
-
-    const res = await coachApprovalService.rejectCoachCourseOffering('off-1', payload)
-    expect(apiClient.patch).toHaveBeenCalledWith('/coach-course-offerings/off-1/reject', payload)
-    expect(res).toEqual(rejected)
-  })
-
-  it('[5] calls PATCH /coach-course-offerings/:id/resubmit to resubmit rejected offering', async () => {
-    const payload = { experienceNote: 'Đã bổ sung chứng chỉ NASM-CPT' }
-    const resubmitted = { id: 'off-1', status: 'PENDING', experienceNote: payload.experienceNote, rejectionReason: null }
-    vi.mocked(apiClient.patch).mockResolvedValueOnce({
-      success: true,
-      data: resubmitted,
-    } as any)
-
-    const res = await coachApprovalService.resubmitCoachCourseOffering('off-1', payload)
-    expect(apiClient.patch).toHaveBeenCalledWith('/coach-course-offerings/off-1/resubmit', payload)
-    expect(res).toEqual(resubmitted)
-  })
 
   it('[6] calls PATCH /coach-course-offerings/:id/status to toggle active status', async () => {
     const payload = { isActive: false }
