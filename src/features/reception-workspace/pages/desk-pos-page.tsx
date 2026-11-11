@@ -1,6 +1,7 @@
+import { savePtContinuation } from '@/shared/utils/pt-continuation'
 import { openReceipt } from '@/features/workspace/receipt-events'
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { Banknote, Check, CheckCircle2, CreditCard, FileDown, RotateCcw, Ticket, UserPlus, X } from 'lucide-react'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import { centerDate } from '@/shared/utils/date'
@@ -23,9 +24,11 @@ type Done = { memberId: string; name: string; plan: string; amount: number; meth
 
 export function DeskPosPage() {
   const { refresh } = useDeskShell()
+  const location = useLocation()
   const [params, setParams] = useSearchParams()
   const plans = useLoad(() => deskApi.plans(), [])
   const [customer, setCustomer] = useState<PersonHit | null>(null)
+  const [renewId, setRenewId] = useState(params.get('renewSubscriptionId') ?? '')
   const [plan, setPlan] = useState<Plan | null>(null)
   const [pending, setPending] = useState<Subscription | null>(null)
   const [startDate, setStartDate] = useState('')
@@ -35,7 +38,8 @@ export function DeskPosPage() {
   const [done, setDone] = useState<Done | null>(null)
   const submit = useSubmit()
   // BE: POST /payments/counter is Receptionist-only; a Manager browsing the desk must not be offered it.
-  const desk = useAuth().role !== 'MANAGER'
+  const { role, user } = useAuth()
+  const desk = role !== 'MANAGER'
   const memberId = params.get('memberId')
   useEffect(() => {
     let active = true
@@ -57,15 +61,16 @@ export function DeskPosPage() {
   const cash = Number(received.replace(/\D/g, '')) || 0
   const ready = !!customer && amount > 0 && (method !== 'CASH' || cash >= amount)
   const nextStep = !customer ? 'Chọn hội viên để tiếp tục.' : amount <= 0 ? 'Chọn vé gym muốn mua.' : method === 'CASH' && cash < amount ? `Cần nhập đủ tiền khách đưa. Còn thiếu ${fmtMoney(amount - cash)}.` : null
-  const pick = (h: PersonHit | null) => { setCustomer(h); setPending(null); const p = new URLSearchParams(params); if (h) p.set('memberId', h.id); else p.delete('memberId'); setParams(p, { replace: true }) }
+  const pick = (h: PersonHit | null) => { setCustomer(h); setPending(null); setRenewId(''); const p = new URLSearchParams(params); if (h) p.set('memberId', h.id); else p.delete('memberId'); setParams(p, { replace: true }) }
   const reset = () => { setDone(null); setPlan(null); setPending(null); setReceived(''); setStartDate(''); submit.clear(); void subs.reload() }
 
   const pay = async () => {
     if (!customer) return
     const r = await submit.run(async () => {
-      const sub = pending ?? await deskApi.createSubscription({ memberId: customer.id, planId: plan!.id, startDate: startDate || undefined })
+      if (renewId && !subs.data?.some(s => s.id === renewId && s.memberId === customer.id)) throw new Error('Vé gia hạn đã thay đổi. Hãy chọn lại vé của học viên.');
+      const sub = pending ?? (renewId ? await deskApi.renewSubscription(renewId, { planId: plan!.id, startDate: startDate || undefined }) : await deskApi.createSubscription({ memberId: customer.id, planId: plan!.id, startDate: startDate || undefined }))
       setPending(sub)
-      if (method === 'VNPAY') { const v = await deskApi.payVnpay({ subscriptionId: sub.id }); window.location.href = v.paymentUrl; return null }
+      if (method === 'VNPAY') { const v = await deskApi.payVnpay({ subscriptionId: sub.id }); if (params.get('returnToPt') && (location.state as { ptDraft?: unknown } | null)?.ptDraft && (!user || !savePtContinuation({ ownerId: user.id, role: 'RECEPTIONIST', paymentId: v.paymentId, subscriptionId: sub.id, draft: location.state.ptDraft }))) throw new Error('Chưa lưu được phương án PT để tiếp tục sau thanh toán. Hãy thử lại trước khi mở VNPay.'); window.location.href = v.paymentUrl; return null }
       const p = await deskApi.payCounter({ subscriptionId: sub.id, method, receivedAmount: cash })
       return { memberId: customer.id, name: customer.name, plan: sub.planNameSnapshot, amount: Number(sub.priceSnapshot), method, change: p.changeAmount ?? 0, paymentId: p.id, application: p.application }
     })
@@ -74,7 +79,8 @@ export function DeskPosPage() {
 
   return <div>
     <PageHeader title="Bán vé gym" subtitle={<><span>Quầy bán hàng</span><Dot /><span>Giá đã gồm thuế · tạo vé rồi thu tiền ngay tại quầy</span></>}
-      actions={<><LinkBtn to="/receptionist/pt-sale">Bán gói PT</LinkBtn><LinkBtn to="/receptionist/payments">Giao dịch hôm nay</LinkBtn></>} />
+      actions={<><Link className="text-sm font-semibold underline" state={params.get('returnToPt') ? location.state : undefined} to={memberId ? '/receptionist/pt-sale?memberId=' + memberId : '/receptionist/pt-sale'}>{params.get('returnToPt') ? 'Quay lại phương án PT' : 'Bán gói PT'}</Link><LinkBtn to="/receptionist/payments">Giao dịch hôm nay</LinkBtn></>} />
+    {customer && <section className="mb-4 rounded-lg bg-bg-surface-muted p-4 text-sm"><h2 className="font-semibold">Vé gym của học viên</h2>{(subs.data ?? []).filter(s => ['ACTIVE','EXPIRED'].includes(s.status)).map(s => <div key={s.id} className="mt-2 flex flex-wrap items-center gap-3"><span>{s.planNameSnapshot} · {dmy(s.startDate)} → {dmy(s.endDate)}</span><Btn size="sm" disabled={submit.busy} onClick={() => { setRenewId(s.id); setPending(null); setPlan(plans.data?.find(p => p.id === s.planId) ?? null); setStartDate('') }}>{renewId === s.id ? 'Đã chọn gia hạn vé này' : 'Gia hạn vé này'}</Btn></div>)}{renewId && <Btn size="sm" disabled={submit.busy} onClick={() => { setRenewId(''); setPending(null) }}>Chọn mua vé mới</Btn>}<InlineError message={subs.error} /></section>}
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
       <Card title="1. Chọn vé gym" subtitle="Các vé đang được trung tâm mở bán">
         {plans.error ? <ErrorBox message={plans.error} onRetry={() => void plans.reload()} /> : !plans.data ? <Skeleton rows={4} className="p-0" /> : !plans.data.length ? <EmptyBox title="Chưa có vé nào mở bán" /> :

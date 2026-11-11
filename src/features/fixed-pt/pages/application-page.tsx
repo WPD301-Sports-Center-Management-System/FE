@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { coachTiers, tierLabels, type CoachTier } from '@/shared/utils/coach-tier'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { CheckCircle2, FileText, Send } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
@@ -7,12 +8,12 @@ import { useLoad, useSubmit } from '../hooks'
 import { Async, Badge, Btn, Card, EmptyBox, ErrorBox, Field, InlineError, PageHeader, Person, Skeleton, Table, inputCls, td, textareaCls, useFlash } from '@/features/workspace/ui'
 
 type ApplicationStatus = 'DRAFT' | 'PENDING_REVIEW' | 'NEEDS_INFO' | 'APPROVED' | 'REJECTED'
-type Application = { id: string; bio: string | null; specialization: string | null; yearsOfExperience: number | null; applicationStatus: ApplicationStatus; applicationSubmittedAt?: string | null; cvUrl: string | null; certificateUrls: string[] | null; applicationReviewNote: string | null; user?: { fullName: string; email?: string; avatarUrl?: string | null } }
+type Application = { completedSessions?: number; averageRating?: string | number | null; reviewCount?: number; id: string; bio: string | null; specialization: string | null; yearsOfExperience: number | null; applicationStatus: ApplicationStatus; applicationSubmittedAt?: string | null; cvUrl: string | null; certificateUrls: string[] | null; applicationReviewNote: string | null; user?: { fullName: string; email?: string; avatarUrl?: string | null } }
 const STATUS: Record<ApplicationStatus, { label: string; tone: 'neutral' | 'warning' | 'success' | 'danger' | 'info'; hint: string }> = {
   DRAFT: { label: 'Chưa nộp', tone: 'neutral', hint: 'Điền hồ sơ và tải CV PDF để gửi Manager duyệt.' },
   PENDING_REVIEW: { label: 'Đang chờ duyệt', tone: 'info', hint: 'Manager đang xem hồ sơ. Bạn sẽ nhận thông báo khi có kết quả.' },
   NEEDS_INFO: { label: 'Cần bổ sung', tone: 'warning', hint: 'Bổ sung theo nhận xét của Manager rồi nộp lại.' },
-  APPROVED: { label: 'Đã duyệt', tone: 'success', hint: 'Hồ sơ đã được duyệt một lần. Bạn có thể tạo gói và nhận học viên.' },
+  APPROVED: { label: 'Đã duyệt', tone: 'success', hint: 'Hồ sơ đã được duyệt một lần. Bạn có thể bán gói theo bậc và nhận học viên.' },
   REJECTED: { label: 'Bị từ chối', tone: 'danger', hint: 'Bạn có thể chỉnh hồ sơ theo lý do và nộp lại.' },
 }
 // A Coach is never left on an empty status: an untouched profile reads as "not submitted".
@@ -93,7 +94,7 @@ export function ApplicationsPanel({ onChange }: { onChange?: () => void } = {}) 
   const [open, setOpen] = useState<Application | null>(null)
   const { flash, node } = useFlash()
   const rows = (state.data ?? []).filter(p => p.cvUrl)
-  return <Card flush title="Hồ sơ Coach chờ duyệt" badge={state.data ? <Badge tone="warning">{rows.length}</Badge> : null} subtitle="Duyệt một lần: duyệt xong Coach tạo gói và nhận học viên.">
+  return <Card flush title="Hồ sơ Coach chờ duyệt" badge={state.data ? <Badge tone="warning">{rows.length}</Badge> : null} subtitle="Duyệt một lần: Coach mở giờ làm và bật nhận học viên để bán các gói PT của trung tâm.">
     {node}
     <Async state={state} rows={3} empty={() => !rows.length && <EmptyBox icon={<CheckCircle2 className="h-5 w-5" />} title="Không có hồ sơ chờ duyệt" />}>
       {() => <Table head={['Coach', 'Chuyên môn', 'Hồ sơ', '']} minWidth={720}>
@@ -112,10 +113,13 @@ export function ApplicationsPanel({ onChange }: { onChange?: () => void } = {}) 
 function ReviewModal({ p, onClose, onDone }: { p: Application; onClose: () => void; onDone: (message: string) => void }) {
   const [note, setNote] = useState('')
   const act = useSubmit()
-  const review = (status: 'APPROVED' | 'NEEDS_INFO' | 'REJECTED', message: string) => void act.run(async () => { await hybridSend('patch', `/coach-applications/${p.id}/review`, { status, note: note.trim() }); onDone(message) })
+  const [tier, setTier] = useState<CoachTier>('STANDARD')
+  const review = (status: 'APPROVED' | 'NEEDS_INFO' | 'REJECTED', message: string) => void act.run(async () => { await hybridSend('patch', `/coach-applications/${p.id}/review`, { status, note: note.trim(), ...(status === 'APPROVED' ? { tier } : {}) }); onDone(message) })
   return <Modal isOpen onClose={onClose} title={`Hồ sơ ${p.user?.fullName ?? ''}`} description={`${p.specialization ?? ''} · ${p.yearsOfExperience ?? 0} năm kinh nghiệm`}>
     <div className="space-y-4">
       {p.bio && <p className="whitespace-pre-line rounded-lg bg-bg-surface-muted px-3 py-2 text-sm">{p.bio}</p>}
+      <p className="text-sm">{p.completedSessions ?? 0} buổi đã dạy xong · {p.averageRating ?? '—'}/5 · {p.reviewCount ?? 0} đánh giá</p>
+      <Field label="Bậc khi duyệt" required><select aria-label="Bậc khi duyệt" className={inputCls} value={tier} disabled={act.busy} onChange={e => setTier(e.target.value as CoachTier)}>{coachTiers.map(t => <option key={t} value={t}>{tierLabels[t]}</option>)}</select><p className="mt-1 text-sm text-text-muted">Chỉ áp dụng khi duyệt hồ sơ. Bậc quyết định các gói Coach được bán và giá bán.</p></Field>
       <Field label="Nhận xét gửi Coach" required hint="Bắt buộc với mọi quyết định; Coach thấy nội dung này."><textarea rows={3} className={textareaCls} value={note} onChange={e => setNote(e.target.value)} /></Field>
       <InlineError message={act.error} />
       <div className="flex flex-wrap justify-end gap-2">

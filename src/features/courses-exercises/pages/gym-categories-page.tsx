@@ -18,6 +18,7 @@ import { CoursesTab } from '../components/tabs/CoursesTab'
 import { ExercisesTab } from '../components/tabs/ExercisesTab'
 import { MuscleGroupsTab } from '../components/tabs/MuscleGroupsTab'
 
+import { DeleteDialog } from '@/shared/components/ui/delete-dialog'
 import { CourseFormModal } from '../components/modals/CourseFormModal'
 import { CourseDetailModal } from '../components/modals/CourseDetailModal'
 import { CourseAssignMusclesModal } from '../components/modals/CourseAssignMusclesModal'
@@ -82,6 +83,9 @@ export function GymCategoriesPage() {
   const [editingMuscleGroup, setEditingMuscleGroup] = useState<MuscleGroup | null>(null)
   const [isSubmittingMuscle, setIsSubmittingMuscle] = useState(false)
   const [togglingMuscleId, setTogglingMuscleId] = useState<string | null>(null)
+
+  // Delete (soft delete on the server) is separate from the pause/activate toggles above.
+  const [deleting, setDeleting] = useState<{ kind: 'course' | 'exercise' | 'muscle'; id: string; name: string } | null>(null)
 
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg)
@@ -390,6 +394,20 @@ export function GymCategoriesPage() {
     }
   }
 
+  const DELETE_TEXT = {
+    course: { noun: 'khóa học', impact: 'Khóa học sẽ biến mất khỏi danh sách và danh mục chọn. Đơn PT, buổi tập và lịch sử đã có vẫn được giữ nguyên. Nếu còn Coach đăng ký hoặc đơn đang chạy, hệ thống sẽ từ chối và bạn nên chọn Tạm dừng.' },
+    exercise: { noun: 'bài tập', impact: 'Bài tập sẽ biến mất khỏi danh sách và không chọn được cho khóa học mới. Lịch sử buổi tập đã ghi vẫn được giữ. Nếu bài tập còn nằm trong khóa học, hệ thống sẽ từ chối; hãy gỡ khỏi khóa hoặc chọn Tạm dừng.' },
+    muscle: { noun: 'nhóm cơ', impact: 'Nhóm cơ sẽ biến mất khỏi danh sách và bộ lọc. Nếu còn bài tập hoặc khóa học đang gắn nhóm cơ này, hệ thống sẽ từ chối; hãy gỡ liên kết hoặc chọn Tạm dừng.' },
+  } as const
+  const handleConfirmDelete = async () => {
+    if (!deleting) return
+    const { kind, id, name } = deleting
+    if (kind === 'course') { await coursesExercisesService.deleteTrainingCourse(id); setCourses((prev) => prev.filter((i) => i.id !== id)) }
+    else if (kind === 'exercise') { await coursesExercisesService.deleteExercise(id); setExercises((prev) => prev.filter((i) => i.id !== id)) }
+    else { await coursesExercisesService.deleteMuscleGroup(id); setMuscleGroups((prev) => prev.filter((i) => i.id !== id)) }
+    showSuccess(`Đã xóa ${DELETE_TEXT[kind].noun} "${name}".`)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -534,6 +552,7 @@ export function GymCategoriesPage() {
               onOpenAssignMuscles={handleOpenAssignMuscles}
               onOpenAssignSyllabus={handleOpenAssignSyllabus}
               onToggleStatus={handleToggleCourseStatus}
+              onDelete={(c) => setDeleting({ kind: 'course', id: c.id, name: c.name })}
               togglingCourseId={togglingCourseId}
             />
           )}
@@ -555,6 +574,7 @@ export function GymCategoriesPage() {
                 setIsExerciseModalOpen(true)
               }}
               onToggleStatus={handleToggleExerciseStatus}
+              onDelete={(ex) => setDeleting({ kind: 'exercise', id: ex.id, name: ex.name })}
               togglingExerciseId={togglingExerciseId}
             />
           )}
@@ -571,6 +591,7 @@ export function GymCategoriesPage() {
                 setIsMuscleModalOpen(true)
               }}
               onToggleStatus={handleToggleMuscleStatus}
+              onDelete={(mg) => setDeleting({ kind: 'muscle', id: mg.id, name: mg.name })}
               togglingMuscleId={togglingMuscleId}
             />
           )}
@@ -578,6 +599,13 @@ export function GymCategoriesPage() {
       )}
 
       {/* Modals */}
+      <DeleteDialog
+        name={deleting?.name ?? null}
+        noun={deleting ? DELETE_TEXT[deleting.kind].noun : ''}
+        impact={deleting ? DELETE_TEXT[deleting.kind].impact : null}
+        onConfirm={handleConfirmDelete}
+        onClose={() => setDeleting(null)}
+      />
       <CourseFormModal
         isOpen={isCourseModalOpen}
         onClose={() => {

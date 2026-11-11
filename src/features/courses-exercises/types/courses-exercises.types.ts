@@ -133,10 +133,13 @@ export interface CourseCoachOfferingRelation {
 }
 
 export interface CoursePtPackageRelation {
+  prices?: Partial<Record<import('@/shared/utils/coach-tier').CoachTier, string>> | null
+  minCoachTier?: import('@/shared/utils/coach-tier').CoachTier
+  priceFrom?: string | null
   id: string
   name: string
   sessionCount: number
-  validityDays: number
+  validityDays?: number | null
   price: string
   approvalStatus: string
   isActive: boolean

@@ -2,7 +2,7 @@ import { hybridGet } from '@/features/fixed-pt/hybrid-api'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Apple, BarChart3, BookOpen, CalendarDays, ClipboardCheck, ConciergeBell, LayoutGrid, Package, ReceiptText, ShieldCheck, SlidersHorizontal, Users, Wallet, Wrench,
+  Apple, BarChart3, BookOpen, CalendarDays, ClipboardCheck, ConciergeBell, LayoutGrid, Package, ReceiptText, ShieldCheck, SlidersHorizontal, Users, Wallet,
 } from 'lucide-react'
 import { WorkspaceLayout, type WorkspaceNavSection } from '@/features/workspace/layout'
 import { PersonSearch } from '@/features/workspace/person-search'
@@ -19,8 +19,7 @@ export function ManagerShell() {
   const [pendingApprovals, setPending] = useState<number | null>(null)
   const refresh = useCallback(() => {
     mgrApi.dashboard().then(setCounts).catch(() => setCounts(null))
-    // Pending = submitted Coach applications + custom Coach packages (offerings are auto-approved now).
-    Promise.all([hybridGet<{ cvUrl: string | null }[]>('/coach-applications', { status: 'PENDING_REVIEW' }), mgrApi.options('PENDING')]).then(([a, p]) => setPending(a.filter(x => x.cvUrl).length + p.filter(x => x.coachId).length)).catch(() => setPending(null))
+    hybridGet<{ cvUrl: string | null }[]>('/coach-applications', { status: 'PENDING_REVIEW' }).then(a => setPending(a.filter(x => x.cvUrl).length)).catch(() => setPending(null))
   }, [])
   useEffect(() => { refresh(); const t = setInterval(refresh, 120_000); return () => clearInterval(t) }, [refresh])
   const find = useCallback(async (term: string) => (await deskApi.members({ search: term, limit: 8 })).items
@@ -37,12 +36,11 @@ export function ManagerShell() {
       { to: '/manager/approvals', label: 'Duyệt huấn luyện viên', icon: ClipboardCheck, badge: { count: pendingApprovals, label: n => `${n} mục chờ duyệt` } },
     ] },
     { title: 'Tài chính', items: [
-      { to: '/manager/coach-income', label: 'Thu nhập & chi trả HLV', icon: Wallet },
+      { to: '/manager/coach-income', label: 'Chi trả Coach', icon: Wallet },
       { to: '/manager/payments', label: 'Thanh toán', icon: ReceiptText, badge: { count: counts?.openReconciliation ?? null, tone: 'warning', label: n => `${n} hồ sơ đối soát mở` } },
       { to: '/manager/reports', label: 'Báo cáo', icon: BarChart3 },
     ] },
     { title: 'Trung tâm', items: [
-      { to: '/manager/equipment', label: 'Khu vực & thiết bị', icon: Wrench, badge: { count: counts?.equipmentIssues ?? null, tone: 'warning', label: n => `${n} thiết bị cần xử lý` } },
       { to: '/receptionist', label: 'Mở quầy lễ tân', icon: ConciergeBell },
     ] },
     { title: 'Hệ thống', items: [

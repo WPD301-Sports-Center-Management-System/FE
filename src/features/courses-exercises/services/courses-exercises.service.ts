@@ -187,4 +187,19 @@ export const coursesExercisesService = {
     const data = res as unknown as ApiSuccess<MuscleGroup>
     return data.data ?? (data as unknown as MuscleGroup)
   },
+
+  /** DELETE /training-courses/{id} - Soft delete (refused with 409 IN_USE while Coaches or orders use the course). */
+  async deleteTrainingCourse(id: string): Promise<void> {
+    await apiClient.delete(`/training-courses/${id}`)
+  },
+
+  /** DELETE /exercises/{id} - Soft delete (refused while a course contains the exercise). */
+  async deleteExercise(id: string): Promise<void> {
+    await apiClient.delete(`/exercises/${id}`)
+  },
+
+  /** DELETE /muscle-groups/{id} - Soft delete (refused while an exercise or course uses the muscle group). */
+  async deleteMuscleGroup(id: string): Promise<void> {
+    await apiClient.delete(`/muscle-groups/${id}`)
+  },
 }

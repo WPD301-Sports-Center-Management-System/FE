@@ -6,7 +6,6 @@ import type { PolicyRow } from '../types'
 import { ErrorBanner, inputCls, Loadable, Notice, Page, Panel, Table, td } from '../components/ui'
 
 const OPTIONS: Record<string, [string, string][]> = {
-  ARRIVAL_MARKERS: [['RECEPTIONIST', 'Chỉ Lễ tân'], ['RECEPTIONIST_AND_COACH', 'Lễ tân và Coach']],
   LATE_OUTCOME_EARNING: [['MANAGER_CONFIRM', 'Chờ Manager xác nhận'], ['AUTO', 'Tự động đủ điều kiện']],
 }
 const SOURCE = { APPROVED: 'Đã phê duyệt', INTERIM: 'Tạm thời (an toàn) – chưa phê duyệt', MISSING: 'Chưa có – chức năng liên quan bị chặn' }

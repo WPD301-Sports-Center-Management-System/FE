@@ -1,5 +1,6 @@
 import { apiClient } from '@/shared/api/client'
-import type { Adjustment, Disruption, EarningLine, EarningSummary, PayoutPeriod, PolicyRow, ReconciliationCase, Session } from '@/features/fixed-pt/types'
+import type { CoachTier } from '@/shared/utils/coach-tier'
+import type { Disruption, EarningLine, EarningSummary, PolicyRow, ReconciliationCase, Session } from '@/features/fixed-pt/types'
 import type { PtPurchase, Subscription, Visit } from '@/features/reception-workspace/api'
 
 // Manager API. Every call maps to a BE route the MANAGER role may use (BE/src/contract/endpoints.json).
@@ -24,11 +25,12 @@ async function all<T>(url: string, params: object = {}, maxPages = 10): Promise<
 
 export interface Revenue {
   totalReceived: number; appliedToOrders: number; pendingReconciliation: number; membershipRevenue: number; ptGross: number; ptGymShare: number; coachBudget: number
-  coachPendingConfirmation: number; coachEligibleUnpaid: number; coachOnHold: number; coachPaidOut: number; advanceRemaining: number; recoveryOutstanding: number; paymentCount: number
+  coachPendingConfirmation: number; coachEligibleUnpaid: number; coachOnHold: number; coachPaidOut: number; recoveryOutstanding: number; paymentCount: number
 }
 export interface ManagerDashboard { members: number; coaches: number; revenue: Revenue; bookingsToday: number; sessionsNeedingReview: number; openReconciliation: number; equipmentIssues: number }
 export interface Offering { id: string; coachId: string; courseId: string; status: 'PENDING' | 'APPROVED' | 'REJECTED'; isActive: boolean; experienceNote?: string | null; rejectionReason?: string | null; approvedAt?: string | null; createdAt: string; updatedAt: string; coach: { user: { fullName: string } }; course: { id: string; name: string; difficultyLevel?: string | null } }
-export interface PackageOption { id: string; coachId?: string | null; courseId: string; name: string; sessionCount: number; sessionsPerWeek?: number; validityDays: number; price: string; approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED'; isActive: boolean; rejectionReason?: string | null; createdAt: string; updatedAt: string; course?: { name: string }; coach?: { user: { fullName: string } } | null }
+export interface PackageOption { minCoachTier: CoachTier; id: string; name: string; sessionCount: number; durationMinutes: number; description?: string | null; price: string; priceFrom: string | null; prices: Partial<Record<CoachTier, string>> | null; isActive: boolean }
+export interface PackageInput { name: string; sessionCount: number; durationMinutes: 60 | 90 | 120; description?: string; minCoachTier: CoachTier; prices: Partial<Record<CoachTier, number | null>> }
 export interface CoachReview { id: string; coachId: string; rating: number; comment?: string | null; moderationStatus: 'VISIBLE' | 'HIDDEN'; createdAt: string }
 export interface SupportLite { id: string; status: string; createdAt: string }
 
@@ -49,21 +51,18 @@ export const mgrApi = {
   reverseOutcome: (id: string, reason: string) => post(`/pt-bookings/${id}/reverse-outcome`, { reason }),
 
   offerings: (status?: Offering['status']) => all<Offering>('/coach-course-offerings', { status }, 5),
-  approveOffering: (id: string) => patch(`/coach-course-offerings/${id}/approve`),
-  rejectOffering: (id: string, rejectionReason: string) => patch(`/coach-course-offerings/${id}/reject`, { rejectionReason }),
-  options: (approvalStatus?: PackageOption['approvalStatus']) => all<PackageOption>('/pt-package-options', { approvalStatus }, 5),
-  approveOption: (id: string) => patch(`/pt-package-options/${id}/approve`),
-  rejectOption: (id: string, rejectionReason: string) => patch(`/pt-package-options/${id}/reject`, { rejectionReason }),
+  options: () => all<PackageOption>('/pt-package-options', {}, 5),
+  deleteOption: async (id: string) => { await apiClient.delete(`/pt-package-options/${id}`) },
   setOptionActive: (id: string, isActive: boolean) => patch(`/pt-package-options/${id}/status`, { isActive }),
-  createOption: (body: { courseId: string; name: string; sessionCount: number; sessionsPerWeek: number; validityDays: number; price: number; durationMinutes?: 60 | 90 | 120; description?: string }) => post<PackageOption>('/pt-package-options', body),
+  createOption: (body: PackageInput) => post<PackageOption>('/pt-package-options', body),
+  updateOption: (id: string, body: PackageInput) => patch<PackageOption>(`/pt-package-options/${id}`, body),
+  setCoachTier: (id: string, tier: CoachTier, reason: string) => patch(`/coaches/${id}/tier`, { tier, reason }),
+  tierHistory: (id: string) => get<CoachTierHistory[]>(`/coaches/${id}/tier-history`),
+  coachApplications: () => all<CoachTierProfile>('/coach-applications'),
   courses: () => get<{ id: string; name: string; isActive?: boolean }[]>('/training-courses', { limit: 100 }),
 
   earningSummary: () => get<EarningSummary>('/coach-earnings/summary'),
   earnings: (params: { status?: string } = {}, maxPages = 10) => all<EarningLine>('/coach-earnings', params, maxPages),
-  confirmEarning: (id: string, note?: string) => post(`/coach-earnings/${id}/confirm`, { note }),
-  rejectEarning: (id: string, reason: string) => post(`/coach-earnings/${id}/reject`, { reason }),
-  periods: () => all<PayoutPeriod>('/coach-payout-periods', {}, 2),
-  adjustments: () => all<Adjustment>('/coach-adjustments', {}, 2),
 
   policies: () => get<PolicyRow[]>('/policy-settings'),
   disruptions: () => all<Disruption>('/service-disruptions', {}, 2),
@@ -71,5 +70,7 @@ export const mgrApi = {
   reviews: () => all<CoachReview>('/coach-reviews', {}, 5),
   auditTotal: (from: string) => total('/audit-logs', { from }),
   support: () => all<SupportLite>('/support-requests', {}, 3),
-  equipmentIssues: () => total('/equipment', { status: 'OUT_OF_SERVICE' }),
 }
+
+export interface CoachTierHistory { changedAt: string; fromTier: CoachTier | null; toTier: CoachTier; reason: string | null; source: 'APPROVAL' | 'CHANGE'; changedBy: { id: string | null; fullName: string | null } }
+export interface CoachTierProfile { id: string; tier: CoachTier; applicationStatus: string; yearsOfExperience: number | null; certificateUrls: string[] | null; completedSessions: number; averageRating: string | number | null; reviewCount: number; user: { fullName: string } }

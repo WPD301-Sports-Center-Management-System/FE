@@ -5,7 +5,7 @@ import { AlertTriangle, ArrowLeftRight, ArrowRight, ClipboardCheck, Pencil, Plus
 import { Modal } from '@/shared/components/ui/modal'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import type { ContentItem } from '@/features/fixed-pt/types'
-import { centerDate, centerInstant } from '@/shared/utils/date'
+import { centerDate, centerInstant, formatDateTime } from '@/shared/utils/date'
 import { coachWs, type Assessment, type Exercise, type LibraryTemplate } from '../api'
 import { useCoachShell } from '../shell'
 import { SessionActions } from '../components/session-actions'
@@ -48,9 +48,10 @@ export function CoachSessionPage() {
         <div className="min-w-0 flex-1">
           <h1 className="text-xl font-bold">{s.memberName} · {s.credit ? `Buổi ${s.credit.creditIndex}/${s.purchase?.totalCredits ?? '?'}` : 'Buổi PT'}</h1>
           <p className="mt-1 text-sm text-text-muted">{s.purchase?.packageNameSnapshot} · {longDate(centerDate(s.startsAt))} · {hhmm(s.startsAt)} – {hhmm(s.endsAt)} ({minutesBetween(s.startsAt, s.endsAt)} phút) · {s.bookingCode}</p>
+          {s.actualStartedAt && s.plannedStartsAt && <p className="mt-1 text-xs text-text-muted">Lịch hẹn ban đầu: {longDate(centerDate(s.plannedStartsAt))} · {hhmm(s.plannedStartsAt)}</p>}
           <div className="mt-2 flex flex-wrap gap-1.5">
             <Badge tone={SESSION_TONE[s.status]} dot={isLive(s)}>{SESSION_LABEL[s.status] ?? s.status}</Badge>
-            {s.arrivedAt && <Badge tone="success">Đã đến {hhmm(s.arrivedAt)}</Badge>}
+            {s.arrivedAt && !s.actualStartedAt && <Badge tone="success">Đã đến {hhmm(s.arrivedAt)}</Badge>}
             {s.actualStartedAt && <Badge tone="info">Bắt đầu {hhmm(s.actualStartedAt)}</Badge>}
             {s.actualEndedAt && <Badge tone="info">Kết thúc {hhmm(s.actualEndedAt)}</Badge>}
             {s.isMakeup && <Badge tone="violet">Buổi học bù</Badge>}
@@ -74,7 +75,7 @@ export function CoachSessionPage() {
 
     {['CONFIRMED', 'ARRIVED'].includes(s.status) && <div className="mb-6"><JourneyStartGate bookingId={s.id} /></div>}
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-      <ContentEditor key={s.id} bookingId={s.id} started={['IN_PROGRESS', 'COMPLETED'].includes(s.status)} closed={!['CONFIRMED', 'ARRIVED', 'IN_PROGRESS', 'COMPLETED'].includes(s.status)} onFlash={flash} />
+      <ContentEditor key={s.id} bookingId={s.id} memberId={s.memberId} purchaseId={s.purchaseId} started={['IN_PROGRESS', 'COMPLETED'].includes(s.status)} closed={!['CONFIRMED', 'ARRIVED', 'IN_PROGRESS', 'COMPLETED'].includes(s.status)} onFlash={flash} />
       <div className="space-y-6">
         <Card title="Chỉ số mới nhất" subtitle={latest ? `Đo ngày ${centerDate(latest.assessedAt).split('-').reverse().join('/')}` : 'Chưa có lần đo nào'}>
           {progress.error ? <InlineError message={progress.error} /> : <AssessmentChips a={latest} prev={assessments.at(-2)} />}
@@ -86,13 +87,28 @@ export function CoachSessionPage() {
             <Note label="Ghi chú khi kết thúc buổi" value={s.completionNote} />
             <Note label="Lý do kết thúc sớm" value={s.earlyEndReason} />
             <Note label="Lý do hủy / vắng" value={s.cancellationReason} />
-            {!s.member?.medicalNotes && !s.completionNote && !s.earlyEndReason && !s.cancellationReason && <p className="text-text-muted">Chưa có ghi chú. Ghi chú buổi tập được nhập khi bấm “Kết thúc ca”.</p>}
+            {!s.member?.medicalNotes && !s.completionNote && !s.earlyEndReason && !s.cancellationReason && <p className="text-text-muted">Nhận xét buổi tập được ghi tại “Đánh giá cuối buổi”.</p>}
           </dl>
         </Card>
       </div>
     </div>
+    <SessionHistory key={`history-${s.id}`} bookingId={s.id} />
     <RescheduleModal key={s.id} open={reschedule} onClose={() => setReschedule(false)} session={s} onDone={m => { setReschedule(false); after(m) }} />
   </div>
+}
+
+function SessionHistory({ bookingId }: { bookingId: string }) {
+  const [open, setOpen] = useState(false)
+  const state = useLoad(() => coachWs.sessionHistory(bookingId), [bookingId], open)
+  return <details className="mt-6 rounded-xl border border-border-subtle p-4 print:hidden" onToggle={e => setOpen(e.currentTarget.open)}>
+    <summary className="cursor-pointer text-sm font-medium">Lịch sử buổi tập và giáo án</summary>
+    <div className="mt-3">{state.error ? <ErrorBox message={state.error} onRetry={() => void state.reload()} /> : !state.data ? <Skeleton rows={2} /> : <ul className="space-y-2 text-sm">
+      {state.data.events.map(e => <li key={e.id}>{formatDateTime(e.createdAt)} · {e.action} · {e.actor?.fullName ?? 'Hệ thống'}</li>)}
+      {state.data.versions.map(v => <li key={v.id}>{formatDateTime(v.createdAt)} · Giáo án phiên bản {v.version} · {v.kind}</li>)}
+      {state.data.changes.map(c => <li key={c.id}>{formatDateTime(c.createdAt)} · {c.code} · {c.status}</li>)}
+      {!state.data.events.length && !state.data.versions.length && !state.data.changes.length && <li>Chưa có lịch sử thay đổi.</li>}
+    </ul>}</div>
+  </details>
 }
 
 const Metric = ({ label, value }: { label: string; value: string }) => <div><dd className="text-lg font-bold tabular-nums">{value}</dd><dt className="text-xs text-text-muted">{label}</dt></div>
@@ -109,7 +125,7 @@ export function AssessmentChips({ a, prev }: { a?: Assessment; prev?: Assessment
 }
 
 /** Session workout plan: draft → assign before the session; after it starts, edits are recorded as the actual content. */
-function ContentEditor({ bookingId, started, closed, onFlash }: { bookingId: string; started: boolean; closed: boolean; onFlash: (m: string) => void }) {
+function ContentEditor({ bookingId, memberId, purchaseId, started, closed, onFlash }: { bookingId: string; memberId: string; purchaseId: string; started: boolean; closed: boolean; onFlash: (m: string) => void }) {
   const content = useLoad(() => coachWs.content(bookingId), [bookingId])
   const templates = useLoad(() => coachWs.templates(), [])
   const exercises = useLoad(() => coachWs.exercises(), [])
@@ -123,13 +139,23 @@ function ContentEditor({ bookingId, started, closed, onFlash }: { bookingId: str
   const status = content.data?.content?.status
   const canEdit = !closed && items !== null
   // Read-only by default; an empty plan before the session opens straight in edit mode.
-  const editable = canEdit && (editing || (!started && items.length === 0))
+  const editable = canEdit && (editing || (!started && (items.length === 0 || status === 'DRAFT')))
   const reset = () => { setItems(content.data?.items.map(i => ({ ...i })) ?? []); setTitle(content.data?.content?.title ?? ''); setReason(''); setEditing(false); submit.clear() }
   const dirty = useMemo(() => JSON.stringify(items) !== JSON.stringify(content.data?.items ?? []) || title !== (content.data?.content?.title ?? ''), [items, title, content.data])
 
   const act = async (work: () => Promise<unknown>, message: string) => { const ok = await submit.run(async () => { await work(); return true }); if (ok) { onFlash(message); setReason(''); setEditing(false); await content.reload() } }
   const clean = (list: ContentItem[]) => list.filter(i => i.name.trim()).map(i => ({ ...i, name: i.name.trim(), confirmed: true }))
   const save = () => act(() => started ? coachWs.saveActual(bookingId, clean(items!), reason.trim()) : coachWs.saveContent(bookingId, { title: title.trim() || undefined, items: clean(items!) }), started ? 'Đã ghi nội dung thực tế của buổi.' : 'Đã lưu nháp giáo án.')
+  const saveAndAssign = async () => {
+    const ok = await submit.run(async () => {
+      try { await coachWs.saveContent(bookingId, { title: title.trim() || undefined, items: clean(items!), assign: true }); return true }
+      catch (error) {
+        if ((error as { details?: { draftSaved?: boolean } }).details?.draftSaved) { onFlash('Đã lưu nháp; chưa giao được giáo án. Kiểm tra nội dung rồi giao lại.'); await content.reload() }
+        throw error
+      }
+    })
+    if (ok) { onFlash('Đã lưu và giao giáo án.'); setEditing(false); await content.reload() }
+  }
   const update = (i: number, patch: Partial<ContentItem>) => setItems(list => list!.map((x, k) => k === i ? { ...x, ...patch } : x))
 
   return <Card flush title={content.data?.content?.title || 'Giáo án buổi tập'} badge={items ? <Badge>{items.length} bài</Badge> : null}
@@ -139,6 +165,7 @@ function ContentEditor({ bookingId, started, closed, onFlash }: { bookingId: str
       <select aria-label="Chọn giáo án mẫu" value={template} onChange={e => setTemplate(e.target.value)} className={`${inputCls} w-52`}><option value="">Áp từ giáo án mẫu…</option>{templates.data.map((t: LibraryTemplate) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
       <Btn type="submit" size="sm" disabled={!template} busy={submit.busy}>Áp dụng</Btn>
     </form> : null}>
+    {canEdit && !started && !dirty && <div className="px-5 pt-4 print:hidden"><LinkBtn size="sm" to={`/coach/library?tab=ai&memberId=${memberId}&purchaseId=${purchaseId}&bookingId=${bookingId}`}>AI soạn cho buổi này</LinkBtn></div>}
     {!editable && !started && status === 'DRAFT' && items && items.length > 0 && <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle bg-amber-50/60 px-5 py-3 text-sm dark:bg-amber-500/10 print:hidden">
       <span>Giáo án đang là bản nháp — học viên chưa thấy.</span>
       <Btn size="sm" variant="primary" icon={<Send aria-hidden className="h-3.5 w-3.5" />} busy={submit.busy} onClick={() => void act(() => coachWs.assignContent(bookingId), 'Đã giao giáo án cho học viên.')}>Giao cho học viên</Btn>
@@ -154,10 +181,10 @@ function ContentEditor({ bookingId, started, closed, onFlash }: { bookingId: str
             <td className={td}>{editable ? <ExerciseInput value={it.name} exercises={exercises.data ?? []} onChange={(name, exerciseId) => update(i, { name, exerciseId, needsExercise: !exerciseId })} /> : <span className="font-semibold">{it.name}</span>}
               {it.roleName && <p className="text-xs text-text-muted">{it.roleName}</p>}
               {it.needsExercise && <p className="text-xs text-amber-700 dark:text-amber-300">Chọn bài tập trong thư viện trước khi giao</p>}</td>
-            <td className={td}>{editable ? <span className="flex items-center gap-1"><NumIn label="Số set" value={it.sets} onChange={v => update(i, { sets: v })} />×<NumIn label="Số rep" value={it.reps} onChange={v => update(i, { reps: v })} /></span> : `${it.sets ?? '—'} × ${it.reps ?? (it.durationMinutes ? `${it.durationMinutes}'` : '—')}`}</td>
-            <td className={td}>{editable ? <span className="flex items-center gap-1"><NumIn label="Khối lượng kg" value={it.targetWeight} onChange={v => update(i, { targetWeight: v })} step={0.5} />kg</span> : it.targetWeight ? `${it.targetWeight} kg` : '—'}</td>
-            <td className={td}>{editable ? <span className="flex items-center gap-1"><NumIn label="Nghỉ giây" value={it.restSeconds} onChange={v => update(i, { restSeconds: v })} />s</span> : it.restSeconds ? `${it.restSeconds}s` : '—'}</td>
-            <td className={td}>{editable ? <input aria-label="RPE hoặc ghi chú" value={it.rpe ?? ''} onChange={e => update(i, { rpe: e.target.value || undefined })} className={`${inputCls} w-28`} maxLength={20} placeholder="RPE 7" /> : <span className="text-text-muted">{[it.rpe, it.notes].filter(Boolean).join(' · ') || '—'}</span>}</td>
+            <td className={td}>{editable ? <div className="space-y-1"><span className="flex items-center gap-1"><NumIn label="Số set" value={it.sets} onChange={v => update(i, { sets: v })} />×<NumIn label="Số rep" value={it.reps} onChange={v => update(i, { reps: v })} /></span>{it.durationMinutes != null && <span className="flex items-center gap-1"><NumIn label="Thời lượng phút" value={it.durationMinutes} onChange={v => update(i, { durationMinutes: v })} />phút</span>}</div> : <span>{it.sets ?? '—'} × {it.reps ?? '—'}{it.durationMinutes != null && <span className="block text-xs text-text-muted">{it.durationMinutes} phút</span>}</span>}</td>
+            <td className={td}>{editable ? <span className="flex items-center gap-1"><NumIn label="Khối lượng kg" value={it.targetWeight} onChange={v => update(i, { targetWeight: v })} step={0.5} />kg</span> : it.targetWeight != null ? `${it.targetWeight} kg` : '—'}</td>
+            <td className={td}>{editable ? <span className="flex items-center gap-1"><NumIn label="Nghỉ giây" value={it.restSeconds} onChange={v => update(i, { restSeconds: v })} />s</span> : it.restSeconds != null ? `${it.restSeconds}s` : '—'}</td>
+            <td className={td}>{editable ? <div className="space-y-2"><input aria-label="RPE" value={it.rpe ?? ''} onChange={e => update(i, { rpe: e.target.value || undefined })} className={`${inputCls} w-28`} maxLength={20} placeholder="RPE 7" /><textarea aria-label="Ghi chú bài tập" value={it.notes ?? ''} onChange={e => update(i, { notes: e.target.value || undefined })} className={`${textareaCls} min-w-40`} maxLength={2000} rows={2} placeholder="Hướng dẫn thực hiện" /></div> : <span className="whitespace-pre-wrap text-text-muted">{[it.rpe, it.notes].filter(Boolean).join(' · ') || '—'}</span>}</td>
             <td className={`${td} text-right`}>{editable ? <button type="button" aria-label={`Xóa ${it.name || 'dòng'}`} onClick={() => setItems(l => l!.filter((_, k) => k !== i))} className="rounded-lg p-1.5 text-text-muted hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"><Trash2 className="h-4 w-4" /></button>
               : <Badge tone={it.confirmed ? 'success' : 'neutral'}>{it.confirmed ? 'đã xác nhận' : 'gợi ý'}</Badge>}</td>
           </tr>)}</tbody>
@@ -169,8 +196,8 @@ function ContentEditor({ bookingId, started, closed, onFlash }: { bookingId: str
         <div className="flex flex-wrap justify-end gap-2">
           {(editing || items.length > 0) && <Btn variant="ghost" onClick={reset}>Hủy chỉnh sửa</Btn>}
           <Btn icon={<Save aria-hidden className="h-4 w-4" />} busy={submit.busy} disabled={!dirty || !items.some(i => i.name.trim()) || (started && !reason.trim())} onClick={() => void save()}>{started ? 'Lưu nội dung thực tế' : 'Lưu nháp'}</Btn>
-          {!started && <Btn variant="primary" icon={<Send aria-hidden className="h-4 w-4" />} busy={submit.busy} disabled={dirty || !items.length || status === 'ASSIGNED'} title={dirty ? 'Lưu nháp trước khi giao' : undefined}
-            onClick={() => void act(() => coachWs.assignContent(bookingId), 'Đã giao giáo án cho học viên.')}>{status === 'ASSIGNED' ? 'Đã giao' : 'Giao cho học viên'}</Btn>}
+          {!started && <Btn variant="primary" icon={<Send aria-hidden className="h-4 w-4" />} busy={submit.busy} disabled={!items.length || items.some(i => !i.exerciseId || !i.name.trim()) || (!dirty && status === 'ASSIGNED')}
+            onClick={() => void saveAndAssign()}>{!dirty && status === 'ASSIGNED' ? 'Đã giao' : 'Lưu và giao'}</Btn>}
         </div>
       </div>}
     </>}

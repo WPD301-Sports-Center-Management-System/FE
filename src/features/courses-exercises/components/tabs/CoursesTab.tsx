@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Search, BookOpen, Target, Eye, Edit2, Layers, ListOrdered, Power } from 'lucide-react'
+import { Search, BookOpen, Target, Eye, Edit2, Layers, ListOrdered, Power, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import type { TrainingCourse, MuscleGroup } from '@/shared/types/api'
@@ -21,6 +21,7 @@ interface CoursesTabProps {
   onOpenAssignSyllabus: (course: TrainingCourse) => void
   onToggleStatus: (course: TrainingCourse) => void
   togglingCourseId: string | null
+  onDelete?: (course: TrainingCourse) => void
 }
 
 export function CoursesTab({
@@ -40,6 +41,7 @@ export function CoursesTab({
   onOpenAssignSyllabus,
   onToggleStatus,
   togglingCourseId,
+  onDelete,
 }: CoursesTabProps) {
   const filteredCourses = useMemo(() => {
     return courses.filter((c) => {
@@ -255,7 +257,8 @@ export function CoursesTab({
                     </Button>
                   </div>
 
-                  <Button
+                  <div className="flex items-center gap-1.5">
+<Button
                     size="sm"
                     variant="outline"
                     onClick={() => onToggleStatus(c)}
@@ -269,6 +272,13 @@ export function CoursesTab({
                     <Power className={`h-3 w-3 ${togglingCourseId === c.id ? 'animate-spin' : ''}`} />
                     <span>{isAct ? 'Tạm dừng' : 'Kích hoạt'}</span>
                   </Button>
+{onDelete && (
+<Button size="sm" variant="outline" onClick={() => onDelete(c)} aria-label={`Xóa khóa học ${c.name}`} className="text-xs h-7 px-2.5 gap-1.5 text-danger hover:bg-danger/10 hover:text-danger border-danger/30">
+<Trash2 className="h-3 w-3" />
+<span>Xóa</span>
+</Button>
+)}
+</div>
                 </div>
               </div>
             )

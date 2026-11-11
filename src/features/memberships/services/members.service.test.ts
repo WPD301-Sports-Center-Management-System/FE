@@ -122,23 +122,6 @@ describe('membersService', () => {
     expect(result.data).toEqual([])
   })
 
-  it('[8] calls POST /members/:id/body-assessments', async () => {
-    const mockAssess = { id: 'a-1', weightKg: '70' }
-    vi.mocked(apiClient.post).mockResolvedValueOnce({
-      success: true,
-      data: mockAssess,
-    } as any)
-
-    const result = await membersService.createMemberBodyAssessment('m-1', {
-      assessedAt: '2026-10-10T00:00:00Z',
-      weightKg: '70',
-    })
-    expect(apiClient.post).toHaveBeenCalledWith('/members/m-1/body-assessments', {
-      assessedAt: '2026-10-10T00:00:00Z',
-      weightKg: '70',
-    })
-    expect(result).toEqual(mockAssess)
-  })
 
   it('[11] calls GET /members/:id/progress', async () => {
     const mockProgress = { assessments: [], results: [] }

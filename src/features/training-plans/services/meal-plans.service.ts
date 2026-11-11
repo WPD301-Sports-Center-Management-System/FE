@@ -225,6 +225,14 @@ export const mealPlansService = {
     const res = (await apiClient.patch(`/food-items/${id}`, payload)) as any
     return (res?.data ?? res) as FoodItem
   },
+  /** DELETE /food-items/{id} - Manager soft delete; refused (409) while an active template or draft plan uses the food. */
+  async deleteFoodItem(id: string): Promise<void> {
+    await apiClient.delete(`/food-items/${id}`)
+  },
+  /** DELETE /meal-plan-templates/{id} - Manager soft delete of a center template. */
+  async deleteTemplate(id: string): Promise<void> {
+    await apiClient.delete(`/meal-plan-templates/${id}`)
+  },
   async getTemplates(params?: { includeInactive?: boolean }): Promise<MealTemplate[]> {
     const res = (await apiClient.get('/meal-plan-templates', { params })) as any
     return (res?.data ?? res ?? []) as MealTemplate[]

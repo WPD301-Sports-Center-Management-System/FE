@@ -49,4 +49,14 @@ describe('Refresh rotation matches BE token-reuse protection', () => {
     const results=await Promise.all([apiClient.get('/members'),apiClient.get('/payments')])
     expect(results).toEqual([{success:true,data:'/members'},{success:true,data:'/payments'}])
   })
+  it('keeps the session when the refresh fails because of the network, and ends it only when the server refuses the token', async () => {
+    apiClient.defaults.adapter=async config=>{ throw denied(config) }
+    vi.spyOn(axios,'post').mockRejectedValueOnce(new AxiosError('Network Error','ERR_NETWORK'))
+    await expect(apiClient.get('/members')).rejects.toBeTruthy()
+    expect(authStorage.getRefreshToken()).toBe(old)   // offline blip: still signed in
+    const refused = (status: number) => new AxiosError('Refused','ERR_BAD_REQUEST',undefined,undefined,{status,statusText:'',headers:{},config:{} as InternalAxiosRequestConfig,data:{}})
+    vi.spyOn(axios,'post').mockRejectedValueOnce(refused(401))
+    await expect(apiClient.get('/members')).rejects.toBeTruthy()
+    expect(authStorage.getRefreshToken()).toBeNull()  // the server rejected the token: signed out
+  })
 })

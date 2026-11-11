@@ -1,3 +1,4 @@
+import { coachProfileLabel } from '@/shared/utils/coach-tier'
 import { useState, useEffect } from 'react'
 import { Avatar } from '@/shared/components/ui/avatar'
 import { useParams, Link } from 'react-router-dom'
@@ -111,8 +112,9 @@ export function PublicCoachProfilePage() {
               <div>
                 <h1 className="text-3xl font-extrabold text-text-primary">{coach.fullName}</h1>
                 <p className="text-sm font-medium text-primary mt-0.5">
-                  {coach.specialization || 'Chuyên gia Huấn luyện Cá nhân (PT 1:1)'}
+                  {coachProfileLabel(coach.tier)}
                 </p>
+                {coach.specialization && <p className="mt-1 text-sm text-text-muted">{coach.specialization}</p>}
               </div>
               <div className="flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2">
                 <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
@@ -158,7 +160,6 @@ export function PublicCoachProfilePage() {
                       {pkg.sessionCount} Buổi Tập
                     </span>
                     <h3 className="text-base font-bold text-text-primary">{pkg.name}</h3>
-                    <p className="text-xs text-text-muted">{pkg.courseName || 'Khóa tập thể hình chuyên sâu'}</p>
                   </div>
 
                   <div className="mt-6 border-t border-border-subtle pt-4 flex items-center justify-between">

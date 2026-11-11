@@ -1,4 +1,9 @@
 import { useState, useEffect, useCallback, type FormEvent } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { useLoad } from '@/features/fixed-pt/hooks'
+import { hybridGet } from '@/features/fixed-pt/hybrid-api'
+import { InlineError, inputCls } from '@/features/workspace/ui'
+import { formatVND } from '@/shared/utils/currency'
 import { HelpCircle, Plus, RefreshCw, AlertCircle, MessageSquare } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Textarea } from '@/shared/components/ui/input'
@@ -10,14 +15,19 @@ import { supportRequestsService } from '../services/support-requests.service'
 import type { SupportRequest } from '@/shared/types/api'
 
 export function MemberSupportPage() {
+  const [params] = useSearchParams()
+  const purchases = useLoad(() => hybridGet<{id: string; purchaseCode: string; packageNameSnapshot: string}[]>('/me/pt-packages', {limit:100}))
+  const [purchaseId, setPurchaseId] = useState(params.get('purchaseId') ?? '')
+  const [category, setCategory] = useState<'GENERAL' | 'COACH' | 'SCHEDULE' | 'PAYMENT'>(params.get('purchaseId') ? 'PAYMENT' : 'GENERAL')
+  const [detailError, setDetailError] = useState<string | null>(null)
   const [tickets, setTickets] = useState<SupportRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   // Create ticket state
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [subject, setSubject] = useState('')
+  const [isCreateOpen, setIsCreateOpen] = useState(!!params.get('purchaseId'))
+  const [subject, setSubject] = useState(params.get('refund') ? 'Yêu cầu hoàn phần gói PT chưa dùng' : '')
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -49,13 +59,14 @@ export function MemberSupportPage() {
   }, [loadTickets])
 
   const handleOpenDetail = async (ticket: SupportRequest) => {
+    setDetailError(null)
     setIsDetailLoading(true)
     setSelectedTicket(ticket)
     try {
       const detail = await supportRequestsService.getSupportRequestById(ticket.id)
       setSelectedTicket(detail)
     } catch {
-      // Fallback to currently selected ticket
+      setDetailError('Chưa tải được kết quả xử lý mới nhất. Vui lòng thử lại.')
     } finally {
       setIsDetailLoading(false)
     }
@@ -75,6 +86,8 @@ export function MemberSupportPage() {
       await supportRequestsService.createSupportRequest({
         subject: subject.trim(),
         message: message.trim(),
+        category,
+        ...(purchaseId ? { ptPurchaseId: purchaseId } : {}),
       })
       setSuccessMessage('Yêu cầu hỗ trợ của bạn đã được gửi thành công đến quầy tiếp đón!')
       setIsCreateOpen(false)
@@ -205,7 +218,7 @@ export function MemberSupportPage() {
                   >
                     Xem chi tiết
                   </Button>
-                  {(t.status === 'RESOLVED' || t.status === 'CLOSED') && (
+                  {t.status === 'RESOLVED' && (
                     <Button
                       size="sm"
                       variant="ghost"
@@ -231,6 +244,10 @@ export function MemberSupportPage() {
         description="Điền thông tin chi tiết thắc mắc hoặc sự cố bạn đang gặp phải"
       >
         <form onSubmit={handleCreateTicket} className="space-y-4">
+          <label className="block space-y-2 text-sm"><span>Loại yêu cầu</span><select aria-label="Loại yêu cầu" className={inputCls} value={category} disabled={isSubmitting} onChange={e => setCategory(e.target.value as typeof category)}><option value="GENERAL">Hỗ trợ chung</option><option value="PAYMENT">Thanh toán / hoàn tiền</option><option value="SCHEDULE">Lịch tập</option><option value="COACH">Coach</option></select></label>
+          <label className="block space-y-2 text-sm"><span>Gói PT liên quan</span><select aria-label="Gói PT liên quan" className={inputCls} value={purchaseId} disabled={isSubmitting || purchases.loading} onChange={e => setPurchaseId(e.target.value)}><option value="">Không liên quan gói PT</option>{purchases.data?.map(p => <option key={p.id} value={p.id}>{p.purchaseCode} · {p.packageNameSnapshot}</option>)}</select></label>
+          {purchases.error && <><InlineError message={purchases.error} /><Button type="button" variant="outline" onClick={() => void purchases.reload()}>Tải lại gói PT</Button></>}
+          {category === 'PAYMENT' && <p className="text-sm text-text-muted">Chọn đúng gói để trung tâm kiểm tra phần chưa dùng. Gửi yêu cầu chưa làm thay đổi gói hoặc phát sinh tiền hoàn.</p>}
           <Input
             label="Chủ đề / Tiêu đề"
             required
@@ -257,6 +274,7 @@ export function MemberSupportPage() {
             >
               Hủy
             </Button>
+            <InlineError message={errorMessage} />
             <Button type="submit" variant="primary" disabled={isSubmitting}>
               {isSubmitting ? 'Đang gửi...' : 'Gửi yêu cầu'}
             </Button>
@@ -273,9 +291,12 @@ export function MemberSupportPage() {
       >
         {selectedTicket && (
           <div className="space-y-4 text-xs">
+            <Button variant="outline" disabled={isDetailLoading} onClick={() => void handleOpenDetail(selectedTicket)}>Cập nhật tiến độ</Button>
             {isDetailLoading && (
               <div className="py-2 text-center text-text-muted">Đang tải chi tiết mới nhất...</div>
             )}
+            {detailError && <><InlineError message={detailError} /><Button variant="outline" onClick={() => void handleOpenDetail(selectedTicket)}>Thử lại kết quả</Button></>}
+            {!detailError && selectedTicket.links?.purchase && <div className="space-y-2 rounded-lg border border-border-subtle p-3 text-sm"><Link className="underline" to={`/pt-purchases/${selectedTicket.links.purchase.id}`}>Gói {selectedTicket.links.purchase.purchaseCode}</Link>{selectedTicket.links.purchase.refund ? <><p className="font-semibold">{selectedTicket.links.purchase.refund.status === 'PAID' ? 'Đã chuyển tiền hoàn' : 'Đã chốt hoàn · đang chờ chuyển'} · {formatVND(Number(selectedTicket.links.purchase.refund.amount))}</p><p className="text-text-muted">{selectedTicket.links.purchase.refund.status === 'PAID' ? 'Trung tâm đã ghi nhận khoản chuyển. Liên hệ lễ tân nếu bạn chưa nhận được tiền.' : 'Gói đã đóng; trung tâm đang xử lý chuyển tiền cho bạn.'}</p></> : <p className="text-text-muted">Trung tâm chưa chốt khoản hoàn cho gói này.</p>}</div>}
             <div className="flex items-center justify-between">
               <span className="font-semibold text-text-muted">Trạng thái:</span>
               <StatusBadge status={selectedTicket.status} context="support" />
@@ -302,7 +323,7 @@ export function MemberSupportPage() {
             )}
 
             <div className="flex justify-between items-center pt-3 border-t border-border-subtle">
-              {(selectedTicket.status === 'RESOLVED' || selectedTicket.status === 'CLOSED') ? (
+              {selectedTicket.status === 'RESOLVED' ? (
                 <Button
                   type="button"
                   size="sm"

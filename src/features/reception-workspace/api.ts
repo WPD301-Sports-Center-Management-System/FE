@@ -34,9 +34,9 @@ export interface CheckInResult extends Visit { reused?: boolean; todaySessions: 
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'EXPIRED' | 'SUPERSEDED'
 export interface Payment { id: string; paymentCode: string; memberId: string; subscriptionId?: string | null; ptPurchaseId?: string | null; amount: string; method: 'CASH' | 'BANK_TRANSFER' | 'VNPAY'; status: PaymentStatus; application?: string | null; paidAt?: string | null; createdAt: string; expiresAt?: string | null; memberName?: string; memberCode?: string; itemDescription?: string; invoiceId?: string | null }
 export interface Invoice { id: string; invoiceNumber: string; paymentId: string; memberNameSnapshot: string; memberEmailSnapshot: string; itemNameSnapshot: string; subtotal: string; total: string; issuedAt: string }
-export interface PtPurchase { id: string; purchaseCode: string; memberId: string; coachId: string; packageOptionId?: string; status: string; packageNameSnapshot: string; courseNameSnapshot: string; coachNameSnapshot?: string; priceSnapshot: string; totalCredits: number; reservedCredits: number; consumedCredits: number; expiresAt?: string | null; createdAt: string }
+export interface PtPurchase { id: string; purchaseCode: string; memberId: string; coachId: string; packageOptionId?: string; status: string; packageNameSnapshot: string; courseNameSnapshot: string | null; coachNameSnapshot?: string; priceSnapshot: string; totalCredits: number; reservedCredits: number; consumedCredits: number; expiresAt?: string | null; createdAt: string }
 export type SupportStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
-export interface SupportRequest { id: string; requestCode: string; memberId: string; memberName?: string | null; subject: string; message: string; status: SupportStatus; response?: string | null; respondedAt?: string | null; category: string; attachmentUrls: string[]; createdAt: string; updatedAt: string }
+export interface SupportRequest { ptPurchaseId?: string | null; bookingId?: string | null; paymentId?: string | null; id: string; requestCode: string; memberId: string; memberName?: string | null; subject: string; message: string; status: SupportStatus; response?: string | null; respondedAt?: string | null; category: string; attachmentUrls: string[]; createdAt: string; updatedAt: string }
 export type TrialStatus = 'NEW' | 'CONTACTED' | 'CONVERTED' | 'CLOSED'
 export interface TrialRequest { id: string; fullName: string; phone: string; goal?: string | null; preferredTime?: string | null; coachId?: string | null; coachName?: string | null; interest?: string | null; note?: string | null; status: TrialStatus; staffNote?: string | null; handledAt?: string | null; createdAt: string }
 export type TrialSessionType = 'GYM' | 'PT'
@@ -82,8 +82,9 @@ export const deskApi = {
   payments: (params: { memberId?: string; status?: PaymentStatus; method?: string }, maxPages = 5) => all<Payment>('/payments', params, maxPages),
   invoices: (params: { memberId?: string }, maxPages = 3) => all<Invoice>('/invoices', params, maxPages),
   invoicePdf: async (id: string) => (await apiClient.get(`/invoices/${id}/pdf`, { responseType: 'blob' })) as unknown as Blob,
-  payCounter: (body: { subscriptionId?: string; ptPurchaseId?: string; method: 'CASH' | 'BANK_TRANSFER'; receivedAmount: number; externalRef?: string }) => counterPayment<Payment & { changeAmount: number }>(body),
-  payVnpay: (body: { subscriptionId?: string; ptPurchaseId?: string }) => post<{ paymentUrl: string; paymentId?: string }>('/payments/vnpay', { ...body, returnTarget: 'web' }),
+  payCounter: (body: { subscriptionId?: string; ptPurchaseId?: string; method: 'CASH'; receivedAmount: number; externalRef?: string; overrideReason?: string }) => counterPayment<Payment & { changeAmount: number }>(body),
+  renewSubscription: (id: string, body: { planId?: string; startDate?: string }) => post<Subscription>(`/subscriptions/${id}/renew`, body),
+  payVnpay: (body: { subscriptionId?: string; ptPurchaseId?: string }) => post<{ paymentUrl: string; paymentId: string }>('/payments/vnpay', { ...body, returnTarget: 'web' }),
   reconciliation: () => get<ReconciliationCase[]>('/reconciliation-cases'),
 
   support: (params: { status?: SupportStatus } = {}) => all<SupportRequest>('/support-requests', params, 3),
@@ -100,7 +101,8 @@ export const deskApi = {
   createTrialSession: (body: { trialRequestId?: string; type: TrialSessionType; mode?: 'GYM' | 'PT' | 'BOTH'; fullName: string; phone: string; coachId?: string; scheduledAt?: string; durationMinutes?: number; note?: string }) => post<TrialSession>('/trial-sessions', body),
   checkInTrialSession: (id: string) => post<TrialSession>(`/trial-sessions/${id}/check-in`),
   checkOutTrialSession: (id: string) => post<TrialSession>(`/trial-sessions/${id}/check-out`),
-  updateTrialSession: (id: string, body: { status?: 'CANCELLED' | 'NO_SHOW' | 'CONVERTED'; note?: string; coachId?: string; coachDecision?: 'ACCEPTED' | 'DECLINED'; coachResponse?: string; scheduledAt?: string }) => patch<TrialSession>(`/trial-sessions/${id}`, body),
+  updateTrialSession: (id: string, body: { status?: 'CANCELLED' | 'NO_SHOW'; note?: string; coachId?: string; scheduledAt?: string }) => patch<TrialSession>(`/trial-sessions/${id}`, body),
+  convertTrial: (id: string, email?: string) => post<{ memberId: string; memberCode: string; userId: string; temporaryPassword?: string; trialSession: TrialSession }>(`/trial-sessions/${id}/convert`, email ? { email } : {}),
   coaches: () => all<PublicCoach>('/trial-sessions/coaches'),
   coursesForTrial: () => get<{ id: string; name: string }[]>('/training-courses', { limit: 100 }),
 }

@@ -1,3 +1,4 @@
+import { CoachTrialRequests } from '../components/trial-requests'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, CalendarDays, Check, Copy, Download, Eye, HeartPulse, Sparkles, TrendingDown, TrendingUp, Users, Wallet } from 'lucide-react'
@@ -40,14 +41,15 @@ export function CoachHomePage() {
   const active = (purchases.data ?? []).filter(p => p.status === 'ACTIVE')
   const activeMembers = new Set(active.map(p => p.memberId)).size
   const s = summary.data
-  const payable = s ? (s.byStatus.ELIGIBLE?.amount ?? 0) + (s.byStatus.INCLUDED?.amount ?? 0) : null
-  const pendingConfirm = s?.byStatus.PENDING_CONFIRMATION?.amount ?? 0
+  const payable = s?.available ?? null
+  const pendingConfirm = s?.unverified ?? 0
 
   const reloadAll = (message: string) => { flash(message); void sessions.reload(); void upcoming.reload(); void purchases.reload(); refreshBadges() }
   const exportToday = () => downloadCsv(`lich-day-${today}.csv`, ['Bắt đầu', 'Kết thúc', 'Học viên', 'Gói', 'Buổi', 'Trạng thái'],
     list.map(x => [hhmm(x.startsAt), hhmm(x.endsAt), x.memberName ?? '', x.purchase?.packageNameSnapshot ?? '', x.credit ? `${x.credit.creditIndex}/${x.purchase?.totalCredits ?? ''}` : '', SESSION_LABEL[x.status] ?? x.status]))
 
   return <div>
+    <div className="mb-5"><CoachTrialRequests compact /></div>
     {node}
     <PageHeader title="Hôm nay của bạn"
       subtitle={<><span>{longDate(today)}</span><Dot /><span className="font-medium text-text-primary">{sessions.data ? (list.length ? `${list.length} ca dạy đã lên lịch` : 'Chưa có ca dạy hôm nay') : 'Đang tải lịch…'}</span></>}
@@ -66,13 +68,13 @@ export function CoachHomePage() {
             hint={sessions.data ? (list.length ? `${counts.done} đã xong · ${counts.live} đang dạy` : 'Mở lịch tuần để xem và xếp ca') : undefined} />
           <StatTile label="Học viên đang quản lý" icon={<Users className="h-[18px] w-[18px]" />} iconTone="violet"
             value={purchases.data ? activeMembers : '—'} unit="người" hint={purchases.data ? `${active.length} gói PT đang dạy` : undefined} />
-          <StatTile label="Thu nhập chờ chi trả" icon={<Wallet className="h-[18px] w-[18px]" />} iconTone="success" tone="success"
+          <StatTile label="Thu nhập có thể rút" icon={<Wallet className="h-[18px] w-[18px]" />} iconTone="success" tone="success"
             value={payable === null ? '—' : fmtNumber(payable)} unit="₫"
-            hint={s ? <>{pendingConfirm > 0 && <Badge tone="warning">{fmtMoney(pendingConfirm)} chờ xác nhận</Badge>}<span>Đã nhận {fmtMoney(s.paidOut)}</span></> : undefined} />
+            hint={s ? <>{pendingConfirm > 0 && <Badge tone="warning">{fmtMoney(pendingConfirm)} chờ đối soát</Badge>}<span>Đã nhận {fmtMoney(s.paidOut)} · đang chờ {fmtMoney(s.reserved)}</span><Link to="/coach/earnings" className="font-medium text-text-primary underline underline-offset-2">Rút tiền</Link></> : undefined} />
         </div>
 
         <Card flush title="Lịch dạy & Điểm danh hôm nay" badge={sessions.data ? <Badge>{list.length} ca</Badge> : null}
-          subtitle={<span className="inline-flex items-center gap-1.5"><span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Lễ tân ghi học viên đến; Coach bắt đầu và kết thúc ca để tính buổi.</span>}
+          subtitle={<span className="inline-flex items-center gap-1.5"><span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Học viên check-in gym; Coach bắt đầu trực tiếp và kết thúc buổi để ghi kết quả.</span>}
           actions={<Segmented label="Lọc ca dạy" value={tab} onChange={setTab} items={TABS.map(t => ({ key: t.key, label: t.label, count: counts[t.key] }))} />}>
           <Async state={sessions} rows={5} empty={() => rows.length ? false : <EmptyBox title={list.length ? 'Không có ca ở trạng thái này' : 'Hôm nay chưa có ca dạy'} hint={list.length ? undefined : 'Mở lịch tuần để xem buổi sắp tới, hoặc mở giờ làm việc để học viên chọn khi mua gói.'} action={!list.length && <div className="flex flex-wrap justify-center gap-2"><LinkBtn to="/coach/schedule" size="sm">Xem lịch tuần</LinkBtn><LinkBtn to="/coach/slots" size="sm" variant="soft">Mở khung giờ làm việc</LinkBtn></div>} />}>
             {() => <Table head={['Khung giờ', 'Học viên', 'Gói PT', 'Buổi tập', 'Trạng thái', '']} minWidth={920}>

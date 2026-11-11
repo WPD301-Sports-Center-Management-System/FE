@@ -15,11 +15,14 @@ import {
   UserCheck,
   Ban,
   Shield,
+  Trash2,
 } from 'lucide-react'
 import { DataTable, type Column } from '@/shared/components/ui/data-table'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import { Button } from '@/shared/components/ui/button'
 import { Modal } from '@/shared/components/ui/modal'
+import { DeleteDialog } from '@/shared/components/ui/delete-dialog'
+import { useCurrentUserId } from '@/features/auth/context/auth-context'
 import { Input, Select } from '@/shared/components/ui/input'
 import { formatDate } from '@/shared/utils/date'
 import { usersService } from '@/features/users-accounts/services/users.service'
@@ -42,6 +45,8 @@ export function UserManagementPage() {
   const [editingUser, setEditingUser] = useState<UserDetail | null>(null)
   const [statusChangeUser, setStatusChangeUser] = useState<{ user: UserDetail; targetStatus: UserStatus } | null>(null)
   const [resetUser, setResetUser] = useState<UserDetail | null>(null)
+  const [deleteUser, setDeleteUser] = useState<UserDetail | null>(null)
+  const currentUserId = useCurrentUserId()
   const [tempPassword, setTempPassword] = useState<string | null>(null)
   const [isCopied, setIsCopied] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -466,6 +471,19 @@ export function UserManagementPage() {
               <KeyRound className="h-3.5 w-3.5 mr-1" />
               <span>Reset MK</span>
             </Button>
+
+            {row.id !== currentUserId && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 px-2 text-xs text-danger hover:bg-danger/10 hover:text-danger border-danger/30"
+                onClick={() => setDeleteUser(row)}
+                title="Xóa tài khoản"
+                aria-label={`Xóa tài khoản ${row.fullName}`}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
         )}
       />
@@ -603,6 +621,25 @@ export function UserManagementPage() {
           </div>
         </form>
       </Modal>
+
+      <DeleteDialog
+        name={deleteUser?.fullName ?? null}
+        noun="tài khoản"
+        impact={
+          <>
+            Tài khoản sẽ bị gỡ khỏi danh sách, không thể đăng nhập và mọi phiên đang mở bị thu hồi. Đơn hàng, thanh toán, buổi tập và lịch sử liên quan vẫn được giữ.
+            {' '}Không xóa được tài khoản còn gói PT/vé gym đang chạy, Manager hoạt động cuối cùng hoặc chính bạn; nếu chỉ cần ngừng truy cập, hãy dùng nút khóa tài khoản.
+          </>
+        }
+        onConfirm={async () => {
+          if (!deleteUser) return
+          await usersService.deleteUser(deleteUser.id)
+          const removed = deleteUser
+          setUsers((prev) => prev.filter((u) => u.id !== removed.id))
+          showSuccess(`Đã xóa tài khoản ${removed.fullName}.`)
+        }}
+        onClose={() => setDeleteUser(null)}
+      />
 
       {/* Modal Confirm Status Change */}
       <Modal

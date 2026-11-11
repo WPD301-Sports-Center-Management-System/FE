@@ -13,7 +13,6 @@ import type {
   CreateMemberResponseData,
   MemberHistoryResponseData,
   MemberProgressResponseData,
-  CreateBodyAssessmentPayload,
 } from '@/features/memberships/types/members.types'
 
 export const membersService = {
@@ -104,27 +103,6 @@ export const membersService = {
       { params }
     )
     return res as unknown as ApiSuccess<BodyAssessment[]>
-  },
-
-  /**
-   * [8] POST /members/{memberId}/body-assessments - Record new body assessment
-   */
-  async createMemberBodyAssessment(
-    memberId: string,
-    payload: CreateBodyAssessmentPayload
-  ): Promise<BodyAssessment> {
-    const res = await apiClient.post<ApiSuccess<BodyAssessment>>(
-      `/members/${memberId}/body-assessments`,
-      payload
-    )
-    const data = res as unknown as ApiSuccess<BodyAssessment>
-    return data.data
-  },
-
-  /** PATCH /body-assessments/{id} - Correct a recorded assessment (BMI is recalculated by the server) */
-  async updateBodyAssessment(id: string, payload: Partial<CreateBodyAssessmentPayload>): Promise<BodyAssessment> {
-    const res = await apiClient.patch<ApiSuccess<BodyAssessment>>(`/body-assessments/${id}`, payload)
-    return (res as unknown as ApiSuccess<BodyAssessment>).data
   },
 
   /**

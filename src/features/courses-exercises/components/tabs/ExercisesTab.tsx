@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Search, Dumbbell, Edit2, Power } from 'lucide-react'
+import { Search, Dumbbell, Edit2, Power, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import type { Exercise, MuscleGroup } from '@/shared/types/api'
@@ -18,6 +18,7 @@ interface ExercisesTabProps {
   onOpenEdit: (exercise: Exercise) => void
   onToggleStatus: (exercise: Exercise) => void
   togglingExerciseId: string | null
+  onDelete?: (exercise: Exercise) => void
 }
 
 export function ExercisesTab({
@@ -34,6 +35,7 @@ export function ExercisesTab({
   onOpenEdit,
   onToggleStatus,
   togglingExerciseId,
+  onDelete,
 }: ExercisesTabProps) {
   const filteredExercises = useMemo(() => {
     return exercises.filter((ex) => {
@@ -199,7 +201,8 @@ export function ExercisesTab({
                     <span>Chỉnh sửa</span>
                   </Button>
 
-                  <Button
+                  <div className="flex items-center gap-1.5">
+<Button
                     size="sm"
                     variant="outline"
                     onClick={() => onToggleStatus(ex)}
@@ -217,6 +220,13 @@ export function ExercisesTab({
                     />
                     <span>{isAct ? 'Tạm dừng' : 'Kích hoạt'}</span>
                   </Button>
+{onDelete && (
+<Button size="sm" variant="outline" onClick={() => onDelete(ex)} aria-label={`Xóa bài tập ${ex.name}`} className="text-xs h-7 px-2.5 gap-1.5 text-danger hover:bg-danger/10 hover:text-danger border-danger/30">
+<Trash2 className="h-3 w-3" />
+<span>Xóa</span>
+</Button>
+)}
+</div>
                 </div>
               </div>
             )

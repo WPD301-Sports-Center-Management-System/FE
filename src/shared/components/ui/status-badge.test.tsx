@@ -4,14 +4,13 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { StatusBadge, statusLabel, statusLabels } from './status-badge'
 
-const schemaPath = resolve(__dirname, '../../../../../BE/prisma/schema.prisma')
+const schemaPath = resolve(__dirname, '../../../../../BE/prisma/migrations/20261108000000_v2_baseline/migration.sql')
 
 describe('StatusBadge', () => {
   it.skipIf(!existsSync(schemaPath))('has a Vietnamese label for every status enum value of the API', () => {
     const schema = readFileSync(schemaPath, 'utf8')
-    const values = [...schema.matchAll(/enum (\w*Status) \{([^}]*)\}/g)].flatMap(([, , body]) =>
-      body.split('\n').map((l) => l.trim()).filter((l) => /^[A-Z_]+$/.test(l)),
-    )
+    const values = [...new Set([...schema.matchAll(/CHECK \((?:status|state) IN \(([^)]*)\)\)/g)]
+      .flatMap(([, body]) => [...body.matchAll(/'([^']+)'/g)].map(m => m[1])))]
     expect(values.length).toBeGreaterThan(50)
     expect(values.filter((v) => !statusLabels[v])).toEqual([])
   })

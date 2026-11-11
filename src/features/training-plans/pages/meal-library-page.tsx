@@ -1,25 +1,29 @@
 import { useMemo, useState } from 'react'
 import { Apple, BookCopy, Copy, Pencil, Plus, Search, Trash2, Utensils } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
+import { DeleteDialog } from '@/shared/components/ui/delete-dialog'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import { Async, Badge, Btn, Card, Dot, EmptyBox, Field, InlineError, PageHeader, Segmented, Table, inputCls, td, textareaCls, useFlash } from '@/features/workspace/ui'
 import { foodLine, GOAL_TAG_LABEL, mealPlansService, type FoodItem, type MealTemplate, type TemplatePayload } from '../services/meal-plans.service'
 import { MEAL_TYPES } from './coach-meal-plan-page'
+import { Link, useSearchParams } from 'react-router-dom'
 
 // Manager: center templates + food library. Coach: center templates (read-only) + own templates.
 type Tab = 'templates' | 'foods'
 export function MealLibraryPage({ manager = false, embedded = false }: { manager?: boolean; embedded?: boolean }) {
+  const [params] = useSearchParams()
   const { flash, node } = useFlash()
   const [tab, setTab] = useState<Tab>('templates')
   const templates = useLoad(() => mealPlansService.getTemplates({ includeInactive: manager }), [manager])
   const foods = useLoad(() => mealPlansService.getFoodItems({ includeInactive: manager }), [manager])
   const [editing, setEditing] = useState<MealTemplate | 'new' | null>(null)
+  const [deletingTemplate, setDeletingTemplate] = useState<MealTemplate | null>(null)
   const canEdit = (t: MealTemplate) => manager ? t.scope === 'CENTER' : t.scope === 'COACH' && !!t.mine
 
   return <div>
     {node}
     {embedded ? tab === 'templates' && <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <p className="text-xs text-text-muted">Mẫu trung tâm và mẫu riêng của bạn. Áp dụng ở tab “Thực đơn học viên” → “Bắt đầu từ mẫu”; khẩu phần tự co giãn theo kcal.</p>
+      <p className="text-sm text-text-muted">Chọn “Dùng mẫu” để tạo thực đơn cho học viên. Khẩu phần được điều chỉnh theo năng lượng mục tiêu.</p>
       <Btn variant="primary" icon={<Plus aria-hidden className="h-4 w-4" />} onClick={() => setEditing('new')}>Tạo mẫu của tôi</Btn>
     </div> : <PageHeader title={manager ? 'Thư viện dinh dưỡng' : 'Mẫu thực đơn'}
       subtitle={<><span>{manager ? 'Mẫu trung tâm dùng chung cho mọi Coach' : 'Mẫu trung tâm và mẫu riêng của bạn'}</span><Dot /><span>Kcal mẫu = tổng các món; khi áp dụng, khẩu phần co giãn theo kcal của học viên</span></>}
@@ -33,17 +37,22 @@ export function MealLibraryPage({ manager = false, embedded = false }: { manager
             <td className={td}>{t.goalTag ? <Badge tone="info">{GOAL_TAG_LABEL[t.goalTag] ?? t.goalTag}</Badge> : <span className="text-text-muted">—</span>}</td>
             <td className={`${td} tabular-nums`}>{t.dailyCalorieTarget.toLocaleString('vi-VN')}</td>
             <td className={`${td} tabular-nums`}>{t.dayCount}</td>
-            <td className={td}><Badge tone={t.isActive ? 'success' : 'neutral'}>{t.isActive ? 'Đang dùng' : 'Đã tắt'}</Badge></td>
+            <td className={td}><Badge tone={t.isActive ? 'success' : 'neutral'}>{t.isActive ? 'Đang sử dụng' : 'Đã ẩn'}</Badge></td>
             <td className={`${td} whitespace-nowrap text-right`}>
+              {!manager && t.isActive && <Link className="mr-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline" to={`/coach/meal-plans?tab=plans&templateId=${t.id}${params.get('memberId') ? `&memberId=${encodeURIComponent(params.get('memberId')!)}` : ''}`}>Dùng mẫu</Link>}
               {canEdit(t) ? <span className="inline-flex gap-1.5">
                 <Btn size="sm" icon={<Pencil aria-hidden className="h-3.5 w-3.5" />} onClick={() => setEditing(t)}>Sửa</Btn>
                 <ToggleTemplate t={t} onDone={m => { flash(m); void templates.reload() }} />
-              </span> : <Btn size="sm" icon={<Copy aria-hidden className="h-3.5 w-3.5" />} onClick={async () => setEditing({ ...(await mealPlansService.getTemplate(t.id)), id: '', scope: 'COACH', title: `${t.title} (bản của tôi)` })}>Sao chép để sửa</Btn>}
+                {manager && <Btn size="sm" variant="danger" icon={<Trash2 aria-hidden className="h-3.5 w-3.5" />} aria-label={`Xóa mẫu ${t.title}`} onClick={() => setDeletingTemplate(t)}>Xóa</Btn>}
+              </span> : <Btn size="sm" icon={<Copy aria-hidden className="h-3.5 w-3.5" />} onClick={async () => setEditing({ ...(await mealPlansService.getTemplate(t.id)), id: '', scope: 'COACH', title: `${t.title} (bản của tôi)` })}>Tạo bản sao</Btn>}
             </td>
           </tr>)}
         </Table>}
       </Async>
     </Card> : <FoodLibrary foods={foods} flash={flash} />}
+    <DeleteDialog name={deletingTemplate?.title ?? null} noun="mẫu thực đơn" onClose={() => setDeletingTemplate(null)}
+      impact="Mẫu sẽ biến mất khỏi danh sách và không còn để Coach chọn. Thực đơn đã tạo từ mẫu này cho học viên là bản sao độc lập nên không đổi. Nếu chỉ muốn tạm ngưng dùng, hãy chọn Tắt."
+      onConfirm={async () => { if (!deletingTemplate) return; await mealPlansService.deleteTemplate(deletingTemplate.id); flash(`Đã xóa mẫu “${deletingTemplate.title}”.`); await templates.reload() }} />
     {editing && <TemplateEditor initial={editing === 'new' ? null : editing} foods={(foods.data ?? []).filter(f => f.isActive)} onClose={() => setEditing(null)}
       onDone={m => { setEditing(null); flash(m); void templates.reload() }} />}
   </div>
@@ -51,7 +60,7 @@ export function MealLibraryPage({ manager = false, embedded = false }: { manager
 
 function ToggleTemplate({ t, onDone }: { t: MealTemplate; onDone: (m: string) => void }) {
   const submit = useSubmit()
-  return <><Btn size="sm" variant={t.isActive ? 'outline' : 'soft'} busy={submit.busy} onClick={async () => { if (await submit.run(() => mealPlansService.setTemplateActive(t.id, !t.isActive))) onDone(t.isActive ? `Đã tắt mẫu “${t.title}”.` : `Đã bật mẫu “${t.title}”.`) }}>{t.isActive ? 'Tắt' : 'Bật'}</Btn>
+  return <><Btn size="sm" variant={t.isActive ? 'outline' : 'soft'} busy={submit.busy} onClick={async () => { if (await submit.run(() => mealPlansService.setTemplateActive(t.id, !t.isActive))) onDone(t.isActive ? `Đã ẩn mẫu “${t.title}”.` : `Đã hiển thị mẫu “${t.title}”.`) }}>{t.isActive ? 'Ẩn mẫu' : 'Hiện mẫu'}</Btn>
     {submit.error && <p role="alert" className="mt-1 text-xs text-red-600">{submit.error}</p>}</>
 }
 
@@ -123,6 +132,7 @@ function TemplateEditor({ initial, foods, onClose, onDone }: { initial: MealTemp
 function FoodLibrary({ foods, flash }: { foods: ReturnType<typeof useLoad<FoodItem[]>>; flash: (m: string) => void }) {
   const [q, setQ] = useState('')
   const [editing, setEditing] = useState<FoodItem | 'new' | null>(null)
+  const [deleting, setDeleting] = useState<FoodItem | null>(null)
   const term = q.trim().toLowerCase()
   return <Card flush>
     <div className="flex flex-wrap items-center gap-3 border-b border-border-subtle p-4">
@@ -138,10 +148,14 @@ function FoodLibrary({ foods, flash }: { foods: ReturnType<typeof useLoad<FoodIt
           <td className={td}>{f.category ?? '—'}</td><td className={td}>{f.servingLabel}</td>
           <td className={`${td} tabular-nums`}>{f.calories}</td><td className={`${td} tabular-nums`}>{Number(f.proteinGrams)} g</td>
           <td className={`${td} tabular-nums`}>{Number(f.carbsGrams)} g</td><td className={`${td} tabular-nums`}>{Number(f.fatGrams)} g</td>
-          <td className={`${td} text-right`}><Btn size="sm" icon={<Pencil aria-hidden className="h-3.5 w-3.5" />} onClick={() => setEditing(f)}>Sửa</Btn></td>
+          <td className={`${td} whitespace-nowrap text-right`}><span className="inline-flex gap-1.5"><Btn size="sm" icon={<Pencil aria-hidden className="h-3.5 w-3.5" />} onClick={() => setEditing(f)}>Sửa</Btn>
+            <Btn size="sm" variant="danger" icon={<Trash2 aria-hidden className="h-3.5 w-3.5" />} aria-label={`Xóa khỏi thư viện: ${f.name}`} onClick={() => setDeleting(f)}>Xóa</Btn></span></td>
         </tr>)}
       </Table>}
     </Async>
+    <DeleteDialog name={deleting?.name ?? null} noun="món trong thư viện" onClose={() => setDeleting(null)}
+      impact="Món sẽ biến mất khỏi thư viện và danh sách chọn món. Thực đơn đã giao cho học viên giữ nguyên tên và dinh dưỡng đã lưu. Món đang nằm trong mẫu đang bật hoặc thực đơn nháp sẽ không xóa được; khi đó hãy chọn “Ẩn khỏi thư viện”."
+      onConfirm={async () => { if (!deleting) return; await mealPlansService.deleteFoodItem(deleting.id); flash(`Đã xóa món “${deleting.name}”.`); await foods.reload() }} />
     {editing && <FoodModal food={editing === 'new' ? null : editing} onClose={() => setEditing(null)} onDone={m => { setEditing(null); flash(m); void foods.reload() }} />}
   </Card>
 }

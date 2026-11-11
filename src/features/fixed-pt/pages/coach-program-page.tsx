@@ -1,18 +1,15 @@
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useState } from 'react'
-import { Copy, Plus, Trash2 } from 'lucide-react'
+import { Copy } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
-import { Modal } from '@/shared/components/ui/modal'
 import { ConfirmDialog } from '@/shared/components/ui/confirm-dialog'
-import { coursesExercisesService } from '@/features/courses-exercises/services/courses-exercises.service'
 import { formatTime, formatWeekdayDateTime } from '@/shared/utils/date'
 import { fixedPtApi } from '../api'
 import { useLoad, useSubmit } from '../hooks'
-import type { ContentItem, SessionWithContent } from '../types'
+import type { SessionWithContent } from '../types'
 import { Empty, ErrorBanner, Field, inputCls, label as statusLabel, Loadable, Notice, Page, Panel, Status, Table, td } from '../components/ui'
 import { ProgramFillPanel } from '../components/program-fill-panel'
 
-const LEVELS = [['', 'Không dùng gợi ý'], ['BEGINNER', 'Người mới'], ['INTERMEDIATE', 'Trung cấp'], ['ADVANCED', 'Nâng cao']] as const
 function contentState(s: SessionWithContent) {
   const c = s.content
   if (['COMPLETED', 'NO_SHOW', 'CANCELLED_LATE'].includes(s.status)) return c?.status === 'LOCKED' ? (c.startedWithout === 'NO_CONTENT' ? 'Đã tập – chưa có giáo án' : 'Đã khóa') : 'Không áp dụng'
@@ -47,13 +44,12 @@ function PurchaseProgram({ purchaseId }: { purchaseId: string }) {
   const sessions = useLoad(() => fixedPtApi.purchaseSessions(purchaseId), [purchaseId])
   const [selected, setSelected] = useState<string[]>([])
   const [copyOverwrite, setCopyOverwrite] = useState(false)
-  const [editing, setEditing] = useState<SessionWithContent | null>(null)
   const [copy, setCopy] = useState({ source: '', target: '' })
   const act = useSubmit(); const [result, setResult] = useState<string | null>(null)
   const active = (sessions.data ?? []).filter(s => !['RESCHEDULED', 'CANCELLED_EARLY', 'COACH_CANCELLED'].includes(s.status))
   return (
     <>
-      <ProgramFillPanel purchaseId={purchaseId} sessions={sessions} submit={act} onApplied={setResult} />
+      <details className="rounded-xl border border-border-subtle bg-bg-surface p-4"><summary className="cursor-pointer text-sm font-semibold">Điền nhanh nhiều buổi từ chu kỳ giáo án</summary><div className="mt-4"><ProgramFillPanel purchaseId={purchaseId} sessions={sessions} submit={act} onApplied={setResult} /></div></details>
       <details className="rounded-xl border border-border-subtle bg-bg-surface p-4">
         <summary className="cursor-pointer text-sm font-semibold">Đã có tuần tập phù hợp? Sao chép sang tuần khác</summary>
         <p className="mt-3 text-sm text-text-muted">Dùng lại giáo án từ các buổi đã có trong gói, thay vì điền theo chu kỳ.</p>
@@ -76,74 +72,16 @@ function PurchaseProgram({ purchaseId }: { purchaseId: string }) {
                 <td className={td}>{formatWeekdayDateTime(s.startsAt)}–{formatTime(s.endsAt)}</td>
                 <td className={td}><Status value={s.status} /></td>
                 <td className={td}>{contentState(s)}{s.content?.title && <div className="text-xs text-text-muted">{s.content.title}</div>}{s.content?.recoveryWarning && <div className="text-xs text-amber-700 dark:text-amber-300">{s.content.recoveryWarning}</div>}</td>
-                <td className={td}><Button size="sm" variant="ghost" disabled={act.busy} onClick={() => setEditing(s)}>{['CONFIRMED', 'ARRIVED'].includes(s.status) ? 'Kiểm tra / sửa' : 'Xem / ghi thực tế'}</Button></td>
+                <td className={td}><Link className="inline-flex min-h-11 items-center text-primary underline" to={`/coach/sessions/${s.id}`}>{['CONFIRMED', 'ARRIVED'].includes(s.status) ? 'Kiểm tra / sửa' : 'Xem / ghi thực tế'}</Link></td>
               </tr>
             ))}
           </Table>
         )}</Loadable>
       </Panel>
-      {editing && <ContentEditor session={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void sessions.reload() }} />}
     </>
   )
 }
 
-export function ContentEditor({ session, onClose, onSaved }: { session: SessionWithContent; onClose: () => void; onSaved: () => void }) {
-  const exercises = useLoad(async () => (await coursesExercisesService.getExercises({ limit: 100 })).data ?? [], [])
-  const templates = useLoad(() => fixedPtApi.sessionTemplates(), [])
-  const locked = !['CONFIRMED', 'ARRIVED'].includes(session.status)
-  const [title, setTitle] = useState(session.content?.title ?? '')
-  const [items, setItems] = useState<ContentItem[]>((session.content?.items ?? []) as ContentItem[])
-  const [templateId, setTemplateId] = useState(''); const [level, setLevel] = useState('')
-  const [reason, setReason] = useState('')
-  const act = useSubmit()
-  const update = (i: number, patch: Partial<ContentItem>) => setItems(items.map((it, idx) => idx === i ? { ...it, ...patch } : it))
-  const reloadContent = async () => { const c = await fixedPtApi.purchaseSessions(session.purchaseId); const me = c.find(x => x.id === session.id); setItems((me?.content?.items ?? []) as ContentItem[]); setTitle(me?.content?.title ?? '') }
-  return (
-    <Modal isOpen onClose={onClose} title={`Giáo án buổi ${formatWeekdayDateTime(session.startsAt)}`} maxWidth="2xl">
-      <div className="space-y-3">
-        {locked ? <Notice tone="info">Buổi đã bắt đầu/kết thúc: giáo án đã khóa. Bạn có thể ghi nội dung thực tế (tạo phiên bản mới, có lý do).</Notice>
-          : <div className="grid gap-2 sm:grid-cols-3">
-            <Field label="Áp mẫu buổi"><select className={inputCls} value={templateId} onChange={e => setTemplateId(e.target.value)}><option value="">— Chọn mẫu —</option>{(templates.data ?? []).map(t => <option key={t.id} value={t.id}>{t.presetKey ? '★ ' : ''}{t.name}</option>)}</select></Field>
-            <Field label="Gợi ý trình độ"><select className={inputCls} value={level} onChange={e => setLevel(e.target.value)}>{LEVELS.map(([v, t]) => <option key={v} value={v}>{t}</option>)}</select></Field>
-            <div className="flex items-end"><Button variant="secondary" disabled={!templateId || act.busy} onClick={() => void act.run(async () => { await fixedPtApi.applyTemplate(session.id, templateId, level || undefined); await reloadContent() })}>Áp mẫu</Button></div>
-          </div>}
-        {!locked && <Field label="Tiêu đề buổi"><input className={inputCls} value={title} onChange={e => setTitle(e.target.value)} /></Field>}
-        <div className="space-y-2">
-          {items.length === 0 && <Empty>Chưa có bài tập.</Empty>}
-          {items.map((it, i) => (
-            <div key={i} className={`grid gap-2 rounded-xl border p-2 sm:grid-cols-12 ${it.needsExercise && !it.exerciseId ? 'border-amber-500/50' : 'border-border-subtle'}`}>
-              <div className="sm:col-span-4"><Field label={it.roleName ?? `Bài ${i + 1}`} hint={it.needsExercise && !it.exerciseId ? 'Mẫu không có bài khớp – chọn bài cụ thể' : undefined}>
-                <select className={inputCls} value={it.exerciseId ?? ''} onChange={e => { const ex = (exercises.data ?? []).find((x: { id: string }) => x.id === e.target.value); update(i, { exerciseId: e.target.value || null, name: ex?.name ?? it.name }) }}>
-                  <option value="">— Chọn bài —</option>{(exercises.data ?? []).map((x: { id: string; name: string }) => <option key={x.id} value={x.id}>{x.name}</option>)}
-                </select></Field></div>
-              <div className="sm:col-span-1"><Field label="Sets"><input type="number" min={1} className={inputCls} value={it.sets ?? ''} onChange={e => update(i, { sets: e.target.value ? Number(e.target.value) : undefined })} /></Field></div>
-              <div className="sm:col-span-1"><Field label="Reps"><input type="number" min={1} className={inputCls} value={it.reps ?? ''} onChange={e => update(i, { reps: e.target.value ? Number(e.target.value) : undefined })} /></Field></div>
-              <div className="sm:col-span-2"><Field label="Tạ (kg)"><input type="number" min={0} step={0.5} className={inputCls} value={it.targetWeight ?? ''} onChange={e => update(i, { targetWeight: e.target.value ? Number(e.target.value) : undefined })} /></Field></div>
-              <div className="sm:col-span-2"><Field label="Nghỉ (giây)"><input type="number" min={0} className={inputCls} value={it.restSeconds ?? ''} onChange={e => update(i, { restSeconds: e.target.value ? Number(e.target.value) : undefined })} /></Field></div>
-              <div className="flex items-end gap-2 sm:col-span-2">
-                {!locked && <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={it.confirmed} onChange={e => update(i, { confirmed: e.target.checked })} />Đã xác nhận</label>}
-                <Button size="sm" variant="ghost" aria-label="Xóa bài" onClick={() => setItems(items.filter((_, idx) => idx !== i))}><Trash2 className="h-4 w-4" aria-hidden /></Button>
-              </div>
-            </div>
-          ))}
-          <Button size="sm" variant="secondary" onClick={() => setItems([...items, { exerciseId: null, name: 'Bài tập', confirmed: false }])}><Plus className="h-4 w-4" aria-hidden />Thêm bài</Button>
-        </div>
-        {locked && <Field label="Lý do ghi nội dung thực tế"><input className={inputCls} value={reason} onChange={e => setReason(e.target.value)} /></Field>}
-        <ErrorBanner message={act.error} />
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>Đóng</Button>
-          {locked ? <Button isLoading={act.busy} disabled={!reason.trim() || !items.length || items.some(i => !i.exerciseId)} onClick={() => void act.run(async () => { await fixedPtApi.saveActual(session.id, items, reason); onSaved() })}>Lưu nội dung thực tế</Button>
-            : <>
-              <Button variant="secondary" isLoading={act.busy} onClick={() => void act.run(async () => { await fixedPtApi.saveContent(session.id, { title: title || undefined, items }); onSaved() })}>Lưu nháp</Button>
-              <Button isLoading={act.busy} disabled={!items.length || items.some(i => !i.exerciseId || !i.confirmed)} onClick={() => void act.run(async () => { await fixedPtApi.saveContent(session.id, { title: title || undefined, items }); await fixedPtApi.assignContent(session.id); onSaved() })}>Lưu & giao cho Member</Button>
-            </>}
-        </div>
-      </div>
-    </Modal>
-  )
-}
-
-/** Programme templates A/B/C: a rotation of session templates applied to every session of a package. */
 export function ProgramLibrary() {
   const templates = useLoad(() => fixedPtApi.sessionTemplates(), [])
   const programs = useLoad(() => fixedPtApi.programTemplates(), [])

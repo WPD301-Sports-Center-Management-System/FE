@@ -5,6 +5,7 @@ import type { ApiSuccess } from '@/shared/types/api'
 // Public data for the website. Everything shown to visitors comes from these endpoints, never from
 // hardcoded samples, so prices, Coaches and reviews always match what the center really offers.
 export interface PublicCoach {
+  tier?: import('@/shared/utils/coach-tier').CoachTier
   id: string
   fullName: string
   avatarUrl?: string | null

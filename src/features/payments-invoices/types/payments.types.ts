@@ -11,9 +11,10 @@ export interface PaymentQueryParams {
 export interface CounterPaymentPayload {
   subscriptionId?: string
   ptPurchaseId?: string
-  method: 'CASH' | 'BANK_TRANSFER'
+  method: 'CASH'
   receivedAmount: number
   externalRef?: string
+  overrideReason?: string
 }
 
 export interface CounterPaymentResult extends Payment {

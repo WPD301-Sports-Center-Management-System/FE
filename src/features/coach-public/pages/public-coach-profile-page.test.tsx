@@ -21,6 +21,7 @@ describe('PublicCoachProfilePage', () => {
     vi.mocked(coachesService.getCoachById).mockResolvedValueOnce({
       id: 'coach-uuid-1',
       fullName: 'Huấn Luyện Viên John Doe',
+      tier: 'ADVANCED',
       specialization: 'Fitness & Bodybuilding',
       bio: 'Chuyên gia thể hình với nhiều năm kinh nghiệm.',
       yearsOfExperience: 5,
@@ -32,6 +33,8 @@ describe('PublicCoachProfilePage', () => {
           id: 'pkg-1',
           name: 'Gói 12 Buổi Giảm Mỡ',
           sessionCount: 12,
+          coachTier: 'ADVANCED',
+          minCoachTier: 'STANDARD',
           price: '6000000',
           courseName: 'Giảm Mỡ Chuẩn Y Khoa',
           validityDays: 60,
@@ -66,6 +69,9 @@ describe('PublicCoachProfilePage', () => {
     await waitFor(() => {
       expect(screen.getByText('Huấn Luyện Viên John Doe')).toBeInTheDocument()
       expect(screen.getByText('Fitness & Bodybuilding')).toBeInTheDocument()
+      expect(screen.getAllByText('Huấn luyện viên nâng cao')).toHaveLength(1)
+      expect(screen.queryByText('Nâng cao', { exact: true })).toBeNull()
+      expect(screen.queryByText('Tiêu chuẩn', { exact: true })).toBeNull()
       expect(screen.getByText('Gói 12 Buổi Giảm Mỡ')).toBeInTheDocument()
       expect(screen.getByText('Nguyễn Văn A')).toBeInTheDocument()
       expect(screen.getByText('"HLV nhiệt tình và chuyên nghiệp!"')).toBeInTheDocument()

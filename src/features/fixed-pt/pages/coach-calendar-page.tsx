@@ -1,13 +1,12 @@
 import { WeeklySchedulePicker } from '@/features/workspace/weekly-schedule-picker'
-import { ContentEditor } from './coach-program-page'
 import { useEffect, useState, type ReactNode } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/shared/components/ui/button'
 import { Modal } from '@/shared/components/ui/modal'
 import { ConfirmDialog } from '@/shared/components/ui/confirm-dialog'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { centerDate, centerInstant, formatDateTime, formatTime } from '@/shared/utils/date'
-import { hybridApi, hybridGet, type CoachCalendar } from '../hybrid-api'
+import { hybridApi, type CoachCalendar } from '../hybrid-api'
 import type { WorkingInterval } from '../hybrid-api'
 import { fixedPtApi } from '../api'
 import { useLoad, useSubmit } from '../hooks'
@@ -21,7 +20,6 @@ import {
   Notice,
   Page,
   Panel,
-  Status,
 } from '../components/ui'
 import {
   addDays,
@@ -39,7 +37,7 @@ import {
   type WeekEvent,
 } from '../components/week-schedule'
 import { SessionTable } from './coach-sessions-page'
-import type { ContentItem, Session, SessionWithContent } from '../types'
+import type { Session } from '../types'
 
 const dayOf = (iso: string) => centerDate(iso)
 type Filterable = { memberName?: string; courseName?: string; status: string; isMakeup: boolean }
@@ -51,7 +49,9 @@ export function CoachCalendarPage({ settingsOnly = false }: { settingsOnly?: boo
   const [filter, setFilter] = useState({ member: '', course: '', tone: '' })
   const [editing, setEditing] = useState(false)
   const [exception, setException] = useState(false)
-  const [session, setSession] = useState<string | null>(() => params.get('sessionId'))
+  const navigate = useNavigate()
+  const openSession = (id: string) => navigate(`/coach/sessions/${id}`)
+  useEffect(() => { const id = params.get('sessionId'); if (id) navigate(`/coach/sessions/${id}`, { replace: true }) }, [params, navigate])
   const [notice, setNotice] = useState('')
   const [removing, setRemoving] = useState<{ id: string; kind: 'exception' | 'timeOff'; text: string } | null>(null)
   const last = addDays(first, 6)
@@ -146,7 +146,7 @@ export function CoachCalendarPage({ settingsOnly = false }: { settingsOnly?: boo
           {view === 'week' ? (
             <Loadable state={{ ...state, data: state.data ? { data: state.data } : null }}>
               {({ data }) => {
-                const events = weekEvents(data, byId, filtered, matches, setSession)
+                const events = weekEvents(data, byId, filtered, matches, openSession)
                 return (
                   <>
                     {!data.rules.length && (
@@ -244,13 +244,6 @@ export function CoachCalendarPage({ settingsOnly = false }: { settingsOnly?: boo
             )
             void state.reload()
           }}
-        />
-      )}
-      {session && (
-        <SessionDrawer
-          id={session}
-          onClose={() => setSession(null)}
-          onChanged={reload}
         />
       )}
     </Page>
@@ -502,205 +495,6 @@ function ExceptionDialog({
         >
           Lưu ngoại lệ
         </Button>
-      </div>
-    </Modal>
-  )
-}
-
-function DrawerTemplate({ id, onChanged }: { id: string; onChanged: () => void }) {
-  const templates = useLoad(() => fixedPtApi.sessionTemplates())
-  const [selected, setSelected] = useState('')
-  const act = useSubmit()
-  return (
-    <div className="space-y-2">
-      <Loadable state={templates}>
-        {(rows) => (
-          <Field label="Chọn mẫu buổi">
-            <select
-              value={selected}
-              className={inputCls}
-              onChange={(e) => setSelected(e.target.value)}
-            >
-              <option value="">Chọn mẫu</option>
-              {rows.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-        )}
-      </Loadable>
-      <Button
-        variant="secondary"
-        disabled={!selected}
-        isLoading={act.busy}
-        onClick={() =>
-          void act.run(async () => {
-            await fixedPtApi.applyTemplate(id, selected)
-            onChanged()
-          })
-        }
-      >
-        Áp dụng mẫu vào bản nháp
-      </Button>
-      <ErrorBanner message={act.error} />
-    </div>
-  )
-}
-
-function SessionDrawer({
-  id,
-  onClose,
-  onChanged,
-}: {
-  id: string
-  onClose: () => void
-  onChanged: () => void
-}) {
-  const [editing, setEditing] = useState(false)
-  const history = useLoad(
-    () =>
-      hybridGet<{
-        events: {
-          id: string
-          action: string
-          createdAt: string
-          actor: { fullName: string } | null
-        }[]
-        versions: { id: string; version: number; kind: string; createdAt: string }[]
-        changes: { id: string; code: string; status: string; createdAt: string }[]
-      }>(`/pt-bookings/${id}/history`),
-    [id],
-  )
-  const state = useLoad(() => fixedPtApi.session(id), [id])
-  const content = useLoad(
-    () =>
-      hybridGet<{ content: SessionWithContent['content']; items: ContentItem[] }>(
-        `/pt-bookings/${id}/content`,
-      ),
-    [id],
-  )
-  const [tab, setTab] = useState('overview')
-  const act = useSubmit()
-  if (editing && state.data && content.data)
-    return (
-      <ContentEditor
-        session={{ ...state.data, content: { ...content.data.content, items: content.data.items } }}
-        onClose={() => setEditing(false)}
-        onSaved={() => {
-          setEditing(false)
-          void content.reload()
-        }}
-      />
-    )
-  return (
-    <Modal isOpen placement="right" title="Chi tiết buổi PT" maxWidth="2xl" onClose={onClose}>
-      <div className="max-h-[75vh] space-y-4 overflow-y-auto">
-        <div className="flex flex-wrap gap-2">
-          {[
-            ['overview', 'Tổng quan'],
-            ['plan', 'Giáo án'],
-            ['history', 'Lịch sử'],
-          ].map(([v, t]) => (
-            <Button key={v} variant={tab === v ? 'primary' : 'secondary'} onClick={() => setTab(v)}>
-              {t}
-            </Button>
-          ))}
-        </div>
-        <Loadable state={state}>
-          {(s) => (
-            <>
-              {tab === 'overview' && (
-                <SessionTable
-                  sessions={[s]}
-                  onChanged={() => {
-                    void state.reload()
-                    onChanged()
-                  }}
-                />
-              )}
-              {tab === 'plan' && (
-                <>
-                  <Loadable state={content}>
-                    {(c) => (
-                      <>
-                        <p>{c.content?.title ?? 'Chưa có giáo án'}</p>
-                        <Status value={c.content?.status ?? 'DRAFT'} />
-                        <ul>
-                          {c.items.map((x, i) => (
-                            <li key={i} className="py-2">
-                              {x.name} · {x.sets ?? '—'} hiệp × {x.reps ?? '—'} lần
-                            </li>
-                          ))}
-                        </ul>
-                        {c.content?.status === 'DRAFT' && (
-                          <Button
-                            isLoading={act.busy}
-                            onClick={() =>
-                              void act.run(async () => {
-                                await fixedPtApi.assignContent(id)
-                                await content.reload()
-                              })
-                            }
-                          >
-                            Giao cho Member
-                          </Button>
-                        )}
-                      </>
-                    )}
-                  </Loadable>
-                  <Button variant="secondary" onClick={() => setEditing(true)}>
-                    Tạo / sửa giáo án buổi này
-                  </Button>
-                  <DrawerTemplate id={id} onChanged={() => void content.reload()} />
-                  <Link
-                    className="inline-block p-2 text-primary underline"
-                    to={`/coach/library?tab=packages&purchaseId=${s.purchaseId}`}
-                  >
-                    Soạn / sửa giáo án và chọn mẫu A/B/C
-                  </Link>
-                </>
-              )}
-              {tab === 'overview' && s.status === 'COMPLETED' && (
-                <Link className="inline-block text-primary underline" to={`/coach/goals/sheet/${id}`}>
-                  Đánh giá cuối buổi
-                </Link>
-              )}
-              {tab === 'history' && (
-                <>
-                  <Loadable state={history}>
-                    {(h) => (
-                      <ul>
-                        {h.events.map((e) => (
-                          <li key={e.id}>
-                            {formatDateTime(e.createdAt)} · {e.action} ·{' '}
-                            {e.actor?.fullName ?? 'Hệ thống'}
-                          </li>
-                        ))}
-                        {h.versions.map((v) => (
-                          <li key={v.id}>
-                            {formatDateTime(v.createdAt)} · Giáo án v{v.version} · {v.kind}
-                          </li>
-                        ))}
-                        {h.changes.map((c) => (
-                          <li key={c.id}>
-                            {formatDateTime(c.createdAt)} · {c.code} · {c.status}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </Loadable>
-                  <p>Tạo: {s.bookedAt ? formatDateTime(s.bookedAt) : 'Chưa có dữ liệu'}</p>
-                  {s.actualStartedAt && <p>Bắt đầu thực tế: {formatDateTime(s.actualStartedAt)}</p>}
-                  {s.actualEndedAt && <p>Kết thúc thực tế: {formatDateTime(s.actualEndedAt)}</p>}
-                  <Status value={s.status} />
-                </>
-              )}
-            </>
-          )}
-        </Loadable>
-        <ErrorBanner message={act.error} />
       </div>
     </Modal>
   )

@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { FlowSteps } from '@/features/workspace/flow-steps'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Plus, RefreshCw } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
@@ -59,14 +61,14 @@ export function TrialSessionsPanel() {
           <div className="min-w-0"><button type="button" aria-label={`Xem lịch sử ${s.fullName}`} onClick={() => setHistoryPhone(s.phone)} className="break-words text-left font-semibold hover:underline focus-visible:outline-primary">{s.fullName}</button><a href={`tel:${s.phone}`} className="mt-1 block text-sm text-text-muted hover:text-primary">{s.phone}</a></div>
           <div className="text-sm"><p>{s.type === 'PT' ? 'Trải nghiệm PT' : 'Trải nghiệm phòng gym'}</p>{s.type === 'PT' && <><p className="mt-1 text-text-muted">{s.coachName || 'Chưa chọn PT'}</p><p className="mt-1 text-xs text-text-muted">Đã dùng {s.trial?.pt?.usedSessions ?? 0}/{s.trial?.pt?.totalSessions ?? 3} buổi PT</p></>}</div>
           <div className="col-span-2 min-w-0 space-y-1.5 xl:col-span-1"><Badge tone={s.status === 'CHECKED_IN' ? 'info' : s.status === 'REQUESTED' ? 'warning' : 'neutral'}>{s.status !== 'CHECKED_IN' && s.type === 'PT' && s.trial?.pt?.remainingSessions === 0 ? 'Đã dùng đủ 3 buổi PT' : s.status !== 'CHECKED_IN' && s.type === 'GYM' && s.trial?.expiresOn && s.trial.expiresOn < today ? 'Hết hạn gym' : sessionLabel(s)}</Badge><p className="text-sm text-text-muted">{s.status === 'COMPLETED' && s.checkedOutAt ? `Checkout ${formatDateTime(s.checkedOutAt)}` : s.scheduledAt ? formatDateTime(s.scheduledAt) : 'Chưa chốt giờ'}</p>{s.type === 'GYM' && s.trial?.expiresOn && <p className="text-xs text-text-muted">Gym đến hết {s.trial.expiresOn}</p>}</div>
-          <div className="col-span-2 flex flex-wrap items-center gap-2 xl:col-span-1 xl:justify-end">{trialNextAction(s, today) ? <Btn size="sm" variant={s.status === 'REQUESTED' ? 'soft' : 'outline'} onClick={() => setActive(s)}>{trialNextAction(s, today)}</Btn> : <span className="text-sm text-text-muted">Đã kết thúc</span>}{oppositeTrialType(s, today) && <Btn size="sm" variant="outline" onClick={() => openExperience(s)}>{s.type === 'GYM' ? 'Đăng ký trải nghiệm PT' : 'Trải nghiệm thêm'}</Btn>}</div>
+          <div className="col-span-2 flex flex-wrap items-center gap-2 xl:col-span-1 xl:justify-end">{trialNextAction(s, today) ? <Btn size="sm" variant={s.status === 'REQUESTED' ? 'soft' : 'outline'} onClick={() => setActive(s)}>{trialNextAction(s, today)}</Btn> : <Btn size="sm" onClick={() => setActive(s)}>Xem hồ sơ</Btn>}{oppositeTrialType(s, today) && <Btn size="sm" variant="outline" onClick={() => openExperience(s)}>{s.type === 'GYM' ? 'Đăng ký trải nghiệm PT' : 'Trải nghiệm thêm'}</Btn>}</div>
         </li>)}</ul><Pagination page={page} pageSize={10} total={rows.length} onChange={setPage} noun="buổi thử" /></>}
       </Async> : <Async state={leads} rows={4} empty={() => !online.length && <EmptyBox title="Chưa có khách đăng ký online" />}>
         {() => <><ul className="divide-y divide-border-subtle px-5">{online.slice((page - 1) * 10, page * 10).map(t => <li key={t.id} className="flex flex-wrap items-center gap-4 py-4"><div className="min-w-0 flex-1"><p className="font-semibold">{t.fullName}</p><p className="mt-1 text-sm text-text-muted">{t.phone}{t.interest ? ` · ${t.interest}` : ''}</p></div><Badge tone={t.status === 'NEW' ? 'warning' : 'neutral'}>{({ NEW: 'Chưa liên hệ', CONTACTED: 'Đã liên hệ', CONVERTED: 'Đã thành hội viên', CLOSED: 'Đã đóng' })[t.status]}</Badge><Btn size="sm" onClick={() => setLead(t)}>Xem đăng ký</Btn>{!['CLOSED', 'CONVERTED'].includes(t.status) && <Btn size="sm" variant="soft" onClick={() => receive(t)}>Tiếp nhận</Btn>}</li>)}</ul><Pagination page={page} pageSize={10} total={online.length} onChange={setPage} noun="đăng ký" /></>}
       </Async>}
     </Card>}
-    {registration && <Modal isOpen title="Đăng ký khách tập thử" maxWidth="2xl" onClose={() => setRegistration(null)}><TrialRegistrationForm seed={registration} onClose={() => setRegistration(null)} onDone={message => { setRegistration(null); setView('sessions'); setFilter('waiting'); setQuery(''); setPage(1); flash(message); reload() }} /></Modal>}
-    {active && <TrialAction session={active} onClose={() => setActive(null)} onDone={effect => { if (effect === 'out') setFilter('waiting'); else if (effect === 'in') setFilter('inside'); setActive(null); reload() }} />}
+    {registration && <Modal isOpen title="Đăng ký khách tập thử" maxWidth="2xl" onClose={() => setRegistration(null)}><TrialRegistrationForm seed={registration} onClose={() => setRegistration(null)} onDone={(message, created) => { setRegistration(null); if (created) setActive(created); setView('sessions'); setFilter('waiting'); setQuery(''); setPage(1); flash(message); reload() }} /></Modal>}
+    {active && <TrialAction session={active} onClose={() => setActive(null)} onDone={effect => { if (effect === 'out') setFilter('waiting'); else if (effect === 'in') setFilter('inside'); reload() }} />}
     {lead && <OnlineTrialDetail trial={lead} onClose={() => setLead(null)} onReceive={() => receive(lead)} onDone={() => { setLead(null); reload() }} />}
     {historyPhone && <TrialHistoryModal phone={historyPhone} onClose={() => setHistoryPhone(null)} />}
   </div>
@@ -83,22 +85,53 @@ function sessionLabel(s: TrialSession) {
   return ({ SCHEDULED: 'Đã lên lịch', CHECKED_IN: 'Đang tập', COMPLETED: 'Đã checkout', NO_SHOW: 'Không đến', CANCELLED: 'Đã hủy', CONVERTED: 'Đã chuyển đổi' })[s.status]
 }
 
-function TrialAction({ session: s, onClose, onDone }: { session: TrialSession; onClose: () => void; onDone: (effect?: 'in' | 'out') => void }) {
+function TrialAction({ session: initialSession, onClose, onDone }: { session: TrialSession; onClose: () => void; onDone: (effect?: 'in' | 'out') => void }) {
   const submit = useSubmit()
+  const [s, setSession] = useState(initialSession)
+  const [conversion, setConversion] = useState<Awaited<ReturnType<typeof deskApi.convertTrial>> | null>(null)
+  const [email, setEmail] = useState(''), [converting, setConverting] = useState(false)
   const allowance = useLoad(() => deskApi.trialAllowance(s.phone), [s.phone])
-  const update = async (body: Update) => { if (await submit.run(() => deskApi.updateTrialSession(s.id, body))) onDone() }
-  return <Modal isOpen title={s.status === 'COMPLETED' ? s.type === 'PT' ? 'Xếp buổi PT tiếp' : 'Khách quay lại tập' : sessionLabel(s)} onClose={onClose}><div className="space-y-4">
+  const [refreshError, setRefreshError] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const revision = useRef(0)
+  const mutating = useRef(false)
+  const refreshSession = useCallback(async () => {
+    if (mutating.current) return
+    const generation = ++revision.current
+    setRefreshing(true)
+    try { const rows = await deskApi.trialSessions(); const updated = rows.find(row => row.id === initialSession.id); if (generation === revision.current) { if (updated) setSession(updated); setRefreshError(null) } }
+    catch { if (generation === revision.current) setRefreshError('Chưa cập nhật được phản hồi PT. Hãy làm mới để thử lại.') }
+    finally { if (generation === revision.current) setRefreshing(false) }
+  }, [initialSession.id])
+  useEffect(() => {
+    const refresh = () => { if (!document.hidden) void refreshSession() }
+    const timer = window.setInterval(refresh, 10000)
+    window.addEventListener('focus', refresh)
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh) }
+  }, [refreshSession])
+  // All mutations fence reads started before/during them, including check-in and checkout.
+  const mutate = async <T,>(work: () => Promise<T>, apply: (result: T) => void) => submit.run(async () => {
+    mutating.current = true; revision.current++; setRefreshing(false)
+    try { const result = await work(); revision.current++; apply(result); return result }
+    finally { revision.current++; mutating.current = false; setRefreshing(false) }
+  })
+  const update = async (body: Update) => { await mutate(() => deskApi.updateTrialSession(s.id, body), updated => { setSession(updated); onDone() }) }
+
+  return <Modal isOpen title={s.status === 'COMPLETED' ? s.type === 'PT' ? 'Xếp buổi PT tiếp' : 'Khách quay lại tập' : sessionLabel(s)} onClose={() => { if (!submit.busy) onClose() }}><div className="space-y-4">
+    <Btn size="sm" busy={refreshing} onClick={() => void refreshSession()}>Làm mới phản hồi PT</Btn><InlineError message={refreshError} /><FlowSteps steps={s.type === 'PT' ? ['PT nhận khách', 'Chốt giờ', 'Tập thử', 'Thành Member'] : ['Tiếp nhận', 'Tập thử', 'Thành Member']} current={s.status === 'CONVERTED' ? (s.type === 'PT' ? 3 : 2) : ['CHECKED_IN','COMPLETED'].includes(s.status) ? (s.type === 'PT' ? 2 : 1) : s.coachDecision === 'ACCEPTED' ? 1 : 0} />
     <p className="font-semibold">{s.fullName} · <a href={`tel:${s.phone}`} className="underline">{s.phone}</a>{s.coachName ? ` · PT ${s.coachName}` : ''}</p>
     {s.coachResponse && <p className="rounded-lg bg-bg-surface-muted p-3 text-sm">Phản hồi PT: {s.coachResponse}</p>}
     {s.note && <details className="text-sm"><summary className="cursor-pointer text-text-muted">Ghi chú buổi thử</summary><p className="mt-2 whitespace-pre-wrap">{s.note}</p></details>}
-    {s.type === 'PT' && ['REQUESTED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(s.status) && <Async state={allowance} rows={1}>{data => <><p className="text-sm">PT: đã dùng {data.pt?.usedSessions ?? 0}/3 buổi, còn {data.pt?.remainingSessions ?? 3} buổi. Không phụ thuộc hạn trải nghiệm gym.</p>{data.pt?.canCheckIn !== false ? <TrialPTArrangement session={s} busy={submit.busy} onSave={update} /> : <p className="text-sm">Khách đã dùng đủ 3 buổi trải nghiệm PT.</p>}</>}</Async>}
+    {s.type === 'PT' && ['REQUESTED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(s.status) && <Async state={allowance} rows={1}>{data => <><p className="text-sm">PT: đã dùng {data.pt?.usedSessions ?? 0}/3 buổi, còn {data.pt?.remainingSessions ?? 3} buổi. Không phụ thuộc hạn trải nghiệm gym.</p>{data.pt?.canCheckIn !== false ? <TrialPTArrangement key={s.id} session={s} busy={submit.busy} onSave={update} /> : <p className="text-sm">Khách đã dùng đủ 3 buổi trải nghiệm PT.</p>}</>}</Async>}
     {(s.status === 'SCHEDULED' || s.status === 'COMPLETED' && s.type === 'GYM') && <Async state={allowance} rows={1}>{data => {
       const gym = data.gym ?? data
       const canCheckIn = s.type === 'PT' ? data.pt?.canCheckIn !== false : gym.canCheckIn
-      return <><p className="text-sm">{s.type === 'PT' ? `PT: còn ${data.pt?.remainingSessions ?? 3}/3 buổi. Không phụ thuộc hạn gym.` : gym.startsOn ? `Gym: ${gym.startsOn} → hết ngày ${gym.expiresOn}. ${gym.canCheckIn ? 'Khách còn hạn trải nghiệm.' : 'Đã hết hạn trải nghiệm gym.'}` : 'Gym: 3 ngày liên tiếp bắt đầu từ lần check-in này.'}</p>{s.type === 'PT' && s.scheduledAt && centerDate(s.scheduledAt) !== centerDate() && <p className="text-sm">Buổi PT hẹn ngày {centerDate(s.scheduledAt)}. Check-in đúng ngày hẹn.</p>}<Btn variant="primary" busy={submit.busy} disabled={!canCheckIn || s.type === 'PT' && !!s.scheduledAt && centerDate(s.scheduledAt) !== centerDate()} onClick={async () => { if (await submit.run(() => deskApi.checkInTrialSession(s.id))) onDone('in') }}>Check-in khách</Btn></>
+      return <><p className="text-sm">{s.type === 'PT' ? `PT: còn ${data.pt?.remainingSessions ?? 3}/3 buổi. Không phụ thuộc hạn gym.` : gym.startsOn ? `Gym: ${gym.startsOn} → hết ngày ${gym.expiresOn}. ${gym.canCheckIn ? 'Khách còn hạn trải nghiệm.' : 'Đã hết hạn trải nghiệm gym.'}` : 'Gym: 3 ngày liên tiếp bắt đầu từ lần check-in này.'}</p>{s.type === 'PT' && s.scheduledAt && centerDate(s.scheduledAt) !== centerDate() && <p className="text-sm">Buổi PT hẹn ngày {centerDate(s.scheduledAt)}. Check-in đúng ngày hẹn.</p>}<Btn variant="primary" busy={submit.busy} disabled={!canCheckIn || s.type === 'PT' && !!s.scheduledAt && centerDate(s.scheduledAt) !== centerDate()} onClick={async () => { await mutate(() => deskApi.checkInTrialSession(s.id), updated => { setSession(updated); onDone('in') }) }}>Check-in khách</Btn></>
     }}</Async>}
-    {s.status === 'CHECKED_IN' && <Btn variant="primary" busy={submit.busy} onClick={async () => { if (await submit.run(() => deskApi.checkOutTrialSession(s.id))) onDone('out') }}>Xác nhận checkout</Btn>}
-    {s.status !== 'CHECKED_IN' && s.status !== 'COMPLETED' && <Btn busy={submit.busy} onClick={() => void update({ status: 'CANCELLED' })}>Hủy đăng ký</Btn>}
+    {s.status === 'CHECKED_IN' && <Btn variant="primary" busy={submit.busy} onClick={async () => { await mutate(() => deskApi.checkOutTrialSession(s.id), updated => { setSession(updated); void allowance.reload(); onDone('out') }) }}>Xác nhận checkout</Btn>}
+    {!['CHECKED_IN','COMPLETED','CONVERTED','CANCELLED','NO_SHOW'].includes(s.status) && <Btn busy={submit.busy} onClick={() => void update({ status: 'CANCELLED' })}>Hủy đăng ký</Btn>}
+    {s.status !== 'CHECKED_IN' && s.status !== 'CONVERTED' && <section className="space-y-3 border-t border-border-subtle pt-4"><h3 className="font-semibold">Khách muốn bắt đầu tập chính thức?</h3>{!converting ? <Btn variant={s.status === 'COMPLETED' ? 'primary' : 'outline'} onClick={() => setConverting(true)}>Chuyển thành Member</Btn> : <form className="space-y-3" onSubmit={e => { e.preventDefault(); void mutate(() => deskApi.convertTrial(s.id, email.trim() || undefined), result => { setConversion(result); setSession(result.trialSession); onDone() }) }}><Field label="Email (không bắt buộc)"><input type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputCls} /></Field><p className="text-sm text-text-muted">Tài khoản được tạo hoặc gắn lại theo số điện thoại của khách.</p><Btn type="submit" variant="primary" busy={submit.busy}>Tạo hoặc gắn tài khoản Member</Btn></form>}</section>}
+    {conversion && <section role="status" className="space-y-3 border-t border-border-subtle pt-4"><h3 className="font-semibold">Đã chuyển thành Member · {conversion.memberCode}</h3>{conversion.temporaryPassword ? <><p className="text-sm">Bàn giao thông tin đăng nhập cho khách trước khi đóng hồ sơ.</p><Field label="Mật khẩu tạm"><input readOnly value={conversion.temporaryPassword} className={inputCls} onFocus={e => e.target.select()} /></Field></> : <p className="text-sm">Đã gắn tài khoản hiện có. Khách tiếp tục dùng mật khẩu của mình.</p>}<div className="flex flex-wrap gap-3"><Link className="text-sm font-semibold underline" to={'/receptionist/members/' + conversion.memberId}>Mở hồ sơ Member</Link><Link className="text-sm font-semibold underline" to={'/receptionist/pt-sale?memberId=' + conversion.memberId}>Chọn gói PT cho khách</Link><Link className="text-sm font-semibold underline" to={'/receptionist/membership-sale?memberId=' + conversion.memberId}>Bán vé gym</Link></div></section>}
     <InlineError message={submit.error} />
   </div></Modal>
 }

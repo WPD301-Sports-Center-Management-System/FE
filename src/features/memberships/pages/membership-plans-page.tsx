@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Edit2, ShieldAlert, Check, RefreshCw, AlertCircle } from 'lucide-react'
+import { Edit2, ShieldAlert, Check, RefreshCw, AlertCircle, Plus, Trash2 } from 'lucide-react'
 import { membershipPlansService } from '../services/membership-plans.service'
 import { formatVND } from '@/shared/utils/currency'
 import { Button } from '@/shared/components/ui/button'
 import { Modal } from '@/shared/components/ui/modal'
+import { DeleteDialog, deleteErrorMessage } from '@/shared/components/ui/delete-dialog'
 import { Input } from '@/shared/components/ui/input'
 import type { MembershipPlan } from '@/shared/types/api'
 
@@ -16,6 +17,51 @@ export function MembershipPlansPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [deletingPlan, setDeletingPlan] = useState<MembershipPlan | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [form, setForm] = useState({ code: '', name: '', description: '', paidMonths: '1', bonusMonths: '0', price: '' })
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const formValid =
+    /^[A-Za-z0-9][A-Za-z0-9_-]{1,29}$/.test(form.code.trim()) && form.name.trim().length > 0 &&
+    Number.isInteger(Number(form.paidMonths)) && Number(form.paidMonths) >= 1 && Number(form.paidMonths) <= 60 &&
+    Number.isInteger(Number(form.bonusMonths)) && Number(form.bonusMonths) >= 0 && Number(form.bonusMonths) <= 60 &&
+    Number.isInteger(Number(form.price)) && Number(form.price) > 0
+  const flash = (message: string) => {
+    setNotice(message)
+    setTimeout(() => setNotice(null), 4000)
+  }
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (isCreating || !formValid) return
+    setIsCreating(true)
+    setCreateError(null)
+    try {
+      const created = await membershipPlansService.createPlan({
+        code: form.code.trim(),
+        name: form.name.trim(),
+        ...(form.description.trim() ? { description: form.description.trim() } : {}),
+        paidMonths: Number(form.paidMonths),
+        bonusMonths: Number(form.bonusMonths),
+        price: Number(form.price),
+      })
+      setPlans((prev) => [...prev, created].sort((a, b) => (a.paidMonths ?? 0) - (b.paidMonths ?? 0)))
+      setIsCreateOpen(false)
+      flash(`Đã tạo gói vé "${created.name}".`)
+    } catch (err) {
+      setCreateError(deleteErrorMessage(err))
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  const openCreate = () => {
+    setForm({ code: '', name: '', description: '', paidMonths: '1', bonusMonths: '0', price: '' })
+    setCreateError(null)
+    setIsCreateOpen(true)
+  }
 
   const loadPlans = async () => {
     setIsLoading(true)
@@ -81,11 +127,19 @@ export function MembershipPlansPage() {
             Cấu hình gói hội viên tập tự do phòng Gym. Giá thay đổi chỉ áp dụng cho lượt mua mới.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={loadPlans} disabled={isLoading} className="gap-2 self-start sm:self-auto">
-          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>Làm mới</span>
-        </Button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button variant="outline" size="sm" onClick={loadPlans} disabled={isLoading} className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Làm mới</span>
+          </Button>
+          <Button variant="primary" size="sm" onClick={openCreate} className="gap-2">
+            <Plus className="h-4 w-4" />
+            <span>Tạo gói vé</span>
+          </Button>
+        </div>
       </div>
+
+      {notice && <p role="status" className="rounded-xl border border-success/30 bg-success/10 p-3 text-sm text-success">{notice}</p>}
 
       {error && (
         <div className="p-4 rounded-xl border border-danger/30 bg-danger/10 text-danger text-sm flex items-center justify-between">
@@ -164,16 +218,71 @@ export function MembershipPlansPage() {
                       : 'Tạm dừng bán'}
                   </button>
 
-                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => handleOpenEdit(plan)}>
-                    <Edit2 className="h-3.5 w-3.5" />
-                    <span>Chỉnh giá vé</span>
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => handleOpenEdit(plan)}>
+                      <Edit2 className="h-3.5 w-3.5" />
+                      <span>Chỉnh giá vé</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 text-danger hover:bg-danger/10 hover:text-danger border-danger/30"
+                      aria-label={`Xóa gói vé ${plan.name}`}
+                      onClick={() => setDeletingPlan(plan)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Xóa</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             )
           })}
         </div>
       )}
+
+      <DeleteDialog
+        name={deletingPlan?.name ?? null}
+        noun="gói vé gym"
+        impact="Gói sẽ biến mất khỏi bảng giá và không còn bán được. Vé đã bán giữ nguyên tên, giá và thời hạn đã chốt. Gói còn vé chờ thanh toán hoặc còn hiệu lực không xóa được; khi đó hãy chọn Tạm dừng bán."
+        onConfirm={async () => {
+          if (!deletingPlan) return
+          await membershipPlansService.deletePlan(deletingPlan.id)
+          setPlans((prev) => prev.filter((p) => p.id !== deletingPlan.id))
+          flash(`Đã xóa gói vé "${deletingPlan.name}".`)
+        }}
+        onClose={() => setDeletingPlan(null)}
+      />
+
+      {/* Modal Tạo gói vé */}
+      <Modal
+        isOpen={isCreateOpen}
+        onClose={() => !isCreating && setIsCreateOpen(false)}
+        title="Tạo gói vé gym"
+        description="Thời hạn vé = số tháng thanh toán + số tháng tặng. Vé đã bán không bị ảnh hưởng bởi gói mới."
+      >
+        <form onSubmit={handleCreate} className="space-y-4">
+          {createError && <p role="alert" className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-sm text-danger">{createError}</p>}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Input label="Mã gói" required maxLength={30} placeholder="VD: GYM-6M" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+            <Input label="Tên gói" required maxLength={120} placeholder="VD: Vé 6 tháng" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <Input label="Số tháng thanh toán" type="number" min={1} max={60} step={1} required value={form.paidMonths} onChange={(e) => setForm({ ...form, paidMonths: e.target.value })} />
+            <Input label="Số tháng tặng" type="number" min={0} max={60} step={1} required value={form.bonusMonths} onChange={(e) => setForm({ ...form, bonusMonths: e.target.value })} />
+          </div>
+          <Input label="Giá niêm yết (VND)" type="number" min={1} step={1} required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+          <Input label="Mô tả (không bắt buộc)" maxLength={1000} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <p className="text-xs text-text-muted">
+            Tổng thời hạn: <strong className="text-text-primary">{(Number(form.paidMonths) || 0) + (Number(form.bonusMonths) || 0)} tháng</strong>. Mã gói là duy nhất; mã và tên của gói đã xóa vẫn được giữ chỗ.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => setIsCreateOpen(false)} disabled={isCreating}>Hủy</Button>
+            <Button type="submit" variant="primary" disabled={isCreating || !formValid} className="gap-1">
+              <Check className="h-4 w-4" />
+              <span>{isCreating ? 'Đang tạo...' : 'Tạo gói vé'}</span>
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Modal Chỉnh Giá */}
       <Modal

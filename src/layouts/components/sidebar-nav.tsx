@@ -5,7 +5,6 @@ import {
   CreditCard,
   Dumbbell,
   CheckCircle2,
-  Wrench,
   BarChart3,
   ShieldAlert,
   Calendar,
@@ -54,7 +53,6 @@ export function SidebarNav({ role }: { role: UserRole | null }) {
           {
             title: 'VẬN HÀNH & BÁO CÁO',
             items: [
-              { to: '/manager/equipment', label: 'Thiết bị & Bảo trì', icon: Wrench },
               { to: '/manager/reports', label: 'Báo cáo', icon: BarChart3 },
               { to: '/manager/coach-ledger', label: 'Đối soát Coach theo kỳ', icon: DollarSign },
               { to: '/manager/pt-board', label: 'Lịch PT toàn trung tâm', icon: Calendar },

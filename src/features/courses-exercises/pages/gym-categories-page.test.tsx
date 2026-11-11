@@ -264,7 +264,7 @@ describe('GymCategoriesPage', () => {
       expect(coursesExercisesService.getTrainingCourseById).toHaveBeenCalledWith('tc-1')
       expect(screen.getByText('Burpees Nâng Cao')).toBeInTheDocument()
       expect(screen.getByText('HLV Tuấn Anh')).toBeInTheDocument()
-      expect(screen.getByText('Gói 12 Buổi Cardio (12 buổi)')).toBeInTheDocument()
+      expect(screen.getByText('Gói 12 Buổi Cardio (12 buổi) · Giá từ 3.600.000 ₫')).toBeInTheDocument()
     })
   })
 

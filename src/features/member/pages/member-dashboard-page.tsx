@@ -1,7 +1,8 @@
+import { MemberNextActions } from '../components/next-actions'
 import { openReceipt } from '@/features/workspace/receipt-events'
 import { MemberGoalSummary } from '@/features/goal-lab/member-goal-summary'
 import { useState, useEffect, useCallback } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { ErrorBox } from '@/features/workspace/ui'
 import {
   User,
@@ -45,6 +46,7 @@ import type { MemberProgressData } from '@/features/auth/types/me.types'
 
 export function MemberDashboardPage() {
   const { user } = useAuth()
+  const location = useLocation()
 
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [ptPackages, setPtPackages] = useState<Purchase[]>([])
@@ -163,8 +165,8 @@ export function MemberDashboardPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-extrabold text-text-primary">{user?.fullName || 'Hội viên'}</h1>
-              <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
-                MEMBER
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+                Hội viên
               </span>
             </div>
             <p className="text-xs text-text-muted mt-0.5">{user?.email} • {user?.phone || 'Chưa cập nhật SĐT'}</p>
@@ -182,6 +184,7 @@ export function MemberDashboardPage() {
         </Button>
       </div>
 
+      <MemberNextActions />
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-subtle bg-bg-surface p-4"><p className="text-sm text-text-muted">Có mục tiêu hoặc phiếu mới từ Coach? Mở để đọc đề xuất và phản hồi kết quả.</p><Link className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground" to="/member/goals">Mục tiêu và phiếu sau buổi</Link></div>
 
       {/* Error Alert */}
@@ -197,11 +200,12 @@ export function MemberDashboardPage() {
         </div>
       )}
 
+      {!!(location.state as { ptDraft?: unknown } | null)?.ptDraft && <div className="rounded-lg bg-bg-surface-muted p-4 text-sm"><p>Phương án PT của bạn đang được giữ để xem lại. Liên hệ quầy nếu cần mua hoặc gia hạn vé gym.</p><Link className="inline-flex min-h-11 items-center font-semibold underline" to="/member/pt-sale" state={location.state}>Quay lại phương án PT</Link></div>}
       {/* Tabs */}
       <div className="flex border-b border-border-subtle gap-2 overflow-x-auto pb-1 text-xs font-semibold">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl transition-colors border-b-2 ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-4 py-2.5 rounded-t-xl transition-colors border-b-2 ${
             activeTab === 'overview'
               ? 'border-primary text-primary bg-bg-surface-muted'
               : 'border-transparent text-text-muted hover:text-text-primary'
@@ -212,7 +216,7 @@ export function MemberDashboardPage() {
         </button>
         <button
           onClick={() => setActiveTab('pt')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl transition-colors border-b-2 ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-4 py-2.5 rounded-t-xl transition-colors border-b-2 ${
             activeTab === 'pt'
               ? 'border-primary text-primary bg-bg-surface-muted'
               : 'border-transparent text-text-muted hover:text-text-primary'
@@ -223,7 +227,7 @@ export function MemberDashboardPage() {
         </button>
         <button
           onClick={() => setActiveTab('training')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl transition-colors border-b-2 ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-4 py-2.5 rounded-t-xl transition-colors border-b-2 ${
             activeTab === 'training'
               ? 'border-primary text-primary bg-bg-surface-muted'
               : 'border-transparent text-text-muted hover:text-text-primary'
@@ -234,7 +238,7 @@ export function MemberDashboardPage() {
         </button>
         <button
           onClick={() => setActiveTab('billing')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl transition-colors border-b-2 ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-4 py-2.5 rounded-t-xl transition-colors border-b-2 ${
             activeTab === 'billing'
               ? 'border-primary text-primary bg-bg-surface-muted'
               : 'border-transparent text-text-muted hover:text-text-primary'
@@ -245,7 +249,7 @@ export function MemberDashboardPage() {
         </button>
         <button
           onClick={() => setActiveTab('support')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl transition-colors border-b-2 ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-4 py-2.5 rounded-t-xl transition-colors border-b-2 ${
             activeTab === 'support'
               ? 'border-primary text-primary bg-bg-surface-muted'
               : 'border-transparent text-text-muted hover:text-text-primary'
@@ -308,30 +312,33 @@ export function MemberDashboardPage() {
                     Bạn chưa đăng ký mua gói huấn luyện viên cá nhân PT nào.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={ptPackages.length > 1 ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'grid grid-cols-1 gap-4'}>
                     {ptPackages.map((pkg) => (
                       <div key={pkg.id} className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 space-y-3">
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="font-bold text-text-primary text-sm">{pkg.courseNameSnapshot || 'Khóa PT'}</p>
-                            <p className="text-xs text-text-muted">HLV: {pkg.coachNameSnapshot || 'Chuyên gia thể hình'}</p>
+                            <p className="text-xs text-text-primary">HLV: {pkg.coachNameSnapshot || 'Chuyên gia thể hình'}</p>
                           </div>
                           <StatusBadge status={pkg.status} />
                         </div>
                         <div className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-bg-surface border border-border-subtle text-center text-xs">
                           <div>
-                            <span className="text-text-muted block text-xs">Đã tập</span>
+                            <span className="text-text-muted block text-xs">Đã tính vào gói</span>
                             <span className="font-bold text-text-primary">{pkg.consumedCredits || 0}</span>
                           </div>
                           <div>
-                            <span className="text-text-muted block text-xs">Đang giữ</span>
+                            <span className="text-text-muted block text-xs">Đã có lịch</span>
                             <span className="font-bold text-amber-600 dark:text-amber-400">{pkg.reservedCredits || 0}</span>
                           </div>
                           <div>
-                            <span className="text-text-muted block text-xs">Còn lại</span>
+                            <span className="text-text-muted block text-xs">Chưa có lịch</span>
                             <span className="font-bold text-emerald-600 dark:text-emerald-400">{pkg.availableCredits || 0}</span>
                           </div>
                         </div>
+                        <p className="text-sm">Buổi còn lại: {(pkg.reservedCredits ?? 0) + (pkg.availableCredits ?? 0)}</p>
+                        {pkg.status === 'COMPLETED' && <p className="mt-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">Bạn đã hoàn tất khóa tập. Hãy chia sẻ đánh giá về Coach.</p>}
+                        <Link className="inline-flex min-h-11 items-center text-sm font-semibold underline" to={'/pt-purchases/' + pkg.id}>{pkg.status === 'COMPLETED' ? 'Xem kết quả và đánh giá Coach' : 'Xem gói và lịch tập'}</Link>
                         {pkg.expiresAt && (
                           <p className="text-xs text-text-muted flex items-center gap-1">
                             <Clock className="h-3 w-3" />
@@ -558,7 +565,7 @@ export function MemberDashboardPage() {
                       <div key={p.id} className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
                           <p className="font-bold text-text-primary text-sm">{p.itemDescription || p.description || 'Dịch vụ Gym'}</p>
-                          <p className="text-xs font-mono text-text-muted">Mã: {p.paymentCode || p.id.slice(0, 8)} • {p.method}</p>
+                          <p className="text-xs font-mono text-text-muted">{p.paymentCode ? 'Mã thanh toán: ' + p.paymentCode : 'Chưa có mã thanh toán'} • {({ CASH: 'Tiền mặt', BANK_TRANSFER: 'Chuyển khoản', VNPAY: 'VNPay' } as Record<string,string>)[p.method] ?? 'Phương thức khác'}</p>
                           {p.paidAt && <p className="text-xs text-text-muted mt-0.5">{formatDateTime(p.paidAt)}</p>}
                         </div>
                         <div className="text-right">

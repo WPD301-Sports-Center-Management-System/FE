@@ -1,4 +1,4 @@
-> **Nghiệp vụ hiện hành 03/11/2026:** ưu tiên [danh mục tài liệu](../Docs/README.md), hai PRD và API hiện hành. File này hướng dẫn cách làm UI, không thay hợp đồng nghiệp vụ hoặc xác nhận triển khai.
+> **Nghiệp vụ hiện hành 11/11/2026:** ưu tiên [danh mục tài liệu](../Docs/README.md), [bối cảnh hệ thống](../Docs/SYSTEM_BUSINESS_CONTEXT_SUMMARY.md) và [API](../Docs/API_CONTRACT_PT_2026-11.md). File này hướng dẫn cách làm UI, không thay hợp đồng nghiệp vụ hoặc xác nhận triển khai.
 
 # UNIVERSAL MASTER PROMPT: PRODUCTION-GRADE BACKEND API INTEGRATION FOR FRONTEND
 

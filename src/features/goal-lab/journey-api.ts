@@ -6,4 +6,6 @@ export const journeyApi = {
   initialize: async (id: string, body: object): Promise<Journey> => (await apiClient.post(`/pt-purchases/${id}/journey`, body)).data,
   session: async (id: string): Promise<SessionJourney> => (await apiClient.get(`/pt-bookings/${id}/journey`)).data,
   save: async (id: string, body: object): Promise<{ id: string }> => (await apiClient.post(`/pt-bookings/${id}/journey-result`, body)).data,
+  /** One transaction: ends the session and saves Form 2; a retry after success only saves the sheet. */
+  finish: async (id: string, body: object): Promise<{ resultId: string; alreadyEnded: boolean }> => (await apiClient.post(`/pt-bookings/${id}/finish`, body)).data,
 };

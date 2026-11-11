@@ -32,7 +32,7 @@ export function Modal({ isOpen, onClose, title, description, children, maxWidth 
     <div className={`fixed inset-0 z-50 flex ${placement === 'right' ? 'items-stretch justify-end' : 'items-center justify-center p-4'}`}>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/60 transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -54,7 +54,7 @@ export function Modal({ isOpen, onClose, title, description, children, maxWidth 
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-text-muted hover:bg-bg-surface-muted hover:text-text-primary transition-colors cursor-pointer"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-bg-surface-muted hover:text-text-primary transition-colors cursor-pointer"
             aria-label="Đóng"
           >
             <X className="h-5 w-5" />

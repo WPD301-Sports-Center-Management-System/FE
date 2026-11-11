@@ -120,8 +120,8 @@ export function Segmented<K extends string>({ items, value, onChange, label }: {
         event.preventDefault(); onChange(items[target]!.key)
         event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[target]?.focus()
       }}
-      className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/50 sm:min-h-9 ${value === it.key ? 'bg-bg-surface text-text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}>
-      {it.label}{it.count !== undefined && <span className={`text-xs tabular-nums ${value === it.key ? 'text-primary' : 'text-text-muted'}`}>{it.count}</span>}
+      className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/50 sm:min-h-9 ${value === it.key ? 'bg-bg-surface text-text-primary shadow-sm' : 'text-text-primary/70 hover:text-text-primary'}`}>
+      {it.label}{it.count !== undefined && <span className={`text-xs tabular-nums ${value === it.key ? 'text-primary' : 'text-text-primary/70'}`}>{it.count}</span>}
     </button>)}
   </div>
 }

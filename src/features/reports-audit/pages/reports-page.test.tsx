@@ -6,7 +6,7 @@ import { reportsService } from '@/features/reports-audit/services/reports.servic
 vi.mock('@/features/reports-audit/services/reports.service', () => ({
   reportsService: {
     getRevenueReport: vi.fn(),
-    getCoachPayouts: vi.fn(),
+    getCoachWithdrawals: vi.fn(),
   },
 }))
 
@@ -15,7 +15,7 @@ describe('ReportsPage', () => {
     vi.clearAllMocks()
   })
 
-  it('renders revenue report and payouts list from API', async () => {
+  it('renders revenue report and withdrawals list from API', async () => {
     vi.mocked(reportsService.getRevenueReport).mockResolvedValueOnce({
       membershipRevenue: 990000,
       ptGross: 3600000,
@@ -25,18 +25,16 @@ describe('ReportsPage', () => {
       paymentCount: 3,
     })
 
-    vi.mocked(reportsService.getCoachPayouts).mockResolvedValueOnce({
+    vi.mocked(reportsService.getCoachWithdrawals).mockResolvedValueOnce({
       success: true,
       data: [
         {
-          id: 'payout-1',
+          id: 'wd-1',
+          code: 'WD-1',
           coachId: 'coach-1',
           coach: { user: { fullName: 'Coach Đỗ Thùy Trang' } },
-          periodFrom: '2026-10-01',
-          periodTo: '2026-10-31',
-          grossAmount: '1800000',
-          offsetAmount: '0',
-          netAmount: '1080000',
+          amount: 1080000,
+          createdAt: '2026-10-31T03:00:00.000Z',
           status: 'PAID',
           transferRef: 'MB-123456',
         } as any,

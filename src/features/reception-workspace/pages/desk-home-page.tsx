@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarCheck, Check, ChevronRight, LifeBuoy, LogOut, ReceiptText, RotateCw, ScanLine, Ticket, UserPlus, Users, Wallet } from 'lucide-react'
+import { CalendarCheck, ChevronRight, LifeBuoy, LogOut, ReceiptText, RotateCw, ScanLine, Ticket, UserPlus, Users, Wallet } from 'lucide-react'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import type { Session } from '@/features/fixed-pt/types'
@@ -59,7 +59,7 @@ export function DeskHomePage() {
       </Card>
 
       <div className="grid content-start gap-6 lg:grid-cols-2 xl:grid-cols-1">
-        <Card flush title="Lịch hẹn PT sắp tới" badge={sessions.data ? <Badge>{coming.length} buổi</Badge> : null} subtitle="Ghi “Đã đến” khi hội viên tới quầy" actions={<LinkBtn size="sm" to="/receptionist/calendar">Cả ngày</LinkBtn>}>
+        <Card flush title="Lịch hẹn PT sắp tới" badge={sessions.data ? <Badge>{coming.length} buổi</Badge> : null} subtitle="Hội viên check-in gym; Coach bắt đầu buổi tập" actions={<LinkBtn size="sm" to="/receptionist/calendar">Cả ngày</LinkBtn>}>
           <Async state={sessions} rows={4} empty={() => !coming.length && <EmptyBox title="Không còn buổi PT nào hôm nay" />}>
             {() => <ul className="divide-y divide-border-subtle">{coming.slice(0, 6).map(s => <ApptRow key={s.id} s={s} onDone={reload} />)}</ul>}
           </Async>
@@ -127,15 +127,12 @@ function InRoomCard({ visit: v, session, onDone }: { visit: Visit; session?: Ses
   </li>
 }
 
-export function ApptRow({ s, onDone }: { s: Session; onDone: (m: string) => void }) {
-  const submit = useSubmit()
+export function ApptRow({ s }: { s: Session; onDone: (m: string) => void }) {
   return <li className="flex items-center gap-3 px-5 py-3">
     <div className="w-14 shrink-0 text-center"><p className="font-bold tabular-nums">{hhmm(s.startsAt)}</p><p className="text-xs text-text-muted">{minutesBetween(s.startsAt, s.endsAt)}'</p></div>
     <div className="min-w-0 flex-1">
-      <p className="flex flex-wrap items-center gap-2"><Link to={`/receptionist/members/${s.memberId}`} className="truncate font-semibold hover:text-primary">{s.memberName}</Link><Badge tone={SESSION_TONE[s.status]}>{s.status === 'CONFIRMED' ? 'Chưa đến' : SESSION_LABEL[s.status]}</Badge>{s.isMakeup && <Badge tone="violet">Học bù</Badge>}</p>
+      <p className="flex flex-wrap items-center gap-2"><Link to={`/receptionist/members/${s.memberId}`} className="truncate font-semibold hover:text-primary">{s.memberName}</Link><Badge tone={SESSION_TONE[s.status]}>{s.status === 'CONFIRMED' ? 'Chưa bắt đầu' : SESSION_LABEL[s.status]}</Badge>{s.isMakeup && <Badge tone="violet">Học bù</Badge>}</p>
       <p className="truncate text-xs text-text-muted">với {s.coachName} · {s.courseName}{s.credit ? ` · buổi ${s.credit.creditIndex}/${s.purchase?.totalCredits ?? '?'}` : ''}</p>
-      {submit.error && <p role="alert" className="text-xs text-red-600">{submit.error}</p>}
     </div>
-    {s.allowedActions.arrive && <Btn size="sm" variant="soft" icon={<Check aria-hidden className="h-3.5 w-3.5" />} busy={submit.busy} onClick={async () => { if (await submit.run(() => deskApi.arrive(s.id))) onDone(`Đã ghi ${s.memberName} có mặt.`) }}>Đã đến</Btn>}
   </li>
 }

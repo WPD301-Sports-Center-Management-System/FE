@@ -47,8 +47,8 @@ export interface CoachStudentData {
   id: string
   memberId: string
   coachId: string
-  courseId: string
-  courseNameSnapshot: string
+  courseId: string | null
+  courseNameSnapshot: string | null
   totalCredits: number
   reservedCredits: number
   consumedCredits: number

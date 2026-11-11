@@ -105,7 +105,7 @@ function CheckinPanel({ hit, openVisit, onClose, onDone }: { hit: PersonHit; ope
     {result ? <div role="status" className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
       <p className="flex items-center gap-2 font-semibold"><CheckCircle2 aria-hidden className="h-4 w-4" />{result.reused ? `Đã ở trong phòng từ ${hhmm(result.checkedInAt)}` : `Check-in thành công lúc ${hhmm(result.checkedInAt)}`}</p>
       {result.todaySessions.length > 0 && <ul className="mt-2 space-y-1">{result.todaySessions.map(s => <li key={s.id} className="flex items-center gap-2"><Clock aria-hidden className="h-3.5 w-3.5" />Buổi PT {hhmm(s.plannedStartsAt)} với {s.coach?.user?.fullName ?? 'Coach'} · {SESSION_LABEL[s.status] ?? s.status}</li>)}</ul>}
-      {result.todaySessions.length > 0 && <p className="mt-2 text-xs">Ghi “Đã đến” cho buổi PT ở mục Lịch PT & điểm danh.</p>}
+      <p className="mt-2 text-xs">Coach có thể mở buổi PT đã chọn và bấm Bắt đầu khi đủ điều kiện.</p>
     </div> : <>
       {openVisit && <p className="mt-4 rounded-lg bg-sky-50 px-3 py-2 text-sm text-sky-800 dark:bg-sky-500/10 dark:text-sky-200">Hội viên đang trong phòng từ {hhmm(openVisit.checkedInAt)}.</p>}
       {state && !canEnter && <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
@@ -113,7 +113,7 @@ function CheckinPanel({ hit, openVisit, onClose, onDone }: { hit: PersonHit; ope
           <AlertTriangle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="font-semibold">Chưa có vé gym hiệu lực hôm nay</p>
-            <p>{state.key === 'pending' ? 'Vé đã tạo nhưng chưa thanh toán.' : 'Cần bán vé mới hoặc gia hạn trước khi cho vào.'}</p>
+            <p>{state.key === 'pending' ? 'Vé đã tạo nhưng chưa thanh toán.' : 'Cần bán vé mới, gia hạn hoặc ngoại lệ PT đã được Manager duyệt.'} Hệ thống sẽ kiểm tra lại khi xác nhận vào tập.</p>
             {!quickBuy ? (
               <div className="mt-2.5 flex flex-wrap items-center gap-2">
                 <Btn size="sm" variant="primary" icon={<Ticket aria-hidden className="h-3.5 w-3.5" />} onClick={() => setQuickBuy(true)}>
@@ -190,7 +190,7 @@ function CheckinPanel({ hit, openVisit, onClose, onDone }: { hit: PersonHit; ope
       </div>}
       <InlineError message={submit.code === 'MEMBERSHIP_REQUIRED' ? 'Hội viên chưa có vé gym còn hiệu lực hôm nay.' : submit.error} />
       <div className="mt-4 flex flex-wrap gap-2">
-        <Btn variant="primary" className="flex-1" icon={<LogIn aria-hidden className="h-4 w-4" />} busy={submit.busy} disabled={!subs.data || !canEnter || !!openVisit} onClick={() => void checkIn()}>Xác nhận vào tập</Btn>
+        <Btn variant="primary" className="flex-1" icon={<LogIn aria-hidden className="h-4 w-4" />} busy={submit.busy} disabled={!subs.data || !!openVisit} onClick={() => void checkIn()}>Xác nhận vào tập</Btn>
         <LinkBtn to={`/receptionist/members/${hit.id}`}>Hồ sơ</LinkBtn>
       </div>
     </>}

@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { isAppApiError } from '@/shared/api/api-error'
+import { tierLabels, type CoachTier } from '@/shared/utils/coach-tier'
 
 export function errorMessage(error: unknown): string {
+  if (isAppApiError(error)) {
+    if (error.code === 'COACH_TIER_TOO_LOW') return 'Coach này chưa bán gói này. Vui lòng chọn lại gói của Coach.'
+    if (['PRICE_BELOW_MIN_TIER', 'PRICE_NOT_SET'].includes(error.code)) {
+      const tiers = (error.details as { tiers?: CoachTier[] } | undefined)?.tiers ?? []
+      return (error.code === 'PRICE_NOT_SET' ? 'Cần nhập giá cho bậc: ' : 'Bỏ giá dưới bậc tối thiểu: ') + tiers.map(t => tierLabels[t] ?? t).join(', ')
+    }
+  }
   if (isAppApiError(error)) return error.errors?.[0]?.message ?? error.message
   return error instanceof Error ? error.message : 'Đã có lỗi xảy ra.'
 }

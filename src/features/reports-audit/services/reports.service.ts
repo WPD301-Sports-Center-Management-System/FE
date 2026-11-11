@@ -1,13 +1,12 @@
 import { apiClient } from '@/shared/api/client'
 import type { ApiSuccess } from '@/shared/types/api'
-import type { PayoutPeriod } from '@/features/fixed-pt/types'
+import type { Withdrawal } from '@/features/fixed-pt/wallet-api'
 import type {
   RevenueReportData,
   PtPackagesReportData,
   BookingReportItem,
   CoachReportItem,
   CourseReportItem,
-  EquipmentReportItem,
   ReportType,
 } from '../types/reports.types'
 
@@ -62,12 +61,6 @@ export const reportsService = {
   /**
    * [6] GET /reports/equipment - Equipment status distribution
    */
-  async getEquipmentReport(): Promise<EquipmentReportItem[]> {
-    const res = await apiClient.get<ApiSuccess<EquipmentReportItem[]>>('/reports/equipment')
-    const data = res as unknown as ApiSuccess<EquipmentReportItem[]>
-    return data.data ?? (data as unknown as EquipmentReportItem[])
-  },
-
   /**
    * [7] GET /reports/export - Download report as CSV or XLSX binary
    */
@@ -84,21 +77,9 @@ export const reportsService = {
     return res as unknown as Blob
   },
 
-  /**
-   * [8] GET /coach-payout-periods - Coach payout periods of the per-session ledger.
-   * The legacy per-order /coach-payouts table is no longer written by the backend.
-   */
-  async getCoachPayouts(params?: { status?: string; page?: number; limit?: number }): Promise<ApiSuccess<PayoutPeriod[]>> {
-    const res = await apiClient.get<ApiSuccess<PayoutPeriod[]>>('/coach-payout-periods', { params })
-    return res as unknown as ApiSuccess<PayoutPeriod[]>
-  },
-
-  /**
-   * [9] POST /coach-payout-periods/{id}/mark-paid - Manager records the transfer of a LOCKED period
-   */
-  async markPaid(id: string, payload: { transferRef: string }): Promise<PayoutPeriod> {
-    const res = await apiClient.post<ApiSuccess<PayoutPeriod>>(`/coach-payout-periods/${id}/mark-paid`, payload)
-    const data = res as unknown as ApiSuccess<PayoutPeriod>
-    return data.data ?? (data as unknown as PayoutPeriod)
+  /** GET /coach-withdrawals - Manager: Coach withdrawal requests (REQUESTED waits for the bank transfer). */
+  async getCoachWithdrawals(params?: { status?: string; page?: number; limit?: number }): Promise<ApiSuccess<Withdrawal[]>> {
+    const res = await apiClient.get<ApiSuccess<Withdrawal[]>>('/coach-withdrawals', { params })
+    return res as unknown as ApiSuccess<Withdrawal[]>
   },
 }

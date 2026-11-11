@@ -78,4 +78,12 @@ export const usersService = {
     })
     return res as unknown as Blob
   },
+
+  /**
+   * Soft delete an account (DELETE /users/{id}). Different from locking: the account leaves every list and cannot sign in;
+   * history is kept. The BE refuses self-delete, the last active Manager and accounts with running orders (409).
+   */
+  async deleteUser(userId: string): Promise<void> {
+    await apiClient.delete(`/users/${userId}`)
+  },
 }

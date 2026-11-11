@@ -1,13 +1,43 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TrialSessionsPanel } from './trial-sessions-panel'
 import { deskApi } from '../api'
 
-vi.mock('../api', () => ({ deskApi: { trialSessions: vi.fn(), trials: vi.fn(), coaches: vi.fn(), trialAllowance: vi.fn(), createTrialSession: vi.fn(), updateTrial: vi.fn(), updateTrialSession: vi.fn(), checkInTrialSession: vi.fn() } }))
+vi.mock('../api', () => ({ deskApi: { trialSessions: vi.fn(), trials: vi.fn(), coaches: vi.fn(), trialAllowance: vi.fn(), createTrialSession: vi.fn(), updateTrial: vi.fn(), updateTrialSession: vi.fn(), checkInTrialSession: vi.fn(), checkOutTrialSession: vi.fn() } }))
 vi.mock('../shell', () => ({ useDeskShell: () => ({ refresh: vi.fn() }) }))
 const api = vi.mocked(deskApi)
 
 describe('focused trial desk', () => {
+  it.each(['check-in', 'checkout'] as const)('ignores stale refresh before and during %s', async transition => {
+    const initial = { id: 'gym', fullName: 'Khách Gym', phone: '0901234567', type: 'GYM' as const, status: transition === 'check-in' ? 'SCHEDULED' as const : 'CHECKED_IN' as const, scheduledAt: null, durationMinutes: 60 }
+    const updated = { ...initial, status: transition === 'check-in' ? 'CHECKED_IN' as const : 'COMPLETED' as const }
+    api.trialSessions.mockResolvedValue([initial])
+    render(<TrialSessionsPanel />)
+    if (transition === 'checkout') fireEvent.change(screen.getByLabelText('Lọc buổi tập thử'), { target: { value: 'inside' } })
+    fireEvent.click(await screen.findByRole('button', { name: transition === 'check-in' ? 'Check-in' : 'Checkout' }))
+    const modal = within(screen.getByRole('dialog'))
+    const action = await modal.findByRole('button', { name: transition === 'check-in' ? 'Check-in khách' : 'Xác nhận checkout' })
+    let resolveRead!: (value: typeof initial[]) => void
+    api.trialSessions.mockImplementationOnce(() => new Promise(resolve => { resolveRead = resolve }))
+    fireEvent.click(modal.getByRole('button', { name: 'Làm mới phản hồi PT' }))
+    let resolveMutation!: (value: typeof updated) => void
+    const mutation = transition === 'check-in' ? api.checkInTrialSession : api.checkOutTrialSession
+    mutation.mockImplementationOnce(() => new Promise(resolve => { resolveMutation = resolve }))
+    fireEvent.click(action)
+    const readsWhileMutating = api.trialSessions.mock.calls.length
+    act(() => { window.dispatchEvent(new Event('focus')) })
+    expect(api.trialSessions).toHaveBeenCalledTimes(readsWhileMutating)
+    await act(async () => resolveMutation(updated))
+    await act(async () => resolveRead([initial]))
+    if (transition === 'check-in') {
+      expect(modal.getByRole('button', { name: 'Xác nhận checkout' })).toBeInTheDocument()
+      expect(modal.queryByRole('button', { name: 'Check-in khách' })).toBeNull()
+      expect(modal.queryByRole('button', { name: 'Hủy đăng ký' })).toBeNull()
+    } else {
+      expect(modal.queryByRole('button', { name: 'Xác nhận checkout' })).toBeNull()
+      expect(modal.getByRole('button', { name: 'Chuyển thành Member' })).toBeInTheDocument()
+    }
+  })
   beforeEach(() => {
     vi.resetAllMocks()
     api.trialSessions.mockResolvedValue([])
@@ -42,7 +72,7 @@ describe('focused trial desk', () => {
     fireEvent.click(dialog.getByRole('button', { name: 'Lưu đăng ký' }))
     await waitFor(() => expect(api.createTrialSession).toHaveBeenCalledWith(expect.objectContaining({ type: 'GYM', mode: 'GYM', coachId: undefined, phone: '0901234567' })))
     expect(api.coaches).not.toHaveBeenCalled()
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(await screen.findByRole('button', { name: 'Check-in khách' })).toBeInTheDocument()
   })
 
   it('keeps online leads separate and prefills reception without starting the trial automatically', async () => {
@@ -168,7 +198,7 @@ describe('focused trial desk', () => {
     expect(screen.queryByText('Đã dùng đủ')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Xếp buổi tiếp' }))
     expect(await screen.findByText(/PT: đã dùng 2\/3 buổi, còn 1 buổi/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Lưu PT nhận khách' })).toBeInTheDocument()
+    expect(screen.getByText(/Đang chờ PT trả lời/)).toBeInTheDocument()
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Đóng' }))
     fireEvent.change(screen.getByRole('combobox', { name: 'Lọc buổi tập thử' }), { target: { value: 'closed' } })
     expect(screen.getByText('Đã dùng đủ')).toBeInTheDocument()
