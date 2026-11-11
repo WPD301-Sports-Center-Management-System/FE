@@ -1,56 +1,80 @@
 import { useState } from 'react'
-import { Modal } from '@/shared/components/ui/modal'
 import { useLoad, useSubmit } from '../hooks'
-import { walletApi, withdrawalLabel, type CoachWallet, type Withdrawal } from '../wallet-api'
-import { FlowSteps } from '@/features/workspace/flow-steps'
+import { isOpenWithdrawal, walletApi, withdrawalLabel, withdrawalRequestKey, type CoachWallet, type Withdrawal } from '../wallet-api'
 import { Async, Badge, Btn, Card, EmptyBox, Field, InlineError, LinkBtn, PageHeader, inputCls, useFlash } from '@/features/workspace/ui'
 import { fmtMoney } from '@/features/workspace/utils'
 import { formatDateTime } from '@/shared/utils/date'
+import { TransferDialog } from './withdrawal-dialog'
 
+const primary = 'bg-text-primary! text-bg-surface! shadow-none! hover:opacity-90'
 export function WalletPage() {
   const state = useLoad(walletApi.mine)
-  return <div className="space-y-5"><PageHeader title="Ví thu nhập" subtitle="Thu nhập được ghi sau buổi tập. Tiền của gói đã kết thúc mới có thể rút." />
-    <Async state={state} rows={4}>{wallet => <>
-      <Card><div className="grid items-start gap-6 lg:grid-cols-2"><div><p className="text-sm text-text-muted">Có thể yêu cầu rút</p><p className="mt-2 text-3xl font-semibold tabular-nums">{fmtMoney(Math.max(0, wallet.available))}</p><dl className="mt-5 space-y-3 text-sm">{[['Đang tích lũy từ gói chưa kết thúc', wallet.accruing], ['Đang chờ chuyển khoản', wallet.requested], ['Đã nhận', wallet.withdrawn]].map(([label, value]) => <div key={label} className="flex justify-between gap-3"><dt>{label}</dt><dd className="tabular-nums">{fmtMoney(Number(value))}</dd></div>)}</dl></div>
-        <div><FlowSteps steps={['Ghi thu nhập', 'Yêu cầu rút', 'Nhận chuyển khoản']} current={wallet.requested > 0 ? 2 : wallet.available > 0 ? 1 : 0} /><div className="mt-5">{wallet.withdrawals.some(w => w.status === 'REQUESTED') ? <div role="status"><h2 className="font-semibold">Yêu cầu đã gửi</h2><p className="mt-2 text-sm text-text-muted">Manager đang xử lý chuyển khoản. Theo dõi kết quả và mã giao dịch bên dưới.</p></div> : wallet.available > 0 ? <RequestWithdrawal key={wallet.available} wallet={wallet} onDone={state.reload} /> : <p className="text-sm text-text-muted">{wallet.available < 0 ? 'Số dư đang được đối chiếu sau thay đổi kết quả buổi. Liên hệ Manager trước khi rút.' : 'Khi một gói kết thúc, tiền đủ điều kiện sẽ chuyển sang số dư có thể rút.'}</p>}</div></div>
-      </div></Card>
-      <div className={wallet.withdrawals.length ? "grid items-start gap-5 xl:grid-cols-2" : "grid gap-5"}><Card title="Thu nhập từ các gói">{!wallet.packages.length ? <EmptyBox title="Chưa có thu nhập" hint="Thu nhập xuất hiện sau khi có kết quả buổi được tính." /> : <ul className="divide-y divide-border-subtle">{wallet.packages.map(p => <li key={p.purchaseId} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"><div><p className="font-medium">{p.packageNameSnapshot}</p><p className="mt-1 text-sm text-text-muted">{p.purchaseCode} · {p.finished ? 'Gói đã kết thúc' : 'Đang tích lũy'}</p></div><div className="flex items-center gap-3"><span className="tabular-nums">{fmtMoney(p.earned)}</span><LinkBtn size="sm" to={`/coach/pt-purchases/${p.purchaseId}`}>Xem gói</LinkBtn></div></li>)}</ul>}</Card><Card title="Lịch sử rút tiền"><WithdrawalHistory rows={wallet.withdrawals} /></Card></div>
-    </>}</Async>
+  return <div className="space-y-5" data-coach-wallet>
+    <PageHeader title="Thu nhập của tôi" subtitle="Thu nhập được rút ngay sau buổi được ghi nhận." actions={<Btn size="sm" onClick={() => void state.reload()} disabled={state.loading}>Cập nhật</Btn>} />
+    <Async state={state} rows={4}>{wallet => {
+      const open = wallet.withdrawals.find(isOpenWithdrawal)
+      return <>
+        {/* Five tracks: 2fr balance + one 24px gutter + 3fr next action = full canvas. */}
+        <Card><div className="grid gap-6 lg:grid-cols-5">
+          <div className="lg:col-span-2"><p className="text-sm text-text-muted">Có thể rút ngay</p><p className="mt-2 text-4xl font-semibold tracking-tight tabular-nums">{fmtMoney(wallet.available)}</p>
+            <dl className="mt-6 space-y-3 text-sm">{[['Đang chờ chuyển', wallet.reserved], ['Đã nhận', wallet.paid], ['Thu nhập ròng', wallet.ledger]].map(([label, value]) => <div key={label} className="flex justify-between gap-4"><dt className="text-text-muted">{label}</dt><dd className="text-right tabular-nums">{fmtMoney(Number(value))}</dd></div>)}</dl>
+            {wallet.recovery > 0 && <div role="status" className="mt-5 border-l-2 border-amber-600 pl-3 text-sm"><p className="font-medium">Cần bù trừ {fmtMoney(wallet.recovery)}</p><p className="mt-1 text-text-muted">Khoản đã nhận vượt thu nhập sau điều chỉnh sẽ được trừ vào thu nhập tiếp theo.</p></div>}
+            {wallet.unverified > 0 && <p className="mt-4 text-sm text-text-muted">{fmtMoney(wallet.unverified)} thu nhập cũ đang chờ đối soát, chưa thể rút.</p>}
+          </div>
+          <div className="border-t border-border-subtle pt-5 lg:col-span-3 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+            {open ? <OpenRequest request={open} /> : wallet.available > 0 ? <RequestWithdrawal wallet={wallet} onDone={state.reload} /> : <div><h2 className="font-medium">Chưa có tiền để rút</h2><p className="mt-2 text-sm text-text-muted">{wallet.recovery > 0 ? 'Thu nhập mới sẽ bù khoản chênh lệch trước. Phần còn lại có thể rút ngay.' : 'Sau buổi tập được ghi nhận thu nhập, bạn có thể gửi yêu cầu nhận tiền tại đây.'}</p><LinkBtn className="mt-4" size="sm" to="/coach/schedule">Xem lịch tập</LinkBtn></div>}
+          </div>
+        </div></Card>
+        <Card><div className="grid items-start gap-6 xl:grid-cols-2"><section><h2 className="font-semibold">Lịch sử rút tiền</h2><p className="mt-1 mb-4 text-sm text-text-muted">Theo dõi kết quả và mã chuyển khoản.</p><WithdrawalHistory rows={wallet.withdrawals} /></section><section className="border-t border-border-subtle pt-5 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-6"><h2 className="font-semibold">Thu nhập theo gói</h2><p className="mt-1 mb-4 text-sm text-text-muted">Gói đang tập hoặc tạm ngưng vẫn được rút thu nhập.</p><PackageIncome packages={wallet.packages} /></section></div></Card>
+      </>
+    }}</Async>
   </div>
 }
-
+function OpenRequest({ request: w }: { request: Withdrawal }) {
+  return <div role="status" className="space-y-3"><Badge tone="warning">{withdrawalLabel[w.status]}</Badge><h2 className="text-xl font-semibold tabular-nums">{fmtMoney(w.amount)}</h2>
+    <p className="text-sm text-text-muted">Yêu cầu đã gửi. Trung tâm sẽ chuyển tiền về tài khoản bên dưới.</p>
+    <p className="break-words text-sm">{w.bankName} · {w.accountNumber}<br /><span className="text-text-muted">{w.accountName}</span></p>
+    <p className="text-xs text-text-muted">{w.code} · {formatDateTime(w.createdAt)}<br />Bạn có thể gửi yêu cầu tiếp theo khi phiếu này hoàn tất.</p>
+  </div>
+}
 function RequestWithdrawal({ wallet, onDone }: { wallet: CoachWallet; onDone: () => Promise<void> }) {
   const last = wallet.withdrawals.find(w => w.bankName && w.accountNumber && w.accountName)
-  const [amount, setAmount] = useState(String(Math.floor(wallet.available)))
+  const [requestKey] = useState(withdrawalRequestKey), [amount, setAmount] = useState(String(wallet.available))
   const [bank, setBank] = useState(last?.bankName ?? ''), [number, setNumber] = useState(last?.accountNumber ?? ''), [name, setName] = useState(last?.accountName ?? '')
+  const [editBank, setEditBank] = useState(!last), [sent, setSent] = useState(false)
   const act = useSubmit()
   const valid = Number.isSafeInteger(Number(amount)) && Number(amount) > 0 && Number(amount) <= wallet.available && !!bank.trim() && /^[0-9 ]{4,40}$/.test(number.trim()) && !!name.trim()
-  return <form className="space-y-3" onSubmit={e => { e.preventDefault(); if (valid) void act.run(async () => { await walletApi.request({ amount: Number(amount), bankName: bank.trim(), accountNumber: number.trim(), accountName: name.trim() }); await onDone() }) }}>
-    <Field label="Số tiền muốn rút" hint={`Tối đa ${fmtMoney(wallet.available)}`}><input inputMode="numeric" type="number" min={1} max={wallet.available} step={1} required className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} /></Field>
-    <Field label="Ngân hàng"><input required maxLength={120} className={inputCls} value={bank} onChange={e => setBank(e.target.value)} /></Field>
-    <div className="grid gap-3 sm:grid-cols-2"><Field label="Số tài khoản"><input required inputMode="numeric" maxLength={40} className={inputCls} value={number} onChange={e => setNumber(e.target.value)} /></Field><Field label="Chủ tài khoản"><input required maxLength={120} className={inputCls} value={name} onChange={e => setName(e.target.value)} /></Field></div>
-    <InlineError message={act.error} /><Btn type="submit" variant="primary" busy={act.busy} disabled={!valid}>Gửi yêu cầu rút tiền</Btn>
+  return <form className="space-y-4" onSubmit={e => { e.preventDefault(); if (valid && !sent) void act.run(async () => {
+    await walletApi.request({ amount: Number(amount), bankName: bank.trim(), accountNumber: number.trim(), accountName: name.trim(), requestKey })
+    setSent(true); await onDone()
+  }) }}>
+    <h2 className="font-medium">Nhận tiền về tài khoản</h2>
+    <Field label="Số tiền muốn rút" hint={`Tối đa ${fmtMoney(wallet.available)}`}><div className="flex gap-2"><input aria-label="Số tiền muốn rút" inputMode="numeric" type="number" min={1} max={wallet.available} step={1} required disabled={act.busy || sent} className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} /><Btn size="sm" className="shrink-0 whitespace-nowrap" disabled={act.busy || sent || Number(amount) === wallet.available} onClick={() => setAmount(String(wallet.available))}>Rút hết</Btn></div></Field>
+    {!editBank ? <div className="flex items-start justify-between gap-3 rounded-lg bg-bg-surface-muted p-3"><div className="min-w-0 text-sm"><p className="break-words font-medium">{bank} · {number}</p><p className="mt-1 break-words text-text-muted">{name}</p></div><Btn size="sm" variant="ghost" disabled={act.busy || sent} onClick={() => setEditBank(true)}>Đổi tài khoản</Btn></div> : <fieldset className="space-y-3" disabled={act.busy || sent}>
+      <Field label="Ngân hàng"><input required maxLength={120} placeholder="Ví dụ: ACB" className={inputCls} value={bank} onChange={e => setBank(e.target.value)} /></Field>
+      <div className="grid gap-3 sm:grid-cols-2"><Field label="Số tài khoản"><input required inputMode="numeric" maxLength={40} className={inputCls} value={number} onChange={e => setNumber(e.target.value)} /></Field><Field label="Chủ tài khoản"><input required maxLength={120} autoComplete="name" className={inputCls} value={name} onChange={e => setName(e.target.value)} /></Field></div>
+    </fieldset>}
+    <InlineError message={act.error} />{act.error && <Btn size="sm" onClick={() => void onDone()}>Kiểm tra trạng thái yêu cầu</Btn>}
+    <Btn type="submit" variant="primary" className={`w-full sm:w-auto ${primary}`} busy={act.busy} disabled={!valid || sent}>Gửi yêu cầu rút tiền</Btn>
   </form>
 }
+function PackageIncome({ packages }: { packages: CoachWallet['packages'] }) {
+  const [all, setAll] = useState(false)
+  return !packages.length ? <EmptyBox title="Chưa có thu nhập theo gói" hint="Thu nhập sẽ xuất hiện sau buổi được ghi nhận." /> : <><ul className="divide-y divide-border-subtle">{packages.slice(0, all ? undefined : 5).map(p => <li key={p.purchaseId} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"><div className="min-w-0"><p className="font-medium">{p.packageNameSnapshot}</p><p className="mt-1 text-xs text-text-muted">{p.purchaseCode}{p.awaitingDecision > 0 ? ' · Có khoản chờ đối soát' : ''}</p><LinkBtn size="sm" variant="ghost" className="-ml-3 mt-1" to={`/coach/pt-purchases/${p.purchaseId}`}>Xem gói</LinkBtn></div><span className="shrink-0 text-right tabular-nums">{fmtMoney(p.earned)}</span></li>)}</ul>{packages.length > 5 && <Btn size="sm" className="mt-3" onClick={() => setAll(v => !v)}>{all ? 'Thu gọn' : `Xem ${packages.length} gói`}</Btn>}</>
+}
 function WithdrawalHistory({ rows }: { rows: Withdrawal[] }) {
-  return !rows.length ? <p className="text-sm text-text-muted">Chưa có yêu cầu rút.</p> : <ul className="divide-y divide-border-subtle">{rows.map(w => <li key={w.id} className="space-y-1 py-3 first:pt-0 last:pb-0"><div className="flex flex-wrap justify-between gap-2"><span className="font-semibold tabular-nums">{fmtMoney(w.amount)}</span><Badge tone={w.status === 'PAID' ? 'success' : w.status === 'REQUESTED' ? 'warning' : 'neutral'}>{withdrawalLabel[w.status]}</Badge></div><p className="text-sm text-text-muted">{w.code} · {formatDateTime(w.createdAt)}</p>{w.transferRef && <p className="break-words text-sm">Mã chuyển khoản: {w.transferRef}</p>}{w.closedReason && <p className="text-sm">Lý do: {w.closedReason}</p>}</li>)}</ul>
+  const [all, setAll] = useState(false)
+  return !rows.length ? <EmptyBox title="Chưa có yêu cầu rút tiền" hint="Yêu cầu đầu tiên của bạn sẽ xuất hiện tại đây." /> : <><ul className="divide-y divide-border-subtle">{rows.slice(0, all ? undefined : 5).map(w => <li key={w.id} className="space-y-1 py-3 first:pt-0 last:pb-0"><div className="flex flex-wrap justify-between gap-2"><span className="font-semibold tabular-nums">{fmtMoney(w.amount)}</span><Badge tone={w.status === 'PAID' ? 'success' : isOpenWithdrawal(w) ? 'warning' : 'neutral'}>{withdrawalLabel[w.status]}</Badge></div><p className="text-xs text-text-muted">{w.code} · {formatDateTime(w.createdAt)}</p>{w.transferRef && <p className="break-words text-sm">Mã chuyển khoản: {w.transferRef}</p>}{w.closedReason && <p className="text-sm">Lý do: {w.closedReason}</p>}</li>)}</ul>{rows.length > 5 && <Btn size="sm" className="mt-3" onClick={() => setAll(v => !v)}>{all ? 'Thu gọn' : `Xem ${rows.length} yêu cầu gần nhất`}</Btn>}</>
 }
-export function WithdrawalsPanel({ coachId }: { coachId?: string }) {
+export function WithdrawalsPanel({ coachId, onChanged }: { coachId?: string; onChanged?: () => void }) {
   const state = useLoad(() => walletApi.list(coachId), [coachId])
-  const [selected, setSelected] = useState<Withdrawal | null>(null), [history, setHistory] = useState(false)
-  const { flash, node } = useFlash()
-  return <Card title="Yêu cầu rút tiền" subtitle="Đối chiếu tài khoản, chuyển tiền, rồi ghi nhận mã giao dịch." actions={<Btn size="sm" onClick={() => setHistory(v => !v)}>{history ? 'Xem yêu cầu đang chờ' : 'Xem lịch sử'}</Btn>}>
-    {node}<Async state={state} rows={3}>{rows => { const shown = rows.filter(w => history ? w.status !== 'REQUESTED' : w.status === 'REQUESTED'); return !shown.length ? <EmptyBox title={history ? 'Chưa có lịch sử chuyển tiền' : 'Không có yêu cầu chờ chuyển'} /> : <ul className="divide-y divide-border-subtle">{shown.map(w => <li key={w.id} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"><div><p className="font-semibold">{w.coach?.user.fullName ?? 'Coach'}</p><p className="mt-1 text-sm text-text-muted">{w.code} · {formatDateTime(w.createdAt)}</p><p className="mt-1 text-sm">{w.bankName} · {w.accountNumber}</p></div><div className="flex flex-wrap items-center gap-4"><strong className="tabular-nums">{fmtMoney(w.amount)}</strong>{w.status === 'REQUESTED' ? <Btn size="sm" onClick={() => setSelected(w)}>Xử lý chuyển khoản</Btn> : <Badge tone={w.status === 'PAID' ? 'success' : 'neutral'}>{withdrawalLabel[w.status]}</Badge>}</div></li>)}</ul> }}</Async>
-    {selected && <TransferDialog request={selected} onClose={() => setSelected(null)} onDone={message => { setSelected(null); flash(message); void state.reload() }} />}
+  const [selectedId, setSelectedId] = useState<string | null>(null), [history, setHistory] = useState(false)
+  const { flash, node } = useFlash(), selected = state.data?.find(w => w.id === selectedId)
+  return <Card title="Yêu cầu rút tiền" subtitle="Mỗi thời điểm chỉ một Manager phụ trách chuyển tiền. Kiểm tra ngân hàng trước khi chuyển lại." actions={<div className="flex gap-2"><Btn size="sm" onClick={() => void state.reload()} disabled={state.loading}>Cập nhật</Btn><Btn size="sm" onClick={() => setHistory(v => !v)}>{history ? 'Đang xử lý' : 'Lịch sử'}</Btn></div>}>
+    {node}<Async state={state} rows={3}>{rows => {
+      const shown = rows.filter(w => history ? !isOpenWithdrawal(w) : isOpenWithdrawal(w))
+      return !shown.length ? <EmptyBox title={history ? 'Chưa có lịch sử chuyển tiền' : 'Không có yêu cầu đang chờ'} /> : <ul className="divide-y divide-border-subtle">{shown.map(w => <li key={w.id} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"><div className="min-w-0"><p className="font-medium">{w.coach?.user.fullName ?? 'Coach'}</p><p className="mt-1 text-xs text-text-muted">{w.code} · {formatDateTime(w.createdAt)}</p><p className="mt-1 text-sm">{w.bankName} · {w.accountNumber}</p>{w.transferRef && <p className="mt-1 break-words text-sm">Mã chuyển khoản: {w.transferRef}</p>}{w.closedReason && <p className="mt-1 break-words text-sm">Lý do: {w.closedReason}</p>}{w.actionReason === 'ENTITLEMENT_REDUCED' && <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">Quyền hưởng còn {fmtMoney(w.coverable ?? 0)} · Chưa chuyển thì từ chối để gửi lại.</p>}</div><div className="flex flex-wrap items-center justify-end gap-3"><div className="space-y-1 text-right"><p className="font-semibold tabular-nums">{fmtMoney(w.amount)}</p><Badge tone={w.status === 'PAID' ? 'success' : isOpenWithdrawal(w) ? 'warning' : 'neutral'}>{withdrawalLabel[w.status]}</Badge></div>{isOpenWithdrawal(w) && <Btn size="sm" onClick={() => setSelectedId(w.id)}>Xử lý yêu cầu</Btn>}</div></li>)}</ul>
+    }}</Async>
+    {selected && <TransferDialog request={selected} onRefresh={state.reload} onClose={() => setSelectedId(null)} onDone={message => { setSelectedId(null); flash(message); void state.reload(); onChanged?.() }} />}
   </Card>
-}
-function TransferDialog({ request: w, onClose, onDone }: { request: Withdrawal; onClose: () => void; onDone: (message: string) => void }) {
-  const [reject, setReject] = useState(false), [text, setText] = useState('')
-  const act = useSubmit(), shortfall = (w.coachAvailable ?? 0) < 0
-  return <Modal isOpen onClose={() => { if (!act.busy) onClose() }} title={reject ? 'Từ chối yêu cầu rút' : 'Ghi nhận chuyển khoản'} description={`${w.coach?.user.fullName ?? 'Coach'} · ${w.code}`}><form className="space-y-4" onSubmit={e => { e.preventDefault(); if (text.trim() && (reject || !shortfall)) void act.run(async () => { if (reject) await walletApi.reject(w.id, text.trim()); else await walletApi.paid(w.id, text.trim()); onDone(reject ? 'Đã từ chối và báo lý do cho Coach.' : 'Đã ghi nhận chuyển khoản và cập nhật ví Coach.') }) }}>
-    <FlowSteps steps={['Yêu cầu đã gửi', 'Chuyển khoản', 'Coach nhận tiền']} current={1} /><p className="text-2xl font-semibold tabular-nums">{fmtMoney(w.amount)}</p><dl className="space-y-2 text-sm">{[['Ngân hàng', w.bankName], ['Số tài khoản', w.accountNumber], ['Chủ tài khoản', w.accountName]].map(([label, value]) => <div key={label} className="flex flex-wrap justify-between gap-2"><dt className="text-text-muted">{label}</dt><dd className="break-all font-medium">{value ?? 'Cần đối chiếu với Coach'}</dd></div>)}</dl>
-    {shortfall && <p role="alert" className="text-sm text-red-700">Số dư đã thay đổi. Từ chối để Coach gửi lại số tiền phù hợp.</p>}
-    <Field label={reject ? 'Lý do từ chối' : 'Mã giao dịch đã chuyển'} hint={reject ? 'Coach sẽ nhận được lý do này.' : 'Chỉ xác nhận sau khi chuyển tiền thành công.'}><input required maxLength={reject ? 1000 : 120} className={inputCls} value={text} onChange={e => setText(e.target.value)} /></Field>
-    <InlineError message={act.error} /><div className="flex flex-wrap justify-between gap-2"><Btn disabled={act.busy} variant="ghost" onClick={() => { setReject(v => !v); setText(''); act.clear() }}>{reject ? 'Quay lại chuyển khoản' : 'Từ chối yêu cầu'}</Btn><Btn type="submit" variant={reject ? 'danger' : 'primary'} busy={act.busy} disabled={!text.trim() || !reject && shortfall}>{reject ? 'Gửi lý do từ chối' : 'Xác nhận đã chuyển tiền'}</Btn></div>
-  </form></Modal>
 }

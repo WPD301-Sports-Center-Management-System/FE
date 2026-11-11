@@ -1,6 +1,7 @@
 import { apiClient } from '@/shared/api/client'
 import type { ApiSuccess, MembershipPlan } from '@/shared/types/api'
 import type {
+  CreateMembershipPlanPayload,
   UpdateMembershipPlanPayload,
   UpdatePlanStatusPayload,
   MembershipPlanQueryParams,
@@ -22,6 +23,22 @@ export const membershipPlansService = {
     const res = await apiClient.get<ApiSuccess<MembershipPlan>>(`/membership-plans/${id}`)
     const data = res as unknown as ApiSuccess<MembershipPlan>
     return data.data
+  },
+
+  /**
+   * POST /membership-plans - Create a gym ticket plan (Manager). 409 PLAN_CODE_EXISTS / PLAN_NAME_EXISTS on duplicates.
+   */
+  async createPlan(payload: CreateMembershipPlanPayload): Promise<MembershipPlan> {
+    const res = await apiClient.post<ApiSuccess<MembershipPlan>>('/membership-plans', payload)
+    const data = res as unknown as ApiSuccess<MembershipPlan>
+    return data.data
+  },
+
+  /**
+   * DELETE /membership-plans/{id} - Soft delete (Manager). Sold tickets keep their own snapshot; 409 while a ticket is pending/valid.
+   */
+  async deletePlan(id: string): Promise<void> {
+    await apiClient.delete(`/membership-plans/${id}`)
   },
 
   /**

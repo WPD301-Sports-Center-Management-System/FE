@@ -68,6 +68,7 @@ export const coachWs = {
   sessions: (params: { from?: string; to?: string; status?: string; purchaseId?: string; order?: 'asc' | 'desc' }, maxPages = 5) => all<Session>('/coaches/me/pt-bookings', params, maxPages),
   trialSessions: (params: { from: string; to: string }) => all<CoachTrialSession>('/coaches/me/trial-sessions', params),
   session: (id: string) => get<SessionDetail>(`/pt-bookings/${id}`),
+  sessionHistory: (id: string) => get<{ events: { id: string; action: string; createdAt: string; actor?: { fullName: string } | null }[]; versions: { id: string; version: number; kind: string; createdAt: string }[]; changes: { id: string; code: string; status: string; createdAt: string }[] }>(`/pt-bookings/${id}/history`),
   arrive: (id: string) => post<Session>(`/pt-bookings/${id}/arrive`),
   start: (id: string) => post<Session>(`/pt-bookings/${id}/start`),
   complete: (id: string, body: { note?: string; earlyEndReason?: string }) => post<Session>(`/pt-bookings/${id}/complete`, body),

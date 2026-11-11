@@ -54,7 +54,7 @@ export function DeskSupportPage() {
             <td className={td}><Badge>{SUPPORT_CATEGORY[t.category] ?? t.category}</Badge></td>
             <td className={`${td} tabular-nums`}>{hhmm(t.createdAt)}<p className="text-xs text-text-muted">{relativeAgo(t.createdAt) === 'hôm nay' ? 'hôm nay' : dmy(t.createdAt)}</p></td>
             <td className={td}><Badge tone={SUPPORT_LABEL[t.status].tone}>{SUPPORT_LABEL[t.status].label}</Badge></td>
-            <td className={`${td} text-right`}><Btn size="sm" variant={t.status === 'OPEN' || t.status === 'IN_PROGRESS' ? 'soft' : 'outline'} icon={<MessageSquareReply aria-hidden className="h-3.5 w-3.5" />} onClick={() => setOpen(t)}>{t.status === 'OPEN' || t.status === 'IN_PROGRESS' ? 'Phản hồi' : 'Xem'}</Btn></td>
+            <td className={`${td} text-right`}><Btn size="sm" variant={t.status === 'OPEN' || t.status === 'IN_PROGRESS' ? 'soft' : 'outline'} icon={<MessageSquareReply aria-hidden className="h-3.5 w-3.5" />} onClick={() => setOpen(t)}>{base === '/manager' ? 'Xem & xử lý' : t.status === 'OPEN' || t.status === 'IN_PROGRESS' ? 'Phản hồi' : 'Xem'}</Btn></td>
           </tr>)}
         </Table><Pagination page={page} pageSize={PAGE} total={rows.length} onChange={setPage} noun="yêu cầu" /></>}
       </Async>
@@ -69,11 +69,12 @@ function TicketModal({ t, onClose, onDone }: { t: SupportRequest; onClose: () =>
   const closed = t.status === 'RESOLVED' || t.status === 'CLOSED'
   const [status, setStatus] = useState<SupportStatus>(t.status === 'OPEN' ? 'IN_PROGRESS' : t.status)
   const [response, setResponse] = useState(t.response ?? '')
+  const [blocked, setBlocked] = useState(true)
   return <Modal isOpen onClose={onClose} maxWidth="xl" title={`${t.requestCode} · ${t.subject}`} description={`${t.memberName ?? ''} · ${SUPPORT_CATEGORY[t.category] ?? t.category} · gửi ${dmy(t.createdAt)} ${hhmm(t.createdAt)}`}>
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3 text-sm font-semibold"><Link className="underline" to={(readOnly ? '/manager' : '/receptionist') + '/members/' + t.memberId + '?ticketId=' + t.id}>Mở hồ sơ học viên</Link>{t.ptPurchaseId && <Link className="underline" to={(readOnly ? '/manager' : '/receptionist') + '/pt-purchases/' + t.ptPurchaseId + '?ticketId=' + t.id}>Mở gói liên quan</Link>}{t.bookingId && <Link className="underline" to={'/pt-sessions/' + t.bookingId + '?ticketId=' + t.id}>Mở buổi liên quan</Link>}</div>
       <p className="whitespace-pre-line rounded-lg bg-bg-surface-muted p-3 text-sm">{t.message}</p>
-      <SupportLinks ticketId={t.id} manager={readOnly} />
+      <SupportLinks ticketId={t.id} manager={readOnly} onBlockedChange={setBlocked} />
       {t.attachmentUrls.length > 0 && <div className="flex flex-wrap gap-2">{t.attachmentUrls.map((u, i) => <a key={u} href={u} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-border-subtle"><img src={u} alt={`Ảnh đính kèm ${i + 1}`} className="h-24 w-24 object-cover" /></a>)}</div>}
       {t.response && <div className="rounded-lg border border-border-subtle p-3 text-sm"><p className="text-xs font-semibold text-text-muted">Phản hồi trước{t.respondedAt ? ` · ${dmy(t.respondedAt)} ${hhmm(t.respondedAt)}` : ''}</p><p className="mt-1 whitespace-pre-line">{t.response}</p></div>}
       {readOnly ? <p className="border-t border-border-subtle pt-4 text-sm text-text-muted">Lễ tân phản hồi và chuyển trạng thái yêu cầu; Manager theo dõi tại đây.</p> : closed ? <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-4">
@@ -83,11 +84,12 @@ function TicketModal({ t, onClose, onDone }: { t: SupportRequest; onClose: () =>
       </div> : <form className="space-y-4 border-t border-border-subtle pt-4" onSubmit={async e => { e.preventDefault(); if (await submit.run(() => deskApi.updateSupport(t.id, { status, response: response.trim() || undefined }))) onDone('Đã cập nhật yêu cầu và báo cho hội viên.') }}>
         <Field label="Phản hồi cho hội viên" hint="Hội viên nhận nội dung này qua thông báo trong app."><textarea rows={4} value={response} onChange={e => setResponse(e.target.value)} className={textareaCls} /></Field>
         <fieldset><legend className="mb-1.5 text-sm font-medium">Chuyển trạng thái</legend>
+          {blocked && <p className="mb-2 text-sm text-text-muted">Chỉ giải quyết hoặc đóng sau khi kiểm tra kết quả, tiền hoàn đã chuyển và hồ sơ gián đoạn đã xử lý. Bạn vẫn có thể gửi phản hồi đang xử lý.</p>}
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{(Object.keys(SUPPORT_LABEL) as SupportStatus[]).map(k => <label key={k} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${status === k ? 'border-primary bg-primary/5 font-semibold' : 'border-border-subtle'}`}>
-            <input type="radio" name="support-status" checked={status === k} onChange={() => setStatus(k)} className="accent-[var(--primary)]" />{SUPPORT_LABEL[k].label}</label>)}</div>
+            <input type="radio" name="support-status" checked={status === k} disabled={blocked && ['RESOLVED', 'CLOSED'].includes(k)} onChange={() => setStatus(k)} className="accent-[var(--primary)]" />{SUPPORT_LABEL[k].label}</label>)}</div>
         </fieldset>
         <InlineError message={submit.error} />
-        <div className="flex justify-end gap-2"><Btn onClick={onClose}>Hủy</Btn><Btn type="submit" variant="primary" busy={submit.busy} disabled={(status === 'RESOLVED' || status === 'CLOSED') && !response.trim() && !t.response}>Lưu & gửi</Btn></div>
+        <div className="flex justify-end gap-2"><Btn onClick={onClose}>Hủy</Btn><Btn type="submit" variant="primary" busy={submit.busy} disabled={['RESOLVED', 'CLOSED'].includes(status) && (blocked || (!response.trim() && !t.response))}>Lưu & gửi</Btn></div>
       </form>}
     </div>
   </Modal>

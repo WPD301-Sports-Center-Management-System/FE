@@ -1,48 +1,42 @@
-import { FinishSession } from './finish-session'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { hybridSend } from '@/features/fixed-pt/hybrid-api'
-import { Check, Play, Square, UserX } from 'lucide-react'
+import { Play, Square, UserX } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
 import { useSubmit } from '@/features/fixed-pt/hooks'
 import type { Session } from '@/features/fixed-pt/types'
 import { coachWs } from '../api'
 import { Btn, Field, InlineError, textareaCls, LinkBtn } from '@/features/workspace/ui'
 
-type Dialog = null | 'end' | 'noShow' | 'interrupt'
+type Dialog = null | 'noShow' | 'interrupt'
 
 /**
  * The actions the server allows on a session right now (Session.allowedActions), with the
- * confirmations the BE rules need: an early end needs a reason, a no-show is blocked while the
+ * confirmations the BE rules need: a no-show is blocked while the
  * member is checked in, and service interruptions retain the session credit.
  */
 export function SessionActions({ session, onDone, size = 'sm', compact }: { session: Session; onDone: (message: string) => void; size?: 'sm' | 'md'; compact?: boolean }) {
   const a = session.allowedActions
+  const navigate = useNavigate()
 
   const [dialog, setDialog] = useState<Dialog>(null)
 
   const [reason, setReason] = useState('')
   const submit = useSubmit()
-  const [openedAt] = useState(() => Date.now())
-  const early = (session.serverTime ? Date.parse(session.serverTime) : openedAt) < new Date(session.endsAt).getTime()
   const close = () => { setDialog(null); setReason(''); submit.clear() }
   const run = async (work: () => Promise<unknown>, message: string, after?: () => void) => { const ok = await submit.run(async () => { await work(); return true }); if (ok) { close(); onDone(message); after?.() } }
 
   return <>
     <div className="flex flex-wrap items-center justify-end gap-1.5">
-      {a.arrive && <Btn size={size} variant="outline" busy={submit.busy && !dialog} icon={<Check aria-hidden className="h-4 w-4" />} onClick={() => void run(() => coachWs.arrive(session.id), 'Đã ghi học viên có mặt.')}>Đã đến</Btn>}
-      {a.start && <Btn size={size} variant="soft" busy={submit.busy && !dialog} icon={<Play aria-hidden className="h-4 w-4" />} onClick={() => void run(() => coachWs.start(session.id), 'Đã bắt đầu buổi tập.')}>Bắt đầu ca</Btn>}
-      {a.end && <Btn size={size} variant="primary" icon={<Square aria-hidden className="h-3.5 w-3.5" />} onClick={() => setDialog('end')}>Kết thúc & ghi phiếu</Btn>}
+      {a.start && <Btn size={size} variant="soft" busy={submit.busy && !dialog} icon={<Play aria-hidden className="h-4 w-4" />} onClick={() => void run(() => coachWs.start(session.id), 'Đã bắt đầu buổi tập.')}>Bắt đầu buổi tập</Btn>}
+      {a.end && <Btn size={size} variant="primary" busy={submit.busy && !dialog} icon={<Square aria-hidden className="h-3.5 w-3.5" />} onClick={() => void run(() => coachWs.complete(session.id, {}), 'Đã kết thúc buổi tập.', () => navigate(`/coach/goals/sheet/${session.id}`))}>Kết thúc buổi</Btn>}
       {a.interrupt && !compact && <Btn size={size} variant="danger" onClick={() => setDialog('interrupt')}>Dừng do sự cố, hoàn buổi</Btn>}
       {a.noShow && !compact && <Btn size={size} variant="outline" icon={<UserX aria-hidden className="h-4 w-4" />} onClick={() => setDialog('noShow')}>Học viên vắng</Btn>}
       {session.status === 'COMPLETED' && !session.outcomeReversedAt && compact && <LinkBtn size={size} to={`/coach/goals/sheet/${session.id}`}>Đánh giá cuối buổi</LinkBtn>}
     </div>
     {!compact && session.actionReasons?.start && <p className="mt-2 text-sm text-text-muted">{session.actionReasons.start}</p>}
     {submit.error && !dialog && <p role="alert" className="mt-1 text-right text-xs text-red-600">{submit.error}</p>}
-
-    <Modal isOpen={dialog === 'end'} onClose={close} title="Kết thúc & ghi phiếu" description={`${session.memberName ?? ''} · buổi được tính và ghi thu nhập theo kết quả.`}>
-      {dialog === 'end' && <FinishSession bookingId={session.id} early={early} onDone={message => { close(); onDone(message) }} />}
-    </Modal>
 
     <Modal isOpen={dialog === 'interrupt'} onClose={close} title="Dừng buổi do sự cố" description="Giữ lại buổi tập để Coach xếp buổi bù; buổi này không phát sinh thu nhập. Lịch sử phần đã tập vẫn được giữ.">
       <form className="space-y-4" onSubmit={e => { e.preventDefault(); void run(() => hybridSend('post', `/pt-bookings/${session.id}/interrupt`, { reason: reason.trim() }), 'Đã dừng buổi và giữ lại buổi tập.') }}>

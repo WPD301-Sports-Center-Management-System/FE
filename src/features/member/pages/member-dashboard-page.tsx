@@ -336,7 +336,9 @@ export function MemberDashboardPage() {
                             <span className="font-bold text-emerald-600 dark:text-emerald-400">{pkg.availableCredits || 0}</span>
                           </div>
                         </div>
-                        <p className="text-sm">Buổi còn lại: {(pkg.reservedCredits ?? 0) + (pkg.availableCredits ?? 0)}</p><Link className="inline-flex min-h-11 items-center text-sm font-semibold underline" to={'/pt-purchases/' + pkg.id}>Xem gói và lịch tập</Link>
+                        <p className="text-sm">Buổi còn lại: {(pkg.reservedCredits ?? 0) + (pkg.availableCredits ?? 0)}</p>
+                        {pkg.status === 'COMPLETED' && <p className="mt-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">Bạn đã hoàn tất khóa tập. Hãy chia sẻ đánh giá về Coach.</p>}
+                        <Link className="inline-flex min-h-11 items-center text-sm font-semibold underline" to={'/pt-purchases/' + pkg.id}>{pkg.status === 'COMPLETED' ? 'Xem kết quả và đánh giá Coach' : 'Xem gói và lịch tập'}</Link>
                         {pkg.expiresAt && (
                           <p className="text-xs text-text-muted flex items-center gap-1">
                             <Clock className="h-3 w-3" />

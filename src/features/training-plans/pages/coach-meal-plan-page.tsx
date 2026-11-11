@@ -12,20 +12,18 @@ import {
   Trash2,
   Edit3,
   Copy,
-  Eye,
   Search,
-  Flame,
   ListFilter,
   CheckCircle2,
   Clock,
 } from 'lucide-react'
 import { coachesService } from '@/features/coaches/services/coaches.service'
-import { foodLine, GOAL_TAG_LABEL, mealPlansService, type CalorieSuggestion, type FoodItem, type MealTemplate, type MealDayRequest } from '../services/meal-plans.service'
+import { foodLine, mealPlansService, type CalorieSuggestion, type FoodItem, type MealTemplate, type MealDayRequest } from '../services/meal-plans.service'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Select } from '@/shared/components/ui/input'
 import { Modal } from '@/shared/components/ui/modal'
 import { ConfirmDialog } from '@/shared/components/ui/confirm-dialog'
-import { StatusBadge } from '@/shared/components/ui/status-badge'
+import { Badge } from '@/features/workspace/ui'
 import { isAppApiError } from '@/shared/api/api-error'
 import { formatDate } from '@/shared/utils/date'
 import type { MemberSummary, MealPlan, MealPlanItem } from '@/shared/types/api'
@@ -51,6 +49,9 @@ interface MealFormItem {
 
 // Same names as the center templates, so a plan from a template and a hand-built one read alike.
 export const MEAL_TYPES = ['Bữa sáng', 'Bữa phụ sáng', 'Bữa trưa', 'Bữa phụ chiều', 'Bữa tối', 'Bữa phụ tối']
+function MealStatus({ status }: { status: string }) {
+  return <Badge tone={status === 'ACTIVE' ? 'success' : status === 'DRAFT' ? 'warning' : 'neutral'}>{status === 'ACTIVE' ? 'Đang áp dụng' : status === 'DRAFT' ? 'Bản nháp' : 'Đã lưu trữ'}</Badge>
+}
 const mealTypeOptions = (current?: string) =>
   [...MEAL_TYPES, ...(current && !MEAL_TYPES.includes(current) ? [current] : [])].map(v => ({ value: v, label: v }))
 
@@ -58,7 +59,7 @@ export function CoachMealPlanPage() {
   const [searchParams] = useSearchParams()
   const initialMemberId = searchParams.get('memberId') || ''
   // Navigation & View mode
-  const [activeTab, setActiveTab] = useState<'list' | 'builder'>(initialMemberId ? 'builder' : 'list')
+  const [activeTab, setActiveTab] = useState<'list' | 'builder'>(initialMemberId || searchParams.get('templateId') || searchParams.get('planId') ? 'builder' : 'list')
 
   // Real data states from BE
   const [members, setMembers] = useState<MemberSummary[]>([])
@@ -88,9 +89,10 @@ export function CoachMealPlanPage() {
   const [pendingDelete, setPendingDelete] = useState<number | null>(null)
   const [pendingArchive, setPendingArchive] = useState<MealPlan | null>(null)
   const [selectedDay, setSelectedDay] = useState<number>(1)
-  const [repeatWeekly, setRepeatWeekly] = useState(true)
+  const [repeatWeekly, setRepeatWeekly] = useState(false)
   const [daySettings, setDaySettings] = useState<Record<number, { calories: number; mealCount: number }>>({})
-  const [pendingSuggestion, setPendingSuggestion] = useState<MealDayRequest | null>(null)
+  const [aiScope, setAiScope] = useState('week')
+  const [pendingAiDays, setPendingAiDays] = useState<MealDayRequest[] | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const suggestionVersion = useRef(0)
   const mealsRef = useRef(meals)
@@ -113,9 +115,10 @@ export function CoachMealPlanPage() {
         return
       }
       setRemovedItemIds(prev => [...new Set([...prev, ...original.flatMap(m => m.id ? [m.id] : [])])])
+      setTitle(current => current.trim() ? current : days.length === 7 ? 'Thực đơn 7 ngày' : 'Thực đơn dinh dưỡng')
       if (days.length === 7) setRepeatWeekly(true)
       setMeals(prev => [...prev.filter(m => !dayNumbers.has(m.dayNumber)), ...generated.flatMap(d => d.meals.map(m => ({
-        dayNumber: d.dayNumber, mealType: m.mealType, foodName: m.foodName || m.mealType,
+        dayNumber: d.dayNumber, mealType: m.mealType, foodName: m.foodName || m.mealType, foodItemId: m.foodItemId, servings: m.servings,
         quantity: m.quantity || '', note: m.note || '', estimatedCalories: m.estimatedCalories || 0,
         proteinGrams: m.proteinGrams || 0, carbsGrams: m.carbsGrams || 0, fatGrams: m.fatGrams || 0, sortOrder: m.sortOrder || 0,
       })))])
@@ -128,15 +131,9 @@ export function CoachMealPlanPage() {
   }, [memberId, notes])
 
   useEffect(() => {
-    if (!pendingSuggestion) return
-    const timer = window.setTimeout(() => { void generateDays([pendingSuggestion]); setPendingSuggestion(null) }, 1200)
-    return () => window.clearTimeout(timer)
-  }, [pendingSuggestion, generateDays])
-
-  useEffect(() => {
     ++suggestionVersion.current
     setIsGenerating(false)
-    setPendingSuggestion(null)
+    setPendingAiDays(null)
     return () => { ++suggestionVersion.current }
   }, [memberId, notes])
 
@@ -167,7 +164,7 @@ export function CoachMealPlanPage() {
   // Center food library and templates (center + this Coach's own)
   const [foods, setFoods] = useState<FoodItem[]>([])
   const [templates, setTemplates] = useState<MealTemplate[]>([])
-  const [templateId, setTemplateId] = useState('')
+  const [templateId, setTemplateId] = useState(searchParams.get('templateId') ?? '')
   const [suggestion, setSuggestion] = useState<CalorieSuggestion | null>(null)
   const [saveTemplateFor, setSaveTemplateFor] = useState<MealPlan | null>(null)
   const [templateTitle, setTemplateTitle] = useState('')
@@ -223,9 +220,9 @@ export function CoachMealPlanPage() {
   // Get distinct day numbers in current builder meals
   const builderDays = useMemo(() => {
     if (repeatWeekly) return [1, 2, 3, 4, 5, 6, 7]
-    const days = Array.from(new Set(meals.map((m) => m.dayNumber))).sort((a, b) => a - b)
+    const days = Array.from(new Set([...meals.map((m) => m.dayNumber), selectedDay])).sort((a, b) => a - b)
     return days.length > 0 ? days : [1]
-  }, [meals, repeatWeekly])
+  }, [meals, repeatWeekly, selectedDay])
 
   // Current day meals in builder
   const currentDayMeals = useMemo(() => {
@@ -233,7 +230,7 @@ export function CoachMealPlanPage() {
   }, [meals, selectedDay])
 
   const settingsForDay = (day: number) => daySettings[day] || {
-    calories: meals.filter(m => m.dayNumber === day).reduce((n, m) => n + m.estimatedCalories, 0) || Number(targetCalories) || 2000,
+    calories: Number(targetCalories) || 2000,
     mealCount: new Set(meals.filter(m => m.dayNumber === day).map(m => m.mealType)).size || 3,
   }
 
@@ -242,7 +239,13 @@ export function CoachMealPlanPage() {
     setDaySettings(prev => ({ ...prev, [selectedDay]: next }))
     ++suggestionVersion.current
     setIsGenerating(false)
-    setPendingSuggestion(memberId && Number.isInteger(next.calories) && next.calories >= 800 && next.calories <= 6000 && next.mealCount >= 1 && next.mealCount <= 6 ? { dayNumber: selectedDay, ...next } : null)
+  }
+
+  const requestAiMeals = () => {
+    const days = (aiScope === 'week' ? [1,2,3,4,5,6,7] : [selectedDay]).map(dayNumber => ({ dayNumber, ...settingsForDay(dayNumber) }))
+    if (days.some(d => !Number.isInteger(d.calories) || d.calories < 800 || d.calories > 6000)) { setErrorMessage('Năng lượng mục tiêu cần từ 800 đến 6.000 kcal/ngày.'); return }
+    if (meals.some(m => days.some(d => d.dayNumber === m.dayNumber) || aiScope === 'week')) setPendingAiDays(days)
+    else void generateDays(days)
   }
 
   // Live macro calculation for selected day
@@ -392,9 +395,9 @@ export function CoachMealPlanPage() {
   const resetBuilder = () => {
     ++suggestionVersion.current
     setIsGenerating(false)
-    setPendingSuggestion(null)
+    setPendingAiDays(null)
     setDaySettings({})
-    setRepeatWeekly(true)
+    setRepeatWeekly(false)
     setEditingPlanId(null)
     setRemovedItemIds([])
     setTitle('')
@@ -414,15 +417,15 @@ export function CoachMealPlanPage() {
   }
 
   // Reopen a saved DRAFT in the builder; every change is written back to the same plan.
-  const openDraftForEdit = async (plan: MealPlan) => {
+  const openDraftForEdit = async (plan: MealPlan, loaded?: MealPlan) => {
     setIsSubmitting(true)
     setErrorMessage(null)
     try {
-      const full = await mealPlansService.getMealPlanById(plan.id)
+      const full = loaded ?? await mealPlansService.getMealPlanById(plan.id)
       const items = (full.mealPlanItemsMealPlanId || full.items || []) as MealPlanItem[]
       ++suggestionVersion.current
       setIsGenerating(false)
-      setPendingSuggestion(null)
+      setPendingAiDays(null)
       setDaySettings({})
       setRepeatWeekly(full.repeatWeekly ?? false)
       setDaySettings(full.daySettings ?? {})
@@ -714,6 +717,24 @@ export function CoachMealPlanPage() {
     return 'Hội viên'
   }
 
+  const requestedPlanId = searchParams.get('planId')
+  const requestedTemplateId = searchParams.get('templateId')
+  const openedTemplate = useRef('')
+  useEffect(() => {
+    if (!requestedTemplateId) { openedTemplate.current = ''; return }
+    if (openedTemplate.current === requestedTemplateId) return
+    openedTemplate.current = requestedTemplateId
+    setActiveTab('builder')
+    if (!mealsRef.current.length && !editingPlanId) setTemplateId(requestedTemplateId)
+    else setErrorMessage('Bạn đang soạn một thực đơn. Hãy lưu nháp trước khi dùng mẫu khác.')
+  }, [requestedTemplateId, editingPlanId])
+  const openedPlan = useRef('')
+  useEffect(() => {
+    if (!requestedPlanId || openedPlan.current === requestedPlanId) return
+    openedPlan.current = requestedPlanId
+    void mealPlansService.getMealPlanById(requestedPlanId).then(plan => plan.status === 'DRAFT' ? openDraftForEdit(plan, plan) : handleViewPlanDetail(plan)).catch(() => setErrorMessage('Không tải được thực đơn đã chọn. Vui lòng tải lại trang.'))
+  }, [requestedPlanId])
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
       {/* Action bar: the page is the "Thực đơn học viên" tab of Thực đơn. */}
@@ -721,7 +742,7 @@ export function CoachMealPlanPage() {
         <p className="text-xs text-text-muted">
           {activeTab === 'list'
             ? `${plans.length} thực đơn · ${plans.filter((p) => p.status === 'DRAFT').length} bản nháp chưa giao`
-            : editingPlanId ? 'Đang sửa bản nháp. Lưu xong mới giao cho học viên.' : 'Chọn học viên, chọn mẫu hoặc thêm món, rồi lưu và giao.'}
+            : editingPlanId ? 'Đang soạn thực đơn. Bạn có thể lưu nháp hoặc lưu và giao ngay.' : 'Chọn học viên, chọn mẫu hoặc thêm món, rồi lưu và giao.'}
         </p>
         <div className="flex items-center gap-2">
           {activeTab === 'list' ? (
@@ -789,9 +810,9 @@ export function CoachMealPlanPage() {
                 className="text-xs px-3 py-2 rounded-xl border border-border-subtle bg-bg-surface text-text-primary focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 <option value="ALL">Tất cả trạng thái</option>
-                <option value="ACTIVE">Đang hoạt động (Active)</option>
-                <option value="DRAFT">Bản nháp (Draft)</option>
-                <option value="ARCHIVED">Đã lưu trữ (Archived)</option>
+                <option value="ACTIVE">Đang áp dụng</option>
+                <option value="DRAFT">Bản nháp</option>
+                <option value="ARCHIVED">Đã lưu trữ</option>
               </select>
 
               <select
@@ -840,7 +861,7 @@ export function CoachMealPlanPage() {
                   <div className="space-y-2.5">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-bold text-text-primary text-sm line-clamp-1">{plan.title}</h3>
-                      <StatusBadge status={plan.status} />
+                      <MealStatus status={plan.status} />
                     </div>
 
                     <p className="text-xs text-text-muted flex items-center gap-1.5">
@@ -852,7 +873,7 @@ export function CoachMealPlanPage() {
 
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border-subtle text-xs">
                       <div className="p-2 rounded-xl bg-bg-surface-muted space-y-0.5">
-                        <span className="text-text-muted block text-xs">Mục tiêu Calo</span>
+                        <span className="text-text-muted block text-xs">Năng lượng mục tiêu</span>
                         <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
                           {plan.dailyCalorieTarget ? `${plan.dailyCalorieTarget} kcal/ngày` : 'Chưa đặt'}
                         </span>
@@ -864,54 +885,14 @@ export function CoachMealPlanPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 pt-3 border-t border-border-subtle">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleViewPlanDetail(plan)}
-                      className="gap-1 text-xs flex-1"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      <span>Chi tiết</span>
-                    </Button>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-3">
+                    <Button size="sm" variant={plan.status === 'DRAFT' ? 'primary' : 'outline'} disabled={isSubmitting || isGenerating} onClick={() => plan.status === 'DRAFT' ? void openDraftForEdit(plan) : void handleViewPlanDetail(plan)}>{plan.status === 'DRAFT' ? 'Soạn tiếp' : 'Xem thực đơn'}</Button>
+                    <details className="relative"><summary className="min-h-11 cursor-pointer py-2 text-sm text-text-muted">Thao tác khác</summary><div className="absolute right-0 z-10 mt-1 flex min-w-44 flex-col gap-1 rounded-lg border border-border-subtle bg-bg-surface p-2 shadow-sm">
+                      <Button size="sm" variant="ghost" onClick={() => void handleDuplicatePlan(plan)} disabled={isSubmitting}>{plan.status === 'ACTIVE' ? 'Tạo bản điều chỉnh' : 'Sao chép thực đơn'}</Button>
+                      {plan.status !== 'ARCHIVED' && <Button size="sm" variant="ghost" onClick={() => setPendingArchive(plan)} disabled={isSubmitting}>{plan.status === 'DRAFT' ? 'Lưu trữ bản nháp' : 'Ngừng áp dụng'}</Button>}
+                    </div></details>
+                  </div>
 
-                    {plan.status === 'ACTIVE' && <Button size="sm" variant="outline" onClick={() => void handleDuplicatePlan(plan)} disabled={isSubmitting || isGenerating}>Chỉnh lịch mới</Button>}
-                    {plan.status === 'DRAFT' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => void openDraftForEdit(plan)}
-                        disabled={isSubmitting || isGenerating || !!pendingSuggestion}
-                        className="gap-1 text-xs flex-1"
-                      >
-                        <Edit3 className="h-3.5 w-3.5" />
-                        <span>Sửa</span>
-                      </Button>
-                    )}
-                    {plan.status === 'DRAFT' && (
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={() => handleAssignExistingPlan(plan.id)}
-                        disabled={isSubmitting}
-                        className="gap-1 text-xs flex-1"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        <span>Giao học viên</span>
-                      </Button>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => void handleDuplicatePlan(plan)} disabled={isSubmitting} className="gap-1 text-xs flex-1">
-                      <Copy className="h-3.5 w-3.5" />
-                      <span>Nhân bản</span>
-                    </Button>
-                    {plan.status !== 'ARCHIVED' && (
-                      <Button size="sm" variant="ghost" onClick={() => setPendingArchive(plan)} disabled={isSubmitting} className="gap-1 text-xs flex-1">
-                        <span>Lưu trữ</span>
-                      </Button>
-                    )}
-                  </div>
                 </div>
               ))}
             </div>
@@ -924,119 +905,25 @@ export function CoachMealPlanPage() {
       {/* ========================================================================= */}
       {activeTab === 'builder' && (
         <div className="space-y-6">
-          {/* General Information Card */}
-          <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4">
-            <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
-              <Utensils className="h-4 w-4 text-primary" />
-              <span>1. Thông Tin Kế Hoạch Dinh Dưỡng</span>
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2">
-                <Input
-                  label="Tên kế hoạch bữa ăn"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ví dụ: Thực Đơn Tăng Cơ Nạc & Giảm Mỡ (High Protein 2200 kcal)..."
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <div className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <Select
-                      label="Bắt đầu từ mẫu (tùy chọn)"
-                      value={templateId}
-                      onChange={(e) => setTemplateId(e.target.value)}
-                      options={[{ value: '', label: '— Chọn mẫu thực đơn —' }, ...templates.map(t => ({
-                        value: t.id,
-                        label: `${t.scope === 'CENTER' ? 'Trung tâm' : 'Của tôi'} · ${t.title} · ${t.dayCount} ngày${t.goalTag && GOAL_TAG_LABEL[t.goalTag] ? ` · ${GOAL_TAG_LABEL[t.goalTag]}` : ''}`,
-                      }))]}
-                    />
-                  </div>
-                  <Button type="button" variant="outline" onClick={() => void applyTemplate()} disabled={!templateId || isSubmitting}>Áp dụng mẫu</Button>
-                </div>
-                <p className="mt-1 text-xs text-text-muted">Chọn học viên và kcal mục tiêu trước: hệ thống tạo bản nháp và co giãn khẩu phần theo kcal đó. Coach chỉnh tiếp rồi mới giao.</p>
-              </div>
-
+          <section className="rounded-xl border border-border-subtle bg-bg-surface p-5 space-y-4">
+            <h2 className="text-base font-semibold text-text-primary">Thông tin thực đơn</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select label="Học viên" disabled={!!editingPlanId || isSubmitting || isGenerating} value={memberId} onChange={e => setMemberId(e.target.value)} options={[{ value: '', label: 'Chọn học viên' }, ...members.map(m => ({ value: m.id, label: getMemberDisplayName(m.id) }))]} />
+              <Input label="Tên thực đơn" required value={title} onChange={e => setTitle(e.target.value)} placeholder="Ví dụ: Thực đơn tăng cơ tuần 1" />
               <div>
-                <Input
-                  label="Mục tiêu Calorie hàng ngày (kcal/ngày)"
-                  type="number"
-                  required
-                  value={targetCalories}
-                  onChange={(e) => setTargetCalories(e.target.value)}
-                  placeholder="2000"
-                />
-                {memberId && suggestion?.suggestion && (
-                  <div className="mt-1.5 flex flex-wrap gap-1.5 text-xs">
-                    <span className="text-text-muted">Gợi ý:</span>
-                    {([['Giảm mỡ', suggestion.suggestion.fatLoss], ['Duy trì', suggestion.suggestion.maintain], ['Tăng cơ', suggestion.suggestion.muscleGain]] as const).map(([label, kcal]) => (
-                      <button key={label} type="button" onClick={() => setTargetCalories(String(kcal))} className="rounded-md border border-border-subtle px-1.5 py-0.5 hover:border-primary hover:text-primary cursor-pointer">
-                        {label} {kcal.toLocaleString('vi-VN')}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {memberId && suggestion && !suggestion.suggestion && suggestion.missing.length > 0 && (
-                  <p className="mt-1 text-xs text-text-muted">Chưa gợi ý được kcal: thiếu {suggestion.missing.join(', ')}.</p>
-                )}
+                <Input label="Năng lượng mục tiêu (kcal/ngày)" type="number" min={800} max={6000} required value={targetCalories} onChange={e => setTargetCalories(e.target.value)} />
+                {memberId && suggestion?.suggestion && <details className="mt-2"><summary className="cursor-pointer text-sm text-text-muted">Gợi ý theo hồ sơ học viên</summary><div className="mt-2 flex flex-wrap gap-2">{([['Giảm mỡ', suggestion.suggestion.fatLoss], ['Duy trì', suggestion.suggestion.maintain], ['Tăng cơ', suggestion.suggestion.muscleGain]] as const).map(([label, kcal]) => <button key={label} type="button" onClick={() => setTargetCalories(String(kcal))} className="min-h-11 rounded-lg border border-border-subtle px-3 text-sm">{label} · {kcal.toLocaleString('vi-VN')} kcal</button>)}</div></details>}
               </div>
-
-              <div className="md:col-span-2">
-                <Select
-                  label="Học viên nhận thực đơn (Bắt buộc)"
-                  disabled={!!editingPlanId}
-                  value={memberId}
-                  onChange={(e) => setMemberId(e.target.value)}
-                  options={[
-                    { value: '', label: '-- Chọn học viên của bạn --' },
-                    ...members.map((m: any) => ({
-                      value: m.id,
-                      label: `${m.fullName || m.user?.fullName || 'Hội viên'} (${m.memberCode || 'HV'})`,
-                    })),
-                  ]}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  label="Ngày bắt đầu"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-                <Input
-                  label="Ngày kết thúc (tùy chọn)"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
+              <Input label="Ngày áp dụng" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
             </div>
+            <Input label="Sở thích và lưu ý ăn uống" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Ví dụ: Không ăn tôm, tránh sữa, ăn trưa tại văn phòng" />
+            <details><summary className="cursor-pointer text-sm text-text-muted">Thời gian áp dụng và cách lặp lại</summary><div className="mt-3 space-y-3"><Input label="Ngày kết thúc (không bắt buộc)" type="date" min={startDate} value={endDate} onChange={e => setEndDate(e.target.value)} /><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={repeatWeekly} onChange={e => setRepeatWeekly(e.target.checked)} />Lặp lại thực đơn 7 ngày hằng tuần</label><p className="text-xs text-text-muted">Ngày 1 tính từ ngày áp dụng. Thực đơn lặp hằng tuần cần có đủ 7 ngày trước khi giao.</p></div></details>
+            {!editingPlanId && !meals.length && <details open={!!requestedTemplateId}><summary className="cursor-pointer text-sm font-medium">Dùng mẫu thực đơn có sẵn</summary><div className="mt-3 flex flex-wrap items-end gap-3"><div className="min-w-0 flex-1"><Select label="Mẫu thực đơn" value={templateId} onChange={e => setTemplateId(e.target.value)} options={[{ value: '', label: 'Chọn mẫu' }, ...templates.filter(t => t.isActive).map(t => ({ value: t.id, label: `${t.title} · ${t.dayCount} ngày` }))]} /></div><Button variant="outline" onClick={() => void applyTemplate()} disabled={!memberId || !templateId || isSubmitting}>Dùng mẫu này</Button></div><p className="mt-2 text-xs text-text-muted">Khẩu phần được điều chỉnh theo năng lượng mục tiêu của học viên.</p></details>}
+          </section>
 
-            <div className="pt-2">
-              <Input
-                label="Sở thích, món kiêng / dị ứng và ghi chú sau khi trao đổi"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ví dụ: Thích món Việt, không ăn tôm, tránh sữa; ăn trưa ở văn phòng…"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-subtle p-4">
-            <div>
-              <p className="text-sm font-semibold">{repeatWeekly ? 'Lịch 7 ngày · lặp lại hằng tuần' : 'Lịch theo ngày'}</p>
-              <p className="text-xs text-text-muted">Ngày 1 tính từ ngày bắt đầu. Coach duyệt món trước khi giao. Khi giao lịch mới, lịch cũ kết thúc vào thời điểm áp dụng.</p>
-            </div>
-            <Button variant="outline" disabled={isGenerating || isSubmitting || !memberId} onClick={() => {
-              setPendingSuggestion(null)
-              const days = [1,2,3,4,5,6,7].map(dayNumber => ({ dayNumber, ...settingsForDay(dayNumber) }))
-              setDaySettings(Object.fromEntries(days.map(d => [d.dayNumber, { calories: d.calories, mealCount: d.mealCount }])))
-              void generateDays(days)
-            }}>{isGenerating ? 'AI đang lên thực đơn…' : 'AI lên thực đơn cả tuần'}</Button>
+          <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl border border-border-subtle p-4">
+            <div><p className="text-sm font-semibold">Soạn món ăn và khẩu phần bằng AI</p><p className="mt-1 text-sm text-text-muted">Kiểm tra và điều chỉnh trước khi giao cho học viên.</p></div>
+            <div className="flex flex-wrap items-end gap-3"><Select label="Phạm vi soạn" value={aiScope} onChange={e => setAiScope(e.target.value)} disabled={isGenerating || isSubmitting} options={[{ value: 'week', label: 'Cả tuần (7 ngày)' }, { value: 'day', label: `Ngày ${selectedDay}` }]} /><Button variant="primary" disabled={isGenerating || isSubmitting || !memberId} onClick={requestAiMeals}>{isGenerating ? 'AI đang soạn…' : 'Soạn bằng AI'}</Button></div>
           </div>
 
           {/* Day Navigation & Action Bar */}
@@ -1045,39 +932,22 @@ export function CoachMealPlanPage() {
               <div>
                 <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-emerald-500" />
-                  <span>2. Chi Tiết Thực Đơn Theo Ngày</span>
+                  <span>Món ăn theo ngày</span>
                 </h2>
                 <p className="text-xs text-text-muted mt-0.5">
-                  Chọn ngày để chỉnh sửa các món ăn hoặc nhân bản nhanh thực đơn sang các ngày khác trong tuần.
+                  Chọn ngày để xem và điều chỉnh món ăn.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsDuplicateModalOpen(true)}
-                  className="gap-1.5 text-xs"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  <span>Nhân bản Ngày {selectedDay}</span>
-                </Button>
+              <details><summary className="cursor-pointer text-sm text-text-muted">Tùy chọn ngày</summary><div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" disabled={!currentDayMeals.length || isGenerating} onClick={() => setIsDuplicateModalOpen(true)}>Sao chép ngày {selectedDay}</Button>
+                {!repeatWeekly && <Button size="sm" variant="outline" onClick={handleAddNewDay}>Thêm ngày</Button>}
+              </div></details>
 
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={repeatWeekly}
-                  onClick={handleAddNewDay}
-                  className="gap-1.5 text-xs"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Thêm ngày mới</span>
-                </Button>
-              </div>
             </div>
 
             {/* Day Tabs */}
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+            <div className="flex flex-wrap gap-2 pb-2">
               {builderDays.map((d) => {
                 const count = meals.filter((m) => m.dayNumber === d).length
                 const isSelected = selectedDay === d
@@ -1104,82 +974,25 @@ export function CoachMealPlanPage() {
               })}
             </div>
 
-            <div className="space-y-3 border-b border-border-subtle pb-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 items-end gap-3">
-                <Input label={`Calo ngày ${selectedDay} (kcal)`} type="number" min={800} max={6000} step={1} value={settingsForDay(selectedDay).calories} onChange={e => changeDaySettings('calories', Number(e.target.value))} />
-                <Select label="Số bữa trong ngày" value={String(settingsForDay(selectedDay).mealCount)} onChange={e => changeDaySettings('mealCount', Number(e.target.value))} options={[1,2,3,4,5,6].map(n => ({ value: String(n), label: `${n} bữa` }))} />
-                <Button variant="outline" disabled={isGenerating || isSubmitting || !memberId} onClick={() => {
-                  setPendingSuggestion(null)
-                  void generateDays([{ dayNumber: selectedDay, ...settingsForDay(selectedDay) }])
-                }}>{isGenerating ? 'AI đang gợi ý…' : 'AI gợi ý lại ngày này'}</Button>
-              </div>
-              <p className="text-xs text-text-muted" role="status">{isGenerating ? 'Đang chọn món và tính khẩu phần theo thư viện…' : 'Đổi calo hoặc số bữa để AI tự điền lại ngày này sau khi nhập xong. Có thể sửa mô tả bên dưới; calo là ước tính và cần kiểm tra lại nếu đổi món.'}</p>
-            </div>
+            <details className="border-b border-border-subtle pb-4"><summary className="cursor-pointer text-sm text-text-muted">Điều chỉnh năng lượng và số bữa của ngày {selectedDay}</summary>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2"><Input label={`Năng lượng ngày ${selectedDay} (kcal)`} type="number" min={800} max={6000} step={1} value={settingsForDay(selectedDay).calories} onChange={e => changeDaySettings('calories', Number(e.target.value))} /><Select label="Số bữa trong ngày" value={String(settingsForDay(selectedDay).mealCount)} onChange={e => changeDaySettings('mealCount', Number(e.target.value))} options={[1,2,3,4,5,6].map(n => ({ value: String(n), label: `${n} bữa` }))} /></div>
+              <p className="mt-2 text-xs text-text-muted">Thông số này dùng khi bạn bấm “Soạn bằng AI”. Món đang có được giữ nguyên khi đổi thông số.</p>
+            </details>
 
-            {/* Live Macro Distribution Bar */}
-            <div className="rounded-xl border border-border-subtle bg-bg-surface-muted p-4 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Flame className="h-4 w-4 text-amber-500" />
-                  <span className="text-xs font-bold text-text-primary">Tổng Năng Lượng Ngày {selectedDay}:</span>
-                  <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
-                    {dayMacroSummary.totalCal} kcal
-                  </span>
-                  <span className="text-xs text-text-muted">/ mục tiêu {dayMacroSummary.target} kcal</span>
-                </div>
-
-                <span className="text-xs text-text-muted">{dayMacroSummary.percentCal}% mục tiêu ngày</span>
-              </div>
-
-              {/* Progress bar */}
-              <div className="w-full bg-border-subtle h-2 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-colors duration-300 ${
-                    dayMacroSummary.percentCal > 105
-                      ? 'bg-danger'
-                      : dayMacroSummary.percentCal >= 90
-                      ? 'bg-emerald-500'
-                      : 'bg-amber-500'
-                  }`}
-                  style={{ width: `${dayMacroSummary.percentCal}%` }}
-                />
-              </div>
-
-              {/* Macro Pills */}
-              <div className="grid grid-cols-3 gap-3 pt-1">
-                <div className="p-2.5 rounded-lg bg-bg-surface border border-border-subtle flex flex-col">
-                  <span className="text-xs text-text-muted">Chất đạm (Protein)</span>
-                  <span className="text-xs font-extrabold text-primary">{dayMacroSummary.totalP}g</span>
-                  <span className="text-xs text-text-muted">~{dayMacroSummary.totalP * 4} kcal</span>
-                </div>
-
-                <div className="p-2.5 rounded-lg bg-bg-surface border border-border-subtle flex flex-col">
-                  <span className="text-xs text-text-muted">Tinh bột (Carbs)</span>
-                  <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400">
-                    {dayMacroSummary.totalC}g
-                  </span>
-                  <span className="text-xs text-text-muted">~{dayMacroSummary.totalC * 4} kcal</span>
-                </div>
-
-                <div className="p-2.5 rounded-lg bg-bg-surface border border-border-subtle flex flex-col">
-                  <span className="text-xs text-text-muted">Chất béo (Fat)</span>
-                  <span className="text-xs font-extrabold text-rose-600 dark:text-rose-400">
-                    {dayMacroSummary.totalF}g
-                  </span>
-                  <span className="text-xs text-text-muted">~{dayMacroSummary.totalF * 9} kcal</span>
-                </div>
-              </div>
+            <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 rounded-lg bg-bg-surface-muted p-3 text-sm">
+              <p className="font-medium">Ngày {selectedDay}: {dayMacroSummary.totalCal} / {dayMacroSummary.target} kcal</p>
+              <p className="text-text-muted">Đạm {dayMacroSummary.totalP} g · Tinh bột {dayMacroSummary.totalC} g · Chất béo {dayMacroSummary.totalF} g</p>
             </div>
 
             {/* Meals in Selected Day */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-text-primary ">
-                  Danh Sách Món Ăn Trong Ngày {selectedDay} ({currentDayMeals.length})
+                  Món ăn ngày {selectedDay} ({currentDayMeals.length})
                 </h3>
                 <Button size="sm" variant="primary" onClick={handleOpenAddMeal} className="gap-1 text-xs">
                   <Plus className="h-3.5 w-3.5" />
-                  <span>Thêm món vào Ngày {selectedDay}</span>
+                  <span>Thêm món cho ngày {selectedDay}</span>
                 </Button>
               </div>
 
@@ -1213,6 +1026,7 @@ export function CoachMealPlanPage() {
                               {meal.estimatedCalories} kcal
                             </span>
                             <button
+                              aria-label={`Sửa món ${meal.foodName}`}
                               onClick={() => handleOpenEditMeal(indexInAll)}
                               className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-bg-surface cursor-pointer"
                               title="Chỉnh sửa món"
@@ -1229,9 +1043,7 @@ export function CoachMealPlanPage() {
                           </div>
                         </div>
 
-                        <label className="block text-xs text-text-muted">Mô tả đồ ăn · {meal.mealType}
-                          <textarea rows={3} maxLength={5000} className="mt-1 w-full rounded-lg border border-border-subtle bg-bg-surface p-3 text-sm text-text-primary" value={meal.note ?? ''} onChange={e => setMeals(prev => prev.map((m, i) => i === indexInAll ? { ...m, note: e.target.value, dirty: !!m.id } : m))} placeholder="Nhập món ăn, khẩu phần và cách dùng…" />
-                        </label>
+                        {meal.note && <p className="whitespace-pre-wrap text-sm text-text-primary">{meal.note}</p>}
                         {meal.quantity && (
                           <p className="text-xs text-text-muted">
                             Định lượng: <span className="text-text-primary">{meal.quantity}</span>
@@ -1240,15 +1052,14 @@ export function CoachMealPlanPage() {
 
                         <div className="flex flex-wrap items-center gap-4 text-xs text-text-muted border-t border-border-subtle pt-2">
                           <span>
-                            Protein: <strong className="text-primary">{meal.proteinGrams}g</strong>
+                            Đạm: <strong className="text-primary">{meal.proteinGrams}g</strong>
                           </span>
                           <span>
-                            Carbs: <strong className="text-amber-600 dark:text-amber-400">{meal.carbsGrams}g</strong>
+                            Tinh bột: <strong className="text-amber-600 dark:text-amber-400">{meal.carbsGrams}g</strong>
                           </span>
                           <span>
-                            Fat: <strong className="text-rose-600 dark:text-rose-400">{meal.fatGrams}g</strong>
+                            Chất béo: <strong className="text-rose-600 dark:text-rose-400">{meal.fatGrams}g</strong>
                           </span>
-                          {meal.note && <span className="italic text-text-muted/80">Lưu ý: {meal.note}</span>}
                         </div>
                       </div>
                     )
@@ -1259,37 +1070,29 @@ export function CoachMealPlanPage() {
 
             {/* Bottom Actions Bar */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-border-subtle">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setActiveTab('list')}
-                disabled={isSubmitting}
-                className="w-full sm:w-auto"
-              >
-                Quay lại danh sách
-              </Button>
+              <p className="text-sm text-text-muted">Học viên chỉ nhận được thực đơn sau khi bạn giao.</p>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => handleSubmitMealPlan(false)}
-                  disabled={isSubmitting || isGenerating || !!pendingSuggestion || !memberId || !meals.length}
+                  disabled={isSubmitting || isGenerating || !!pendingAiDays || !memberId || !meals.length}
                   className="w-full sm:w-auto gap-1.5"
                 >
                   {isSubmitting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
-                  <span>Lưu Bản Nháp</span>
+                  <span>Lưu nháp</span>
                 </Button>
 
                 <Button
                   type="button"
                   variant="primary"
                   onClick={() => handleSubmitMealPlan(true)}
-                  disabled={isSubmitting || isGenerating || !!pendingSuggestion || !memberId || !meals.length}
+                  disabled={isSubmitting || isGenerating || !!pendingAiDays || !memberId || !meals.length}
                   className="w-full sm:w-auto gap-1.5"
                 >
                   {isSubmitting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                  <span>Lưu & Giao Cho Học Viên</span>
+                  <span>Lưu và giao thực đơn</span>
                 </Button>
               </div>
             </div>
@@ -1303,13 +1106,13 @@ export function CoachMealPlanPage() {
       <Modal
         isOpen={isMealModalOpen}
         onClose={() => setIsMealModalOpen(false)}
-        title={editingMealIndex !== null ? 'Chỉnh Sửa Món Ăn' : `Thêm Món Ăn - Ngày ${selectedDay}`}
+        title={editingMealIndex !== null ? 'Sửa món ăn' : `Thêm món ăn · ngày ${selectedDay}`}
         description="Chọn món trong thư viện để hệ thống tự tính dinh dưỡng theo khẩu phần, hoặc tự nhập món ngoài thư viện."
         maxWidth="lg"
       >
         <form onSubmit={handleSaveMealItem} className="space-y-4">
           <Select
-            label="Loại bữa ăn"
+            label="Bữa ăn"
             value={mealFormType}
             onChange={(e) => setMealFormType(e.target.value)}
             options={mealTypeOptions(mealFormType)}
@@ -1333,8 +1136,8 @@ export function CoachMealPlanPage() {
             />
           </div>
 
-          <Input
-            label="Tên món ăn & nguyên liệu"
+          {!mealFormFoodId ? <><Input
+            label="Tên món và nguyên liệu"
             required
             value={mealFormFood}
             disabled={!!mealFormFoodId}
@@ -1343,7 +1146,7 @@ export function CoachMealPlanPage() {
           />
 
           <Input
-            label="Khẩu phần / Định lượng"
+            label="Khẩu phần"
             value={mealFormQuantity}
             disabled={!!mealFormFoodId}
             onChange={(e) => setMealFormQuantity(e.target.value)}
@@ -1360,42 +1163,43 @@ export function CoachMealPlanPage() {
               onChange={(e) => setMealFormCalories(e.target.value)}
             />
             <Input
-              label="Đạm (Protein g)"
+              label="Đạm (g)"
               type="number"
+              min={0}
+              step="any"
               disabled={!!mealFormFoodId}
               value={mealFormProtein}
               onChange={(e) => setMealFormProtein(e.target.value)}
             />
             <Input
-              label="Tinh bột (Carb g)"
+              label="Tinh bột (g)"
               type="number"
+              min={0}
+              step="any"
               disabled={!!mealFormFoodId}
               value={mealFormCarbs}
               onChange={(e) => setMealFormCarbs(e.target.value)}
             />
             <Input
-              label="Béo (Fat g)"
+              label="Chất béo (g)"
               type="number"
+              min={0}
+              step="any"
               disabled={!!mealFormFoodId}
               value={mealFormFat}
               onChange={(e) => setMealFormFat(e.target.value)}
             />
           </div>
-          {mealFormFoodId && <p className="text-xs text-text-muted">Dinh dưỡng tính từ thư viện × số khẩu phần. Muốn sửa số liệu tay, chọn “Món ngoài thư viện”.</p>}
+          </> : <div className="space-y-2 rounded-lg bg-bg-surface-muted p-3 text-sm"><p className="font-medium">{mealFormFood} · {mealFormQuantity}</p><p>{mealFormCalories} kcal · Đạm {mealFormProtein} g · Tinh bột {mealFormCarbs} g · Chất béo {mealFormFat} g</p><p className="text-xs text-text-muted">Dinh dưỡng được tính theo món ăn và số khẩu phần đã chọn.</p></div>}
 
-          <Input
-            label="Ghi chú chế biến / Cách dùng"
-            value={mealFormNote}
-            onChange={(e) => setMealFormNote(e.target.value)}
-            placeholder="Ví dụ: Hạn chế nêm muối, uống cùng 300ml nước ấm..."
-          />
+          <label className="block text-sm font-medium">Ghi chú món ăn<textarea className="mt-2 w-full rounded-lg border border-border-subtle bg-bg-surface p-3 text-sm" rows={3} maxLength={5000} value={mealFormNote} onChange={e => setMealFormNote(e.target.value)} placeholder="Khẩu phần, cách chế biến hoặc lưu ý cho học viên" /></label>
 
           <div className="flex justify-end gap-2 pt-4 border-t border-border-subtle">
             <Button type="button" variant="outline" onClick={() => setIsMealModalOpen(false)}>
               Hủy
             </Button>
             <Button type="submit" variant="primary" disabled={!mealFormFood.trim()}>
-              {editingMealIndex !== null ? 'Lưu Thay Đổi' : 'Thêm Vào Bữa Ăn'}
+              {editingMealIndex !== null ? 'Lưu món ăn' : 'Thêm món ăn'}
             </Button>
           </div>
         </form>
@@ -1407,8 +1211,8 @@ export function CoachMealPlanPage() {
       <Modal
         isOpen={isDuplicateModalOpen}
         onClose={() => setIsDuplicateModalOpen(false)}
-        title={`Nhân Bản Thực Đơn Ngày ${selectedDay}`}
-        description="Sao chép toàn bộ món ăn và macro của ngày này sang một ngày khác."
+        title={`Sao chép thực đơn ngày ${selectedDay}`}
+        description="Sao chép món ăn và khẩu phần sang ngày khác."
         maxWidth="sm"
       >
         <div className="space-y-4">
@@ -1418,7 +1222,7 @@ export function CoachMealPlanPage() {
           </p>
 
           <Input
-            label="Ngày đích (Số thứ tự ngày)"
+            label="Sao chép sang ngày"
             type="number"
             min={1}
             max={repeatWeekly ? 7 : 365}
@@ -1431,7 +1235,7 @@ export function CoachMealPlanPage() {
               Hủy
             </Button>
             <Button variant="primary" onClick={handleDuplicateDay} disabled={targetDuplicateDay === selectedDay}>
-              Tiến Hành Sao Chép
+              Sao chép
             </Button>
           </div>
         </div>
@@ -1443,7 +1247,7 @@ export function CoachMealPlanPage() {
       <Modal
         isOpen={!!viewingPlan}
         onClose={() => setViewingPlan(null)}
-        title={viewingPlan?.title || 'Chi Tiết Thực Đơn Dinh Dưỡng'}
+        title={viewingPlan?.title || 'Chi tiết thực đơn'}
         description={`Học viên: ${viewingPlan?.member?.fullName || viewingPlan?.member?.user?.fullName || (viewingPlan ? getMemberDisplayName(viewingPlan.memberId) : '')}`}
         maxWidth="xl"
       >
@@ -1453,7 +1257,7 @@ export function CoachMealPlanPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-bg-surface-muted border border-border-subtle text-xs">
               <div>
                 <span className="text-text-muted block text-xs">Trạng thái:</span>
-                <StatusBadge status={viewingPlan.status} />
+                <MealStatus status={viewingPlan.status} />
               </div>
               <div>
                 <span className="text-text-muted block text-xs">Mục tiêu calo:</span>
@@ -1510,15 +1314,15 @@ export function CoachMealPlanPage() {
                     </span>
                   </div>
                   <div>
-                    <span className="text-xs text-text-muted block">Protein</span>
+                    <span className="text-xs text-text-muted block">Đạm</span>
                     <span className="font-bold text-primary">{viewingDayMacro.p}g</span>
                   </div>
                   <div>
-                    <span className="text-xs text-text-muted block">Carbs</span>
+                    <span className="text-xs text-text-muted block">Tinh bột</span>
                     <span className="font-bold text-amber-600 dark:text-amber-400">{viewingDayMacro.c}g</span>
                   </div>
                   <div>
-                    <span className="text-xs text-text-muted block">Fat</span>
+                    <span className="text-xs text-text-muted block">Chất béo</span>
                     <span className="font-bold text-rose-600 dark:text-rose-400">{viewingDayMacro.f}g</span>
                   </div>
                 </div>
@@ -1566,7 +1370,7 @@ export function CoachMealPlanPage() {
                   <span>Lưu thành mẫu</span>
                 </Button>
               )}
-              {viewingPlan.status === 'ACTIVE' && <Button variant="outline" onClick={() => void handleDuplicatePlan(viewingPlan)} disabled={isSubmitting || isGenerating}>Chỉnh lịch ăn mới</Button>}
+              {viewingPlan.status === 'ACTIVE' && <Button variant="outline" onClick={() => void handleDuplicatePlan(viewingPlan)} disabled={isSubmitting || isGenerating}>Tạo bản điều chỉnh</Button>}
               {viewingPlan.status === 'DRAFT' && (
                 <Button variant="outline" onClick={() => void openDraftForEdit(viewingPlan)} disabled={isSubmitting} className="gap-1.5">
                   <Edit3 className="h-4 w-4" />
@@ -1581,7 +1385,7 @@ export function CoachMealPlanPage() {
                   className="gap-1.5"
                 >
                   <CheckCircle2 className="h-4 w-4" />
-                  <span>Giao Ngay Cho Học Viên</span>
+                  <span>Giao thực đơn</span>
                 </Button>
               )}
             </div>
@@ -1605,6 +1409,7 @@ export function CoachMealPlanPage() {
         </div>
       </Modal>
 
+      <ConfirmDialog isOpen={!!pendingAiDays} title="Soạn lại thực đơn bằng AI?" message={pendingAiDays?.length === 7 ? 'Toàn bộ món đang soạn sẽ được thay bằng thực đơn mới gồm 7 ngày, lặp lại hằng tuần.' : 'Món ăn của ngày đã chọn sẽ được thay bằng gợi ý mới. Các ngày khác được giữ nguyên.'} confirmLabel="Soạn lại" onCancel={() => setPendingAiDays(null)} onConfirm={() => { const days = pendingAiDays; setPendingAiDays(null); if (days) void generateDays(days) }} />
       <ConfirmDialog
         isOpen={pendingDelete !== null}
         title="Xóa món này?"
@@ -1616,9 +1421,9 @@ export function CoachMealPlanPage() {
       />
       <ConfirmDialog
         isOpen={!!pendingArchive}
-        title="Lưu trữ thực đơn?"
-        message={<>“{pendingArchive?.title}” sẽ không còn là thực đơn hiện tại của học viên. Bạn vẫn xem và nhân bản được sau này.</>}
-        confirmLabel="Lưu trữ"
+        title={pendingArchive?.status === 'DRAFT' ? 'Lưu trữ bản nháp?' : 'Ngừng áp dụng thực đơn?'}
+        message={<>“{pendingArchive?.title}” {pendingArchive?.status === 'DRAFT' ? 'sẽ được chuyển vào danh sách đã lưu trữ.' : 'sẽ không còn là thực đơn hiện tại của học viên.'} Bạn vẫn có thể xem và sao chép sau này.</>}
+        confirmLabel={pendingArchive?.status === 'DRAFT' ? 'Lưu trữ bản nháp' : 'Ngừng áp dụng'}
         isLoading={isSubmitting}
         onCancel={() => setPendingArchive(null)}
         onConfirm={() => pendingArchive && void handleArchivePlan(pendingArchive)}

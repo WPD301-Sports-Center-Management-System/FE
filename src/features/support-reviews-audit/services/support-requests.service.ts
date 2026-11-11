@@ -62,7 +62,7 @@ export const supportRequestsService = {
   /**
    * [6] POST /support-requests - Member creates a new support ticket
    */
-  async createSupportRequest(payload: { subject: string; message: string }): Promise<SupportRequest> {
+  async createSupportRequest(payload: { subject: string; message: string; category?: 'GENERAL' | 'COACH' | 'SCHEDULE' | 'PAYMENT'; ptPurchaseId?: string }): Promise<SupportRequest> {
     const res = await apiClient.post<ApiSuccess<SupportRequest>>('/support-requests', payload)
     const data = res as unknown as ApiSuccess<SupportRequest>
     return data.data ?? (data as unknown as SupportRequest)

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Modal } from '@/shared/components/ui/modal'
+import { DeleteDialog } from '@/shared/components/ui/delete-dialog'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import { Async, Badge, Btn, Card, EmptyBox, Field, InlineError, PageHeader, inputCls, useFlash } from '@/features/workspace/ui'
 import { fmtMoney } from '@/features/workspace/utils'
@@ -10,6 +11,7 @@ export function MgrPtPackagesPage() {
   const options = useLoad(() => mgrApi.options())
   const [editing, setEditing] = useState<PackageOption | 'new' | null>(null)
   const [q, setQ] = useState('')
+  const [deleting, setDeleting] = useState<PackageOption | null>(null)
   const { flash, node } = useFlash()
   return <div className="space-y-5">
     <PageHeader title="Gói PT trung tâm" subtitle="Coach tự động bán gói khi đạt bậc tối thiểu. Giá bán theo bậc Coach." actions={<Btn variant="primary" onClick={() => setEditing('new')}>Tạo gói PT</Btn>} />{node}
@@ -20,11 +22,14 @@ export function MgrPtPackagesPage() {
           <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold">{p.name}</p><p className="mt-1 text-sm text-text-muted">Từ bậc {tierLabels[p.minCoachTier ?? 'STANDARD']} · {p.sessionCount} buổi · {p.durationMinutes} phút/buổi</p></div><Badge tone={p.isActive ? 'success' : 'neutral'}>{p.isActive ? 'Đang mở bán' : 'Ngừng bán'}</Badge></div>
           {/* Three equal price columns share the full row: 3 × 1fr + 2 × gap. */}
           <dl className="grid gap-3 rounded-lg bg-bg-surface-muted p-4 sm:grid-cols-3">{coachTiers.map(tier => <div key={tier} className="flex items-center justify-between gap-3 sm:block sm:text-right"><dt className="text-sm text-text-muted">{tierLabels[tier]}</dt><dd className="mt-1 font-semibold tabular-nums">{coachTiers.indexOf(tier) < coachTiers.indexOf(p.minCoachTier ?? 'STANDARD') ? '—' : p.prices?.[tier] != null ? fmtMoney(p.prices[tier]) : 'Chưa đặt giá'}</dd></div>)}</dl>
-          <div className="flex flex-wrap justify-end gap-2"><Btn size="sm" onClick={() => setEditing(p)}>Sửa gói và giá</Btn><ToggleSale o={p} onDone={m => { flash(m); void options.reload() }} /></div>
+          <div className="flex flex-wrap justify-end gap-2"><Btn size="sm" onClick={() => setEditing(p)}>Sửa gói và giá</Btn><ToggleSale o={p} onDone={m => { flash(m); void options.reload() }} /><Btn size="sm" variant="danger" aria-label={`Xóa gói ${p.name}`} onClick={() => setDeleting(p)}>Xóa</Btn></div>
         </li>)}</ul>
       }}</Async>
     </Card>
     <p className="text-sm text-text-muted">Thay đổi giá chỉ áp dụng cho đơn mới. Đơn đã giữ lịch hoặc đã mua giữ nguyên giá và bậc Coach.</p>
+    <DeleteDialog name={deleting?.name ?? null} noun="gói PT" onClose={() => setDeleting(null)}
+      impact="Gói sẽ biến mất khỏi bảng giá và danh sách bán của mọi Coach. Đơn đã mua giữ nguyên giá, bậc Coach và lịch sử. Gói còn đơn chờ thanh toán, đang tập hoặc tạm dừng không xóa được; khi đó hãy chọn Ngừng bán."
+      onConfirm={async () => { if (!deleting) return; await mgrApi.deleteOption(deleting.id); flash(`Đã xóa gói “${deleting.name}”.`); await options.reload() }} />
     {editing && <OptionModal option={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)} onDone={m => { setEditing(null); flash(m); void options.reload() }} />}
   </div>
 }

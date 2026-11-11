@@ -1,4 +1,4 @@
-import { walletApi } from '@/features/fixed-pt/wallet-api'
+import { isOpenWithdrawal, walletApi } from '@/features/fixed-pt/wallet-api'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, BarChart3, CalendarDays, ClipboardCheck, Download, FileSpreadsheet, LifeBuoy, Scale, TrendingDown, TrendingUp, Users, Wallet } from 'lucide-react'
@@ -56,7 +56,7 @@ export function MgrHomePage() {
     return { labels: hours.map(h => `${h}h`), wd, we, total: recent.length, perDay: recent.length / 28, topIndex: topWd, top: hours[topWd]!, topWe: hours[topWe]!, peakWd: wd[topWd]!, peakWe: we[topWe]! }
   }, [visits.data])
 
-  const pendingWithdrawals = withdrawals.data?.filter(w => w.status === 'REQUESTED')
+  const pendingWithdrawals = withdrawals.data?.filter(isOpenWithdrawal)
   return <div className="flex flex-col">
     <PageHeader title="Hôm nay tại trung tâm" subtitle={<><span>{longDate(today)}</span><Dot /><span>{counts ? `${fmtNumber(counts.coaches)} Coach · ${fmtNumber(counts.members)} hội viên` : 'Đang tải…'}</span><Dot /><span>Doanh thu tính theo tiền đã thu và áp vào đơn</span></>}
       actions={<ExportBtn type="revenue" label="Xuất báo cáo tháng" from={monthStart(ym)} to={today} primary />} />
@@ -105,7 +105,7 @@ export function MgrHomePage() {
         <ul className="divide-y divide-border-subtle">
           <Todo to="/manager/pt-board?tab=review" icon={<AlertTriangle className="h-4 w-4" />} tone="text-red-600 bg-red-50 dark:bg-red-500/10" title="Buổi PT cần kiểm tra" n={counts?.sessionsNeedingReview} hint="Qua giờ chưa có kết quả hoặc đang dạy quá giờ" action="Xử lý" />
           <Todo to="/manager/approvals" icon={<ClipboardCheck className="h-4 w-4" />} tone="text-violet-600 bg-violet-50 dark:bg-violet-500/10" title="Hồ sơ Coach chờ duyệt" n={pendingApprovals ?? undefined} hint="Xem năng lực và phản hồi hồ sơ một lần" action="Duyệt" />
-          <Todo to="/manager/coach-income" icon={<Wallet className="h-4 w-4" />} tone="text-amber-600 bg-amber-50 dark:bg-amber-500/10" title="Yêu cầu rút tiền Coach" n={pendingWithdrawals?.length} hint={pendingWithdrawals ? fmtMoney(pendingWithdrawals.reduce((n, w) => n + w.amount, 0)) + ' đang chờ chuyển khoản' : 'Coach gửi yêu cầu, Manager chuyển và xác nhận'} action="Chuyển tiền" />
+          <Todo to="/manager/coach-income" icon={<Wallet className="h-4 w-4" />} tone="text-amber-600 bg-amber-50 dark:bg-amber-500/10" title="Yêu cầu rút tiền Coach" n={pendingWithdrawals?.length} hint={pendingWithdrawals ? fmtMoney(pendingWithdrawals.reduce((n, w) => n + w.amount, 0)) + ' đang chờ chuyển / xác minh' : 'Coach gửi yêu cầu, Manager chuyển và xác nhận'} action="Xử lý yêu cầu" />
           <Todo to="/manager/payments?tab=reconciliation" icon={<Scale className="h-4 w-4" />} tone="text-sky-600 bg-sky-50 dark:bg-sky-500/10" title="Hồ sơ đối soát tiền nhận" n={counts?.openReconciliation} hint="Tiền đã nhận nhưng chưa áp vào đơn" action="Mở" />
           <Todo to="/manager/support" icon={<LifeBuoy className="h-4 w-4" />} tone="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10" title="Yêu cầu hỗ trợ đang mở" n={desk.data?.openSupportRequests} hint="Lễ tân đang xử lý — theo dõi tồn đọng" action="Xem" />
         </ul>

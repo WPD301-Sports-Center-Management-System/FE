@@ -1,51 +1,48 @@
+import { useEffect, useState } from 'react'
 import { PurchasePicker } from '../components/purchase-picker'
-import { useState } from 'react'
-import { hybridGet, hybridSend } from '../hybrid-api'
 import { useLoad, useSubmit } from '../hooks'
-import { mgrApi } from '@/features/manager-workspace/api'
-import { Async, Badge, Btn, Card, Field, InlineError, Table, inputCls, td, useFlash } from '@/features/workspace/ui'
-import { money } from '../components/ui'
+import { refundApi, type PtRefund } from '../refund-api'
+import { Async, Badge, Btn, Card, EmptyBox, Field, InlineError, Segmented, inputCls, textareaCls, useFlash } from '@/features/workspace/ui'
+import { fmtMoney } from '@/features/workspace/utils'
+import { formatDateTime } from '@/shared/utils/date'
 
-type Refund = { id: string; purchaseId: string; amount: string; creditIds: string[]; status: 'PENDING_TRANSFER' | 'PAID'; reason: string; transferRef?: string | null; purchase: { purchaseCode: string; member: { user: { fullName: string } } } }
-type Quote = { purchaseId?: string; amount: number; creditIds: string[]; purchaseCode: string; refund: Refund | null }
-
-export function RefundsPanel({ initialPurchaseId = '' }: { initialPurchaseId?: string } = {}) {
-  const refunds = useLoad(() => hybridGet<Refund[]>('/pt-purchase-refunds'))
-  const purchases = useLoad(() => mgrApi.purchases({}, 10))
-  const [purchaseId, setPurchaseId] = useState(initialPurchaseId)
-  const [quote, setQuote] = useState<Quote | null>(null)
-  const [reason, setReason] = useState('')
-  const act = useSubmit()
-  const { flash, node } = useFlash()
-  return <div className="mt-6 space-y-4">
-    {node}
-    <Card title="Hoàn phần gói PT chưa dùng" subtitle="Chốt hoàn sẽ đóng gói, thu hồi toàn bộ buổi chưa dùng và nhả lịch. Sau đó chuyển tiền cho học viên và xác nhận mã giao dịch.">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="min-w-0 flex-1"><Field label="Gói cần hoàn" required>{initialPurchaseId ? <p className="text-sm">Gói đang xem đã được chọn.</p> : <PurchasePicker value={purchaseId} onChange={id => { setPurchaseId(id); setQuote(null); act.clear() }} />}<InlineError message={purchases.error} /></Field></div>
-        <Btn busy={act.busy} disabled={!purchaseId} onClick={() => void act.run(async () => { setQuote(null); setQuote({ ...await hybridGet<Quote>(`/pt-package-purchases/${purchaseId}/refund-preview`), purchaseId }) })}>Xem số buổi và tiền hoàn</Btn>
-      </div>
-      {quote && quote.purchaseId === purchaseId && <div className="mt-4 space-y-3">
-        <p className="text-sm"><strong>{quote.purchaseCode}</strong> · Thu hồi {quote.creditIds.length} buổi chưa dùng · Tiền hoàn <strong>{money(quote.amount)}</strong></p>
-        <p className="text-xs text-text-muted">Tính theo giá gói lúc mua. Buổi đã tập hoặc mất hợp lệ và commission tương ứng được giữ nguyên.</p>
-        <Field label="Lý do chốt hoàn" required><textarea className={inputCls} rows={2} maxLength={5000} value={reason} disabled={act.busy} onChange={e => setReason(e.target.value)} /></Field>
-        <Btn variant="danger" busy={act.busy} disabled={!reason.trim() || !!quote.refund} onClick={() => void act.run(async () => {
-          await hybridSend('post', `/pt-package-purchases/${purchaseId}/refund`, { expectedAmount: quote.amount, expectedCreditIds: quote.creditIds, reason: reason.trim() })
-          flash('Đã chốt hoàn và thu hồi buổi. Chuyển tiền rồi xác nhận ở danh sách bên dưới.'); setQuote(null); setPurchaseId(''); setReason(''); await refunds.reload(); await purchases.reload()
-        })}>Chốt hoàn và thu hồi {quote.creditIds.length} buổi</Btn>
-      </div>}
-      <InlineError message={act.error} />
+export function RefundsPanel({ initialPurchaseId = '', onChanged }: { initialPurchaseId?: string; onChanged?: () => void } = {}) {
+  const refunds = useLoad(refundApi.list)
+  const [purchaseId, setPurchaseId] = useState(initialPurchaseId), [reason, setReason] = useState('')
+  const [view, setView] = useState<'pending' | 'paid'>('pending')
+  const quote = useLoad(() => refundApi.preview(purchaseId), [purchaseId], !!purchaseId)
+  const reloadQuote = quote.reload
+  const act = useSubmit(), { flash, node } = useFlash()
+  const refresh = () => { void refunds.reload(); if (purchaseId) void quote.reload(); onChanged?.() }
+  useEffect(() => { if (act.code === 'REFUND_CHANGED') void reloadQuote() }, [act.code, reloadQuote])
+  return <div className="mt-5 space-y-5" data-refunds-panel>
+    {node}<Card title="Hoàn phần gói PT chưa dùng" subtitle="Xem số tiền → chốt và thu hồi buổi → ghi nhận chuyển tiền. Yêu cầu hỗ trợ chỉ hoàn tất sau khi tiền đã chuyển.">
+      {!initialPurchaseId && <div className="mb-5"><PurchasePicker value={purchaseId} onChange={id => { setPurchaseId(id); setReason(''); act.clear() }} /></div>}
+      {!purchaseId ? <p className="text-sm text-text-muted">Chọn học viên và gói cần hoàn. Số buổi và tiền hoàn được tính theo gói lúc mua.</p> : <Async state={quote} rows={2}>{q => <div className="grid gap-6 lg:grid-cols-2">
+        <div><p className="text-sm text-text-muted">{q.purchaseCode} · {q.creditIds.length} buổi {q.refund ? 'đã thu hồi' : 'chưa dùng'}</p><p className="mt-2 text-3xl font-semibold tabular-nums">{fmtMoney(q.amount)}</p><p className="mt-3 text-sm text-text-muted">Chốt hoàn sẽ đóng gói, thu hồi buổi chưa dùng và hủy lịch tương lai. Thu nhập từ buổi đã tập được giữ nguyên.</p></div>
+        <div>{q.refund ? <RefundPayment refund={q.refund} purchaseCode={q.purchaseCode} onDone={() => { flash('Đã ghi nhận tiền hoàn cho học viên.'); refresh() }} /> : q.amount <= 0 || !q.creditIds.length ? <EmptyBox title="Không còn phần chưa dùng để hoàn" hint="Thu nhập từ buổi đã ghi nhận vẫn được giữ nguyên." /> : <form className="space-y-3" onSubmit={e => { e.preventDefault(); if (!reason.trim()) return; void act.run(async () => {
+          const refund = await refundApi.confirm(purchaseId, q.amount, reason.trim())
+          quote.setData({ ...q, refund }); setView('pending'); flash('Đã chốt hoàn. Nhập mã giao dịch sau khi chuyển tiền cho học viên.'); await refunds.reload(); onChanged?.()
+        }) }}><Field label="Lý do hoàn tiền"><textarea aria-label="Lý do hoàn tiền" required rows={3} maxLength={5000} className={textareaCls} value={reason} disabled={act.busy} onChange={e => setReason(e.target.value)} /></Field><InlineError message={act.error} /><Btn type="submit" variant="danger" busy={act.busy} disabled={!reason.trim()}>Chốt hoàn {fmtMoney(q.amount)} và thu hồi {q.creditIds.length} buổi</Btn></form>}</div>
+      </div>}</Async>}
     </Card>
-    <Card flush title="Các khoản hoàn đã chốt" subtitle="Chờ chuyển tiền và đã xác nhận chi được theo dõi riêng.">
-      <Async state={refunds} rows={3}>{rows => <Table head={['Gói / Học viên', 'Buổi thu hồi', 'Tiền hoàn', 'Trạng thái / Xác nhận']} minWidth={680} alignLast={false}>
-        {rows.filter(r => !initialPurchaseId || r.purchaseId === initialPurchaseId).map(r => <tr key={r.id}><td className={td}><p className="font-semibold">{r.purchase.purchaseCode} · {r.purchase.member.user.fullName}</p><p className="text-xs text-text-muted">{r.reason}</p></td><td className={td}>{r.creditIds.length}</td><td className={`${td} tabular-nums`}>{money(r.amount)}</td><td className={td}><RefundPayment r={r} onDone={() => { flash('Đã xác nhận chuyển tiền hoàn.'); void refunds.reload() }} /></td></tr>)}
-      </Table>}</Async>
-    </Card>
+    {!initialPurchaseId && <Card title="Theo dõi tiền hoàn" subtitle="Chốt hoàn chưa có nghĩa học viên đã nhận tiền." actions={<Btn size="sm" disabled={refunds.loading} onClick={() => void refunds.reload()}>Cập nhật</Btn>}>
+      <Async state={refunds} rows={3}>{all => {
+        const rows = all.filter(r => r.purchaseId !== purchaseId)
+        const shown = rows.filter(r => view === 'pending' ? r.status === 'PENDING_TRANSFER' : r.status === 'PAID')
+        return <><Segmented label="Trạng thái tiền hoàn" value={view} onChange={setView} items={[{ key: 'pending', label: 'Chờ chuyển', count: rows.filter(r => r.status === 'PENDING_TRANSFER').length }, { key: 'paid', label: 'Đã chuyển', count: rows.filter(r => r.status === 'PAID').length }]} />
+          {!shown.length ? <p role="status" className="mt-4 text-sm text-text-muted">{view === 'pending' ? 'Không có khoản hoàn chờ chuyển' : 'Chưa có khoản hoàn đã chuyển'}</p> : <ul className="mt-4 divide-y divide-border-subtle">{shown.map(r => <li key={r.id} className="grid items-start gap-4 py-4 first:pt-0 last:pb-0 lg:grid-cols-2"><div><p className="font-medium">{r.purchase?.member.user.fullName ?? 'Học viên'} · {r.purchase?.purchaseCode}</p><p className="mt-1 text-sm text-text-muted">{r.reason}</p><p className="mt-2 text-lg font-semibold tabular-nums">{fmtMoney(Number(r.amount))}<span className="ml-2 text-sm font-normal text-text-muted">· {r.creditIds.length} buổi</span></p></div><RefundPayment refund={r} purchaseCode={r.purchase?.purchaseCode ?? r.purchaseId} onDone={() => { flash('Đã ghi nhận chuyển tiền hoàn.'); refresh() }} /></li>)}</ul>}
+        </>
+      }}</Async>
+    </Card>}
   </div>
 }
 
-function RefundPayment({ r, onDone }: { r: Refund; onDone: () => void }) {
-  const [reference, setReference] = useState('')
+function RefundPayment({ refund: r, purchaseCode, onDone }: { refund: PtRefund; purchaseCode: string; onDone: () => void }) {
+  const [reference, setReference] = useState(''), [sent, setSent] = useState(false)
   const act = useSubmit()
-  if (r.status === 'PAID') return <><Badge tone="success">Đã xác nhận hoàn</Badge><p className="mt-1 text-xs text-text-muted">Mã giao dịch: {r.transferRef}</p></>
-  return <div className="space-y-2"><Badge tone="warning">Chờ chuyển tiền</Badge><input aria-label={`Mã chuyển tiền hoàn ${r.purchase.purchaseCode}`} placeholder="Mã giao dịch đã chuyển" className={inputCls} value={reference} maxLength={120} disabled={act.busy} onChange={e => setReference(e.target.value)} /><Btn size="sm" busy={act.busy} disabled={!reference.trim()} onClick={() => void act.run(async () => { await hybridSend('post', `/pt-package-purchases/${r.purchaseId}/refund/mark-paid`, { transferRef: reference.trim() }); onDone() })}>Đã chuyển — xác nhận</Btn><InlineError message={act.error} /></div>
+  if (r.status === 'PAID') return <div className="space-y-2"><Badge tone="success">Đã chuyển tiền hoàn</Badge><p className="break-words text-sm">Mã giao dịch: {r.transferRef}</p>{r.paidAt && <p className="text-xs text-text-muted">{formatDateTime(r.paidAt)}</p>}</div>
+  return <form className="space-y-3" onSubmit={e => { e.preventDefault(); if (!reference.trim() || sent) return; void act.run(async () => {
+    await refundApi.paid(r.purchaseId, reference.trim()); setSent(true); onDone()
+  }) }}><Badge tone="warning">Chờ chuyển tiền</Badge><p className="text-sm text-text-muted">Chuyển tiền sau khi đối chiếu tài khoản với học viên. Chưa rõ kết quả ngân hàng thì giữ chờ, kiểm tra sao kê trước khi chuyển lại.</p><Field label="Mã giao dịch đã chuyển"><input aria-label={`Mã chuyển tiền hoàn ${purchaseCode}`} required className={inputCls} value={reference} maxLength={120} disabled={act.busy || sent} onChange={e => setReference(e.target.value)} /></Field><InlineError message={act.error} /><Btn type="submit" busy={act.busy} disabled={!reference.trim() || sent}>Xác nhận đã chuyển</Btn></form>
 }

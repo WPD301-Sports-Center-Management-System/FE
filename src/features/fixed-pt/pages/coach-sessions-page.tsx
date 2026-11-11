@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { CalendarPlus, Play, Square, UserCheck, UserX } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { CalendarPlus, Play, Square, UserX } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Modal } from '@/shared/components/ui/modal'
 import { ScheduleTools } from '../components/schedule-tools'
-import { formatDateTime, formatTime, formatWeekdayDateTime } from '@/shared/utils/date'
+import { centerDateTimeInput, formatDateTime, formatTime, formatWeekdayDateTime } from '@/shared/utils/date'
 import { fixedPtApi } from '../api'
 import { useLoad, useSubmit } from '../hooks'
 import type { ScheduleChange, Session } from '../types'
@@ -12,9 +12,7 @@ import { ErrorBanner, Field, inputCls, label, Loadable, Notice, Page, Panel, Sta
 import { ReasonDialog } from '../components/widgets'
 
 export const localInputToIso = (v: string) => new Date(`${v}:00+07:00`).toISOString()
-export const isoToLocalInput = (iso: string) => {
-  const d = new Date(new Date(iso).getTime() + 7 * 3600000); return d.toISOString().slice(0, 16)
-}
+export const isoToLocalInput = (iso: string) => centerDateTimeInput(iso)
 
 // Coach: run sessions (đã đến/bắt đầu/kết thúc/vắng/hủy), answer change requests, schedule makeups.
 export function CoachSessionsPage() {
@@ -25,7 +23,7 @@ export function CoachSessionsPage() {
   const reload = () => { void sessions.reload(); void changes.reload() }
   return (
     <Page title="Lịch PT 1:1" subtitle="Buổi đã đặt hợp lệ được tự xác nhận. Chỉ kết thúc hợp lệ, nghỉ muộn hoặc vắng mới tính buổi." actions={<Button variant="secondary" onClick={reload}>Làm mới buổi tập</Button>}>
-      <Notice>Học viên mua trước nhưng chưa đặt sẽ chưa có buổi trong bảng. Mở gói tại Học viên hoặc xem Buổi chưa xếp lịch bên dưới. Đã đến / Bắt đầu chỉ hiện khi trạng thái, thời gian và quyền tài khoản cho phép.</Notice>
+      <Notice>Member check-in vào gym, sau đó Coach mở buổi tập và bấm Bắt đầu. Có thể tập khác giờ hoặc ngày hẹn khi đủ điều kiện và không trùng lịch.</Notice>
       <ChangeRequests state={changes} onDone={reload} />
       <Panel title="Buổi tập" actions={<div className="flex gap-2">{(['upcoming', 'past', 'review'] as const).map(r => <Button key={r} size="sm" variant={range === r ? 'primary' : 'secondary'} onClick={() => setRange(r)}>{{ upcoming: 'Sắp tới', past: 'Đã qua', review: 'Cần xử lý' }[r]}</Button>)}</div>}>
         <Loadable state={sessions} empty="Không có buổi nào.">{items => <SessionTable sessions={items} onChanged={reload} />}</Loadable>
@@ -37,11 +35,12 @@ export function CoachSessionsPage() {
 
 export function SessionTable({ sessions, onChanged }: { sessions: Session[]; onChanged: () => void }) {
   const act = useSubmit()
-  const [dialog, setDialog] = useState<{ kind: 'noShow' | 'end' | 'reschedule'; session: Session } | null>(null)
+  const navigate = useNavigate()
+  const [dialog, setDialog] = useState<{ kind: 'noShow' | 'reschedule'; session: Session } | null>(null)
   const run = (work: () => Promise<unknown>) => void act.run(async () => { await work(); setDialog(null); onChanged() })
   return (
     <>
-      <ErrorBanner message={act.code === 'MEMBER_PRESENT' ? 'Member có lượt vào gym trong khung giờ buổi tập — không ghi vắng. Ghi "Đã đến" hoặc báo Manager xác nhận.' : act.error} />
+      <ErrorBanner message={act.code === 'MEMBER_PRESENT' ? 'Member có lượt vào gym. Xác minh học viên hoặc báo Manager trước khi ghi vắng.' : act.error} />
       <Table head={['Thời gian', 'Học viên', 'Buổi', 'Trạng thái', 'Thao tác']}>
         {sessions.map(s => (
           <tr key={s.id}>
@@ -51,10 +50,9 @@ export function SessionTable({ sessions, onChanged }: { sessions: Session[]; onC
             <td className={td}><Status value={s.status} />{s.needsReview && <div className="text-xs text-amber-700 dark:text-amber-300">Cần xử lý: {s.reviewReason}</div>}{s.disruptionId && <div className="text-xs text-amber-700">Trong phạm vi gián đoạn</div>}{s.outcomeReversedAt && <div className="text-xs text-text-muted">Kết quả đã được đảo</div>}</td>
             <td className={td}>
               <div className="flex flex-wrap gap-1.5">
-                <Link className="self-center text-xs font-semibold text-primary underline" to={`/coach/slots?sessionId=${s.id}`}>Chi tiết / giáo án / kết quả</Link>
-                {s.allowedActions.arrive && <Button size="sm" variant="secondary" disabled={act.busy} onClick={() => run(() => fixedPtApi.arrive(s.id))}><UserCheck className="h-3.5 w-3.5" aria-hidden />Đã đến</Button>}
+                <Link className="self-center text-xs font-semibold text-primary underline" to={`/coach/sessions/${s.id}`}>Mở buổi tập</Link>
                 {s.allowedActions.start && <Button size="sm" disabled={act.busy} onClick={() => run(() => fixedPtApi.start(s.id))}><Play className="h-3.5 w-3.5" aria-hidden />Bắt đầu</Button>}
-                {s.allowedActions.end && <Button size="sm" disabled={act.busy} onClick={() => new Date() < new Date(s.endsAt) ? setDialog({ kind: 'end', session: s }) : run(() => fixedPtApi.end(s.id, {}))}><Square className="h-3.5 w-3.5" aria-hidden />Kết thúc</Button>}
+                {s.allowedActions.end && <Button size="sm" disabled={act.busy} onClick={() => void act.run(async () => { await fixedPtApi.end(s.id, {}); onChanged(); navigate(`/coach/goals/sheet/${s.id}`) })}><Square className="h-3.5 w-3.5" aria-hidden />Kết thúc</Button>}
                 {s.allowedActions.noShow && <Button size="sm" variant="ghost" disabled={act.busy} onClick={() => setDialog({ kind: 'noShow', session: s })}><UserX className="h-3.5 w-3.5" aria-hidden />Vắng</Button>}
                 {s.status === 'CONFIRMED' && <Button size="sm" variant="ghost" onClick={() => setDialog({ kind: 'reschedule', session: s })}><CalendarPlus className="h-3.5 w-3.5" aria-hidden />Đổi giờ</Button>}
               </div>
@@ -64,8 +62,6 @@ export function SessionTable({ sessions, onChanged }: { sessions: Session[]; onC
       </Table>
       <ReasonDialog open={dialog?.kind === 'noShow'} title="Ghi Member vắng mặt" requireReason={false} danger confirmLabel="Ghi vắng (tính buổi)" busy={act.busy} error={act.error}
         description="Buổi sẽ được tính theo chính sách. Hệ thống chặn nếu Member có lượt vào gym trong khung giờ này." onClose={() => { setDialog(null); act.clear() }} onConfirm={reason => run(() => fixedPtApi.noShow(dialog!.session.id, { reason: reason || undefined }))} />
-      <ReasonDialog open={dialog?.kind === 'end'} title="Kết thúc trước giờ dự kiến" confirmLabel="Kết thúc buổi" busy={act.busy} error={act.error}
-        description={`Giờ kết thúc dự kiến: ${dialog ? formatTime(dialog.session.endsAt) : ''}. Kết thúc sớm cần ghi lý do.`} onClose={() => { setDialog(null); act.clear() }} onConfirm={reason => run(() => fixedPtApi.end(dialog!.session.id, { earlyEndReason: reason }))} />
       {dialog?.kind === 'reschedule' && <RescheduleModal session={dialog.session} onClose={() => setDialog(null)} onDone={() => { setDialog(null); onChanged() }} />}
     </>
   )

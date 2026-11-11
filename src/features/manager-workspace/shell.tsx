@@ -8,7 +8,6 @@ import { WorkspaceLayout, type WorkspaceNavSection } from '@/features/workspace/
 import { PersonSearch } from '@/features/workspace/person-search'
 import { deskApi } from '@/features/reception-workspace/api'
 import { mgrApi, type ManagerDashboard } from './api'
-import { demoVisible } from '@/features/demo/demo-page'
 
 interface MgrShellState { counts: ManagerDashboard | null; pendingApprovals: number | null; refresh: () => void }
 const ShellContext = createContext<MgrShellState>({ counts: null, pendingApprovals: null, refresh: () => {} })
@@ -27,7 +26,6 @@ export function ManagerShell() {
     .map(m => ({ id: m.id, name: m.user.fullName, sub: `${m.memberCode}${m.user.phone ? ` · ${m.user.phone}` : ''}`, avatarUrl: m.user.avatarUrl })), [])
 
   const nav: WorkspaceNavSection[] = [
-    ...(demoVisible ? [{ title: 'Trình diễn', items: [{ to: '/manager/demo', label: 'Hướng dẫn demo', icon: ClipboardCheck }] }] : []),
     { title: 'Tổng quan', items: [{ to: '/manager', label: 'Hôm nay', icon: LayoutGrid, end: true }] },
     { title: 'Vận hành', items: [
       { to: '/manager/members', label: 'Hội viên & vé', icon: Users },

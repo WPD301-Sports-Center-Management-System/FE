@@ -17,7 +17,7 @@ export interface CreateRecommendationPayload {
 }
 
 // Draft content per kind, as validated by the server (library ids only, nutrition recomputed).
-export interface TrainingPlanDraft { title: string; goal: string; notes?: string; exercises: { exerciseId: string; name: string; sets?: number; reps?: number; durationMinutes?: number; restSeconds?: number; instructions?: string }[] }
+export interface TrainingPlanDraft { title: string; goal: string; notes?: string; exercises: { exerciseId: string; name: string; sets?: number; reps?: number; durationMinutes?: number; targetWeight?: number; restSeconds?: number; rpe?: string; instructions?: string }[] }
 export interface ProgressSummaryDraft { title: string; summary: string; highlights: string[]; focusNext: string[] }
 export interface MealPlanDraft { title: string; notes?: string; dailyCalorieTarget: number; averageDailyKcal: number; days: { dayNumber: number; meals: { mealType: string; items: { foodItemId: string; foodName: string; servings: number; quantity: string; estimatedCalories: number; proteinGrams: number }[] }[] }[] }
 export type DraftContent = TrainingPlanDraft | ProgressSummaryDraft | MealPlanDraft

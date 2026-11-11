@@ -218,3 +218,8 @@ export function useAuth() {
   }
   return context
 }
+
+/** Id of the signed-in account, or undefined outside the provider (screens that only hide "own account" actions). */
+export function useCurrentUserId(): string | undefined {
+  return useContext(AuthContext)?.user?.id
+}

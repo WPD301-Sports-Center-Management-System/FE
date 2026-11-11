@@ -529,6 +529,9 @@ export type CoachReview = {
 }
 
 export type SupportRequest = {
+  category?: 'GENERAL' | 'COACH' | 'SCHEDULE' | 'PAYMENT'
+  ptPurchaseId?: string | null
+  links?: { purchase: { id: string; purchaseCode: string; refund: { status: string; amount: number | string; paidAt?: string | null } | null } | null }
   id: string
   requestCode: string
   // Image links uploaded by the Member (receipt screenshots etc.), at most 3.

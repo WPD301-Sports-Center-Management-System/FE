@@ -49,8 +49,9 @@ export function JourneyCoachPage({ embedded = false }: { embedded?: boolean } = 
 }
 export function JourneyMemberPage({ embedded = false }: { embedded?: boolean } = {}) {
   const state = useLoad(() => journeyApi.list(), []);
+  const [params] = useSearchParams();
   const [picked, setPicked] = useState('');
-  const selected = picked || state.data?.[0]?.id;
+  const selected = picked || state.data?.find(p => p.id === params.get('purchaseId'))?.id || state.data?.[0]?.id;
   return <div className="space-y-5">{!embedded && <PageHeader title="Tiến độ lộ trình" subtitle="Kết quả được tính từ mốc đầu và số đo Coach ghi sau mỗi buổi." />}<LoadState state={state}>{state.data?.length ? <Select label="Lộ trình" value={selected ?? ''} onChange={setPicked} options={state.data.map(p => ({ value: p.id, label: p.packageNameSnapshot }))} /> : <p className="text-sm text-text-muted">Chưa có lộ trình tập cùng Coach.</p>}</LoadState>{selected && <JourneyForPurchase key={selected} purchaseId={selected} />}</div>;
 }
 export function JourneySessionPage() {
@@ -60,10 +61,14 @@ export function JourneySessionPage() {
   const [comment, setComment] = useState('');
   const act = useSubmit();
   const data = state.data;
-  const save = () => void act.run(async () => { await journeyApi.save(bookingId, { values: Object.fromEntries(Object.entries(values).filter(([, v]) => v.trim()).map(([k, v]) => [k, Number(v.replace(',', '.'))])), comment }); await state.reload(); });
+  const save = () => void act.run(async () => { await journeyApi.save(bookingId, { values: Object.fromEntries(Object.entries(values).filter(([, v]) => v.trim()).map(([k, v]) => [k, Number(v.replace(',', '.'))])), comment: comment.trim() }); await state.reload(); });
   return <div className="mx-auto max-w-3xl space-y-5"><Link className="text-sm text-primary" to={`/coach/sessions/${bookingId}`}>← Quay lại buổi tập</Link><PageHeader title="Đánh giá cuối buổi" subtitle="Ghi số đo đã đo hôm nay và nhận xét cho học viên." /><LoadState state={state}>{data && (!data.journey.initial ? data.booking.status === 'COMPLETED' ? <p>Buổi này đã kết thúc trước khi có mốc đầu. Khởi tạo lộ trình trước buổi tập tiếp theo.</p> : <JourneyInitialize data={data.journey} done={() => void state.reload()} /> : <>
     <p className="text-sm text-text-muted">{data.journey.purchase.memberName} · {formatDateTime(data.booking.at)}</p>
-    {data.result ? <Box title={data.result.isJourney ? data.result.status === 'VOID' ? 'Đánh giá đã thu hồi' : 'Đã lưu đánh giá' : `Bản ghi theo mẫu cũ · ${data.result.status === 'DRAFT' ? 'Bản nháp' : data.result.status === 'VOID' ? 'Đã thu hồi' : 'Đã công bố'}`}><p className="whitespace-pre-wrap">{data.result.comment}</p><JourneyProgress data={data.journey} /></Box> : data.booking.status !== 'COMPLETED' || data.booking.outcomeReversedAt || Date.parse(data.booking.at) < Date.parse(data.journey.initial.startedAt) ? <p>Hoàn thành buổi tập để ghi đánh giá cuối buổi.</p> : <Box title="Số đo hôm nay"><p className="text-sm text-text-muted">Chỉ điền số thực sự đã đo. Không đo thì để trống.</p><div className="grid grid-cols-2 gap-4">{journeyMetrics.map(k => <Input key={k} label={`${metricLabels[k]} (${k === 'waistCm' ? 'cm' : k === 'bodyFatPercent' ? '%' : 'kg'})`} type="number" value={values[k] ?? ''} onChange={v => setValues(old => ({ ...old, [k]: v }))} />)}</div><label className="block text-sm font-medium">Đánh giá của Coach *<textarea className="mt-2 min-h-28 w-full rounded-lg border border-border-subtle bg-bg-surface p-3" value={comment} onChange={e => setComment(e.target.value)} placeholder="Hôm nay học viên…" /></label><Err error={act.error} /><Btn disabled={act.busy || !comment.trim()} onClick={save}>{act.busy ? 'Đang lưu…' : 'Lưu đánh giá'}</Btn></Box>}
+    {data.result ? <Box title={data.result.isJourney ? data.result.status === 'VOID' ? 'Đánh giá đã thu hồi' : 'Đã lưu đánh giá' : `Bản ghi theo mẫu cũ · ${data.result.status === 'DRAFT' ? 'Bản nháp' : data.result.status === 'VOID' ? 'Đã thu hồi' : 'Đã công bố'}`}><p className="whitespace-pre-wrap">{data.result.comment}</p><JourneyProgress data={data.journey} /></Box> : data.booking.status !== 'COMPLETED' || data.booking.outcomeReversedAt || Date.parse(data.booking.at) < Date.parse(data.journey.initial.startedAt) ? <p>Hoàn thành buổi tập để ghi đánh giá cuối buổi.</p> : <Box title="Nhận xét sau buổi">
+      <label className="block text-sm font-medium">Đánh giá của Coach *<textarea disabled={act.busy} className="mt-2 min-h-28 w-full rounded-lg border border-border-subtle bg-bg-surface p-3" value={comment} onChange={e => setComment(e.target.value)} placeholder="Hôm nay học viên…" /></label>
+      <details><summary className="cursor-pointer text-sm font-medium">Thêm số đo hôm nay (không bắt buộc)</summary><p className="my-3 text-sm text-text-muted">Chỉ điền số thực sự đã đo. Không đo thì để trống.</p><fieldset disabled={act.busy} className="grid grid-cols-1 gap-4 sm:grid-cols-2">{journeyMetrics.map(k => <Input key={k} label={`${metricLabels[k]} (${k === 'waistCm' ? 'cm' : k === 'bodyFatPercent' ? '%' : 'kg'})`} type="number" value={values[k] ?? ''} onChange={v => setValues(old => ({ ...old, [k]: v }))} />)}</fieldset></details>
+      <Err error={act.error} /><Btn disabled={act.busy || !comment.trim()} onClick={save}>{act.busy ? 'Đang lưu…' : 'Lưu đánh giá'}</Btn>
+    </Box>}
   </>)}</LoadState></div>;
 }
 export function JourneyStartGate({ bookingId }: { bookingId: string }) {

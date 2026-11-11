@@ -82,7 +82,7 @@ export const deskApi = {
   payments: (params: { memberId?: string; status?: PaymentStatus; method?: string }, maxPages = 5) => all<Payment>('/payments', params, maxPages),
   invoices: (params: { memberId?: string }, maxPages = 3) => all<Invoice>('/invoices', params, maxPages),
   invoicePdf: async (id: string) => (await apiClient.get(`/invoices/${id}/pdf`, { responseType: 'blob' })) as unknown as Blob,
-  payCounter: (body: { subscriptionId?: string; ptPurchaseId?: string; method: 'CASH' | 'BANK_TRANSFER'; receivedAmount: number; externalRef?: string }) => counterPayment<Payment & { changeAmount: number }>(body),
+  payCounter: (body: { subscriptionId?: string; ptPurchaseId?: string; method: 'CASH'; receivedAmount: number; externalRef?: string; overrideReason?: string }) => counterPayment<Payment & { changeAmount: number }>(body),
   renewSubscription: (id: string, body: { planId?: string; startDate?: string }) => post<Subscription>(`/subscriptions/${id}/renew`, body),
   payVnpay: (body: { subscriptionId?: string; ptPurchaseId?: string }) => post<{ paymentUrl: string; paymentId: string }>('/payments/vnpay', { ...body, returnTarget: 'web' }),
   reconciliation: () => get<ReconciliationCase[]>('/reconciliation-cases'),

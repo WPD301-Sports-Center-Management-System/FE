@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeftRight, CalendarCheck, CalendarX, Check, ChevronLeft, ChevronRight, Download, Eye, UserCheck, XCircle } from 'lucide-react'
+import { ArrowLeftRight, CalendarCheck, CalendarX, ChevronLeft, ChevronRight, Download, Eye, UserCheck, XCircle } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import type { Session } from '@/features/fixed-pt/types'
@@ -36,19 +36,19 @@ export function DeskPtCalendarPage() {
   const scoped = all.filter(s => (!coach || s.coachId === coach) && (day === 'week' || centerDate(s.startsAt) === day))
   const rows = scoped.filter(TABS.find(t => t.key === tab)!.test)
   const todays = all.filter(s => centerDate(s.startsAt) === today && !TABS[4]!.test(s))
-  const checked = todays.filter(s => ['ARRIVED', 'IN_PROGRESS', 'COMPLETED'].includes(s.status)).length
+  const checked = todays.filter(s => ['IN_PROGRESS', 'COMPLETED'].includes(s.status)).length
   const reload = (m: string) => { flash(m); setCancel(null); void sessions.reload() }
 
   return <div>
     {node}
-    <PageHeader title="Lịch PT & điểm danh" subtitle={<><span>Tuần {isoWeek(monday)} · {shortDate(monday)} – {shortDate(sunday)}/{sunday.slice(0, 4)}</span><Dot /><span>Ghi “Đã đến” khi hội viên tới quầy trước buổi tập</span></>}
+    <PageHeader title="Lịch PT" subtitle={<><span>Tuần {isoWeek(monday)} · {shortDate(monday)} – {shortDate(sunday)}/{sunday.slice(0, 4)}</span><Dot /><span>Hội viên check-in gym; Coach bắt đầu buổi tập</span></>}
       actions={<><LinkBtn to="/receptionist/calendar?tab=changes" icon={<ArrowLeftRight aria-hidden className="h-4 w-4" />}>Đổi lịch & học bù</LinkBtn>
         <Btn icon={<Download aria-hidden className="h-4 w-4" />} disabled={!rows.length} onClick={() => downloadCsv(`lich-pt-${monday}.csv`, ['Ngày', 'Giờ', 'Hội viên', 'HLV', 'Khóa', 'Buổi', 'Trạng thái'],
           rows.map(s => [centerDate(s.startsAt), `${hhmm(s.startsAt)}-${hhmm(s.endsAt)}`, s.memberName ?? '', s.coachName ?? '', s.courseName ?? '', s.credit ? `${s.credit.creditIndex}/${s.purchase?.totalCredits ?? ''}` : '', SESSION_LABEL[s.status] ?? s.status]))}>Xuất CSV</Btn></>} />
     <div className="mb-6 grid gap-4 md:grid-cols-3">
       <StatTile label="Buổi PT hôm nay" icon={<CalendarCheck className="h-[18px] w-[18px]" />} iconTone="info" value={sessions.data ? todays.length : '—'} unit="buổi" hint={sessions.data ? `${new Set(todays.map(s => s.coachId)).size} HLV có lịch` : undefined} />
-      <StatTile label="Đã điểm danh hôm nay" icon={<UserCheck className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={sessions.data ? <>{checked}<span className="text-lg font-medium text-text-muted">/{todays.length}</span></> : '—'}
-        progress={todays.length ? { value: checked, max: todays.length, tone: 'success' } : undefined} hint={sessions.data ? `${todays.filter(s => s.status === 'CONFIRMED').length} buổi chưa đến` : undefined} />
+      <StatTile label="Buổi đã bắt đầu hôm nay" icon={<UserCheck className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={sessions.data ? <>{checked}<span className="text-lg font-medium text-text-muted">/{todays.length}</span></> : '—'}
+        progress={todays.length ? { value: checked, max: todays.length, tone: 'success' } : undefined} hint={sessions.data ? `${todays.filter(s => s.status === 'CONFIRMED').length} buổi chưa bắt đầu` : undefined} />
       <StatTile label="Hủy / vắng trong tuần" icon={<CalendarX className="h-[18px] w-[18px]" />} iconTone="danger" value={sessions.data ? all.filter(TABS[4]!.test).length : '—'} unit="buổi" hint={sessions.data ? `${all.filter(s => s.isMakeup).length} buổi học bù trong tuần` : undefined} />
     </div>
     <Card flush title="Lịch hẹn trong tuần" subtitle="Bấm tên hội viên để mở hồ sơ"
@@ -68,7 +68,7 @@ export function DeskPtCalendarPage() {
       </div>
       <Async state={sessions} rows={6} empty={() => !rows.length && <EmptyBox icon={<CalendarCheck className="h-5 w-5" />} title="Không có buổi PT nào phù hợp" />}>
         {() => <Table head={['Khung giờ', 'Hội viên', 'HLV', 'Buổi', 'Trạng thái', 'Thao tác']} minWidth={1000}>
-          {rows.map(s => <SessionRow key={s.id} s={s} onCancel={() => setCancel(s)} onDone={reload} />)}
+          {rows.map(s => <SessionRow key={s.id} s={s} onCancel={() => setCancel(s)} />)}
         </Table>}
       </Async>
     </Card>
@@ -76,8 +76,7 @@ export function DeskPtCalendarPage() {
   </div>
 }
 
-function SessionRow({ s, onCancel, onDone }: { s: Session; onCancel: () => void; onDone: (m: string) => void }) {
-  const submit = useSubmit()
+function SessionRow({ s, onCancel }: { s: Session; onCancel: () => void }) {
   const d = centerDate(s.startsAt)
   return <tr className="hover:bg-bg-surface-muted/40">
     <td className={td}><p className="whitespace-nowrap font-semibold tabular-nums">{WEEKDAY_SHORT[weekdayOf(d)]} {shortDate(d)} · {hhmm(s.startsAt)}–{hhmm(s.endsAt)}</p><p className="text-xs text-text-muted">{minutesBetween(s.startsAt, s.endsAt)} phút</p></td>
@@ -86,10 +85,9 @@ function SessionRow({ s, onCancel, onDone }: { s: Session; onCancel: () => void;
     <td className={td}>{s.courseName}<p className="text-xs text-text-muted">{s.credit ? `buổi ${s.credit.creditIndex}/${s.purchase?.totalCredits ?? '?'}` : ''}{s.isMakeup ? ' · học bù' : ''}</p></td>
     <td className={td}><Badge tone={SESSION_TONE[s.status]} dot={s.status === 'IN_PROGRESS'}>{s.status === 'CONFIRMED' ? 'Chờ đến' : SESSION_LABEL[s.status]}</Badge>{s.arrivedAt && <p className="mt-1 text-xs text-text-muted">đến {hhmm(s.arrivedAt)}</p>}</td>
     <td className={`${td} text-right`}><div className="flex justify-end gap-1.5">
-      {s.allowedActions.arrive && <Btn size="sm" variant="soft" busy={submit.busy} icon={<Check aria-hidden className="h-3.5 w-3.5" />} onClick={async () => { if (await submit.run(() => deskApi.arrive(s.id))) onDone(`Đã ghi ${s.memberName} có mặt.`) }}>Đã đến</Btn>}
       {s.allowedActions.cancel && <Btn size="sm" icon={<XCircle aria-hidden className="h-3.5 w-3.5" />} onClick={onCancel}>Báo nghỉ</Btn>}
       <LinkBtn size="sm" variant="ghost" to={`/receptionist/sessions/${s.id}`} icon={<Eye aria-hidden className="h-4 w-4" />}><span className="sr-only">Chi tiết buổi {s.bookingCode}</span></LinkBtn>
-    </div>{submit.error && <p role="alert" className="mt-1 text-right text-xs text-red-600">{submit.error}</p>}</td>
+    </div></td>
   </tr>
 }
 

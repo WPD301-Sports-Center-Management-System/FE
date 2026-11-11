@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Search, Layers, Edit2, Power } from 'lucide-react'
+import { Search, Layers, Edit2, Power, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { StatusBadge } from '@/shared/components/ui/status-badge'
 import type { MuscleGroup } from '@/shared/types/api'
@@ -13,6 +13,7 @@ interface MuscleGroupsTabProps {
   onOpenEdit: (muscleGroup: MuscleGroup) => void
   onToggleStatus: (muscleGroup: MuscleGroup) => void
   togglingMuscleId: string | null
+  onDelete?: (muscleGroup: MuscleGroup) => void
 }
 
 export function MuscleGroupsTab({
@@ -24,6 +25,7 @@ export function MuscleGroupsTab({
   onOpenEdit,
   onToggleStatus,
   togglingMuscleId,
+  onDelete,
 }: MuscleGroupsTabProps) {
   const filteredMuscleGroups = useMemo(() => {
     return muscleGroups.filter((mg) => {
@@ -135,7 +137,8 @@ export function MuscleGroupsTab({
                   <span>Chỉnh sửa</span>
                 </Button>
 
-                <Button
+                <div className="flex items-center gap-1.5">
+<Button
                   size="sm"
                   variant="outline"
                   onClick={() => onToggleStatus(mg)}
@@ -153,6 +156,13 @@ export function MuscleGroupsTab({
                   />
                   <span>{mg.isActive ? 'Tạm dừng' : 'Kích hoạt'}</span>
                 </Button>
+{onDelete && (
+<Button size="sm" variant="outline" onClick={() => onDelete(mg)} aria-label={`Xóa nhóm cơ ${mg.name}`} className="text-xs h-7 px-2.5 gap-1.5 text-danger hover:bg-danger/10 hover:text-danger border-danger/30">
+<Trash2 className="h-3 w-3" />
+<span>Xóa</span>
+</Button>
+)}
+</div>
               </div>
             </div>
           ))}

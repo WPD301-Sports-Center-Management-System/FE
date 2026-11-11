@@ -22,7 +22,7 @@ export const fixedPtApi = {
   createTimeOff: (body: { startsAt: string; endsAt: string; reason?: string }) => post<{ affectedSessions: { id: string; plannedStartsAt: string }[] }>('/coach-time-offs', body),
   deleteTimeOff: (id: string) => del(`/coach-time-offs/${id}`),
 
-  payCounter: (body: { ptPurchaseId: string; method: 'CASH' | 'BANK_TRANSFER'; receivedAmount: number; externalRef?: string; overrideReason?: string }) => counterPayment<{ id: string; application: string; changeAmount: number }>(body),
+  payCounter: (body: { ptPurchaseId: string; method: 'CASH'; receivedAmount: number; externalRef?: string; overrideReason?: string }) => counterPayment<{ id: string; application: string; changeAmount: number }>(body),
 
   coachPackages: () => get<CoachPackage[]>('/coaches/me/pt-packages', { limit: 100 }),
   sessions: (params?: object) => get<Session[]>('/pt-bookings', params),

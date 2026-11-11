@@ -52,6 +52,7 @@ export const mgrApi = {
 
   offerings: (status?: Offering['status']) => all<Offering>('/coach-course-offerings', { status }, 5),
   options: () => all<PackageOption>('/pt-package-options', {}, 5),
+  deleteOption: async (id: string) => { await apiClient.delete(`/pt-package-options/${id}`) },
   setOptionActive: (id: string, isActive: boolean) => patch(`/pt-package-options/${id}/status`, { isActive }),
   createOption: (body: PackageInput) => post<PackageOption>('/pt-package-options', body),
   updateOption: (id: string, body: PackageInput) => patch<PackageOption>(`/pt-package-options/${id}`, body),

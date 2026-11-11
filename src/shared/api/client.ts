@@ -116,8 +116,11 @@ apiClient.interceptors.response.use(
           throw new Error('Malformed refresh token response')
         }
       } catch (refreshErr) {
-        processQueue(refreshErr, null)
-        if (authStorage.getRefreshToken() === refreshToken) {
+        processQueue(normalizeError(refreshErr), null)
+        // Only a refusal from the server (the token is invalid, revoked or expired) ends the session. A timeout or a dropped
+        // connection says nothing about the token: keep the session so the next request can retry the refresh.
+        const refused = axios.isAxiosError(refreshErr) && [400, 401, 403].includes(refreshErr.response?.status ?? 0)
+        if (refused && authStorage.getRefreshToken() === refreshToken) {
           authStorage.clearSession()
           window.dispatchEvent(new CustomEvent('auth:unauthorized'))
         }

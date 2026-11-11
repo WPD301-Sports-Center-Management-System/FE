@@ -6,15 +6,17 @@ import { MealLibraryPage } from '@/features/training-plans/pages/meal-library-pa
 import { CoachSheetsPage } from '@/features/goal-lab/coach-sheets-page'
 import { CoachLibraryPage } from './coach-library-page'
 import { CoachGoalsPage } from '@/features/goal-lab/coach-goals-page'
+import { useSearchParams } from 'react-router-dom'
+import { useState } from 'react'
 
 // The Coach's professional tools, one page per job. Each page starts with the daily task (a Member's
 // package / progress / meals), then the reusable library, then AI drafts of the same kind.
 
 export function CoachTeachingPage() {
   return <TabbedPage title="Giáo án" tabs={[
-    { key: 'packages', label: 'Theo gói học viên', hint: 'Điền giáo án cho nhiều buổi theo chu kỳ, kiểm tra rồi giao cho học viên.', render: () => <CoachProgramPage embedded /> },
+    { key: 'packages', label: 'Buổi tập học viên', hint: 'Chọn buổi để soạn, dùng mẫu hoặc nhờ AI; kiểm tra rồi lưu và giao ngay tại buổi tập.', render: () => <CoachProgramPage embedded /> },
     { key: 'templates', label: 'Thư viện giáo án', hint: 'Giáo án mẫu cho một buổi và chương trình A/B/C xoay vòng cho cả gói.', render: () => <CoachLibraryPage /> },
-    { key: 'ai', label: 'Soạn bằng AI', hint: 'AI chọn bài trong thư viện bài tập; duyệt xong thành giáo án mẫu của bạn.', render: () => <CoachAiRecommendationPage kind="TRAINING_PLAN" /> },
+    { key: 'ai', label: 'Soạn bằng AI', hint: 'AI soạn nháp; bạn kiểm tra và chọn buổi tập để dùng ngay.', render: () => <CoachAiRecommendationPage kind="TRAINING_PLAN" /> },
   ]} />
 }
 
@@ -26,9 +28,14 @@ export function CoachProgressPage() {
 }
 
 export function CoachNutritionPage() {
+  const [params] = useSearchParams()
   return <TabbedPage title="Thực đơn" tabs={[
-    { key: 'plans', label: 'Thực đơn học viên', render: () => <CoachMealPlanPage /> },
+    { key: 'plans', label: 'Thực đơn học viên', render: () => <div className="space-y-5"><CoachMealPlanPage /><MealAiHistory key={String(params.get('tab') === 'ai')} initiallyOpen={params.get('tab') === 'ai'} /></div> },
     { key: 'templates', label: 'Mẫu thực đơn', render: () => <MealLibraryPage embedded /> },
-    { key: 'ai', label: 'Soạn bằng AI', hint: 'AI ghép món trong thư viện theo kcal mục tiêu; duyệt xong thành thực đơn nháp.', render: () => <CoachAiRecommendationPage kind="MEAL_PLAN" /> },
   ]} />
+}
+
+function MealAiHistory({ initiallyOpen }: { initiallyOpen: boolean }) {
+  const [open, setOpen] = useState(initiallyOpen)
+  return <details open={open} onToggle={e => setOpen(e.currentTarget.open)} className="rounded-xl border border-border-subtle p-4"><summary className="cursor-pointer text-sm text-text-muted">Bản nháp AI đã lưu trước đây</summary>{open && <div className="mt-4"><CoachAiRecommendationPage kind="MEAL_PLAN" historyOnly /></div>}</details>
 }

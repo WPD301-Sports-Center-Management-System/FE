@@ -34,7 +34,7 @@ describe('paymentsService', () => {
       data: { id: 'pay-1', status: 'PAID', changeAmount: 0 },
     } as any)
     const result = await paymentsService.payCounter(payload)
-    expect(apiClient.post).toHaveBeenCalledWith('/payments/counter', payload)
+    expect(apiClient.post).toHaveBeenCalledWith('/payments/counter', { ...payload, idempotencyKey: expect.any(String) })
     expect(result.id).toBe('pay-1')
     expect(result.changeAmount).toBe(0)
   })

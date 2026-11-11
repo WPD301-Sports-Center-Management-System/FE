@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AlertTriangle, Check, ShieldCheck, Sparkles, Trash2, X } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
 import { UnsavedChanges } from '@/shared/components/ui/unsaved-changes'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import { coachWs } from '@/features/coach-workspace/api'
 import { Async, Badge, Btn, Card, Dot, EmptyBox, Field, InlineError, PageHeader, Segmented, btnCls, inputCls, textareaCls, useFlash } from '@/features/workspace/ui'
-import { formatDate } from '@/shared/utils/date'
+import { formatDate, formatDateTime } from '@/shared/utils/date'
+import { fixedPtApi } from '@/features/fixed-pt/api'
 import { mealPlansService } from '../services/meal-plans.service'
 import {
   AI_KIND_LABEL, aiRecommendationsService, type AiKind, type AiRecommendation, type DraftContent, type MealPlanDraft, type ProgressSummaryDraft, type TrainingPlanDraft,
@@ -23,9 +24,9 @@ const STATUS = { DRAFT: { label: 'Chờ duyệt', tone: 'warning' }, APPROVED: {
 type Filter = 'DRAFT' | 'APPROVED' | 'REJECTED'
 
 /** `kind` fixes the draft type when the page is a tab of Giáo án / Tiến độ / Thực đơn. */
-export function CoachAiRecommendationPage({ kind }: { kind?: AiKind } = {}) {
+export function CoachAiRecommendationPage({ kind, historyOnly = false }: { kind?: AiKind; historyOnly?: boolean } = {}) {
   const { flash, node } = useFlash()
-  const status = useLoad(() => aiRecommendationsService.status(), [])
+  const status = useLoad(() => aiRecommendationsService.status(), [], !historyOnly)
   const [filter, setFilter] = useState<Filter>('DRAFT')
   const list = useLoad(() => aiRecommendationsService.getRecommendations({ status: filter, kind, limit: 50 }), [filter, kind])
   const [open, setOpen] = useState<AiRecommendation | null>(null)
@@ -39,8 +40,8 @@ export function CoachAiRecommendationPage({ kind }: { kind?: AiKind } = {}) {
       <AlertTriangle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
       <span>AI chưa sẵn sàng. Vui lòng liên hệ quản trị viên để bật tính năng. Bạn vẫn có thể xem và duyệt các bản nháp đã tạo.</span>
     </div>}
-    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-      <CreateCard fixedKind={kind} disabled={!configured} onCreated={rec => { setFilter('DRAFT'); void list.reload(); setOpen(rec) }} />
+    <div className={historyOnly ? '' : 'grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]'}>
+      {!historyOnly && <CreateCard fixedKind={kind} disabled={!configured} onCreated={rec => { setFilter('DRAFT'); void list.reload(); setOpen(rec) }} />}
       <Card flush title="Bản nháp AI" actions={<Segmented label="Lọc" value={filter} onChange={setFilter} items={(['DRAFT', 'APPROVED', 'REJECTED'] as const).map(k => ({ key: k, label: STATUS[k].label }))} />}>
         <Async state={list} rows={5} empty={l => !l.length && <EmptyBox icon={<Sparkles className="h-5 w-5" />} title={filter === 'DRAFT' ? 'Không có nháp chờ duyệt' : 'Chưa có mục nào'} />}>
           {items => <ul className="divide-y divide-border-subtle">{items.map(r => { const c = (r.editedContent ?? r.generatedContent) as { title?: string }; return <li key={r.id}>
@@ -84,7 +85,7 @@ function CreateCard({ fixedKind, disabled, onCreated }: { fixedKind?: AiKind; di
         dailyCalorieTarget: kind === 'MEAL_PLAN' ? Number(kcal) : undefined, days: kind === 'MEAL_PLAN' ? Number(days) : undefined, durationMinutes: kind === 'TRAINING_PLAN' ? Number(duration) : undefined }))
       if (rec) {
         const member = members.data?.find(m => m.id === memberId)
-        onCreated({ ...rec, member: member ? { memberCode: member.memberCode, user: { fullName: member.fullName ?? member.user?.fullName ?? 'Học viên' } } : rec.member })
+        onCreated({ ...rec, ptPurchaseId: rec.ptPurchaseId ?? selectedPurchase?.id, member: member ? { memberCode: member.memberCode, user: { fullName: member.fullName ?? member.user?.fullName ?? 'Học viên' } } : rec.member })
       }
     }}>
       {!fixedKind && <Segmented label="Loại nháp" value={kind} onChange={setKind} items={(Object.keys(AI_KIND_LABEL) as AiKind[]).map(k => ({ key: k, label: AI_KIND_LABEL[k] }))} />}
@@ -130,6 +131,13 @@ function CreateCard({ fixedKind, disabled, onCreated }: { fixedKind?: AiKind; di
 const toLines = (s: string) => s.split('\n').map(x => x.trim()).filter(Boolean)
 
 function DraftModal({ rec, onClose, onChanged, onReviewed }: { rec: AiRecommendation; onClose: () => void; onChanged: (m: string) => void; onReviewed: (r: AiRecommendation) => void }) {
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const sessions = useLoad(() => fixedPtApi.purchaseSessions(rec.ptPurchaseId!), [rec.ptPurchaseId], rec.kind === 'TRAINING_PLAN' && !!rec.ptPurchaseId)
+  const available = (sessions.data ?? []).filter(s => ['CONFIRMED', 'ARRIVED'].includes(s.status) && !['ASSIGNED', 'LOCKED'].includes(s.content?.status ?? ''))
+  const [chosenBooking, setChosenBooking] = useState<string | null>(null)
+  const contextBooking = params.get('bookingId')
+  const bookingId = chosenBooking ?? (contextBooking ? available.some(s => s.id === contextBooking) ? contextBooking : '' : available[0]?.id ?? '')
   const [content, setContent] = useState<DraftContent>(() => structuredClone(rec.editedContent ?? rec.generatedContent))
   const [dirty, setDirty] = useState(false)
   const [rejecting, setRejecting] = useState(false)
@@ -139,6 +147,10 @@ function DraftModal({ rec, onClose, onChanged, onReviewed }: { rec: AiRecommenda
   const editable = rec.status === 'DRAFT'
   const edit = (next: DraftContent) => { setContent(next); setDirty(true) }
   const saveEdits = async () => { if (!dirty) return true; const r = await submit.run(() => aiRecommendationsService.updateRecommendation(rec.id, content)); if (r) { setContent(r.editedContent ?? content); setDirty(false) } return !!r }
+  const applyToSession = async (templateId: string) => {
+    const ok = await submit.run(async () => { await coachWs.applyTemplate(bookingId, templateId); return true })
+    if (ok) navigate(`/coach/sessions/${bookingId}`)
+  }
   const approve = async (publish?: boolean) => {
     const r = await submit.run(async () => {
       if (dirty) {
@@ -148,16 +160,27 @@ function DraftModal({ rec, onClose, onChanged, onReviewed }: { rec: AiRecommenda
       return aiRecommendationsService.approveRecommendation(rec.id, { publish })
     })
     if (r) {
-      if (rec.kind === 'TRAINING_PLAN') onReviewed({ ...rec, ...r })
-      else onChanged(rec.kind === 'MEAL_PLAN' ? 'Đã tạo thực đơn nháp. Mở “Thực đơn dinh dưỡng” để giao.' : publish ? 'Đã gửi nhận xét cho học viên.' : 'Đã lưu nhận xét nháp ở trang học viên.')
+      if (rec.kind === 'TRAINING_PLAN') {
+        onReviewed({ ...rec, ...r })
+        if (bookingId && r.sessionTemplateId) await applyToSession(r.sessionTemplateId)
+      }
+      else if (rec.kind === 'MEAL_PLAN') onReviewed({ ...rec, ...r })
+      else onChanged(publish ? 'Đã gửi nhận xét cho học viên.' : 'Đã lưu nhận xét nháp ở trang học viên.')
     }
   }
-  const link = rec.status === 'APPROVED' && (rec.sessionTemplateId ? { to: `/coach/library?tab=templates&templateId=${rec.sessionTemplateId}`, label: 'Mở giáo án vừa lưu' } : rec.mealPlanId ? { to: '/coach/meal-plans?tab=plans', label: 'Mở thực đơn' } : rec.progressReportId ? { to: `/coach/students/${rec.memberId}`, label: 'Mở trang học viên' } : null)
+  const link = rec.status === 'APPROVED' && (rec.sessionTemplateId ? { to: `/coach/library?tab=templates&templateId=${rec.sessionTemplateId}`, label: 'Mở giáo án vừa lưu' } : rec.mealPlanId ? { to: `/coach/meal-plans?tab=plans&planId=${rec.mealPlanId}`, label: 'Mở thực đơn để kiểm tra và giao' } : rec.progressReportId ? { to: `/coach/students/${rec.memberId}`, label: 'Mở trang học viên' } : null)
 
   return <Modal isOpen onClose={() => { if (!submit.busy) { if (dirty) setConfirmClose(true); else onClose() } }} maxWidth={rec.kind === 'TRAINING_PLAN' ? '4xl' : 'xl'} title={`${AI_KIND_LABEL[rec.kind]} · ${rec.member?.user.fullName ?? 'Học viên'}`} description={`Tạo ${formatDate(rec.createdAt)}${editable ? ' · Sửa trực tiếp rồi duyệt' : ''}`}>
     <div className="space-y-4">
       <UnsavedChanges dirty={dirty && editable} busy={submit.busy} />
-      {rec.status === 'APPROVED' && rec.kind === 'TRAINING_PLAN' && <p role="status" className="text-sm text-green-700">Đã lưu vào thư viện. Mở giáo án để áp cho gói học viên.</p>}
+      {rec.status === 'APPROVED' && rec.kind === 'TRAINING_PLAN' && <p role="status" className="text-sm text-green-700">Đã lưu vào thư viện giáo án. Chọn buổi tập để sử dụng ngay.</p>}
+      {rec.kind === 'TRAINING_PLAN' && rec.status !== 'REJECTED' && <div className="space-y-2">
+        <Field label="Dùng cho buổi tập" hint="Giáo án được điền vào bản nháp của buổi đã chọn. Kiểm tra mức tạ rồi lưu và giao cho học viên."><select aria-label="Dùng cho buổi tập" className={inputCls} disabled={submit.busy || sessions.loading} value={bookingId} onChange={e => setChosenBooking(e.target.value)}>
+          <option value="">Chỉ lưu vào thư viện</option>{available.map(s => <option key={s.id} value={s.id}>{formatDateTime(s.startsAt)}{s.content?.title ? ` · Thay nháp: ${s.content.title}` : ''}</option>)}
+        </select></Field>
+        {sessions.error && <><InlineError message={sessions.error} /><Btn onClick={() => void sessions.reload()}>Tải lại buổi tập</Btn></>}
+        {!sessions.loading && !sessions.error && !available.length && <p className="text-sm text-text-muted">Chưa có buổi chờ soạn. Giáo án đã giao hoặc buổi đã bắt đầu được giữ nguyên.</p>}
+      </div>}
       {confirmClose && <div className="space-y-2 rounded-lg border border-border-subtle p-3"><p className="text-sm">Bạn còn chỉnh sửa chưa lưu.</p><div className="flex flex-wrap gap-2"><Btn onClick={() => setConfirmClose(false)}>Tiếp tục sửa</Btn><Btn busy={submit.busy} onClick={async () => { if (await saveEdits()) onClose() }}>Lưu và đóng</Btn><Btn disabled={submit.busy} onClick={onClose}>Bỏ chỉnh sửa và đóng</Btn></div></div>}
       {rec.kind === 'TRAINING_PLAN' && <TrainingEditor c={content as TrainingPlanDraft} editable={editable && !submit.busy} onChange={edit} />}
       {rec.kind === 'PROGRESS_SUMMARY' && <SummaryEditor c={content as ProgressSummaryDraft} editable={editable} onChange={edit} />}
@@ -165,12 +188,13 @@ function DraftModal({ rec, onClose, onChanged, onReviewed }: { rec: AiRecommenda
       {rec.status === 'REJECTED' && rec.rejectionReason && <p className="text-sm text-text-muted">Lý do bỏ: {rec.rejectionReason}</p>}
       <InlineError message={submit.error} />
       <div className="flex flex-wrap justify-end gap-2 border-t border-border-subtle pt-3">
-        {link && <Link to={link.to} onClick={onClose} className={btnCls('primary')}>{link.label}</Link>}
+        {rec.status === 'APPROVED' && rec.kind === 'TRAINING_PLAN' && rec.sessionTemplateId && bookingId && <Btn variant="primary" busy={submit.busy} onClick={() => void applyToSession(rec.sessionTemplateId!)}>Dùng cho buổi tập</Btn>}
+        {link && <Link to={link.to} onClick={onClose} className={btnCls(bookingId && rec.kind === 'TRAINING_PLAN' ? 'outline' : 'primary')}>{link.label}</Link>}
         {editable && !rejecting && <>
           <Btn icon={<X aria-hidden className="h-4 w-4" />} onClick={() => setRejecting(true)}>Bỏ nháp</Btn>
           {dirty && <Btn busy={submit.busy} onClick={() => void saveEdits()}>Lưu chỉnh sửa</Btn>}
           {rec.kind === 'PROGRESS_SUMMARY' ? <><Btn busy={submit.busy} onClick={() => void approve(false)}>Duyệt, lưu nháp</Btn><Btn variant="primary" busy={submit.busy} icon={<Check aria-hidden className="h-4 w-4" />} onClick={() => void approve(true)}>Duyệt & gửi học viên</Btn></>
-            : <Btn variant="primary" busy={submit.busy} icon={<Check aria-hidden className="h-4 w-4" />} onClick={() => void approve()}>{rec.kind === 'TRAINING_PLAN' ? 'Lưu vào thư viện giáo án' : 'Duyệt'}</Btn>}
+            : <Btn variant="primary" busy={submit.busy} disabled={rec.kind === 'TRAINING_PLAN' && sessions.loading} icon={<Check aria-hidden className="h-4 w-4" />} onClick={() => void approve()}>{rec.kind === 'TRAINING_PLAN' ? bookingId ? 'Lưu và dùng cho buổi tập' : 'Lưu vào thư viện giáo án' : 'Lưu thực đơn nháp'}</Btn>}
         </>}
         {rejecting && <div className="flex w-full items-end gap-2"><div className="flex-1"><Field label="Lý do bỏ" required><input value={reason} onChange={e => setReason(e.target.value)} className={inputCls} placeholder="Không phù hợp với chấn thương gối" /></Field></div>
           <Btn onClick={() => setRejecting(false)}>Hủy</Btn><Btn variant="danger" busy={submit.busy} disabled={!reason.trim()} onClick={async () => { if (await submit.run(() => aiRecommendationsService.rejectRecommendation(rec.id, reason.trim()))) onChanged('Đã bỏ bản nháp.') }}>Bỏ nháp</Btn></div>}
@@ -179,8 +203,8 @@ function DraftModal({ rec, onClose, onChanged, onReviewed }: { rec: AiRecommenda
   </Modal>
 }
 
-const numIn = (v: number | undefined, on: (n: number | undefined) => void, editable: boolean, label: string) =>
-  <input aria-label={label} type="number" min={0} disabled={!editable} value={v ?? ''} onChange={e => on(e.target.value === '' ? undefined : Number(e.target.value))} className={`${inputCls} h-8 min-w-16 w-16 px-2 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none`} />
+const numIn = (v: number | undefined, on: (n: number | undefined) => void, editable: boolean, label: string, step = 1) =>
+  <input aria-label={label} type="number" min={0} step={step} disabled={!editable} value={v ?? ''} onChange={e => on(e.target.value === '' ? undefined : Number(e.target.value))} className={`${inputCls} h-8 min-w-16 w-16 px-2 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none`} />
 
 function TrainingEditor({ c, editable, onChange }: { c: TrainingPlanDraft; editable: boolean; onChange: (c: TrainingPlanDraft) => void }) {
   const library = useLoad(() => coachWs.exercises(), [], editable)
@@ -197,7 +221,7 @@ function TrainingEditor({ c, editable, onChange }: { c: TrainingPlanDraft; edita
     </div>
     <div className="overflow-x-auto rounded-xl border border-border-subtle"><table className="w-full text-sm">
       <caption className="px-3 py-2 text-left font-medium">{c.exercises.length} bài tập · Theo thứ tự thực hiện</caption>
-      <thead className="bg-bg-surface-muted text-xs text-text-muted"><tr><th className="px-3 py-2 text-left">Bài tập</th><th className="px-2">Hiệp</th><th className="px-2">Lần</th><th className="px-2">Phút</th><th className="px-2">Nghỉ (s)</th><th className="px-3 text-left">Hướng dẫn</th><th /></tr></thead>
+      <thead className="bg-bg-surface-muted text-xs text-text-muted"><tr><th className="px-3 py-2 text-left">Bài tập</th><th className="px-2">Hiệp</th><th className="px-2">Lần</th><th className="px-2">Phút</th><th className="px-2">Tạ (kg)</th><th className="px-2">Nghỉ (s)</th><th className="px-2">RPE</th><th className="px-3 text-left">Hướng dẫn</th><th /></tr></thead>
       <tbody className="divide-y divide-border-subtle">{c.exercises.map((e, i) => <tr key={e.exerciseId}>
         <td className="min-w-44 px-3 py-2 font-semibold">{i + 1}. {e.name}
           {editable && <div className="mt-1 flex gap-2 text-xs font-normal"><button type="button" disabled={i === 0} aria-label={`Đưa ${e.name} lên`} onClick={() => move(i, -1)} className="py-1 disabled:opacity-30">Lên</button><button type="button" disabled={i === c.exercises.length - 1} aria-label={`Đưa ${e.name} xuống`} onClick={() => move(i, 1)} className="py-1 disabled:opacity-30">Xuống</button></div>}
@@ -205,7 +229,9 @@ function TrainingEditor({ c, editable, onChange }: { c: TrainingPlanDraft; edita
         <td className="px-2 py-2">{numIn(e.sets, n => setEx(i, { sets: n }), editable, `Hiệp ${e.name}`)}</td>
         <td className="px-2 py-2">{numIn(e.reps, n => setEx(i, { reps: n }), editable, `Lần ${e.name}`)}</td>
         <td className="px-2 py-2">{numIn(e.durationMinutes, n => setEx(i, { durationMinutes: n }), editable, `Phút ${e.name}`)}</td>
+        <td className="px-2 py-2">{numIn(e.targetWeight, n => setEx(i, { targetWeight: n }), editable, `Khối lượng ${e.name}`, 0.5)}</td>
         <td className="px-2 py-2">{numIn(e.restSeconds, n => setEx(i, { restSeconds: n }), editable, `Nghỉ ${e.name}`)}</td>
+        <td className="px-2 py-2"><input aria-label={`RPE ${e.name}`} disabled={!editable} value={e.rpe ?? ''} maxLength={20} onChange={ev => setEx(i, { rpe: ev.target.value || undefined })} className={`${inputCls} h-8 w-20`} /></td>
         <td className="min-w-48 px-3 py-2"><input aria-label={`Hướng dẫn ${e.name}`} disabled={!editable} value={e.instructions ?? ''} onChange={ev => setEx(i, { instructions: ev.target.value })} className={`${inputCls} h-8`} /></td>
         <td className="px-2">{editable && c.exercises.length > 1 && <button type="button" aria-label={`Bỏ ${e.name}`} onClick={() => onChange({ ...c, exercises: c.exercises.filter((_, j) => j !== i) })} className="text-text-muted hover:text-red-600"><Trash2 className="h-4 w-4" /></button>}</td>
       </tr>)}</tbody></table></div>

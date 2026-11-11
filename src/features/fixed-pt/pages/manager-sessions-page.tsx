@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react'
 import { Modal } from '@/shared/components/ui/modal'
 import { hybridSend } from '../hybrid-api'
 import { Button } from '@/shared/components/ui/button'
-import { formatDateTime, formatTime, formatWeekdayDateTime } from '@/shared/utils/date'
+import { centerDateTimeInput, formatDateTime, formatTime, formatWeekdayDateTime } from '@/shared/utils/date'
 import { fixedPtApi } from '../api'
 import { useLoad, useSubmit } from '../hooks'
 import type { Disruption, Session } from '../types'
@@ -110,7 +110,7 @@ export function DisruptionPanel({ initialPurchaseId = '', bookingId, from = '', 
 }
 
 function RecordCompleted({ session, onClose, onDone }: { session: Session; onClose: () => void; onDone: () => void }) {
-  const local = (s: string) => new Date(Date.parse(s) + 7 * 3600000).toISOString().slice(0, 16)
+  const local = (s: string) => centerDateTimeInput(s)
   const [from, setFrom] = useState(local(session.startsAt)), [to, setTo] = useState(local(session.endsAt))
   const [reason, setReason] = useState(''), [evidence, setEvidence] = useState('')
   const act = useSubmit()

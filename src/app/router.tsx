@@ -1,5 +1,4 @@
 import { MemberGymSalePage } from '@/features/member/pages/member-gym-sale-page'
-import { DemoPage, demoVisible } from '@/features/demo/demo-page'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { CoachSheetPage } from '@/features/goal-lab/coach-sheet-page'
 import { MemberGoalsPage } from '@/features/goal-lab/member-goals-page'
@@ -121,7 +120,6 @@ export const router = createBrowserRouter([
     ),
     children: [
       { path: '/manager', element: <MgrHomePage /> },
-      ...(demoVisible ? [{ path: '/manager/demo', element: <DemoPage /> }] : []),
       { path: '/manager/members', element: <MgrMembersPage /> },
       { path: '/manager/members/:id', element: <DeskMemberPage /> },
       { path: '/manager/pt-board', element: <MgrPtBoardPage /> },

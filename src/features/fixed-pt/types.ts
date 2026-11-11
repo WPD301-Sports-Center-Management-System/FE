@@ -19,7 +19,7 @@ export interface Session {
   bookedAt?: string
   id: string; bookingCode: string; status: SessionStatus; purchaseId: string; memberId: string; coachId: string; creditId: string | null; startsAt: string; endsAt: string; centerDate: string
   memberName?: string; coachName?: string; courseName?: string; isMakeup: boolean; needsReview: boolean; reviewReason?: string | null; disruptionId?: string | null; outcomeReversedAt?: string | null; dataOrigin: 'NATIVE' | 'LEGACY'
-  actualStartedAt?: string | null; actualEndedAt?: string | null; arrivedAt?: string | null
+  actualStartedAt?: string | null; actualEndedAt?: string | null; arrivedAt?: string | null; expectedEndsAt?: string | null; plannedStartsAt?: string; plannedEndsAt?: string
   credit?: { creditIndex: number; status: string } | null; purchase?: { id: string; purchaseCode: string; packageNameSnapshot: string; totalCredits: number } | null
   cancellationPolicy: CancellationPreview | null
   allowedActions: { arrive: boolean; start: boolean; end: boolean; noShow: boolean; cancel: boolean; coachCancel: boolean; reverse: boolean; interrupt?: boolean; recordCompleted?: boolean }
@@ -44,7 +44,7 @@ export interface EarningLine { id: string; coachId: string; amount: string; outc
   booking: { bookingCode: string; plannedStartsAt: string; status: string; outcomeReversedAt?: string | null }; credit: { creditIndex: number }
   purchase: { purchaseCode: string; packageNameSnapshot: string; member: { memberCode: string; user: { fullName: string } } }; coach?: { user: { fullName: string } }
   disputes: { id: string; status: string; afterPayment: boolean; reason: string }[] }
-export interface EarningSummary { byStatus: Record<string, { amount: number; count: number }>; recoveryOutstanding: number; paidOut: number }
+export interface EarningSummary { byStatus: Record<string, { amount: number; count: number }>; recoveryOutstanding: number; paidOut: number; reserved: number; available: number; unverified: number }
 export interface PayoutPeriod { id: string; code: string; coachId: string; periodFrom: string; periodTo: string; status: 'DRAFT' | 'LOCKED' | 'PAID' | 'CANCELLED'; grossAmount: string; offsetAmount: string; netAmount: string; transferRef?: string | null; paidAt?: string | null; coach?: { user: { fullName: string } }
   items: { id: string; itemType: 'EARNING' | 'ADJUSTMENT'; amount: string; status: string; earningLine?: { booking: { bookingCode: string; plannedStartsAt: string }; credit: { creditIndex: number }; purchase: { purchaseCode: string } } | null; adjustment?: { code: string; type: string; reason: string } | null }[] }
 export interface Adjustment { id: string; code: string; coachId: string; type: 'RECOVERY' | 'ADDITION'; status: string; amount: string; remaining: string; reason: string; createdAt: string; coach?: { user: { fullName: string } }; settlements: { id: string; amount: string; method: string; reference?: string | null; createdAt: string }[] }
