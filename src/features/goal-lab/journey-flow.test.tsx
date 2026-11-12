@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { journeyApi } from './journey-api';
 import { JourneyInitialize, JourneySessionPage } from './journey-pages';
-import { JourneyProgress } from './journey-progress';
+import { JourneyChart, JourneyProgress } from './journey-progress';
 import type { Journey, SessionJourney } from './journey-types';
 vi.mock('./journey-api', () => ({ journeyApi: { initialize: vi.fn(), session: vi.fn(), save: vi.fn() } }));
 const initial = { startedAt: '2026-10-01T00:00:00Z', deadline: '2027-01-01T00:00:00Z', goalType: 'WEIGHT_LOSS', baseline: { weightKg: 80, waistCm: 90 }, targets: { weightKg: 70 }, profile: { dateOfBirth: '1995-01-01', gender: 'MALE', heightCm: 170, medicalNotes: 'Không' } };
@@ -48,4 +48,14 @@ it('shows progress read-only, omits absent optional metrics, and explains missin
   expect(screen.getByText('BMI chỉ để tham khảo')).toBeInTheDocument();
   expect(screen.queryByText('Tỷ lệ mỡ')).not.toBeInTheDocument();
   expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+});
+
+it('plots measurements in chronological order and only labels available series', () => {
+  const metric = { ...journey.metrics[0]!, points: [...journey.metrics[0]!.points].reverse(), forecast: null };
+  const { container } = render(<JourneyChart metric={metric} start={initial.startedAt} end={initial.deadline} />);
+  const dots = Array.from(container.querySelectorAll('circle'));
+  expect(Number(dots[0]?.getAttribute('cx'))).toBeLessThan(Number(dots[1]?.getAttribute('cx')));
+  expect(screen.getByText('Số đo thực tế')).toBeInTheDocument();
+  expect(screen.getByText('Kế hoạch')).toBeInTheDocument();
+  expect(screen.queryByText('Dự báo')).not.toBeInTheDocument();
 });

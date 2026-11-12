@@ -19,7 +19,7 @@ export function JourneyProgress({ data }: { data: Journey }) {
     </article>)}</div>
     {data.bmi && <aside className="journey-bmi"><span>BMI</span><strong>{showNumber(data.bmi.value)}</strong><span>{data.bmi.label}</span><small>BMI chỉ để tham khảo</small></aside>}
     <section className="journey-plot"><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">Thay đổi theo thời gian</h3><label className="text-sm">Chỉ số <select className="ml-2 rounded border border-border-subtle bg-bg-surface p-2" value={selected?.key ?? ''} onChange={e => setMetric(e.target.value)}>{journeyMetrics.filter(k => data.metrics.some(m => m.key === k)).map(k => <option key={k} value={k}>{metricLabels[k]}</option>)}</select></label></div>
-      {selected && <><JourneyChart metric={selected} start={data.initial.startedAt} end={data.initial.deadline} /><p className="mt-4 font-medium">{selected.forecast ? `Dự kiến đạt ${showNumber(selected.forecast.value)} ${selected.unit} vào cuối lộ trình${selected.target == null ? '' : ` (mục tiêu ${showNumber(selected.target)} ${selected.unit})`}.` : 'Chưa đủ dữ liệu để dự báo'}</p><p className="mt-1 text-xs text-text-muted">{selected.forecast ? 'Ước tính nếu xu hướng hiện tại tiếp tục.' : 'Cần ít nhất 3 buổi có số đo của chỉ số này, ở các thời điểm khác nhau.'}</p></>}
+      {selected && <><JourneyChart metric={selected} start={data.initial.startedAt} end={data.initial.deadline} /><p className="mt-4 font-medium">{selected.forecast ? `Dự kiến đạt ${showNumber(selected.forecast.value)} ${selected.unit} vào cuối lộ trình${selected.target == null ? '' : ` (mục tiêu ${showNumber(selected.target)} ${selected.unit})`}.` : 'Chưa đủ dữ liệu để dự báo'}</p><p className="mt-1 text-xs text-text-muted">{selected.forecast ? 'Ước tính nếu xu hướng hiện tại tiếp tục.' : 'Cần ít nhất 3 buổi có số đo ở các thời điểm khác nhau và lần đo gần nhất trước ngày kết thúc lộ trình.'}</p></>}
     </section>
     {data.readings.length > 0 && <section className="space-y-3"><h3 className="font-semibold">Đánh giá qua các buổi</h3>{data.readings.slice().reverse().map(r => <article key={r.bookingId} className="border-t border-border-subtle pt-3"><p className="text-xs text-text-muted">{formatDate(r.at)}</p><p className="whitespace-pre-wrap text-sm">{r.comment}</p></article>)}</section>}
   </section>;
@@ -32,13 +32,16 @@ export function ProgressTrack({ value, expected, boundary }: { value: number; ex
 }
 export function JourneyChart({ metric: m, start, end }: { metric: MetricProgress; start: string; end: string }) {
   const width = 680, height = 240, left = 52, right = 14, top = 20, bottom = 32;
-  const actual = m.points;
+  const actual = [...m.points].filter(p => Number.isFinite(Date.parse(p.at)) && Number.isFinite(p.value)).sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
   const plan = m.baseline != null && m.target != null ? [{ at: start, value: m.baseline }, { at: end, value: m.target }] : [];
   const forecast = m.forecast ? [m.forecast.from, m.forecast.to] : [];
   const values = [...actual, ...plan, ...forecast].map(p => p.value);
+  if (m.target != null) values.push(m.target);
   if (!values.length) return <p>Chưa có số liệu.</p>;
   const low = Math.min(...values), high = Math.max(...values), pad = Math.max(0.5, (high - low) * 0.15), min = low - pad, max = high + pad;
-  const from = Date.parse(start), until = Math.max(Date.parse(end), ...actual.map(p => Date.parse(p.at)));
+  const times = [start, end, ...actual.map(p => p.at), ...forecast.map(p => p.at)].map(Date.parse).filter(Number.isFinite);
+  if (!times.length) return <p>Chưa có ngày hợp lệ để hiển thị biểu đồ.</p>;
+  const from = Math.min(...times), until = Math.max(...times);
   const x = (at: string) => left + (Date.parse(at) - from) / Math.max(1, until - from) * (width - left - right);
   const y = (v: number) => top + (max - v) / (max - min) * (height - top - bottom);
   const path = (points: Point[]) => points.map(p => `${x(p.at)},${y(p.value)}`).join(' ');
@@ -49,6 +52,6 @@ export function JourneyChart({ metric: m, start, end }: { metric: MetricProgress
     {forecast.length > 0 && <polyline points={path(forecast)} fill="none" stroke="var(--journey-data)" strokeDasharray="7 5" strokeWidth="2" />}
     <polyline points={path(actual)} fill="none" stroke="var(--journey-data)" strokeWidth="2.5" />
     {actual.map((p, i) => <circle key={i} cx={x(p.at)} cy={y(p.value)} r="4" fill="var(--journey-data)"><title>{formatDate(p.at)}: {showNumber(p.value)} {m.unit}</title></circle>)}
-    <text x={left} y={height - 6}>{formatDate(start)}</text><text x={width - right} y={height - 6} textAnchor="end">{formatDate(new Date(until).toISOString())}</text>
-  </svg><div className="journey-legend"><span><i className="actual" />Thực tế</span><span><i className="plan" />Kế hoạch</span><span><i className="forecast" />Dự báo</span><span><i className="target" />Mục tiêu</span></div></>;
+    <text x={left} y={height - 6}>{formatDate(new Date(from).toISOString())}</text><text x={width - right} y={height - 6} textAnchor="end">{formatDate(new Date(until).toISOString())}</text>
+  </svg><div className="journey-legend">{actual.length > 0 && <span><i className="actual" />Số đo thực tế</span>}{plan.length > 0 && <span><i className="plan" />Kế hoạch</span>}{forecast.length > 0 && <span><i className="forecast" />Dự báo</span>}{m.target != null && <span><i className="target" />Mục tiêu</span>}</div></>;
 }
