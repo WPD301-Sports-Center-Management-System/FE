@@ -54,7 +54,7 @@ export function MgrMembersPage() {
       <StatTile label="Tổng hội viên" icon={<Users className="h-[18px] w-[18px]" />} iconTone="info" value={counts ? fmtNumber(counts.members) : '—'} hint={desk.data ? `${desk.data.checkinsToday} lượt check-in hôm nay` : undefined} />
       <StatTile label="Có vé gym hiệu lực" icon={<Ticket className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={subs.data ? fmtNumber(activeMembers) : '—'} hint={counts?.members && subs.data ? `${fmtNumber((activeMembers / counts.members) * 100, 1)}% tổng hội viên` : undefined} />
       <StatTile label="Giá trị đơn trung bình" icon={<CreditCard className="h-[18px] w-[18px]" />} iconTone="violet" value={thisMonth.length ? fmtNumber(thisMonth.reduce((n, o) => n + o.value, 0) / thisMonth.length / 1_000_000, 1) : '—'} unit="tr ₫" hint={top ? `Bán chạy tháng này: ${top[0]} (${top[1]})` : 'Chưa có đơn tháng này'} />
-      <StatTile label="Vé hết hạn ≤ 7 ngày" icon={<CalendarClock className="h-[18px] w-[18px]" />} iconTone="warning" tone="warning" value={desk.data?.expiringSubscriptions ?? '—'} hint="Lễ tân gọi nhắc gia hạn" />
+      <StatTile label="Vé hết hạn ≤ 7 ngày" icon={<CalendarClock className="h-[18px] w-[18px]" />} iconTone="warning" tone="warning" value={desk.data?.expiringSubscriptions ?? '—'} />
     </div>
     <Card flush>
       <div className="flex flex-wrap items-center gap-3 border-b border-border-subtle p-4">

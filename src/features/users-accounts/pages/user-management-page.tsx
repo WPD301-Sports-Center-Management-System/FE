@@ -312,9 +312,6 @@ export function UserManagementPage() {
           <h1 className="text-2xl font-bold tracking-tight text-text-primary">
             Quản lý Tài Khoản & Nhân Sự
           </h1>
-          <p className="text-xs text-text-muted mt-1">
-            Quản lý tài khoản và phân quyền cho Quản lý, Lễ tân, Huấn luyện viên và Hội viên.
-          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button

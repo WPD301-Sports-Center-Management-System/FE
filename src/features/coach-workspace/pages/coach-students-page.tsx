@@ -63,8 +63,8 @@ export function CoachStudentsPage() {
 
   return <div>
     <PageHeader title="Danh sách học viên"
-      subtitle={rows ? <><span>{active.length} học viên đang tập</span><Dot /><span>{rows.length - active.length} đã xong gói</span><Dot /><span>Chuyên cần tính trên 60 ngày gần nhất</span></> : 'Đang tải…'}
-      actions={<Btn icon={<Download aria-hidden className="h-4 w-4" />} onClick={exportCsv} disabled={!filtered.length}>Xuất CSV</Btn>} />
+      subtitle={rows ? <><span>{active.length} học viên đang tập</span><Dot /><span>{rows.length - active.length} không còn gói đang tập</span><Dot /><span>Tối đa 1.000 gói và 1.000 buổi đã tải; chuyên cần trong 60 ngày</span></> : error ? 'Không tải được dữ liệu' : 'Đang tải…'}
+      actions={<Btn icon={<Download aria-hidden className="h-4 w-4" />} onClick={exportCsv} disabled={!filtered.length}>Xuất dữ liệu đã tải</Btn>} />
     <Card flush>
       <div className="flex flex-wrap items-end gap-3 border-b border-border-subtle p-4">
         <label className="relative min-w-60 flex-1"><span className="sr-only">Tìm học viên</span>

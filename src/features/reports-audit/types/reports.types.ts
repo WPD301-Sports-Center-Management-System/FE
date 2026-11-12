@@ -4,8 +4,8 @@ export interface RevenueReportData {
   membershipRevenue: number
   ptGross: number
   ptGymShare: number
-  coachPayable: number
-  coachPending: number
+  coachBudget: number
+  coachEligibleUnpaid: number
   paymentCount: number
 }
 

@@ -8,7 +8,7 @@ export function CoachTierPanel() {
   const coaches = useLoad(() => mgrApi.coachApplications())
   const [selectedId, setSelectedId] = useState('')
   const selected = coaches.data?.find(c => c.id === selectedId)
-  return <Card title="Bậc Coach" subtitle="Bậc quyết định gói được bán và giá của đơn mới. Đơn đã mua tiếp tục theo giá và bậc đã lưu.">
+  return <Card title="Bậc Coach">
     <Async state={coaches} rows={3} empty={rows => !rows.some(c => c.applicationStatus === 'APPROVED') && <EmptyBox title="Chưa có Coach đã duyệt" />}>
       {rows => <div className="space-y-4"><Field label="Coach"><select aria-label="Coach cần đổi bậc" className={inputCls} value={selectedId} onChange={e => setSelectedId(e.target.value)}><option value="">Chọn Coach đã duyệt</option>{rows.filter(c => c.applicationStatus === 'APPROVED').map(c => <option key={c.id} value={c.id}>{c.user.fullName} · {tierLabel(c.tier)}</option>)}</select></Field>
         {selected && <TierEditor key={selected.id} coach={selected} onSaved={coaches.reload} />}

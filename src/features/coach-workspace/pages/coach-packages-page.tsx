@@ -6,7 +6,7 @@ import { useLoad } from '@/features/fixed-pt/hooks'
 import { centerDate } from '@/shared/utils/date'
 import { coachWs, type CoachPurchase } from '../api'
 import { CoachCatalog } from '@/features/fixed-pt/pages/package-catalog-page'
-import { Async, Badge, Btn, Card, Dot, EmptyBox, LinkBtn, PageHeader, Pagination, Person, ProgressBar, Segmented, StatTile, Table, td } from '@/features/workspace/ui'
+import { Async, Badge, Btn, Card, EmptyBox, LinkBtn, PageHeader, Pagination, Person, ProgressBar, Segmented, StatTile, Table, td } from '@/features/workspace/ui'
 import { addDays, dayEnd, downloadCsv, fmtNumber, isUpcoming, PURCHASE_LABEL, relativeSlot, type Tone } from '@/features/workspace/utils'
 
 const PAGE = 8
@@ -27,7 +27,7 @@ export function CoachPackagesPage() {
   const view: View = params.get('view') === 'catalog' ? 'catalog' : 'sold'
   const switcher = <Segmented label="Chế độ xem" value={view} onChange={v => setParams(v === 'catalog' ? { view: v } : {}, { replace: true })} items={[{ key: 'sold' as const, label: 'Học viên đã mua' }, { key: 'catalog' as const, label: 'Gói mở bán' }]} />
   if (view === 'catalog') return <div>
-    <PageHeader title="Gói PT" subtitle="Các gói trung tâm đang mở bán theo bậc Coach của bạn." actions={switcher} />
+    <PageHeader title="Gói PT" actions={switcher} />
     <CoachCatalog />
   </div>
   return <SoldPackages switcher={switcher} />
@@ -55,12 +55,12 @@ function SoldPackages({ switcher }: { switcher: React.ReactNode }) {
     rows.map(p => [p.purchaseCode, p.memberName, p.memberCode, p.packageNameSnapshot, p.courseNameSnapshot ?? 'PT 1:1', p.consumedCredits, p.totalCredits, dmy(p.expiresAt), statusOf(p).label]))
 
   return <div>
-    <PageHeader title="Gói PT" subtitle={<><span>Các gói học viên đã mua và số buổi còn lại</span><Dot /><span>Cập nhật sau mỗi buổi kết thúc</span></>}
-      actions={<>{switcher}<Btn icon={<Download aria-hidden className="h-4 w-4" />} onClick={exportCsv} disabled={!rows.length}>Xuất CSV</Btn></>} />
-    <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <PageHeader title="Gói PT" subtitle="Số liệu từ tối đa 1.000 gói và 500 buổi sắp tới đã tải"
+      actions={<>{switcher}<Btn icon={<Download aria-hidden className="h-4 w-4" />} onClick={exportCsv} disabled={!rows.length}>Xuất dữ liệu đã tải</Btn></>} />
+    <div className="mb-6 grid grid-cols-2 rounded-xl border border-border-subtle bg-bg-surface xl:grid-cols-4 [&>div]:rounded-none [&>div]:border-0 [&>div]:bg-transparent [&>div]:p-4">
       <StatTile label="Gói đang dạy" icon={<Package className="h-[18px] w-[18px]" />} iconTone="info" value={purchases.data ? active.length : '—'} hint={byCourse.slice(0, 3).map(([c, n]) => `${n} ${c}`).join(' · ') || undefined} />
       <StatTile label="Buổi còn lại" icon={<CheckCircle2 className="h-[18px] w-[18px]" />} iconTone="violet" value={purchases.data ? totalRemaining : '—'} hint={active.length ? `Trung bình ${fmtNumber(totalRemaining / active.length, 1)} buổi / gói` : undefined} />
-      <StatTile label="Sắp hết buổi" icon={<AlertTriangle className="h-[18px] w-[18px]" />} iconTone="warning" tone="warning" value={purchases.data ? low.length : '—'} hint="Còn ≤ 2 buổi — nên tư vấn gia hạn" />
+      <StatTile label="Sắp hết buổi" icon={<AlertTriangle className="h-[18px] w-[18px]" />} iconTone="warning" tone="warning" value={purchases.data ? low.length : '—'} hint="Còn ≤ 2 buổi" />
       <StatTile label="Buổi đã dạy" icon={<TrendingUp className="h-[18px] w-[18px]" />} iconTone="success" value={purchases.data ? fmtNumber(consumed) : '—'} hint={purchases.data ? `${all.filter(p => p.status === 'COMPLETED').length} gói đã hoàn thành` : undefined} />
     </div>
     <Card flush actions={<Segmented label="Lọc gói" value={tab} onChange={t => { setTab(t); setPage(1) }} items={TABS.map(t => ({ key: t.key, label: t.label, count: all.filter(t.test).length }))} />} title="Danh sách gói">

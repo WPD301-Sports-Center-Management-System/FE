@@ -38,7 +38,7 @@ export function SessionActions({ session, onDone, size = 'sm', compact }: { sess
     {!compact && session.actionReasons?.start && <p className="mt-2 text-sm text-text-muted">{session.actionReasons.start}</p>}
     {submit.error && !dialog && <p role="alert" className="mt-1 text-right text-xs text-red-600">{submit.error}</p>}
 
-    <Modal isOpen={dialog === 'interrupt'} onClose={close} title="Dừng buổi do sự cố" description="Giữ lại buổi tập để Coach xếp buổi bù; buổi này không phát sinh thu nhập. Lịch sử phần đã tập vẫn được giữ.">
+    <Modal isOpen={dialog === 'interrupt'} onClose={close} title="Dừng buổi do sự cố" description="Giữ lại buổi tập để huấn luyện viên xếp buổi bù; buổi này không phát sinh thu nhập. Lịch sử phần đã tập vẫn được giữ.">
       <form className="space-y-4" onSubmit={e => { e.preventDefault(); void run(() => hybridSend('post', `/pt-bookings/${session.id}/interrupt`, { reason: reason.trim() }), 'Đã dừng buổi và giữ lại buổi tập.') }}>
         <Field label="Sự cố và cách xử lý" required><textarea required className={textareaCls} rows={3} value={reason} onChange={e => setReason(e.target.value)} /></Field>
         <InlineError message={submit.error} />

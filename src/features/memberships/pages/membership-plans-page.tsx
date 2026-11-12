@@ -123,9 +123,6 @@ export function MembershipPlansPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary">Quản lý Bảng Giá Vé Gym</h1>
-          <p className="text-xs text-text-muted mt-1">
-            Cấu hình gói hội viên tập tự do phòng Gym. Giá thay đổi chỉ áp dụng cho lượt mua mới.
-          </p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <Button variant="outline" size="sm" onClick={loadPlans} disabled={isLoading} className="gap-2">

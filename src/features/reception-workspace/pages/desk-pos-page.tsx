@@ -6,7 +6,7 @@ import { Banknote, Check, CheckCircle2, CreditCard, FileDown, RotateCcw, Ticket,
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import { centerDate } from '@/shared/utils/date'
 import { PersonSearch, type PersonHit } from '@/features/workspace/person-search'
-import { Badge, Btn, Card, Dot, EmptyBox, ErrorBox, Field, InlineError, LinkBtn, PageHeader, Person, Skeleton, inputCls } from '@/features/workspace/ui'
+import { Badge, Btn, Card, EmptyBox, ErrorBox, Field, InlineError, LinkBtn, PageHeader, Person, Skeleton, inputCls } from '@/features/workspace/ui'
 import { fmtMoney, fmtNumber } from '@/features/workspace/utils'
 import { deskApi, type Plan, type Subscription } from '../api'
 import { useDeskShell } from '../shell'
@@ -78,11 +78,11 @@ export function DeskPosPage() {
   }
 
   return <div>
-    <PageHeader title="Bán vé gym" subtitle={<><span>Quầy bán hàng</span><Dot /><span>Giá đã gồm thuế · tạo vé rồi thu tiền ngay tại quầy</span></>}
+    <PageHeader title="Bán vé gym" subtitle="Giá đã gồm thuế"
       actions={<><Link className="text-sm font-semibold underline" state={params.get('returnToPt') ? location.state : undefined} to={memberId ? '/receptionist/pt-sale?memberId=' + memberId : '/receptionist/pt-sale'}>{params.get('returnToPt') ? 'Quay lại phương án PT' : 'Bán gói PT'}</Link><LinkBtn to="/receptionist/payments">Giao dịch hôm nay</LinkBtn></>} />
     {customer && <section className="mb-4 rounded-lg bg-bg-surface-muted p-4 text-sm"><h2 className="font-semibold">Vé gym của học viên</h2>{(subs.data ?? []).filter(s => ['ACTIVE','EXPIRED'].includes(s.status)).map(s => <div key={s.id} className="mt-2 flex flex-wrap items-center gap-3"><span>{s.planNameSnapshot} · {dmy(s.startDate)} → {dmy(s.endDate)}</span><Btn size="sm" disabled={submit.busy} onClick={() => { setRenewId(s.id); setPending(null); setPlan(plans.data?.find(p => p.id === s.planId) ?? null); setStartDate('') }}>{renewId === s.id ? 'Đã chọn gia hạn vé này' : 'Gia hạn vé này'}</Btn></div>)}{renewId && <Btn size="sm" disabled={submit.busy} onClick={() => { setRenewId(''); setPending(null) }}>Chọn mua vé mới</Btn>}<InlineError message={subs.error} /></section>}
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
-      <Card title="1. Chọn vé gym" subtitle="Các vé đang được trung tâm mở bán">
+      <Card title="1. Chọn vé gym">
         {plans.error ? <ErrorBox message={plans.error} onRetry={() => void plans.reload()} /> : !plans.data ? <Skeleton rows={4} className="p-0" /> : !plans.data.length ? <EmptyBox title="Chưa có vé nào mở bán" /> :
           <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">{plans.data.map(p => { const sel = plan?.id === p.id && !pending; return <button key={p.id} type="button" disabled={submit.busy} aria-pressed={sel} onClick={() => { setPlan(p); setPending(null) }}
             className={`relative rounded-xl border p-4 text-left transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/50 ${sel ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border-subtle bg-bg-surface'}`}>
@@ -95,7 +95,7 @@ export function DeskPosPage() {
           </button> })}</div>}
       </Card>
 
-      <Card title="2. Hội viên & thanh toán" subtitle="Kiểm tra thông tin trước khi thu tiền" className="xl:sticky xl:top-20 xl:self-start">
+      <Card title="2. Hội viên & thanh toán" className="xl:sticky xl:top-20 xl:self-start">
         {done ? <Receipt done={done} onNew={reset} /> : <fieldset disabled={submit.busy} className="min-w-0 space-y-4">
           <div>
             <p className="mb-1.5 text-sm font-medium">Khách hàng <span className="text-red-600" aria-hidden>*</span></p>

@@ -106,7 +106,7 @@ function ReadyToggle() {
       <ChevronDown aria-hidden className="h-4 w-4" />
     </button>
     {open && <div id={menuId} role="menu" className="absolute right-0 top-11 w-72 rounded-xl border border-border-subtle bg-bg-surface p-2 shadow-xl">
-      {[{ v: true, t: 'Nhận học viên mới', d: 'Hiển thị bạn trong danh sách Coach còn nhận gói PT.' }, { v: false, t: 'Tạm ngưng nhận', d: 'Học viên hiện tại vẫn tập bình thường.' }].map(o =>
+      {[{ v: true, t: 'Nhận học viên mới', d: 'Hiển thị bạn trong danh sách huấn luyện viên còn nhận gói PT.' }, { v: false, t: 'Tạm ngưng nhận', d: 'Học viên hiện tại vẫn tập bình thường.' }].map(o =>
         <button key={String(o.v)} role="menuitemradio" aria-checked={on === o.v} type="button" disabled={busy} onClick={() => void choose(o.v)}
           className={`block w-full rounded-lg px-3 py-2 text-left hover:bg-bg-surface-muted ${on === o.v ? 'bg-primary/5' : ''}`}>
           <span className="text-sm font-semibold text-text-primary">{o.t}</span>

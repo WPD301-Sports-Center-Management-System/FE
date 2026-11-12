@@ -28,7 +28,7 @@ export function ManagerSessionsPage() {
     <td className={td}><Status value={s.status} />{s.reviewReason && <div className="text-xs text-amber-700 dark:text-amber-300">{s.reviewReason === 'LEGACY_OVERLAP' ? 'Lịch cũ trùng giờ' : s.reviewReason === 'NO_OUTCOME_AFTER_END' ? 'Đã qua giờ, chưa có kết quả' : s.reviewReason}</div>}{s.outcomeReversedAt && <div className="text-xs text-text-muted">Đã đảo kết quả</div>}</td>
     <td className={td}><div className="flex flex-wrap gap-1.5">{actions}</div></td></tr>
   return (
-    <Page title="Buổi cần xử lý & gián đoạn dịch vụ" subtitle="Không có chuyển Coach: gói luôn giữ Coach ban đầu. Mọi điều chỉnh có lý do và audit.">
+    <Page title="Buổi cần xử lý & gián đoạn dịch vụ">
       <ErrorBanner message={act.error} />
       <Panel title="Buổi cần xử lý">
         <Loadable state={review} empty="Không có buổi cần xử lý.">{items => (

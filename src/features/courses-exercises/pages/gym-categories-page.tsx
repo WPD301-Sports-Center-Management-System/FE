@@ -416,9 +416,6 @@ export function GymCategoriesPage() {
           <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2.5">
             <span>Danh Mục & Thư Viện Bài Tập</span>
           </h1>
-          <p className="text-xs text-text-muted mt-1">
-            Quản lý nhóm cơ giải phẫu, bài tập chuẩn hóa và các khóa đào tạo PT 1:1
-          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button

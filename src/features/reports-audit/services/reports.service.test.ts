@@ -20,8 +20,8 @@ describe('reportsService', () => {
       membershipRevenue: 990000,
       ptGross: 3600000,
       ptGymShare: 1440000,
-      coachPayable: 2160000,
-      coachPending: 1080000,
+      coachBudget: 2160000,
+      coachEligibleUnpaid: 1080000,
       paymentCount: 3,
     }
     vi.mocked(apiClient.get).mockResolvedValueOnce({

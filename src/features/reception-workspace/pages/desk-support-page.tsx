@@ -6,7 +6,7 @@ import { Modal } from '@/shared/components/ui/modal'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import { centerDate } from '@/shared/utils/date'
-import { Async, Badge, Btn, Card, Dot, EmptyBox, Field, InlineError, PageHeader, Pagination, Person, Segmented, StatTile, Table, td, textareaCls, useFlash } from '@/features/workspace/ui'
+import { Async, Badge, Btn, Card, EmptyBox, Field, InlineError, PageHeader, Pagination, Person, Segmented, StatTile, Table, td, textareaCls, useFlash } from '@/features/workspace/ui'
 import { hhmm, minutesBetween, mondayOf, relativeAgo } from '@/features/workspace/utils'
 import { deskApi, type SupportRequest, type SupportStatus } from '../api'
 import { useDeskShell } from '../shell'
@@ -33,8 +33,9 @@ export function DeskSupportPage() {
 
   return <div>
     {node}
-    <PageHeader title="Hỗ trợ hội viên" subtitle={<><span>Yêu cầu do hội viên gửi từ app</span><Dot /><span>Phản hồi được gửi thông báo tới hội viên</span></>} />
-    <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <PageHeader title="Hỗ trợ hội viên" />
+    <p className="mb-2 text-sm text-text-muted">Số liệu từ tối đa 300 yêu cầu đã tải</p>
+    <div className="mb-6 grid grid-cols-2 rounded-xl border border-border-subtle bg-bg-surface xl:grid-cols-4 [&>div]:rounded-none [&>div]:border-0 [&>div]:bg-transparent [&>div]:p-4">
       <StatTile label="Yêu cầu mới" icon={<Inbox className="h-[18px] w-[18px]" />} iconTone="warning" tone="warning" value={tickets.data ? all.filter(t => t.status === 'OPEN').length : '—'} hint="Chưa ai nhận xử lý" />
       <StatTile label="Đang xử lý" icon={<Clock3 className="h-[18px] w-[18px]" />} iconTone="info" value={tickets.data ? all.filter(t => t.status === 'IN_PROGRESS').length : '—'} />
       <StatTile label="Giải quyết tuần này" icon={<CheckCircle2 className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={tickets.data ? all.filter(t => (t.status === 'RESOLVED' || t.status === 'CLOSED') && centerDate(t.updatedAt) >= week).length : '—'} />
@@ -77,7 +78,7 @@ function TicketModal({ t, onClose, onDone }: { t: SupportRequest; onClose: () =>
       <SupportLinks ticketId={t.id} manager={readOnly} onBlockedChange={setBlocked} />
       {t.attachmentUrls.length > 0 && <div className="flex flex-wrap gap-2">{t.attachmentUrls.map((u, i) => <a key={u} href={u} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-border-subtle"><img src={u} alt={`Ảnh đính kèm ${i + 1}`} className="h-24 w-24 object-cover" /></a>)}</div>}
       {t.response && <div className="rounded-lg border border-border-subtle p-3 text-sm"><p className="text-xs font-semibold text-text-muted">Phản hồi trước{t.respondedAt ? ` · ${dmy(t.respondedAt)} ${hhmm(t.respondedAt)}` : ''}</p><p className="mt-1 whitespace-pre-line">{t.response}</p></div>}
-      {readOnly ? <p className="border-t border-border-subtle pt-4 text-sm text-text-muted">Lễ tân phản hồi và chuyển trạng thái yêu cầu; Manager theo dõi tại đây.</p> : closed ? <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-4">
+      {readOnly ? null : closed ? <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-4">
         <span className="text-sm text-text-muted">Yêu cầu đã {SUPPORT_LABEL[t.status].label.toLowerCase()}.</span>
         <div className="flex gap-2"><Btn onClick={onClose}>Đóng</Btn><Btn variant="soft" busy={submit.busy} icon={<RotateCcw aria-hidden className="h-4 w-4" />} onClick={async () => { if (await submit.run(() => deskApi.reopenSupport(t.id))) onDone('Đã mở lại yêu cầu.') }}>Mở lại</Btn></div>
         <div className="basis-full"><InlineError message={submit.error} /></div>

@@ -23,6 +23,6 @@ export function PaymentsHubPage() {
   return <TabbedPage bare title="Thanh toán" tabs={[
     { key: 'payments', label: 'Giao dịch & hóa đơn', render: () => <DeskPaymentsPage /> },
     { key: 'reconciliation', label: 'Đối soát tiền nhận', render: () => <ReconciliationPage /> },
-    ...(user?.role === 'MANAGER' ? [{ key: 'refunds', label: 'Hoàn tiền PT', render: () => <div><PageHeader title="Hoàn tiền PT" subtitle="Chốt phần chưa dùng, thu hồi quyền lợi và theo dõi chuyển tiền cho học viên." /><RefundsPanel /></div> }] : []),
+    ...(user?.role === 'MANAGER' ? [{ key: 'refunds', label: 'Hoàn tiền PT', render: () => <div><PageHeader title="Hoàn tiền PT" /><RefundsPanel /></div> }] : []),
   ]} />
 }

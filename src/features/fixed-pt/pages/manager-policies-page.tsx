@@ -21,7 +21,7 @@ export function ManagerPoliciesPage() {
   const dirty = Object.keys(draft)
   const valueOf = (p: PolicyRow) => draft[p.key] ?? (p.value === null || p.value === undefined ? '' : String(p.value))
   return (
-    <Page title="Chính sách vận hành PT" subtitle="Các giá trị này là quyết định của chủ sản phẩm. Mỗi thay đổi được ghi audit.">
+    <Page title="Chính sách vận hành PT">
       <Notice tone="warning">Chỉ nhập giá trị đã được chủ sản phẩm phê duyệt. Không để trống giá trị đang sửa; chính sách chỉ có thể cập nhật, không thể xóa. Đơn đã mua giữ chính sách được lưu tại thời điểm mua.</Notice>
       {success && <Notice tone="success">{success}</Notice>}
       <form onSubmit={e => {

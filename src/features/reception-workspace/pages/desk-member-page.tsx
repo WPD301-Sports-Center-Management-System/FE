@@ -60,12 +60,12 @@ export function DeskMemberPage() {
       </div>
     </section>
 
-    <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="mb-6 grid grid-cols-2 rounded-xl border border-border-subtle bg-bg-surface xl:grid-cols-4 [&>div]:rounded-none [&>div]:border-0 [&>div]:bg-transparent [&>div]:p-4">
       <StatTile label="Vé gym hiện tại" icon={<Ticket className="h-[18px] w-[18px]" />} iconTone="success" value={st?.sub && st.key !== 'pending' && st.key !== 'expired' ? `${daysUntil(st.sub.endDate)}` : '—'} unit={st?.sub && (st.key === 'active' || st.key === 'expiring') ? 'ngày còn lại' : undefined}
         hint={st?.sub ? `${st.sub.planNameSnapshot} · đến ${dmy(st.sub.endDate)}` : 'Chưa có vé'} />
-      <StatTile label="Buổi PT còn lại" icon={<Dumbbell className="h-[18px] w-[18px]" />} iconTone="violet" value={purchases.data ? ptLeft : '—'} unit={ptTotal ? `/${ptTotal} buổi` : undefined} hint={active[0] ? `HLV ${active[0].coachNameSnapshot ?? ''}` : 'Không có gói PT đang tập'} />
-      <StatTile label="Check-in 30 ngày" icon={<CalendarCheck className="h-[18px] w-[18px]" />} iconTone="info" value={visits.data ? visits30 : '—'} unit="lượt" hint={visits.data?.[0] ? `Gần nhất ${dmy(visits.data[0].checkedInAt)} ${hhmm(visits.data[0].checkedInAt)}` : undefined} />
-      <StatTile label="Tổng đã thanh toán" icon={<Wallet className="h-[18px] w-[18px]" />} iconTone="warning" value={payments.data ? fmtNumber(spent) : '—'} unit="₫" hint={payments.data ? `${payments.data.filter(p => p.status === 'PAID').length} giao dịch` : undefined} />
+      <StatTile label="Buổi PT còn lại" icon={<Dumbbell className="h-[18px] w-[18px]" />} iconTone="violet" value={purchases.data ? ptLeft : '—'} unit={ptTotal ? `/${ptTotal} buổi` : undefined} hint="Trong tối đa 300 gói đã tải" />
+      <StatTile label="Check-in 30 ngày" icon={<CalendarCheck className="h-[18px] w-[18px]" />} iconTone="info" value={visits.data ? visits30 : '—'} unit="lượt" hint="Trong 100 lượt gần nhất đã tải" />
+      <StatTile label="Đã thanh toán" icon={<Wallet className="h-[18px] w-[18px]" />} iconTone="warning" value={payments.data ? fmtNumber(spent) : '—'} unit="₫" hint="Trong tối đa 200 giao dịch đã tải" />
     </div>
 
     <div className="grid gap-6 xl:grid-cols-2">
@@ -92,7 +92,7 @@ export function DeskMemberPage() {
         {purchases.error ? <ErrorBox message={purchases.error} /> : !purchases.data ? <Skeleton rows={3} /> : !purchases.data.length ? <EmptyBox title="Chưa có gói PT" /> :
           <ul className="divide-y divide-border-subtle">{purchases.data.map(p => <li key={p.id} className="px-5 py-3">
             <div className="flex flex-wrap items-center gap-2"><Link to={`${base}/pt-purchases/${p.id}`} className="font-semibold hover:text-primary">{p.packageNameSnapshot}</Link><Badge tone={p.status === 'ACTIVE' ? 'info' : p.status === 'PENDING_PAYMENT' ? 'warning' : 'neutral'}>{PURCHASE_LABEL[p.status] ?? p.status}</Badge></div>
-            <p className="text-xs text-text-muted">{p.courseNameSnapshot ?? 'PT 1:1'}{p.coachNameSnapshot ? ` · HLV ${p.coachNameSnapshot}` : ''}{p.expiresAt ? ` · hạn ${dmy(p.expiresAt)}` : ''}</p>
+            <p className="text-xs text-text-muted">{p.courseNameSnapshot ?? 'PT 1:1'}{p.coachNameSnapshot ? ` · Huấn luyện viên ${p.coachNameSnapshot}` : ''}{p.expiresAt ? ` · hạn ${dmy(p.expiresAt)}` : ''}</p>
             <div className="mt-2 flex items-center gap-3"><ProgressBar className="flex-1" value={p.consumedCredits} max={p.totalCredits} /><span className="text-xs tabular-nums text-text-muted">{p.consumedCredits}/{p.totalCredits} buổi</span></div>
           </li>)}</ul>}
       </Card>

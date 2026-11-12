@@ -75,7 +75,7 @@ export function CoachStudentDetailPage() {
     {(workPackage ?? purchases.data?.[0]) && <div className="mb-6"><JourneyForPurchase purchaseId={(workPackage ?? purchases.data![0])!.id} coach /></div>}
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
       <div className="space-y-6">
-        <Card flush title="Lịch sử buổi tập" subtitle="Các buổi của học viên với bạn">
+        <Card flush title="Lịch sử buổi tập">
           {sessions.error ? <ErrorBox message={sessions.error} /> : !sessions.data ? <Skeleton rows={4} /> : !list.length ? <EmptyBox title="Chưa có buổi nào" /> :
             <ul className="divide-y divide-border-subtle">{[...upcoming.slice(0, 3), ...list.filter(s => !isUpcoming(s)).sort((a, b) => b.startsAt.localeCompare(a.startsAt)).slice(0, 7)].map(s => <SessionRow key={s.id} s={s} />)}</ul>}
         </Card>
@@ -114,7 +114,7 @@ const SessionRow = ({ s }: { s: Session }) => <li><Link to={`/coach/sessions/${s
 function NotesModal({ open, memberId, value, onClose, onDone }: { open: boolean; memberId: string; value: string; onClose: () => void; onDone: (m: string) => void }) {
   const submit = useSubmit()
   const [text, setText] = useState(value)
-  return <Modal isOpen={open} onClose={onClose} title="Lưu ý sức khỏe / chấn thương" description="Chỉ Coach phụ trách và chính học viên xem được nội dung này.">
+  return <Modal isOpen={open} onClose={onClose} title="Lưu ý sức khỏe / chấn thương" description="Chỉ huấn luyện viên phụ trách và chính học viên xem được nội dung này.">
     <form className="space-y-4" onSubmit={async e => { e.preventDefault(); if (await submit.run(() => coachWs.updateMedicalNotes(memberId, text.trim()))) onDone('Đã cập nhật lưu ý sức khỏe.') }}>
       <textarea aria-label="Lưu ý sức khỏe" rows={5} value={text} onChange={e => setText(e.target.value)} className={textareaCls} placeholder="VD: Chấn thương cổ tay phải 10/2026 — hạn chế push-up, plank cao tay." />
       <InlineError message={submit.error} />

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+﻿import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { LoginPage } from './login-page'
@@ -48,7 +48,7 @@ describe('LoginPage', () => {
 
     expect(screen.getByRole('heading', { name: /Đăng nhập tài khoản/i })).toBeInTheDocument()
     expect(screen.getByLabelText(/Email hoặc Số điện thoại/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Mật khẩu/i)).toBeInTheDocument()
+    expect(screen.getByLabelText('Mật khẩu')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Đăng nhập ngay/i })).toBeInTheDocument()
   })
 
@@ -60,7 +60,7 @@ describe('LoginPage', () => {
     )
 
     const identifierInput = screen.getByLabelText(/Email hoặc Số điện thoại/i)
-    const passwordInput = screen.getByLabelText(/Mật khẩu/i)
+    const passwordInput = screen.getByLabelText('Mật khẩu')
 
     fireEvent.change(identifierInput, { target: { value: '' } })
     fireEvent.change(passwordInput, { target: { value: '' } })
@@ -86,6 +86,13 @@ describe('LoginPage', () => {
     expect(mockLogin).not.toHaveBeenCalled()
   })
 
+  it('does not accept Vietnamese characters in the password', () => {
+    render(<MemoryRouter><LoginPage /></MemoryRouter>)
+    const password = screen.getByLabelText('Mật khẩu')
+    fireEvent.change(password, { target: { value: 'Passấđ123!' } })
+    expect(password).toHaveValue('Pass123!')
+  })
+
   it('calls login on submit and redirects to role dashboard', async () => {
     mockLogin.mockResolvedValueOnce({
       user: { id: '1', role: 'MANAGER', fullName: 'Manager User', email: 'manager@sports.local', phone: '0912345678', status: 'ACTIVE' },
@@ -102,7 +109,7 @@ describe('LoginPage', () => {
     )
 
     const identifierInput = screen.getByLabelText(/Email hoặc Số điện thoại/i)
-    const passwordInput = screen.getByLabelText(/Mật khẩu/i)
+    const passwordInput = screen.getByLabelText('Mật khẩu')
     const submitBtn = screen.getByRole('button', { name: /Đăng nhập ngay/i })
 
     fireEvent.change(identifierInput, { target: { value: 'manager@sports.local' } })
@@ -136,14 +143,14 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/Email hoặc Số điện thoại/i), {
       target: { value: 'manager@sports.local' },
     })
-    fireEvent.change(screen.getByLabelText(/Mật khẩu/i), {
+    fireEvent.change(screen.getByLabelText('Mật khẩu'), {
       target: { value: 'incorrect-password' },
     })
     const submitBtn = screen.getByRole('button', { name: /Đăng nhập ngay/i })
     fireEvent.change(screen.getByLabelText(/Email hoặc Số điện thoại/i), {
       target: { value: 'wrong@gym.local' },
     })
-    fireEvent.change(screen.getByLabelText(/Mật khẩu/i), {
+    fireEvent.change(screen.getByLabelText('Mật khẩu'), {
       target: { value: 'wrongpass' },
     })
     fireEvent.click(submitBtn)

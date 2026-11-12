@@ -5,7 +5,7 @@ import { AlertTriangle, CheckCircle2, Clock, LogIn, LogOut, ScanLine, Ticket, Ti
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import { centerDate } from '@/shared/utils/date'
 import { PersonSearch, type PersonHit } from '@/features/workspace/person-search'
-import { Async, Badge, Btn, Card, Dot, EmptyBox, InlineError, LinkBtn, PageHeader, Pagination, Person, Segmented, Skeleton, StatTile, Table, td, useFlash } from '@/features/workspace/ui'
+import { Async, Badge, Btn, Card, EmptyBox, InlineError, LinkBtn, PageHeader, Pagination, Person, Segmented, Skeleton, StatTile, Table, td, useFlash } from '@/features/workspace/ui'
 import { dayEnd, dayStart, fmtMoney, hhmm, minutesBetween, SESSION_LABEL } from '@/features/workspace/utils'
 import { deskApi, type CheckInResult, type Visit } from '../api'
 import { useDeskShell } from '../shell'
@@ -36,16 +36,16 @@ export function DeskCheckinPage() {
 
   return <div className="flex flex-col">
     {node}
-    <PageHeader title="Vào / ra phòng tập" subtitle={<><span>Quầy lễ tân</span><Dot /><span>Vé gym cần còn hiệu lực trong ngày vào tập</span></>} />
-    <div className="order-2 mt-6 grid grid-cols-2 gap-4 xl:order-1 xl:mb-6 xl:mt-0 xl:grid-cols-4">
+    <PageHeader title="Vào / ra phòng tập" />
+    <div className="order-2 mt-6 grid grid-cols-2 rounded-xl border border-border-subtle bg-bg-surface xl:order-1 xl:mb-6 xl:mt-0 xl:grid-cols-4 [&>div]:rounded-none [&>div]:border-0 [&>div]:bg-transparent [&>div]:p-4">
       <StatTile label="Lượt vào hôm nay" icon={<LogIn className="h-[18px] w-[18px]" />} iconTone="info" value={counts?.checkinsToday ?? '—'} unit="lượt" />
       <StatTile label="Đang trong phòng" icon={<Users className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={counts?.insideGym ?? '—'} unit="người" />
       <StatTile label="Lượt ra hôm nay" icon={<LogOut className="h-[18px] w-[18px]" />} iconTone="violet" value={recent.data ? outToday.length : '—'} unit="lượt" hint="Tính trên 300 lượt gần nhất" />
-      <StatTile label="Thời lượng trung bình" icon={<Timer className="h-[18px] w-[18px]" />} iconTone="warning" value={avg === null ? '—' : avg >= 60 ? `${Math.floor(avg / 60)}g ${avg % 60}p` : `${avg}p`} hint="Các lượt đã ra về hôm nay" />
+      <StatTile label="Thời lượng trung bình" icon={<Timer className="h-[18px] w-[18px]" />} iconTone="warning" value={avg === null ? '—' : avg >= 60 ? `${Math.floor(avg / 60)}g ${avg % 60}p` : `${avg}p`} hint="Lượt ra hôm nay trong 300 lượt gần nhất" />
     </div>
 
     <div className="order-1 grid items-start gap-6 xl:order-2 xl:grid-cols-[360px_minmax(0,1fr)]">
-      <Card title="Ghi nhận hội viên vào tập" subtitle="Tìm hội viên để kiểm tra vé tập">
+      <Card title="Ghi nhận hội viên vào tập">
         <PersonSearch className="" label="Tìm hội viên để vào tập" placeholder="Tên hoặc số điện thoại hội viên" find={find} onPick={setPicked} />
         {picked ? <CheckinPanel key={picked.id} hit={picked} openVisit={inside.find(v => v.memberId === picked.id)} onClose={() => setPicked(null)} onDone={m => { reload(m) }} />
           : <div className="mt-6 flex flex-col items-center rounded-xl border border-dashed border-border-strong px-6 py-10 text-center text-sm text-text-muted">
@@ -57,7 +57,7 @@ export function DeskCheckinPage() {
         </details>
       </Card>
 
-      <Card flush title={tab === 'in' ? 'Đang trong phòng' : 'Nhật ký hôm nay'} badge={recent.data ? <Badge tone={tab === 'in' ? 'success' : 'neutral'}>{rows.length}</Badge> : null}
+      <Card flush title={tab === 'in' ? 'Đang trong phòng' : 'Nhật ký hôm nay'} subtitle="Trong tối đa 300 lượt gần nhất đã tải" badge={recent.data ? <Badge tone={tab === 'in' ? 'success' : 'neutral'}>{rows.length}</Badge> : null}
         actions={<Segmented label="Chế độ xem" value={tab} onChange={t => { setTab(t); setPage(1) }} items={[{ key: 'in', label: 'Đang trong phòng', count: inside.length }, { key: 'log', label: 'Nhật ký hôm nay', count: todayLog.length }]} />}>
         <Async state={recent} rows={6} empty={() => !rows.length && <EmptyBox icon={<Users className="h-5 w-5" />} title={tab === 'in' ? 'Không có ai trong phòng' : 'Chưa có lượt nào hôm nay'} />}>
           {() => <>{tab === 'in'
@@ -104,8 +104,7 @@ function CheckinPanel({ hit, openVisit, onClose, onDone }: { hit: PersonHit; ope
     {!subs.data && !subs.error && <Skeleton rows={1} className="px-0" />}
     {result ? <div role="status" className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
       <p className="flex items-center gap-2 font-semibold"><CheckCircle2 aria-hidden className="h-4 w-4" />{result.reused ? `Đã ở trong phòng từ ${hhmm(result.checkedInAt)}` : `Check-in thành công lúc ${hhmm(result.checkedInAt)}`}</p>
-      {result.todaySessions.length > 0 && <ul className="mt-2 space-y-1">{result.todaySessions.map(s => <li key={s.id} className="flex items-center gap-2"><Clock aria-hidden className="h-3.5 w-3.5" />Buổi PT {hhmm(s.plannedStartsAt)} với {s.coach?.user?.fullName ?? 'Coach'} · {SESSION_LABEL[s.status] ?? s.status}</li>)}</ul>}
-      <p className="mt-2 text-xs">Coach có thể mở buổi PT đã chọn và bấm Bắt đầu khi đủ điều kiện.</p>
+      {result.todaySessions.length > 0 && <ul className="mt-2 space-y-1">{result.todaySessions.map(s => <li key={s.id} className="flex items-center gap-2"><Clock aria-hidden className="h-3.5 w-3.5" />Buổi PT {hhmm(s.plannedStartsAt)} với {s.coach?.user?.fullName ?? 'Huấn luyện viên'} · {SESSION_LABEL[s.status] ?? s.status}</li>)}</ul>}
     </div> : <>
       {openVisit && <p className="mt-4 rounded-lg bg-sky-50 px-3 py-2 text-sm text-sky-800 dark:bg-sky-500/10 dark:text-sky-200">Hội viên đang trong phòng từ {hhmm(openVisit.checkedInAt)}.</p>}
       {state && !canEnter && <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">

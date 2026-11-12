@@ -1,11 +1,11 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarCheck, ChevronRight, LifeBuoy, LogOut, ReceiptText, RotateCw, ScanLine, Ticket, UserPlus, Users, Wallet } from 'lucide-react'
+import { ChevronRight, LifeBuoy, LogOut, ReceiptText, RotateCw, ScanLine, Ticket, UserPlus, Users } from 'lucide-react'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import type { Session } from '@/features/fixed-pt/types'
 import { centerDate } from '@/shared/utils/date'
-import { Async, Badge, Btn, Card, Dot, EmptyBox, LinkBtn, PageHeader, Pagination, Person, StatTile, Table, td, useFlash } from '@/features/workspace/ui'
+import { Async, Badge, Btn, Card, Dot, EmptyBox, LinkBtn, PageHeader, Pagination, Person, Table, td, useFlash } from '@/features/workspace/ui'
 import { dayEnd, dayStart, fmtNumber, hhmm, isUpcoming, longDate, minutesBetween, SESSION_LABEL, SESSION_TONE } from '@/features/workspace/utils'
 import { deskApi, type Visit } from '../api'
 import { useDeskShell } from '../shell'
@@ -35,23 +35,20 @@ export function DeskHomePage() {
     <PageHeader title="Hôm nay tại quầy" subtitle={<><span>{longDate(today)}</span><Dot /><span>Lễ tân: <span className="font-medium text-text-primary">{user?.fullName}</span></span></>}
       actions={<><Btn icon={<RotateCw aria-hidden className="h-4 w-4" />} onClick={() => reload('Đã làm mới số liệu.')}>Làm mới</Btn><LinkBtn to="/receptionist/support" icon={<LifeBuoy aria-hidden className="h-4 w-4" />}>Hỗ trợ hội viên</LinkBtn></>} />
 
-    <div className="mb-6 grid gap-4 md:grid-cols-3">
-      <QuickAction to="/receptionist/check-in" icon={<ScanLine className="h-6 w-6" />} title="Ghi nhận vào tập" hint="Tìm hội viên và kiểm tra vé tập" primary />
-      <QuickAction to="/receptionist/trial-requests" icon={<UserPlus className="h-6 w-6" />} title="Đăng ký tập thử" hint={newTrials ? `${newTrials} khách mới đang chờ gọi lại` : 'Khách đến trực tiếp hoặc đăng ký trên website'} />
-      <QuickAction to="/receptionist/membership-sale" icon={<Ticket className="h-6 w-6" />} title="Bán vé gym" hint="Chọn vé và thu tiền tại quầy" />
+    <div className="mb-4 max-w-sm sm:hidden">
+      <QuickAction to="/receptionist/check-in" icon={<ScanLine className="h-6 w-6" />} title="Ghi nhận vào tập" primary />
     </div>
 
-    <div className="mb-6 grid gap-4 md:grid-cols-3">
-      <StatTile label="Khách đang trong phòng gym" icon={<Users className="h-[18px] w-[18px]" />} iconTone="success" value={counts?.insideGym ?? '—'} unit="người" hint={counts ? `${counts.checkinsToday} lượt check-in hôm nay` : undefined} />
-      <StatTile label="Ca PT hôm nay" icon={<CalendarCheck className="h-[18px] w-[18px]" />} iconTone="info" value={sessions.data ? list.filter(s => !['CANCELLED_EARLY', 'COACH_CANCELLED', 'RESCHEDULED'].includes(s.status)).length : '—'} unit="ca"
-        hint={sessions.data ? `${live} đang diễn ra · ${coming.length} sắp tới · ${list.filter(s => s.status === 'COMPLETED').length} xong` : undefined} />
-      <StatTile label="Doanh thu đã thu hôm nay" icon={<Wallet className="h-[18px] w-[18px]" />} iconTone="primary" tone="success" value={paid.data ? fmtNumber(revenue) : '—'} unit="₫" hint={paid.data ? `${todayPaid.length} giao dịch đã thanh toán` : undefined} />
-    </div>
+    <dl className="mb-6 grid gap-4 rounded-xl border border-border-subtle bg-bg-surface px-5 py-4 sm:grid-cols-3 sm:divide-x sm:divide-border-subtle sm:gap-0">
+      <div className="sm:pr-5"><dt className="text-sm text-text-muted">Khách đang trong phòng gym</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{counts?.insideGym ?? '—'} <span className="text-sm font-normal">người</span></dd>{counts && <p className="mt-1 text-xs text-text-muted">{counts.checkinsToday} lượt check-in hôm nay</p>}</div>
+      <div className="sm:px-5"><dt className="text-sm text-text-muted">Ca PT hôm nay</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{sessions.data ? list.filter(s => !['CANCELLED_EARLY', 'COACH_CANCELLED', 'RESCHEDULED'].includes(s.status)).length : '—'}</dd>{sessions.data && <p className="mt-1 text-xs text-text-muted">{live} đang diễn ra · {coming.length} sắp tới · {list.filter(s => s.status === 'COMPLETED').length} xong · tối đa 200 buổi đã tải</p>}</div>
+      <div className="sm:pl-5"><dt className="text-sm text-text-muted">Tiền đã thu hôm nay</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{paid.data ? fmtNumber(revenue) : '—'} ₫</dd>{paid.data && <p className="mt-1 text-xs text-text-muted">{todayPaid.length} giao dịch · trong 100 giao dịch đã thanh toán gần nhất</p>}</div>
+    </dl>
 
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-      <Card flush title="Người đang trong phòng gym" badge={visits.data ? <Badge tone="success" dot>{visits.data.length} đang tập</Badge> : null} subtitle="Hội viên đã vào và chưa ghi nhận ra về"
+      <Card flush title="Người đang trong phòng gym" subtitle="Tối đa 300 lượt đang mở đã tải" badge={visits.data ? <Badge tone="success" dot>{visits.data.length} đã tải</Badge> : null}
         actions={<LinkBtn size="sm" to="/receptionist/check-in">Ghi nhận vào / ra</LinkBtn>}>
-        <Async state={visits} rows={5} empty={v => !v.length && <EmptyBox icon={<Users className="h-5 w-5" />} title="Phòng tập đang trống" hint="Hội viên sẽ xuất hiện ở đây sau khi ghi nhận vào tập." />}>
+        <Async state={visits} rows={5} empty={v => !v.length && <EmptyBox icon={<Users className="h-5 w-5" />} title="Phòng tập đang trống" />}>
           {v => <><InRoomCards visits={v.slice((page - 1) * PAGE, page * PAGE)} sessions={coachByMember} onDone={reload} /><div className="hidden 2xl:block"><Table head={['Hội viên', 'Giờ vào', 'Đã ở', 'Buổi PT hôm nay', '']} minWidth={720}>
             {v.slice((page - 1) * PAGE, page * PAGE).map(x => <InRoomRow key={x.id} v={x} pt={coachByMember.get(x.memberId)} onDone={reload} />)}
           </Table></div><Pagination page={page} pageSize={PAGE} total={v.length} onChange={setPage} noun="người" /></>}
@@ -59,7 +56,7 @@ export function DeskHomePage() {
       </Card>
 
       <div className="grid content-start gap-6 lg:grid-cols-2 xl:grid-cols-1">
-        <Card flush title="Lịch hẹn PT sắp tới" badge={sessions.data ? <Badge>{coming.length} buổi</Badge> : null} subtitle="Hội viên check-in gym; Coach bắt đầu buổi tập" actions={<LinkBtn size="sm" to="/receptionist/calendar">Cả ngày</LinkBtn>}>
+        <Card flush title="Lịch hẹn PT sắp tới" badge={sessions.data ? <Badge>{coming.length} buổi</Badge> : null} actions={<LinkBtn size="sm" to="/receptionist/calendar">Cả ngày</LinkBtn>}>
           <Async state={sessions} rows={4} empty={() => !coming.length && <EmptyBox title="Không còn buổi PT nào hôm nay" />}>
             {() => <ul className="divide-y divide-border-subtle">{coming.slice(0, 6).map(s => <ApptRow key={s.id} s={s} onDone={reload} />)}</ul>}
           </Async>
@@ -77,10 +74,10 @@ export function DeskHomePage() {
   </div>
 }
 
-function QuickAction({ to, icon, title, hint, primary }: { to: string; icon: ReactNode; title: string; hint: string; primary?: boolean }) {
+function QuickAction({ to, icon, title, hint, primary }: { to: string; icon: ReactNode; title: string; hint?: string; primary?: boolean }) {
   return <Link to={to} className={`group flex items-center gap-3 rounded-xl border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/50 ${primary ? 'border-primary bg-primary/5 hover:bg-primary/10' : 'border-border-subtle bg-bg-surface hover:border-border-strong'}`}>
     <span aria-hidden className={`shrink-0 ${primary ? 'text-primary' : 'text-text-muted'}`}>{icon}</span>
-    <span className="min-w-0 flex-1"><span className="block font-semibold">{title}</span><span className="mt-1 block text-sm text-text-muted">{hint}</span></span>
+    <span className="min-w-0 flex-1"><span className="block font-semibold">{title}</span>{hint && <span className="mt-1 block text-sm text-text-muted">{hint}</span>}</span>
     <ChevronRight aria-hidden className="h-5 w-5 shrink-0 opacity-60 transition-transform group-hover:translate-x-0.5" />
   </Link>
 }

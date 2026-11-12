@@ -1,10 +1,9 @@
 import { OperationsPanel } from '@/features/fixed-pt/components/operations-panel'
-import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { BarChart3, ChevronRight, FileClock, LifeBuoy, ScrollText, ShieldAlert, Star, Ticket, TriangleAlert, Wallet } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useLoad } from '@/features/fixed-pt/hooks'
 import { centerDate } from '@/shared/utils/date'
-import { Dot, PageHeader } from '@/features/workspace/ui'
+import { PageHeader } from '@/features/workspace/ui'
 import { addDays, fmtNumber } from '@/features/workspace/utils'
 import { mgrApi } from '../api'
 import { useMgrShell } from '../shell'
@@ -23,39 +22,26 @@ export function MgrOpsPage() {
   const low = visible.filter(r => r.rating <= 2 && r.createdAt >= new Date(Date.now() - 14 * 86_400_000).toISOString()).length
   const openSupport = (support.data ?? []).filter(s => s.status === 'OPEN' || s.status === 'IN_PROGRESS')
   const late = openSupport.filter(s => Date.now() - new Date(s.createdAt).getTime() > 24 * 3600_000).length
-  const v = (n: number | null | undefined, ready: boolean) => ready ? fmtNumber(n ?? 0) : '…'
-
+  const status = (ready: boolean, error: string | null, value: string) => ready ? value : error ? 'Không tải được' : 'Đang tải…'
+  const priority = [
+    { to: '/manager/policies', title: 'Chính sách cần phê duyệt', detail: status(!!policies.data, policies.error, `${missing} chính sách`), warn: missing > 0 },
+    { to: '/manager/sessions', title: 'Buổi tập và gián đoạn cần xử lý', detail: `${counts ? `${counts.sessionsNeedingReview} buổi cần kiểm tra` : 'Đang tải buổi tập…'} · ${status(!!disruptions.data, disruptions.error, `${openDisruptions} gián đoạn đang mở`)}`, warn: !!counts?.sessionsNeedingReview || openDisruptions > 0 },
+    { to: '/manager/support', title: 'Yêu cầu hỗ trợ', detail: status(!!support.data, support.error, `${openSupport.length} đang mở · ${late} quá 24 giờ`), warn: late > 0 },
+    { to: '/manager/payments?tab=reconciliation', title: 'Đối soát tiền nhận', detail: counts ? `${counts.openReconciliation} hồ sơ chưa kết luận` : 'Đang tải…', warn: !!counts?.openReconciliation },
+    { to: '/manager/reviews-audit', title: 'Đánh giá huấn luyện viên', detail: status(!!reviews.data, reviews.error, `${avg === null ? 'Chưa có điểm' : `${fmtNumber(avg, 1)}/5`} · ${visible.length} đánh giá hiển thị · ${low} đánh giá ≤ 2/5 trong 14 ngày`), warn: low > 0 },
+  ]
+  const links = [
+    { to: '/manager/reviews-audit?tab=audit', title: 'Nhật ký hệ thống', detail: status(audit.data !== null, audit.error, `${fmtNumber(audit.data ?? 0)} thao tác / 30 ngày`) },
+    { to: '/manager/membership-plans', title: 'Bảng giá vé gym' },
+    { to: '/manager/reports', title: 'Báo cáo' },
+    { to: '/manager/users', title: 'Tài khoản & phân quyền' },
+  ]
   return <div>
-    <PageHeader title="Vận hành & Kiểm duyệt" subtitle={<><span>Trung tâm điều khiển các phân hệ quản trị</span><Dot /><span>Chọn một khối để mở chi tiết</span></>} />
+    <PageHeader title="Vận hành & Kiểm duyệt" />
     <div className="mb-6"><OperationsPanel /></div>
-    <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-      <Block to="/manager/policies" icon={<ShieldAlert className="h-5 w-5" />} title="Chính sách vận hành" value={v(policies.data?.length, !!policies.data)} unit="chính sách"
-        meta={policies.data ? (missing ? `${missing} chính sách đang dùng giá trị tạm hoặc còn thiếu` : 'Tất cả đã được phê duyệt') : '…'} hint="Mốc hủy buổi, học bù, vắng, giữ chỗ, chia doanh thu" warn={missing > 0} />
-      <Block to="/manager/sessions" icon={<TriangleAlert className="h-5 w-5" />} title="Buổi cần xử lý & gián đoạn" value={v(openDisruptions, !!disruptions.data)} unit="gián đoạn đang mở"
-        meta={counts ? `${counts.sessionsNeedingReview} buổi PT đang gắn cờ kiểm tra` : '…'} hint="Đảo kết quả, ngoại lệ vé gym, tạm dừng gói khi có sự cố" warn={openDisruptions > 0 || !!counts?.sessionsNeedingReview} />
-      <Block to="/manager/reviews-audit" icon={<Star className="h-5 w-5" />} title="Kiểm duyệt đánh giá Coach" value={avg === null ? (reviews.data ? '—' : '…') : `${fmtNumber(avg, 1)}/5`} unit={reviews.data ? `${visible.length} đánh giá đang hiển thị` : ''}
-        meta={reviews.data ? `${reviews.data.length - visible.length} đã ẩn · ${low} đánh giá ≤ 2/5 trong 14 ngày` : '…'} hint="Đánh giá hiện ngay trên app; Manager ẩn kèm lý do khi vi phạm" warn={low > 0} />
-      <Block to="/manager/reviews-audit" icon={<ScrollText className="h-5 w-5" />} title="Nhật ký hệ thống" value={v(audit.data, audit.data !== null)} unit="thao tác / 30 ngày"
-        meta="Ai làm gì, lúc nào, trước và sau" hint="Lọc theo người dùng, hành động, đối tượng; xuất CSV cho kiểm toán" />
-      <Block to="/manager/support" icon={<LifeBuoy className="h-5 w-5" />} title="Yêu cầu hỗ trợ" value={v(openSupport.length, !!support.data)} unit="đang mở"
-        meta={support.data ? (late ? `${late} yêu cầu mở quá 24 giờ` : 'Không có yêu cầu tồn quá 24 giờ') : '…'} hint="Lễ tân trả lời hội viên; Manager theo dõi tồn đọng" warn={late > 0} />
-      <Block to="/manager/payments?tab=reconciliation" icon={<Wallet className="h-5 w-5" />} title="Đối soát tiền nhận" value={v(counts?.openReconciliation, !!counts)} unit="hồ sơ chưa kết luận"
-        meta="Tiền đến muộn, trùng, sai số tiền" hint="Kết luận hồ sơ; hệ thống không tự hoàn tiền" warn={!!counts?.openReconciliation} />
-      <Block to="/manager/membership-plans" icon={<Ticket className="h-5 w-5" />} title="Bảng giá vé gym" value="" unit="" meta="Chỉnh giá, mở / đóng bán vé" hint="Đơn đã bán giữ nguyên giá cũ" />
-      <Block to="/manager/reports" icon={<BarChart3 className="h-5 w-5" />} title="Báo cáo" value="" unit="" meta="Doanh thu, gói PT, buổi tập, Coach" hint="Lọc theo khoảng ngày, xuất CSV / Excel" />
-      <Block to="/manager/users" icon={<FileClock className="h-5 w-5" />} title="Tài khoản & phân quyền" value="" unit="" meta="Tạo tài khoản nhân sự, khóa / mở, đặt lại mật khẩu" hint="Vai trò: Manager, Lễ tân, Coach, Hội viên" />
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]">
+      <section className="rounded-xl border border-border-subtle bg-bg-surface"><h2 className="border-b border-border-subtle px-5 py-4 font-semibold">Cần theo dõi</h2><ul className="divide-y divide-border-subtle">{priority.map(item => <li key={item.to}><Link to={item.to} className="flex min-h-16 items-center gap-4 px-5 py-3 hover:bg-bg-surface-muted focus-visible:outline-2 focus-visible:outline-focus-ring"><span className="min-w-0 flex-1"><span className="block font-medium">{item.title}</span><span className={`mt-1 block text-sm ${item.warn ? 'text-amber-700 dark:text-amber-400' : 'text-text-muted'}`}>{item.detail}</span></span><ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-text-muted" /></Link></li>)}</ul></section>
+      <section className="rounded-xl border border-border-subtle bg-bg-surface"><h2 className="border-b border-border-subtle px-5 py-4 font-semibold">Tra cứu & cấu hình</h2><ul className="divide-y divide-border-subtle">{links.map(item => <li key={item.to}><Link to={item.to} className="flex min-h-14 items-center gap-3 px-5 py-3 hover:bg-bg-surface-muted focus-visible:outline-2 focus-visible:outline-focus-ring"><span className="min-w-0 flex-1"><span className="block font-medium">{item.title}</span>{item.detail && <span className="mt-1 block text-sm text-text-muted">{item.detail}</span>}</span><ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-text-muted" /></Link></li>)}</ul></section>
     </div>
   </div>
-}
-
-function Block({ to, icon, title, value, unit, meta, hint, warn }: { to: string; icon: ReactNode; title: string; value: string; unit: string; meta: string; hint: string; warn?: boolean }) {
-  return <Link to={to} className="group flex flex-col rounded-xl border border-border-subtle bg-bg-surface p-5 transition-colors hover:bg-bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/50">
-    <div className="flex items-start gap-3">
-      <span aria-hidden className="mt-0.5 shrink-0 text-text-muted">{icon}</span>
-      <div className="min-w-0 flex-1"><p className="font-semibold">{title}</p><p className="text-xs text-text-muted">{hint}</p></div>
-      <ChevronRight aria-hidden className="h-5 w-5 text-text-muted transition-transform group-hover:translate-x-0.5" />
-    </div>
-    {value && <p className="mt-4 text-2xl font-bold tabular-nums">{value}<span className="ml-1.5 text-sm font-medium text-text-muted">{unit}</span></p>}
-    <p className={`mt-auto pt-3 text-sm ${warn ? 'font-medium text-amber-700 dark:text-amber-400' : 'text-text-muted'}`}>{meta}</p>
-  </Link>
 }

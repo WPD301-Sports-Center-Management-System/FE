@@ -20,8 +20,8 @@ describe('ReportsPage', () => {
       membershipRevenue: 990000,
       ptGross: 3600000,
       ptGymShare: 1440000,
-      coachPayable: 2160000,
-      coachPending: 1080000,
+      coachBudget: 2160000,
+      coachEligibleUnpaid: 1080000,
       paymentCount: 3,
     })
 
@@ -46,6 +46,9 @@ describe('ReportsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Báo Cáo Tài Chính & Quyết Toán HLV')).toBeInTheDocument()
       expect(screen.getByText('Coach Đỗ Thùy Trang')).toBeInTheDocument()
+      expect(screen.getByText('Ngân sách huấn luyện viên theo gói đã thanh toán')).toBeInTheDocument()
+      expect(screen.getByText(/Còn phải trả hiện tại:/)).toHaveTextContent('1.080.000')
+      expect(screen.getByText('Kỳ báo cáo: Tất cả thời gian')).toBeInTheDocument()
     })
   })
 })

@@ -1,6 +1,6 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { Dumbbell, AlertCircle } from 'lucide-react'
+import { Dumbbell, AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
@@ -114,7 +114,6 @@ export function LoginPage() {
           <Link to="/" className="inline-flex min-h-11 items-center gap-2 font-bold lg:hidden"><Dumbbell aria-hidden className="h-6 w-6 text-primary" />ApexFIT</Link>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Đăng nhập tài khoản</h1>
-            <p className="mt-2 text-sm text-text-muted">Dùng email hoặc số điện thoại đã đăng ký tại trung tâm.</p>
           </div>
           {errorMessage && (
             <div id="login-error" role="alert" className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
@@ -130,7 +129,6 @@ export function LoginPage() {
               required
               value={identifier}
               onChange={e => { setIdentifier(e.target.value); setErrorMessage(null); setInvalidField(null) }}
-              placeholder="Ví dụ: ten@email.com hoặc 0912 345 678"
               disabled={isLoading}
               autoComplete="username"
               autoCapitalize="none"
@@ -139,21 +137,25 @@ export function LoginPage() {
               aria-describedby={invalidField === 'identifier' ? 'login-error' : undefined}
             />
             <div className="space-y-2">
+              <div className="relative">
               <Input
                 ref={passwordRef}
                 id="login-password"
                 label="Mật khẩu"
+                className="pr-12"
                 type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
-                onChange={e => { setPassword(e.target.value); setErrorMessage(null); setInvalidField(null) }}
+                onChange={e => { setPassword(e.target.value.replace(/[^\x20-\x7e]/g, '')); setErrorMessage(null); setInvalidField(null) }}
                 disabled={isLoading}
                 autoComplete="current-password"
+                spellCheck={false}
                 aria-invalid={invalidField === 'password' || undefined}
                 aria-describedby={invalidField === 'password' ? 'login-error' : undefined}
               />
-              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <button type="button" aria-controls="login-password" aria-pressed={showPassword} onClick={() => setShowPassword(v => !v)} className="min-h-11 rounded-lg px-2 text-text-muted hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus-ring">{showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}</button>
+              <button type="button" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} aria-controls="login-password" aria-pressed={showPassword} onClick={() => setShowPassword(v => !v)} className="absolute bottom-0 right-0 flex h-11 w-11 items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus-ring">{showPassword ? <EyeOff aria-hidden className="h-5 w-5" /> : <Eye aria-hidden className="h-5 w-5" />}</button>
+              </div>
+              <div className="flex justify-end text-sm">
                 <Link to="/forgot-password" className="inline-flex min-h-11 items-center rounded-lg px-2 font-medium text-primary hover:underline">Quên mật khẩu?</Link>
               </div>
             </div>

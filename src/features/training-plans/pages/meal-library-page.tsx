@@ -26,14 +26,14 @@ export function MealLibraryPage({ manager = false, embedded = false }: { manager
       <p className="text-sm text-text-muted">Chọn “Dùng mẫu” để tạo thực đơn cho học viên. Khẩu phần được điều chỉnh theo năng lượng mục tiêu.</p>
       <Btn variant="primary" icon={<Plus aria-hidden className="h-4 w-4" />} onClick={() => setEditing('new')}>Tạo mẫu của tôi</Btn>
     </div> : <PageHeader title={manager ? 'Thư viện dinh dưỡng' : 'Mẫu thực đơn'}
-      subtitle={<><span>{manager ? 'Mẫu trung tâm dùng chung cho mọi Coach' : 'Mẫu trung tâm và mẫu riêng của bạn'}</span><Dot /><span>Kcal mẫu = tổng các món; khi áp dụng, khẩu phần co giãn theo kcal của học viên</span></>}
+      subtitle={manager ? undefined : <><span>Mẫu trung tâm và mẫu riêng của bạn</span><Dot /><span>Kcal mẫu = tổng các món; khi áp dụng, khẩu phần co giãn theo kcal của học viên</span></>}
       actions={tab === 'templates' && <Btn variant="primary" icon={<Plus aria-hidden className="h-4 w-4" />} onClick={() => setEditing('new')}>{manager ? 'Tạo mẫu trung tâm' : 'Tạo mẫu của tôi'}</Btn>} />}
     {manager && <div className="mb-4"><Segmented label="Mục" value={tab} onChange={setTab} items={[{ key: 'templates' as Tab, label: 'Mẫu thực đơn', count: templates.data?.length }, { key: 'foods' as Tab, label: 'Thư viện món', count: foods.data?.length }]} /></div>}
     {tab === 'templates' ? <Card flush>
       <Async state={templates} rows={5} empty={t => !t.length && <EmptyBox icon={<BookCopy className="h-5 w-5" />} title="Chưa có mẫu thực đơn" hint={manager ? undefined : 'Mở một thực đơn rồi bấm “Lưu thành mẫu”, hoặc tạo mẫu mới.'} />}>
         {list => <Table head={['Mẫu', 'Mục tiêu', 'Kcal / ngày', 'Số ngày', 'Trạng thái', 'Thao tác']} minWidth={860}>
           {list.map(t => <tr key={t.id} className="hover:bg-bg-surface-muted/40">
-            <td className={td}><p className="font-semibold">{t.title}</p><p className="max-w-md text-xs text-text-muted">{t.scope === 'CENTER' ? 'Mẫu trung tâm' : 'Mẫu của tôi'}{t.description ? ` · ${t.description}` : ''}</p></td>
+            <td className={td}><p className="font-semibold">{t.title}</p>{!manager && <p className="max-w-md text-xs text-text-muted">{t.scope === 'CENTER' ? 'Mẫu trung tâm' : 'Mẫu của tôi'}{t.description ? ` · ${t.description}` : ''}</p>}</td>
             <td className={td}>{t.goalTag ? <Badge tone="info">{GOAL_TAG_LABEL[t.goalTag] ?? t.goalTag}</Badge> : <span className="text-text-muted">—</span>}</td>
             <td className={`${td} tabular-nums`}>{t.dailyCalorieTarget.toLocaleString('vi-VN')}</td>
             <td className={`${td} tabular-nums`}>{t.dayCount}</td>
@@ -53,7 +53,7 @@ export function MealLibraryPage({ manager = false, embedded = false }: { manager
     <DeleteDialog name={deletingTemplate?.title ?? null} noun="mẫu thực đơn" onClose={() => setDeletingTemplate(null)}
       impact="Mẫu sẽ biến mất khỏi danh sách và không còn để Coach chọn. Thực đơn đã tạo từ mẫu này cho học viên là bản sao độc lập nên không đổi. Nếu chỉ muốn tạm ngưng dùng, hãy chọn Tắt."
       onConfirm={async () => { if (!deletingTemplate) return; await mealPlansService.deleteTemplate(deletingTemplate.id); flash(`Đã xóa mẫu “${deletingTemplate.title}”.`); await templates.reload() }} />
-    {editing && <TemplateEditor initial={editing === 'new' ? null : editing} foods={(foods.data ?? []).filter(f => f.isActive)} onClose={() => setEditing(null)}
+    {editing && <TemplateEditor manager={manager} initial={editing === 'new' ? null : editing} foods={(foods.data ?? []).filter(f => f.isActive)} onClose={() => setEditing(null)}
       onDone={m => { setEditing(null); flash(m); void templates.reload() }} />}
   </div>
 }
@@ -69,7 +69,7 @@ let rowKey = 0
 const toRows = (t: MealTemplate | null): Row[] => (t?.items ?? []).filter(i => i.foodItemId).map(i => ({ key: ++rowKey, dayNumber: i.dayNumber, mealType: i.mealType, foodItemId: i.foodItemId!, servings: String(Number(i.servings)) }))
 
 /** Template content = library foods × servings per meal and day; kcal is computed, not typed. */
-function TemplateEditor({ initial, foods, onClose, onDone }: { initial: MealTemplate | null; foods: FoodItem[]; onClose: () => void; onDone: (m: string) => void }) {
+function TemplateEditor({ manager, initial, foods, onClose, onDone }: { manager: boolean; initial: MealTemplate | null; foods: FoodItem[]; onClose: () => void; onDone: (m: string) => void }) {
   const submit = useSubmit()
   const [title, setTitle] = useState(initial?.title ?? '')
   const [description, setDescription] = useState(initial?.description ?? '')
@@ -96,7 +96,7 @@ function TemplateEditor({ initial, foods, onClose, onDone }: { initial: MealTemp
     if (saved) onDone(`Đã lưu mẫu “${saved.title}” · ~${saved.dailyCalorieTarget.toLocaleString('vi-VN')} kcal/ngày.`)
   }
 
-  return <Modal isOpen onClose={onClose} maxWidth="xl" title={initial?.id ? 'Sửa mẫu thực đơn' : 'Tạo mẫu thực đơn'} description="Chọn món trong thư viện cho từng bữa. Thực đơn đã tạo từ mẫu trước đây không bị thay đổi.">
+  return <Modal isOpen onClose={onClose} maxWidth="xl" title={initial?.id ? 'Sửa mẫu thực đơn' : 'Tạo mẫu thực đơn'} description={manager ? undefined : 'Chọn món trong thư viện cho từng bữa. Thực đơn đã tạo từ mẫu trước đây không bị thay đổi.'}>
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="sm:col-span-2"><Field label="Tên mẫu" required><input value={title} onChange={e => setTitle(e.target.value)} maxLength={180} className={inputCls} placeholder="Giảm mỡ · dân văn phòng" /></Field></div>

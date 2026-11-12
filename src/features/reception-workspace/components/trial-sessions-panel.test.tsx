@@ -35,7 +35,7 @@ describe('focused trial desk', () => {
       expect(modal.queryByRole('button', { name: 'Hủy đăng ký' })).toBeNull()
     } else {
       expect(modal.queryByRole('button', { name: 'Xác nhận checkout' })).toBeNull()
-      expect(modal.getByRole('button', { name: 'Chuyển thành Member' })).toBeInTheDocument()
+      expect(modal.getByRole('button', { name: 'Chuyển thành hội viên' })).toBeInTheDocument()
     }
   })
   beforeEach(() => {

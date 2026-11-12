@@ -7,7 +7,7 @@ import { fixedPtApi } from '@/features/fixed-pt/api'
 import type { ScheduleChange } from '@/features/fixed-pt/types'
 import { centerDate, centerInstant } from '@/shared/utils/date'
 import { PersonSearch, type PersonHit } from '@/features/workspace/person-search'
-import { Async, Badge, Btn, Card, Dot, EmptyBox, Field, InlineError, PageHeader, Person, Segmented, StatTile, Table, inputCls, td, textareaCls, useFlash } from '@/features/workspace/ui'
+import { Async, Badge, Btn, Card, EmptyBox, Field, InlineError, PageHeader, Person, Segmented, StatTile, Table, inputCls, td, textareaCls, useFlash } from '@/features/workspace/ui'
 import { CHANGE_LABEL, CHANGE_TONE, CHANGE_TYPE, hhmm, isUpcoming, mondayOf, relativeAgo, relativeSlot, shortDate, WEEKDAY_SHORT, weekdayOf } from '@/features/workspace/utils'
 import { deskApi, type MemberProfile } from '../api'
 import { useDeskShell } from '../shell'
@@ -28,7 +28,7 @@ export function DeskScheduleChangesPage() {
   const list = changes.data ?? []
   const week = mondayOf(centerDate())
   const tabs: { key: Tab; label: string; test: (c: Change) => boolean }[] = [
-    { key: 'all', label: 'Tất cả', test: () => true }, { key: 'REQUESTED', label: 'Chờ Coach', test: c => c.status === 'REQUESTED' },
+    { key: 'all', label: 'Tất cả', test: () => true }, { key: 'REQUESTED', label: 'Chờ huấn luyện viên', test: c => c.status === 'REQUESTED' },
     { key: 'PROPOSED', label: 'Chờ HV đồng ý', test: c => c.status === 'PROPOSED' }, { key: 'ACCEPTED', label: 'Đã chốt', test: c => c.status === 'ACCEPTED' },
     { key: 'closed', label: 'Đã đóng', test: c => ['DECLINED', 'WITHDRAWN', 'EXPIRED'].includes(c.status) },
   ]
@@ -37,10 +37,10 @@ export function DeskScheduleChangesPage() {
 
   return <div>
     {node}
-    <PageHeader title="Đổi lịch & học bù" subtitle={<><span>Coach đề xuất lịch mới, hội viên đồng ý thì lịch được chốt</span><Dot /><span>Quầy xác nhận thay hội viên khi có căn cứ đồng ý</span></>} />
-    <div className="mb-6 grid gap-4 md:grid-cols-3">
-      <StatTile label="Chờ Coach đề xuất giờ" icon={<Hourglass className="h-[18px] w-[18px]" />} iconTone="info" value={changes.data ? list.filter(c => c.status === 'REQUESTED').length : '—'} />
-      <StatTile label="Chờ hội viên đồng ý" icon={<CalendarClock className="h-[18px] w-[18px]" />} iconTone="warning" tone="warning" value={changes.data ? list.filter(c => c.status === 'PROPOSED').length : '—'} hint="Gọi xác nhận rồi ghi nhận tại đây" />
+    <PageHeader title="Đổi lịch & học bù" />
+    <div className="mb-6 grid rounded-xl border border-border-subtle bg-bg-surface sm:grid-cols-3 [&>div]:rounded-none [&>div]:border-0 [&>div]:bg-transparent [&>div]:p-4">
+      <StatTile label="Chờ huấn luyện viên đề xuất giờ" icon={<Hourglass className="h-[18px] w-[18px]" />} iconTone="info" value={changes.data ? list.filter(c => c.status === 'REQUESTED').length : '—'} />
+      <StatTile label="Chờ hội viên đồng ý" icon={<CalendarClock className="h-[18px] w-[18px]" />} iconTone="warning" tone="warning" value={changes.data ? list.filter(c => c.status === 'PROPOSED').length : '—'} />
       <StatTile label="Đã chốt tuần này" icon={<CheckCircle2 className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={changes.data ? list.filter(c => c.status === 'ACCEPTED' && c.decidedAt && centerDate(c.decidedAt) >= week).length : '—'} />
     </div>
     <div className="grid gap-6 2xl:grid-cols-[400px_minmax(0,1fr)]">
@@ -54,7 +54,7 @@ export function DeskScheduleChangesPage() {
                 <ul className="mt-0.5 space-y-0.5 text-xs text-text-muted">{c.items.map(i => <li key={i.id}>{i.credit ? `Buổi ${i.credit.creditIndex}: ` : ''}{i.sourceBooking ? <>{slot(i.sourceBooking.plannedStartsAt)} → </> : null}<span className="font-semibold text-text-primary">{slot(i.startsAt)}</span></li>)}</ul></td>
               <td className={`${td} max-w-60`}><p className="line-clamp-3">{c.note || <span className="text-text-muted">—</span>}</p>{c.responseNote && <p className="mt-1 text-xs text-text-muted">Phản hồi: {c.responseNote}</p>}</td>
               <td className={td}><p className="font-semibold tabular-nums">{hhmm(c.createdAt)}</p><p className="text-xs text-text-muted">{relativeAgo(c.createdAt)}</p></td>
-              <td className={td}><Badge tone={CHANGE_TONE[c.status]}>{c.status === 'REQUESTED' ? 'Chờ Coach' : CHANGE_LABEL[c.status]}</Badge></td>
+              <td className={td}><Badge tone={CHANGE_TONE[c.status]}>{c.status === 'REQUESTED' ? 'Chờ huấn luyện viên' : CHANGE_LABEL[c.status]}</Badge></td>
               <td className={`${td} text-right`}>
                 {c.status === 'PROPOSED' && <div className="flex justify-end gap-1.5"><Btn size="sm" variant="soft" icon={<Check aria-hidden className="h-4 w-4" />} onClick={() => setAccept(c)}>HV đồng ý</Btn><Btn size="sm" icon={<X aria-hidden className="h-4 w-4" />} onClick={() => setDecline(c)}>Từ chối</Btn></div>}
                 {c.status === 'REQUESTED' && <WithdrawButton id={c.id} onDone={done} />}
@@ -105,15 +105,15 @@ function RequestForm({ onDone }: { onDone: (m: string) => void }) {
       const start = day && time ? centerInstant(day, time) : null
       const times = start ? { startsAt: start.toISOString(), endsAt: new Date(start.getTime() + minutes * 60_000).toISOString() } : {}
       const item = mode === 'move' ? { bookingId: target, ...times } : { creditId: target, ...times }
-      if (await submit.run(() => deskApi.requestChange({ purchaseId, items: [item], note: note.trim() || undefined }))) { reset(); onDone('Đã gửi yêu cầu cho Coach.') }
+      if (await submit.run(() => deskApi.requestChange({ purchaseId, items: [item], note: note.trim() || undefined }))) { reset(); onDone('Đã gửi yêu cầu cho huấn luyện viên.') }
     }}>
       {member ? <div className="flex items-center gap-3 rounded-lg border border-border-subtle p-3"><Person name={member.name} src={member.avatarUrl} size={32} /><div className="min-w-0 flex-1"><p className="font-semibold">{member.name}</p><p className="text-xs text-text-muted">{member.sub}</p></div>
         <button type="button" aria-label="Đổi hội viên" onClick={reset} className="rounded-lg p-1.5 text-text-muted hover:bg-bg-surface-muted"><X className="h-4 w-4" /></button></div>
         : <Field label="Hội viên" required><PersonSearch className="" label="Tìm hội viên" placeholder="Tên / SĐT hội viên…" find={find} onPick={setMember} /></Field>}
       {member && <Field label="Gói PT" required error={purchases.error}><select required value={purchaseId} onChange={e => { setPurchaseId(e.target.value); setTarget('') }} className={inputCls}>
-        <option value="">{purchases.data ? (purchases.data.length ? 'Chọn gói…' : seriesOnly ? 'Gói lịch cố định do Coach xếp lịch' : 'Hội viên không có gói PT đang hoạt động') : 'Đang tải…'}</option>
-        {(purchases.data ?? []).map(p => <option key={p.id} value={p.id}>{p.packageNameSnapshot} · HLV {p.coachNameSnapshot ?? ''} · {p.consumedCredits}/{p.totalCredits}</option>)}</select></Field>}
-      {seriesOnly && <p className="rounded-lg bg-bg-surface-muted px-3 py-2 text-sm text-text-muted">Gói của hội viên có lịch cố định: hội viên báo nghỉ trong ứng dụng, Coach đề xuất lịch mới. Quầy chỉ xác nhận đề xuất thay hội viên ở danh sách bên cạnh.</p>}
+        <option value="">{purchases.data ? (purchases.data.length ? 'Chọn gói…' : seriesOnly ? 'Gói lịch cố định do huấn luyện viên xếp lịch' : 'Hội viên không có gói PT đang hoạt động') : 'Đang tải…'}</option>
+        {(purchases.data ?? []).map(p => <option key={p.id} value={p.id}>{p.packageNameSnapshot} · Huấn luyện viên {p.coachNameSnapshot ?? ''} · {p.consumedCredits}/{p.totalCredits}</option>)}</select></Field>}
+      {seriesOnly && <p className="rounded-lg bg-bg-surface-muted px-3 py-2 text-sm text-text-muted">Gói của hội viên có lịch cố định: hội viên báo nghỉ trong ứng dụng, huấn luyện viên đề xuất lịch mới. Quầy chỉ xác nhận đề xuất thay hội viên ở danh sách bên cạnh.</p>}
       {purchaseId && <>
         <Segmented label="Loại yêu cầu" value={mode} onChange={m => { setMode(m); setTarget('') }} items={[{ key: 'move', label: 'Đổi giờ buổi đã có' }, { key: 'credit', label: 'Xếp buổi trống / học bù' }]} />
         {mode === 'move'
@@ -123,11 +123,11 @@ function RequestForm({ onDone }: { onDone: (m: string) => void }) {
           <Field label="Ngày mong muốn"><input type="date" min={centerDate()} value={day} onChange={e => setDay(e.target.value)} className={inputCls} /></Field>
           <Field label="Giờ mong muốn"><input type="time" value={time} onChange={e => setTime(e.target.value)} className={inputCls} /></Field>
         </div>
-        <p className="-mt-2 text-xs text-text-muted">Không bắt buộc. Coach sẽ dựa vào đây để chọn giờ trống.</p>
+        <p className="-mt-2 text-xs text-text-muted">Không bắt buộc. Huấn luyện viên sẽ dựa vào đây để chọn giờ trống.</p>
         <Field label="Lý do / ghi chú"><textarea rows={2} value={note} onChange={e => setNote(e.target.value)} className={textareaCls} placeholder="Khách bận công tác, muốn tập tối…" /></Field>
       </>}
       <InlineError message={submit.error} />
-      <Btn type="submit" variant="primary" className="w-full" icon={<Send aria-hidden className="h-4 w-4" />} busy={submit.busy} disabled={!valid}>Gửi yêu cầu cho Coach</Btn>
+      <Btn type="submit" variant="primary" className="w-full" icon={<Send aria-hidden className="h-4 w-4" />} busy={submit.busy} disabled={!valid}>Gửi yêu cầu cho huấn luyện viên</Btn>
     </form>
   </Card>
 }
@@ -139,7 +139,7 @@ function AcceptModal({ change, name, onClose, onDone }: { change: Change; name?:
     <form className="space-y-4" onSubmit={async e => { e.preventDefault(); if (await submit.run(() => deskApi.acceptChange(change.id, evidence.trim()))) onDone('Đã chốt lịch mới.') }}>
       <ul className="space-y-1 rounded-lg bg-bg-surface-muted px-3 py-2 text-sm">{change.items.map(i => <li key={i.id}>{i.sourceBooking ? `${slot(i.sourceBooking.plannedStartsAt)} → ` : ''}<span className="font-semibold">{slot(i.startsAt)}</span></li>)}</ul>
       <Field label="Cách hội viên xác nhận" required hint="Lưu làm bằng chứng đồng ý, ví dụ: gọi điện lúc 10:20, khách đồng ý."><textarea required rows={2} value={evidence} onChange={e => setEvidence(e.target.value)} className={textareaCls} placeholder={`${name ?? 'Hội viên'} xác nhận qua điện thoại lúc ${hhmm(new Date().toISOString())}`} /></Field>
-      <InlineError message={submit.code === 'SLOT_CONFLICT' ? 'Giờ mới không còn trống. Lịch cũ được giữ nguyên — hãy nhờ Coach đề xuất giờ khác.' : submit.error} />
+      <InlineError message={submit.code === 'SLOT_CONFLICT' ? 'Giờ mới không còn trống. Lịch cũ được giữ nguyên — hãy nhờ huấn luyện viên đề xuất giờ khác.' : submit.error} />
       <div className="flex justify-end gap-2"><Btn onClick={onClose}>Hủy</Btn><Btn type="submit" variant="primary" busy={submit.busy} disabled={!evidence.trim()}>Xác nhận đồng ý</Btn></div>
     </form>
   </Modal>

@@ -16,9 +16,9 @@ export function RefundsPanel({ initialPurchaseId = '', onChanged }: { initialPur
   const refresh = () => { void refunds.reload(); if (purchaseId) void quote.reload(); onChanged?.() }
   useEffect(() => { if (act.code === 'REFUND_CHANGED') void reloadQuote() }, [act.code, reloadQuote])
   return <div className="mt-5 space-y-5" data-refunds-panel>
-    {node}<Card title="Hoàn phần gói PT chưa dùng" subtitle="Xem số tiền → chốt và thu hồi buổi → ghi nhận chuyển tiền. Yêu cầu hỗ trợ chỉ hoàn tất sau khi tiền đã chuyển.">
+    {node}<Card title="Hoàn phần gói PT chưa dùng">
       {!initialPurchaseId && <div className="mb-5"><PurchasePicker value={purchaseId} onChange={id => { setPurchaseId(id); setReason(''); act.clear() }} /></div>}
-      {!purchaseId ? <p className="text-sm text-text-muted">Chọn học viên và gói cần hoàn. Số buổi và tiền hoàn được tính theo gói lúc mua.</p> : <Async state={quote} rows={2}>{q => <div className="grid gap-6 lg:grid-cols-2">
+      {purchaseId && <Async state={quote} rows={2}>{q => <div className="grid gap-6 lg:grid-cols-2">
         <div><p className="text-sm text-text-muted">{q.purchaseCode} · {q.creditIds.length} buổi {q.refund ? 'đã thu hồi' : 'chưa dùng'}</p><p className="mt-2 text-3xl font-semibold tabular-nums">{fmtMoney(q.amount)}</p><p className="mt-3 text-sm text-text-muted">Chốt hoàn sẽ đóng gói, thu hồi buổi chưa dùng và hủy lịch tương lai. Thu nhập từ buổi đã tập được giữ nguyên.</p></div>
         <div>{q.refund ? <RefundPayment refund={q.refund} purchaseCode={q.purchaseCode} onDone={() => { flash('Đã ghi nhận tiền hoàn cho học viên.'); refresh() }} /> : q.amount <= 0 || !q.creditIds.length ? <EmptyBox title="Không còn phần chưa dùng để hoàn" hint="Thu nhập từ buổi đã ghi nhận vẫn được giữ nguyên." /> : <form className="space-y-3" onSubmit={e => { e.preventDefault(); if (!reason.trim()) return; void act.run(async () => {
           const refund = await refundApi.confirm(purchaseId, q.amount, reason.trim())
@@ -26,7 +26,7 @@ export function RefundsPanel({ initialPurchaseId = '', onChanged }: { initialPur
         }) }}><Field label="Lý do hoàn tiền"><textarea aria-label="Lý do hoàn tiền" required rows={3} maxLength={5000} className={textareaCls} value={reason} disabled={act.busy} onChange={e => setReason(e.target.value)} /></Field><InlineError message={act.error} /><Btn type="submit" variant="danger" busy={act.busy} disabled={!reason.trim()}>Chốt hoàn {fmtMoney(q.amount)} và thu hồi {q.creditIds.length} buổi</Btn></form>}</div>
       </div>}</Async>}
     </Card>
-    {!initialPurchaseId && <Card title="Theo dõi tiền hoàn" subtitle="Chốt hoàn chưa có nghĩa học viên đã nhận tiền." actions={<Btn size="sm" disabled={refunds.loading} onClick={() => void refunds.reload()}>Cập nhật</Btn>}>
+    {!initialPurchaseId && <Card title="Theo dõi tiền hoàn" actions={<Btn size="sm" disabled={refunds.loading} onClick={() => void refunds.reload()}>Cập nhật</Btn>}>
       <Async state={refunds} rows={3}>{all => {
         const rows = all.filter(r => r.purchaseId !== purchaseId)
         const shown = rows.filter(r => view === 'pending' ? r.status === 'PENDING_TRANSFER' : r.status === 'PAID')

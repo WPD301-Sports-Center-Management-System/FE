@@ -54,10 +54,10 @@ export function CoachSchedulePage() {
   const title = view === 'week' ? `Tuần ${shortDate(monday)} – ${shortDate(days[6]!)}/${days[6]!.slice(0, 4)}` : longDate(anchor)
   return <div>
     <PageHeader title="Lịch dạy theo ngày / tuần"
-      subtitle={<>{sessions.data ? <span>{scheduled.length} ca · ~{Math.round(hours * 10) / 10} giờ dạy</span> : <span>Đang tải…</span>}<Dot /><span>Tuần {isoWeek(monday)} · {shortDate(monday)} – {shortDate(days[6]!)}/{days[6]!.slice(0, 4)}</span></>}
-      actions={<Btn icon={<Download aria-hidden className="h-4 w-4" />} onClick={exportCsv} disabled={!all.length}>Xuất lịch</Btn>} />
+      subtitle={<>{sessions.data ? <span>{scheduled.length} ca · ~{Math.round(hours * 10) / 10} giờ dạy · tối đa 300 buổi PT và 1.000 buổi tập thử đã tải</span> : <span>{sessions.error ? 'Không tải được lịch' : 'Đang tải…'}</span>}<Dot /><span>Tuần {isoWeek(monday)} · {shortDate(monday)} – {shortDate(days[6]!)}/{days[6]!.slice(0, 4)}</span></>}
+      actions={<Btn icon={<Download aria-hidden className="h-4 w-4" />} onClick={exportCsv} disabled={!all.length}>Xuất lịch đã tải</Btn>} />
 
-    <Card flush title={title} subtitle="Bấm vào ca để mở chi tiết buổi PT"
+    <Card flush title={title}
       actions={<>
         <div className="flex items-center gap-1">
           <button type="button" aria-label={view === 'week' ? 'Tuần trước' : 'Ngày trước'} onClick={() => step(-1)} className={btnCls('ghost', 'md')}><ChevronLeft aria-hidden className="h-4 w-4" /></button>

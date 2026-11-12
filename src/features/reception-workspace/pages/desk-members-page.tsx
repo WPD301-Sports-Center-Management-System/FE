@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CalendarClock, Download, Search, Ticket, TicketX, UserPlus, Users } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
-import { Badge, Btn, Card, Dot, EmptyBox, ErrorBox, Field, InlineError, LinkBtn, PageHeader, Pagination, Person, Segmented, Skeleton, StatTile, Table, inputCls, td, useFlash } from '@/features/workspace/ui'
+import { Badge, Btn, Card, EmptyBox, ErrorBox, Field, InlineError, LinkBtn, PageHeader, Pagination, Person, Segmented, Skeleton, StatTile, Table, inputCls, td, useFlash } from '@/features/workspace/ui'
 import { downloadCsv, fmtNumber } from '@/features/workspace/utils'
 import { deskApi, type MemberProfile, type Subscription } from '../api'
 import { useDeskShell } from '../shell'
@@ -31,15 +31,16 @@ export function DeskMembersPage() {
 
   return <div>
     {node}
-    <PageHeader title="Danh sách hội viên" subtitle={<><span>{counts ? `${fmtNumber(counts.activeMembers)} tài khoản hội viên` : 'Đang tải…'}</span><Dot /><span>Trạng thái vé tính theo vé gym còn hiệu lực</span></>}
+    <PageHeader title="Danh sách hội viên" subtitle={counts ? `${fmtNumber(counts.activeMembers)} tài khoản đang hoạt động` : 'Đang tải…'}
       actions={<Btn variant="primary" icon={<UserPlus aria-hidden className="h-4 w-4" />} onClick={() => setCreate(true)}>Thêm hội viên</Btn>} />
-    <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="mb-6 grid grid-cols-2 rounded-xl border border-border-subtle bg-bg-surface xl:grid-cols-4 [&>div]:rounded-none [&>div]:border-0 [&>div]:bg-transparent [&>div]:p-4">
       <StatTile label="Tổng hội viên" icon={<Users className="h-[18px] w-[18px]" />} iconTone="info" value={counts ? fmtNumber(counts.activeMembers) : '—'} hint="Tài khoản đang hoạt động" />
-      <StatTile label="Có vé gym hiệu lực" icon={<Ticket className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={live.data ? fmtNumber(activeCount) : '—'} hint={counts && live.data && counts.activeMembers ? `${Math.round((activeCount / counts.activeMembers) * 100)}% tổng hội viên` : undefined} />
-      <StatTile label="Sắp hết hạn ≤ 7 ngày" icon={<CalendarClock className="h-[18px] w-[18px]" />} iconTone="warning" tone="warning" value={counts?.expiringSubscriptions ?? '—'} hint="Nên gọi nhắc gia hạn" />
+      <StatTile label="Có vé gym hiệu lực" icon={<Ticket className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={live.data ? fmtNumber(activeCount) : '—'} hint="Trong tối đa 1.000 vé đang hoạt động đã tải" />
+      <StatTile label="Sắp hết hạn ≤ 7 ngày" icon={<CalendarClock className="h-[18px] w-[18px]" />} iconTone="warning" tone="warning" value={counts?.expiringSubscriptions ?? '—'} />
       <StatTile label="Vé đã hết hạn" icon={<TicketX className="h-[18px] w-[18px]" />} iconTone="danger" value={expiredTotal.data ?? '—'} hint="Tổng số vé đã hết hạn (lịch sử)" />
     </div>
     <Card flush>
+      <p className="px-4 pt-4 text-xs text-text-muted">Trạng thái vé dựa trên tối đa 1.000 vé đang hoạt động và 200 vé chờ đã tải</p>
       <div className="flex flex-wrap items-center gap-3 border-b border-border-subtle p-4">
         <Segmented label="Chế độ xem" value={view} onChange={v => { const p = new URLSearchParams(params); if (v === 'all') p.delete('state'); else p.set('state', v); setParams(p, { replace: true }) }}
           items={[{ key: 'all', label: 'Tất cả hội viên' }, { key: 'expiring', label: 'Sắp hết hạn', count: counts?.expiringSubscriptions }]} />
@@ -74,7 +75,7 @@ function ExpiringList({ subs, error }: { subs: Subscription[] | null; error: str
   if (!subs || !people.data) return <Skeleton rows={5} />
   if (!soon.length) return <EmptyBox icon={<CalendarClock className="h-5 w-5" />} title="Không có vé nào hết hạn trong 7 ngày tới" />
   const exportCsv = () => downloadCsv('ve-sap-het-han.csv', ['Mã HV', 'Họ tên', 'SĐT', 'Vé', 'Hết hạn', 'Còn (ngày)'], soon.map(({ s, d }) => { const m = people.data!.get(s.memberId); return [m?.memberCode ?? '', m?.user.fullName ?? '', m?.user.phone ?? '', s.planNameSnapshot, dmy(s.endDate), d] }))
-  return <><div className="flex justify-end px-4 pt-3"><Btn size="sm" icon={<Download aria-hidden className="h-3.5 w-3.5" />} onClick={exportCsv}>Xuất danh sách gọi</Btn></div>
+  return <>{soon.length > 60 && <p className="px-4 pt-3 text-sm text-text-muted">Thông tin liên hệ chỉ được tải cho 60 hội viên đầu tiên.</p>}<div className="flex justify-end px-4 pt-3"><Btn size="sm" icon={<Download aria-hidden className="h-3.5 w-3.5" />} onClick={exportCsv}>Xuất danh sách gọi</Btn></div>
     <Table head={['Hội viên', 'Vé gym', 'Hết hạn', 'Liên hệ', 'Thao tác']} minWidth={820}>
       {soon.map(({ s, d }) => { const m = people.data!.get(s.memberId); return <tr key={s.id}>
         <td className={td}><Link to={`/receptionist/members/${s.memberId}`} className="flex items-center gap-3 hover:text-primary"><Person name={m?.user.fullName} /><span><span className="block font-semibold">{m?.user.fullName ?? s.memberId.slice(0, 8)}</span><span className="text-xs text-text-muted">{m?.memberCode}</span></span></Link></td>

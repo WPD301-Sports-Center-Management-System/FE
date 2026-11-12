@@ -22,7 +22,7 @@ export function ReconciliationPage() {
   const act = useSubmit()
   const isManager = user?.role === 'MANAGER'
   return (
-    <Page title="Đối soát tiền nhận" subtitle="Mọi khoản tiền thực nhận đều được ghi; khoản không áp dụng được cho đơn nằm ở đây chờ xử lý.">
+    <Page title="Đối soát tiền nhận">
       <Notice tone="info">Khoản đã nhận nhưng áp dụng lỗi có thể phục hồi ở đây. Hoàn phần gói chưa dùng được xử lý tại tab Hoàn tiền PT.</Notice>
       {result && <Notice tone="info">{result}</Notice>}
       <Panel title="Hồ sơ đối soát" actions={<select aria-label="Lọc" className={inputCls} value={status} onChange={e => setStatus(e.target.value)}><option value="OPEN">Đang mở</option><option value="IN_PROGRESS">Đang xử lý</option><option value="RESOLVED">Đã giải quyết</option><option value="">Tất cả</option></select>}>

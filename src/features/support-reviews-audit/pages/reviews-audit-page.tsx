@@ -20,7 +20,7 @@ import { isAppApiError } from '@/shared/api/api-error'
 import type { CoachReview, AuditLog } from '@/shared/types/api'
 
 export function ReviewsAuditPage() {
-  const [activeTab, setActiveTab] = useState<'reviews' | 'audit'>('reviews')
+  const [activeTab, setActiveTab] = useState<'reviews' | 'audit'>(() => new URLSearchParams(window.location.search).get('tab') === 'audit' ? 'audit' : 'reviews')
   const [reviews, setReviews] = useState<CoachReview[]>([])
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -186,9 +186,6 @@ export function ReviewsAuditPage() {
             <ShieldAlert className="h-6 w-6 text-primary" />
             <span>Kiểm Duyệt Đánh Giá & Audit Log</span>
           </h1>
-          <p className="text-xs text-text-muted mt-1">
-            Giám sát tính minh bạch đánh giá HLV và nhật ký thao tác dữ liệu hệ thống
-          </p>
         </div>
         <div className="flex items-center gap-2">
           {activeTab === 'audit' && (
@@ -387,7 +384,6 @@ export function ReviewsAuditPage() {
         </div>
       ) : (
         <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-2 shadow-sm">
-          <p className="text-xs text-text-muted">Nhấn vào một bản ghi để xem chi tiết đầy đủ</p>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-text-primary">
               <thead className="border-b border-border-subtle text-text-muted uppercase bg-bg-surface-muted">

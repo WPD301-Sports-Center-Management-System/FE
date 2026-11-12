@@ -58,7 +58,7 @@ export function MgrHomePage() {
 
   const pendingWithdrawals = withdrawals.data?.filter(isOpenWithdrawal)
   return <div className="flex flex-col">
-    <PageHeader title="Hôm nay tại trung tâm" subtitle={<><span>{longDate(today)}</span><Dot /><span>{counts ? `${fmtNumber(counts.coaches)} Coach · ${fmtNumber(counts.members)} hội viên` : 'Đang tải…'}</span><Dot /><span>Doanh thu tính theo tiền đã thu và áp vào đơn</span></>}
+    <PageHeader title="Hôm nay tại trung tâm" subtitle={<><span>{longDate(today)}</span><Dot /><span>{counts ? `${fmtNumber(counts.coaches)} Coach · ${fmtNumber(counts.members)} hội viên` : 'Đang tải…'}</span></>}
       actions={<ExportBtn type="revenue" label="Xuất báo cáo tháng" from={monthStart(ym)} to={today} primary />} />
 
     <div className="order-1 mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
@@ -101,13 +101,13 @@ export function MgrHomePage() {
     </div>
 
     <div className="order-2 mb-6 grid gap-6 xl:grid-cols-2">
-      <Card flush title="Cần xử lý hôm nay" subtitle="Tổng hợp từ các phân hệ">
+      <Card flush title="Cần xử lý hôm nay">
         <ul className="divide-y divide-border-subtle">
           <Todo to="/manager/pt-board?tab=review" icon={<AlertTriangle className="h-4 w-4" />} tone="text-red-600 bg-red-50 dark:bg-red-500/10" title="Buổi PT cần kiểm tra" n={counts?.sessionsNeedingReview} hint="Qua giờ chưa có kết quả hoặc đang dạy quá giờ" action="Xử lý" />
-          <Todo to="/manager/approvals" icon={<ClipboardCheck className="h-4 w-4" />} tone="text-violet-600 bg-violet-50 dark:bg-violet-500/10" title="Hồ sơ Coach chờ duyệt" n={pendingApprovals ?? undefined} hint="Xem năng lực và phản hồi hồ sơ một lần" action="Duyệt" />
+          <Todo to="/manager/approvals" icon={<ClipboardCheck className="h-4 w-4" />} tone="text-violet-600 bg-violet-50 dark:bg-violet-500/10" title="Hồ sơ Coach chờ duyệt" n={pendingApprovals ?? undefined} action="Duyệt" />
           <Todo to="/manager/coach-income" icon={<Wallet className="h-4 w-4" />} tone="text-amber-600 bg-amber-50 dark:bg-amber-500/10" title="Yêu cầu rút tiền Coach" n={pendingWithdrawals?.length} hint={pendingWithdrawals ? fmtMoney(pendingWithdrawals.reduce((n, w) => n + w.amount, 0)) + ' đang chờ chuyển / xác minh' : 'Coach gửi yêu cầu, Manager chuyển và xác nhận'} action="Xử lý yêu cầu" />
           <Todo to="/manager/payments?tab=reconciliation" icon={<Scale className="h-4 w-4" />} tone="text-sky-600 bg-sky-50 dark:bg-sky-500/10" title="Hồ sơ đối soát tiền nhận" n={counts?.openReconciliation} hint="Tiền đã nhận nhưng chưa áp vào đơn" action="Mở" />
-          <Todo to="/manager/support" icon={<LifeBuoy className="h-4 w-4" />} tone="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10" title="Yêu cầu hỗ trợ đang mở" n={desk.data?.openSupportRequests} hint="Lễ tân đang xử lý — theo dõi tồn đọng" action="Xem" />
+          <Todo to="/manager/support" icon={<LifeBuoy className="h-4 w-4" />} tone="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10" title="Yêu cầu hỗ trợ đang mở" n={desk.data?.openSupportRequests} action="Xem" />
         </ul>
       </Card>
       <Card flush title="Báo cáo nhanh" subtitle={`Số liệu tháng ${ym.slice(5)}/${ym.slice(0, 4)} · xuất CSV hoặc Excel`}>
@@ -127,10 +127,10 @@ export function MgrHomePage() {
   </div>
 }
 
-function Todo({ to, icon, tone, title, n, hint, action, onQuickAction }: { to: string; icon: ReactNode; tone: string; title: string; n?: number; hint: string; action: string; onQuickAction?: () => void }) {
+function Todo({ to, icon, tone, title, n, hint, action, onQuickAction }: { to: string; icon: ReactNode; tone: string; title: string; n?: number; hint?: string; action: string; onQuickAction?: () => void }) {
   return <li className="flex items-center gap-3 px-5 py-3.5">
     <span aria-hidden className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${tone}`}>{icon}</span>
-    <div className="min-w-0 flex-1"><p className="flex items-center gap-2 font-semibold">{title}<Badge tone={n ? 'warning' : 'neutral'}>{n ?? '—'}</Badge></p><p className="text-xs text-text-muted">{hint}</p></div>
+    <div className="min-w-0 flex-1"><p className="flex items-center gap-2 font-semibold">{title}<Badge tone={n ? 'warning' : 'neutral'}>{n ?? '—'}</Badge></p>{hint && <p className="text-xs text-text-muted">{hint}</p>}</div>
     {onQuickAction && (n ?? 0) > 0 ? (
       <button type="button" onClick={onQuickAction} className="rounded-lg border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15">Duyệt nhanh</button>
     ) : (

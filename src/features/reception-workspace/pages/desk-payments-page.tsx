@@ -5,7 +5,7 @@ import { AlertCircle, Clock3, Download, FileDown, Hash, QrCode, ReceiptText, Sca
 import { useAuth } from '@/features/auth/context/auth-context'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import { centerDate } from '@/shared/utils/date'
-import { Async, Badge, Btn, Card, Dot, EmptyBox, LinkBtn, PageHeader, Pagination, Person, Segmented, StatTile, Table, inputCls, td } from '@/features/workspace/ui'
+import { Async, Badge, Btn, Card, EmptyBox, LinkBtn, PageHeader, Pagination, Person, Segmented, StatTile, Table, inputCls, td } from '@/features/workspace/ui'
 import { downloadCsv, fmtMoney, fmtNumber, hhmm, relativeAgo } from '@/features/workspace/utils'
 import { deskApi, type Invoice, type Payment, type PaymentStatus } from '../api'
 import { dmy, METHOD_LABEL, PAYMENT_LABEL } from '../labels'
@@ -39,18 +39,19 @@ export function DeskPaymentsPage() {
   const byMethod = (m: Payment['method']) => paidToday.filter(p => p.method === m).reduce((n, p) => n + Number(p.amount), 0)
 
   return <div>
-    <PageHeader title="Thanh toán & Hóa đơn" subtitle={<><span>Toàn bộ giao dịch tại quầy và VNPay</span><Dot /><span>Hôm nay: tiền mặt {fmtMoney(byMethod('CASH'))} · chuyển khoản {fmtMoney(byMethod('BANK_TRANSFER'))} · VNPay {fmtMoney(byMethod('VNPAY'))}</span></>}
+    <PageHeader title="Thanh toán & Hóa đơn" subtitle={payments.data ? `Hôm nay, trong 500 giao dịch gần nhất: tiền mặt ${fmtMoney(byMethod('CASH'))} · chuyển khoản ${fmtMoney(byMethod('BANK_TRANSFER'))} · VNPay ${fmtMoney(byMethod('VNPAY'))}` : payments.error ? 'Không tải được giao dịch' : 'Đang tải giao dịch…'}
       actions={<><LinkBtn to={`${base}/reconciliation`} icon={<Scale aria-hidden className="h-4 w-4" />}>Đối soát tiền nhận</LinkBtn>
-        <Btn icon={<Download aria-hidden className="h-4 w-4" />} disabled={!paidToday.length} onClick={() => downloadCsv(`bao-cao-ngay-${today}.csv`, ['Mã', 'Giờ', 'Hội viên', 'Mã HV', 'Nội dung', 'Phương thức', 'Số tiền'],
-          paidToday.map(p => [p.paymentCode, hhmm(p.paidAt), p.memberName ?? '', p.memberCode ?? '', p.itemDescription ?? '', METHOD_LABEL[p.method], Number(p.amount)]))}>Xuất báo cáo ngày</Btn>
+        <Btn icon={<Download aria-hidden className="h-4 w-4" />} disabled={!paidToday.length} onClick={() => downloadCsv(`giao-dich-da-tai-${today}.csv`, ['Mã', 'Giờ', 'Hội viên', 'Mã HV', 'Nội dung', 'Phương thức', 'Số tiền'],
+          paidToday.map(p => [p.paymentCode, hhmm(p.paidAt), p.memberName ?? '', p.memberCode ?? '', p.itemDescription ?? '', METHOD_LABEL[p.method], Number(p.amount)]))}>Xuất giao dịch đã tải</Btn>
         {desk && <LinkBtn to="/receptionist/membership-sale" variant="primary">Tạo hóa đơn mới</LinkBtn>}</>} />
-    <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <p className="mb-2 text-sm text-text-muted">Số liệu từ tối đa 500 giao dịch gần nhất</p>
+    <div className="mb-6 grid grid-cols-2 rounded-xl border border-border-subtle bg-bg-surface xl:grid-cols-4 [&>div]:rounded-none [&>div]:border-0 [&>div]:bg-transparent [&>div]:p-4">
       <StatTile label="Doanh thu đã thu hôm nay" icon={<Wallet className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={payments.data ? fmtNumber(revenue) : '—'} unit="₫" />
-      <StatTile label="Giao dịch thành công hôm nay" icon={<Hash className="h-[18px] w-[18px]" />} iconTone="info" value={payments.data ? paidToday.length : '—'} hint={paidToday.length ? `Trung bình ${fmtMoney(revenue / paidToday.length)} / giao dịch` : undefined} />
-      <StatTile label="Chờ thanh toán" icon={<Clock3 className="h-[18px] w-[18px]" />} iconTone="warning" tone="warning" value={payments.data ? pending.length : '—'} hint="Chủ yếu là VNPay khách chưa quét xong" />
+      <StatTile label="Giao dịch thành công hôm nay" icon={<Hash className="h-[18px] w-[18px]" />} iconTone="info" value={payments.data ? paidToday.length : '—'} hint={desk && paidToday.length ? `Trung bình ${fmtMoney(revenue / paidToday.length)} / giao dịch` : undefined} />
+      <StatTile label="Chờ thanh toán" icon={<Clock3 className="h-[18px] w-[18px]" />} iconTone="warning" tone="warning" value={payments.data ? pending.length : '—'} />
       <StatTile label="Thất bại / hết hạn hôm nay" icon={<AlertCircle className="h-[18px] w-[18px]" />} iconTone="danger" value={payments.data ? failedToday.length : '—'} />
     </div>
-    <Card flush title={view === 'payments' ? 'Danh sách giao dịch' : 'Hóa đơn đã xuất'} subtitle={view === 'payments' ? '500 giao dịch gần nhất' : 'Hóa đơn tạo tự động khi giao dịch được áp dụng'}
+    <Card flush title={view === 'payments' ? 'Danh sách giao dịch' : 'Hóa đơn đã xuất'} subtitle={view === 'payments' ? '500 giao dịch gần nhất' : desk ? 'Hóa đơn tạo tự động khi giao dịch được áp dụng' : undefined}
       actions={<Segmented label="Chế độ xem" value={view} onChange={setView} items={[{ key: 'payments', label: 'Giao dịch' }, { key: 'invoices', label: 'Hóa đơn' }]} />}>
       {view === 'payments' ? <>
         <div className="flex flex-wrap items-center gap-3 border-b border-border-subtle p-4">

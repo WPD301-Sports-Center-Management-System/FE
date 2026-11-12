@@ -45,10 +45,10 @@ export function MgrPtBoardPage() {
           list.map(s => [hhmm(s.startsAt), hhmm(s.endsAt), s.coachName ?? '', s.memberName ?? '', s.purchase?.packageNameSnapshot ?? '', s.credit ? `${s.credit.creditIndex}/${s.purchase?.totalCredits ?? ''}` : '', SESSION_LABEL[s.status] ?? s.status]))}>Xuất lịch ngày</Btn>
       </>} />
     <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <StatTile label="Buổi PT trong ngày" icon={<CalendarDays className="h-[18px] w-[18px]" />} iconTone="info" value={sessions.data ? scheduled.length : '—'} hint={sessions.data ? `${list.filter(s => s.isMakeup).length} buổi học bù · ${list.length - scheduled.length} đã hủy / dời` : undefined} />
-      <StatTile label="Đã hoàn thành" icon={<CheckCircle2 className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={sessions.data ? list.filter(s => s.status === 'COMPLETED').length : '—'} hint={sessions.data ? `${list.filter(s => s.status === 'NO_SHOW').length} vắng · ${list.filter(s => s.status === 'CANCELLED_LATE').length} hủy muộn` : undefined} />
-      <StatTile label="HLV đang dạy" icon={<UserRoundCheck className="h-[18px] w-[18px]" />} iconTone="violet" value={sessions.data ? <>{new Set(live.map(s => s.coachId)).size}<span className="text-lg font-medium text-text-muted">/{coaches.length}</span></> : '—'} hint={day === today ? 'Tại thời điểm hiện tại' : 'Chỉ có ý nghĩa với hôm nay'} />
-      <StatTile label="Cần kiểm tra" icon={<AlertTriangle className="h-[18px] w-[18px]" />} iconTone="danger" tone="danger" value={counts?.sessionsNeedingReview ?? '—'} hint="Hệ thống tự gắn cờ khi qua giờ chưa có kết quả" />
+      <StatTile label="Buổi PT trong ngày" icon={<CalendarDays className="h-[18px] w-[18px]" />} iconTone="info" value={sessions.data ? scheduled.length : '—'} />
+      <StatTile label="Đã hoàn thành" icon={<CheckCircle2 className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={sessions.data ? list.filter(s => s.status === 'COMPLETED').length : '—'} />
+      <StatTile label="HLV đang dạy" icon={<UserRoundCheck className="h-[18px] w-[18px]" />} iconTone="violet" value={sessions.data && day === today ? <>{new Set(live.map(s => s.coachId)).size}<span className="text-lg font-medium text-text-muted">/{coaches.length}</span></> : '—'} />
+      <StatTile label="Cần kiểm tra" icon={<AlertTriangle className="h-[18px] w-[18px]" />} iconTone="danger" tone="danger" value={counts?.sessionsNeedingReview ?? '—'} />
     </div>
     <Card flush>
       <div className="flex flex-wrap items-center gap-3 border-b border-border-subtle p-4">

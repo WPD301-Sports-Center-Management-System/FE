@@ -5,7 +5,7 @@ import { Modal } from '@/shared/components/ui/modal'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import type { Session } from '@/features/fixed-pt/types'
 import { centerDate } from '@/shared/utils/date'
-import { Async, Badge, Btn, Card, Dot, EmptyBox, Field, InlineError, LinkBtn, PageHeader, Person, Segmented, StatTile, Table, btnCls, inputCls, td, textareaCls, useFlash } from '@/features/workspace/ui'
+import { Async, Badge, Btn, Card, EmptyBox, Field, InlineError, LinkBtn, PageHeader, Person, Segmented, StatTile, Table, btnCls, inputCls, td, textareaCls, useFlash } from '@/features/workspace/ui'
 import { addDays, dayEnd, dayStart, downloadCsv, hhmm, isoWeek, minutesBetween, mondayOf, SESSION_LABEL, SESSION_TONE, shortDate, WEEKDAY_SHORT, weekdayOf } from '@/features/workspace/utils'
 import { deskApi } from '../api'
 
@@ -41,22 +41,22 @@ export function DeskPtCalendarPage() {
 
   return <div>
     {node}
-    <PageHeader title="Lịch PT" subtitle={<><span>Tuần {isoWeek(monday)} · {shortDate(monday)} – {shortDate(sunday)}/{sunday.slice(0, 4)}</span><Dot /><span>Hội viên check-in gym; Coach bắt đầu buổi tập</span></>}
+    <PageHeader title="Lịch PT" subtitle={`Tuần ${isoWeek(monday)} · ${shortDate(monday)} – ${shortDate(sunday)}/${sunday.slice(0, 4)} · Tối đa 500 buổi đã tải`}
       actions={<><LinkBtn to="/receptionist/calendar?tab=changes" icon={<ArrowLeftRight aria-hidden className="h-4 w-4" />}>Đổi lịch & học bù</LinkBtn>
-        <Btn icon={<Download aria-hidden className="h-4 w-4" />} disabled={!rows.length} onClick={() => downloadCsv(`lich-pt-${monday}.csv`, ['Ngày', 'Giờ', 'Hội viên', 'HLV', 'Khóa', 'Buổi', 'Trạng thái'],
+        <Btn icon={<Download aria-hidden className="h-4 w-4" />} disabled={!rows.length} onClick={() => downloadCsv(`lich-pt-${monday}.csv`, ['Ngày', 'Giờ', 'Hội viên', 'Huấn luyện viên', 'Khóa', 'Buổi', 'Trạng thái'],
           rows.map(s => [centerDate(s.startsAt), `${hhmm(s.startsAt)}-${hhmm(s.endsAt)}`, s.memberName ?? '', s.coachName ?? '', s.courseName ?? '', s.credit ? `${s.credit.creditIndex}/${s.purchase?.totalCredits ?? ''}` : '', SESSION_LABEL[s.status] ?? s.status]))}>Xuất CSV</Btn></>} />
-    <div className="mb-6 grid gap-4 md:grid-cols-3">
-      <StatTile label="Buổi PT hôm nay" icon={<CalendarCheck className="h-[18px] w-[18px]" />} iconTone="info" value={sessions.data ? todays.length : '—'} unit="buổi" hint={sessions.data ? `${new Set(todays.map(s => s.coachId)).size} HLV có lịch` : undefined} />
-      <StatTile label="Buổi đã bắt đầu hôm nay" icon={<UserCheck className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={sessions.data ? <>{checked}<span className="text-lg font-medium text-text-muted">/{todays.length}</span></> : '—'}
+    <div className="mb-6 grid rounded-xl border border-border-subtle bg-bg-surface sm:grid-cols-3 [&>div]:rounded-none [&>div]:border-0 [&>div]:bg-transparent [&>div]:p-4">
+      <StatTile label="Buổi PT hôm nay" icon={<CalendarCheck className="h-[18px] w-[18px]" />} iconTone="info" value={sessions.data && today >= monday && today <= sunday ? todays.length : '—'} unit="buổi" hint={sessions.data && today >= monday && today <= sunday ? `${new Set(todays.map(s => s.coachId)).size} huấn luyện viên có lịch` : undefined} />
+      <StatTile label="Buổi đã bắt đầu hôm nay" icon={<UserCheck className="h-[18px] w-[18px]" />} iconTone="success" tone="success" value={sessions.data && today >= monday && today <= sunday ? <>{checked}<span className="text-lg font-medium text-text-muted">/{todays.length}</span></> : '—'}
         progress={todays.length ? { value: checked, max: todays.length, tone: 'success' } : undefined} hint={sessions.data ? `${todays.filter(s => s.status === 'CONFIRMED').length} buổi chưa bắt đầu` : undefined} />
       <StatTile label="Hủy / vắng trong tuần" icon={<CalendarX className="h-[18px] w-[18px]" />} iconTone="danger" value={sessions.data ? all.filter(TABS[4]!.test).length : '—'} unit="buổi" hint={sessions.data ? `${all.filter(s => s.isMakeup).length} buổi học bù trong tuần` : undefined} />
     </div>
-    <Card flush title="Lịch hẹn trong tuần" subtitle="Bấm tên hội viên để mở hồ sơ"
+    <Card flush title="Lịch hẹn trong tuần"
       actions={<div className="flex flex-wrap items-center gap-2">
         <button type="button" aria-label="Tuần trước" onClick={() => go(addDays(monday, -7))} className={btnCls('ghost')}><ChevronLeft aria-hidden className="h-4 w-4" /></button>
         <Btn onClick={() => go(today)}>Tuần này</Btn>
         <button type="button" aria-label="Tuần sau" onClick={() => go(addDays(monday, 7))} className={btnCls('ghost')}><ChevronRight aria-hidden className="h-4 w-4" /></button>
-        <label><span className="sr-only">Lọc theo HLV</span><select value={coach} onChange={e => setCoach(e.target.value)} className={`${inputCls} w-48`}><option value="">Tất cả HLV</option>{coaches.map(([id, n]) => <option key={id} value={id}>{n}</option>)}</select></label>
+        <label><span className="sr-only">Lọc theo huấn luyện viên</span><select value={coach} onChange={e => setCoach(e.target.value)} className={`${inputCls} w-48`}><option value="">Tất cả huấn luyện viên</option>{coaches.map(([id, n]) => <option key={id} value={id}>{n}</option>)}</select></label>
       </div>}>
       <div className="flex flex-wrap items-center gap-3 border-b border-border-subtle px-4 py-3">
         <div role="tablist" aria-label="Chọn ngày" className="flex flex-wrap gap-1">
@@ -67,7 +67,7 @@ export function DeskPtCalendarPage() {
         <div className="ml-auto"><Segmented label="Lọc trạng thái" value={tab} onChange={setTab} items={TABS.map(t => ({ key: t.key, label: t.label, count: scoped.filter(t.test).length }))} /></div>
       </div>
       <Async state={sessions} rows={6} empty={() => !rows.length && <EmptyBox icon={<CalendarCheck className="h-5 w-5" />} title="Không có buổi PT nào phù hợp" />}>
-        {() => <Table head={['Khung giờ', 'Hội viên', 'HLV', 'Buổi', 'Trạng thái', 'Thao tác']} minWidth={1000}>
+        {() => <Table head={['Khung giờ', 'Hội viên', 'Huấn luyện viên', 'Buổi', 'Trạng thái', 'Thao tác']} minWidth={1000}>
           {rows.map(s => <SessionRow key={s.id} s={s} onCancel={() => setCancel(s)} />)}
         </Table>}
       </Async>

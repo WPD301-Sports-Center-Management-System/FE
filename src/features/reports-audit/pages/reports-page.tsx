@@ -6,7 +6,6 @@ import {
   RefreshCw,
   AlertCircle,
   DollarSign,
-  TrendingUp,
   CheckCircle2,
   Package,
   Calendar,
@@ -119,18 +118,14 @@ export function ReportsPage() {
   }
 
 
-  const totalPtGross = revenue?.ptGross || 0
-  const gymShare = revenue?.ptGymShare || 0
-  const coachPayable = revenue?.coachPayable || 0
+  const money = (value: number | null | undefined) => value == null ? '—' : formatVND(value)
+  const period = dateFrom && dateTo ? `${dateFrom} – ${dateTo}` : dateFrom ? `Từ ${dateFrom}` : dateTo ? `Đến ${dateTo}` : 'Tất cả thời gian'
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary">Báo Cáo Tài Chính & Quyết Toán HLV</h1>
-          <p className="text-xs text-text-muted mt-1">
-            Tổng hợp dữ liệu doanh thu, gói PT, lịch tập, HLV, khóa học và thiết bị
-          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -286,38 +281,14 @@ export function ReportsPage() {
       ) : activeTab === 'revenue' ? (
         <div className="space-y-6">
           {/* Revenue Split Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="rounded-2xl border border-border-subtle bg-bg-surface p-5 space-y-2 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-text-muted uppercase">Tổng Doanh Thu Hợp Đồng PT</p>
-                <DollarSign className="h-4 w-4 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-text-primary">{formatVND(totalPtGross)}</h3>
-              <p className="text-xs text-text-muted">
-                {revenue?.paymentCount || 0} đơn thanh toán • Membership: {formatVND(revenue?.membershipRevenue || 0)}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5 space-y-2 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase">Phần Gym Giữ Lại (40%)</p>
-                <TrendingUp className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-              </div>
-              <h3 className="text-2xl font-bold text-cyan-600 dark:text-cyan-300">{formatVND(gymShare)}</h3>
-              <p className="text-xs text-text-muted">Chi phí vận hành mặt bằng & máy móc</p>
-            </div>
-
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5 space-y-2 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase">Phần Quyết Toán HLV (60%)</p>
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <h3 className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">{formatVND(coachPayable)}</h3>
-              <p className="text-xs text-text-muted">
-                Còn chờ chi trả: {formatVND(revenue?.coachPending || 0)}
-              </p>
-            </div>
-          </div>
+          <section aria-label="Doanh thu và ngân sách PT" className="rounded-xl border border-border-subtle bg-bg-surface p-5">
+            <p className="text-sm text-text-muted">Kỳ báo cáo: {period}</p>
+            <dl className="mt-4 grid gap-4 md:grid-cols-3 md:divide-x md:divide-border-subtle md:gap-0">
+              <div className="md:pr-5"><dt className="text-sm text-text-muted">Tiền PT đã áp vào đơn</dt><dd className="mt-1 text-2xl font-semibold tabular-nums">{money(revenue?.ptGross)}</dd><p className="mt-1 text-xs text-text-muted">{revenue?.paymentCount ?? '—'} giao dịch đã thanh toán · Vé gym: {money(revenue?.membershipRevenue)}</p></div>
+              <div className="md:px-5"><dt className="text-sm text-text-muted">Phần trung tâm theo gói đã thanh toán</dt><dd className="mt-1 text-2xl font-semibold tabular-nums">{money(revenue?.ptGymShare)}</dd></div>
+              <div className="md:pl-5"><dt className="text-sm text-text-muted">Ngân sách huấn luyện viên theo gói đã thanh toán</dt><dd className="mt-1 text-2xl font-semibold tabular-nums">{money(revenue?.coachBudget)}</dd><p className="mt-1 text-xs text-text-muted">Còn phải trả hiện tại: {money(revenue?.coachEligibleUnpaid)}</p></div>
+            </dl>
+          </section>
 
           {/* Coach withdrawals */}
           <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 space-y-4 shadow-sm">

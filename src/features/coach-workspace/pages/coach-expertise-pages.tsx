@@ -14,8 +14,8 @@ import { useState } from 'react'
 
 export function CoachTeachingPage() {
   return <TabbedPage title="Giáo án" tabs={[
-    { key: 'packages', label: 'Buổi tập học viên', hint: 'Chọn buổi để soạn, dùng mẫu hoặc nhờ AI; kiểm tra rồi lưu và giao ngay tại buổi tập.', render: () => <CoachProgramPage embedded /> },
-    { key: 'templates', label: 'Thư viện giáo án', hint: 'Giáo án mẫu cho một buổi và chương trình A/B/C xoay vòng cho cả gói.', render: () => <CoachLibraryPage /> },
+    { key: 'packages', label: 'Buổi tập học viên', render: () => <CoachProgramPage embedded /> },
+    { key: 'templates', label: 'Thư viện giáo án', render: () => <CoachLibraryPage /> },
     { key: 'ai', label: 'Soạn bằng AI', hint: 'AI soạn nháp; bạn kiểm tra và chọn buổi tập để dùng ngay.', render: () => <CoachAiRecommendationPage kind="TRAINING_PLAN" /> },
   ]} />
 }

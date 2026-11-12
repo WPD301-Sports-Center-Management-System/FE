@@ -6,6 +6,7 @@ const auth = vi.hoisted(()=>({role:'MEMBER'}))
 vi.mock('@/features/auth/context/auth-context',()=>({useAuth:()=>auth}))
 vi.mock('../api',()=>({fixedPtApi:{scheduleChanges:vi.fn().mockResolvedValue([])}}))
 vi.mock('../hybrid-api',()=>({hybridGet:vi.fn().mockResolvedValue({id:'p1',seriesMode:true,status:'ACTIVE',availableCredits:2,reservedCredits:3,consumedCredits:1,activationDeadline:'2027-01-01',expiresAt:'2027-02-01'})}))
+vi.mock('../refund-api',()=>({refundApi:{list:vi.fn().mockResolvedValue([]),preview:vi.fn().mockResolvedValue({purchaseCode:'P1',creditIds:[],amount:0,refund:null})}}))
 afterEach(cleanup)
 describe('Purchase return routes',()=>{
   it.each([['MEMBER','/member'],['MANAGER','/manager/members'],['RECEPTIONIST','/receptionist/members'],['COACH','/coach/packages?view=sold']])('returns %s to an existing destination',async(role,href)=>{

@@ -13,7 +13,7 @@ export function TrialHistoryPanel({ onSelect }: { onSelect: (phone: string) => v
   const [page, setPage] = useState(1)
   useEffect(() => { const timer = window.setTimeout(() => { setSearch(query.trim()); setPage(1) }, 250); return () => window.clearTimeout(timer) }, [query])
   const history = useLoad(() => deskApi.trialHistory({ search: search || undefined, page, limit: 10 }), [search, page])
-  return <Card flush title="Lịch sử khách tập thử" subtitle="Mỗi SĐT một hồ sơ, giữ lại các lần đến tập và thông tin đăng ký.">
+  return <Card flush title="Lịch sử khách tập thử">
     <div className="border-b border-border-subtle px-5 py-4"><input type="search" aria-label="Tìm lịch sử tập thử" placeholder="Tìm tên hoặc số điện thoại" value={query} onChange={e => setQuery(e.target.value)} className={`${inputCls} sm:max-w-80`} /></div>
     <Async state={history} rows={4} empty={data => !data.items.length && <EmptyBox title="Chưa có lịch sử phù hợp" hint="Hồ sơ được giữ lại cả khi khách đã hết thời hạn tập thử." />}>
       {data => <><ul className="divide-y divide-border-subtle px-5">{data.items.map(item => <li key={item.id} className="grid grid-cols-2 items-center gap-3 py-4 md:grid-cols-[minmax(140px,1.2fr)_minmax(120px,1fr)_minmax(150px,1.2fr)_auto]">

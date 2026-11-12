@@ -37,7 +37,7 @@ const fileCls = 'block w-full text-sm text-text-muted file:mr-3 file:cursor-poin
 export function CoachApplicationPage() {
   const state = useLoad(() => hybridGet<Application>('/coaches/me/application'))
   return <div>
-    <PageHeader title="Hồ sơ Coach" subtitle="Nộp hồ sơ chuyên môn và CV PDF một lần để được duyệt." />
+    <PageHeader title="Hồ sơ huấn luyện viên" />
     {state.error ? <ErrorBox message={state.error} onRetry={() => void state.reload()} /> : !state.data ? <Skeleton rows={5} /> : <ApplicationForm p={state.data} reload={() => void state.reload()} />}
   </div>
 }
@@ -64,7 +64,7 @@ function ApplicationForm({ p, reload }: { p: Application; reload: () => void }) 
         <p className="text-sm text-text-muted">{STATUS[status].hint}</p>
         {p.applicationReviewNote && <p className="rounded-lg bg-bg-surface-muted px-3 py-2 text-sm"><span className="font-medium">Nhận xét của Manager:</span> {p.applicationReviewNote}</p>}
         {p.cvUrl && <a className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline" href={p.cvUrl} target="_blank" rel="noreferrer"><FileText aria-hidden className="h-4 w-4" />Xem CV đã nộp</a>}
-        {status === 'APPROVED' && <Link to="/coach" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"><CheckCircle2 aria-hidden className="h-4 w-4" />Vào khu vực Coach</Link>}
+        {status === 'APPROVED' && <Link to="/coach" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"><CheckCircle2 aria-hidden className="h-4 w-4" />Vào khu vực huấn luyện viên</Link>}
       </div>
     </Card>
     <Card title="Thông tin hồ sơ" subtitle={editable ? 'Các mục có dấu * là bắt buộc.' : 'Hồ sơ đang khóa trong lúc chờ duyệt hoặc đã được duyệt.'}>
@@ -94,7 +94,7 @@ export function ApplicationsPanel({ onChange }: { onChange?: () => void } = {}) 
   const [open, setOpen] = useState<Application | null>(null)
   const { flash, node } = useFlash()
   const rows = (state.data ?? []).filter(p => p.cvUrl)
-  return <Card flush title="Hồ sơ Coach chờ duyệt" badge={state.data ? <Badge tone="warning">{rows.length}</Badge> : null} subtitle="Duyệt một lần: Coach mở giờ làm và bật nhận học viên để bán các gói PT của trung tâm.">
+  return <Card flush title="Hồ sơ Coach chờ duyệt" badge={state.data ? <Badge tone="warning">{rows.length}</Badge> : null}>
     {node}
     <Async state={state} rows={3} empty={() => !rows.length && <EmptyBox icon={<CheckCircle2 className="h-5 w-5" />} title="Không có hồ sơ chờ duyệt" />}>
       {() => <Table head={['Coach', 'Chuyên môn', 'Hồ sơ', '']} minWidth={720}>
