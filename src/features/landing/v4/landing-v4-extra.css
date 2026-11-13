@@ -16,14 +16,11 @@
   width: 32px;
   height: 32px;
   margin-right: 10px;
-  border-radius: 8px;
-  background: var(--lime);
-  color: #101113;
+  color: #ea580c;
 }
 .gc-landing .brand-icon svg {
   width: 20px;
   height: 20px;
-  transform: rotate(-45deg);
 }
 @media (max-width: 600px) {
   .gc-landing .brand-icon {
