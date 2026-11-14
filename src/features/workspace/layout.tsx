@@ -95,6 +95,7 @@ function Sidebar({ nav, panel, roleLabel, open, onClose, actions }: { nav: Works
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-text-primary">{user?.fullName ?? '—'}</p>
         <span className="inline-block rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">{roleLabel}</span>
+        <Link to="/account/change-password" className="mt-1 block text-xs text-text-muted underline">Đổi mật khẩu</Link>
       </div>
       <button type="button" title="Đăng xuất" aria-label="Đăng xuất" onClick={async () => { await logout(); navigate('/login') }} className="rounded-lg p-2 text-text-muted hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"><LogOut className="h-4 w-4" /></button>
     </div>

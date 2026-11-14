@@ -10,7 +10,7 @@ import { beReholdSchema } from '@/test/be-rehold-schema'
 import { AppApiError } from '@/shared/api/api-error'
 vi.mock('@/features/reception-workspace/api', () => ({ deskApi: { member: vi.fn(), members: vi.fn() } }))
 vi.mock('../hybrid-api', () => ({ hybridGet: vi.fn() }))
-vi.mock('../series-api', () => ({ seriesApi: { patterns: vi.fn(), preview: vi.fn(), checkout: vi.fn(), rehold: vi.fn() } }))
+vi.mock('../series-api', () => ({ seriesApi: { order: vi.fn(), patterns: vi.fn(), preview: vi.fn(), checkout: vi.fn(), rehold: vi.fn() } }))
 vi.mock('@/features/workspace/counter-payment', () => ({ counterPayment: vi.fn() }))
 const auth = vi.hoisted(() => ({ role: 'RECEPTIONIST' as string }))
 vi.mock('@/features/auth/context/auth-context', () => ({ useAuth: () => ({ role: auth.role, user: { fullName: 'Học viên', memberProfilesUserId: { id: 'member' } } }) }))
@@ -33,6 +33,18 @@ async function hold() {
   fireEvent.change(screen.getByLabelText('Căn cứ Member đồng ý'), { target: { value: 'Member xác nhận trực tiếp tại quầy' } }); fireEvent.click(hold)
 }
 describe('Series checkout at reception', () => {
+  it.each(['MEMBER', 'RECEPTIONIST'])('restores a live held order for %s without reholding or previewing', async role => {
+    auth.role = role
+    vi.mocked(seriesApi.order).mockResolvedValue({ purchaseId: 'existing', memberId: 'member', coachId: 'coach', packageOptionId: 'option', hold: { expiresAt: new Date(Date.now() + 900000).toISOString() }, expectedCompletionAt: preview.expectedCompletionAt, price: '2400000', items: preview.items })
+    render(<MemoryRouter initialEntries={[{ pathname: '/member/pt-sale', state: { ptDraft: { memberId: 'member', coachId: 'coach', optionId: 'option', startDate: '2026-12-07', pattern, purchaseId: 'existing' } } }]}><HybridSalePage /></MemoryRouter>)
+    await screen.findByText('Giá đơn đã xác nhận: 2.400.000 ₫')
+    expect(screen.getByLabelText('Ngày bắt đầu')).toHaveValue('2026-12-07')
+    expect(screen.queryByText('Giữ chỗ còn 0 giây.')).toBeNull()
+    if (role === 'MEMBER') expect(screen.getByRole('button', { name: 'Thanh toán qua VNPay' })).toBeEnabled()
+    else expect(screen.getByRole('button', { name: 'Xác nhận đã thu tiền mặt' })).toBeEnabled()
+    expect(seriesApi.rehold).not.toHaveBeenCalled()
+    expect(seriesApi.preview).not.toHaveBeenCalled()
+  })
   it.each([1, 6])('allows preview with %i weekly sessions even when the package defaults to three', async count => {
     vi.mocked(seriesApi.patterns).mockResolvedValue({ sessionsPerWeek: 3, slots: Array.from({ length: 7 }, (_, i) => ({ weekday: i + 1, startTime: '18:00', available: true })), suggestions: [] })
     await setup(['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'].slice(0, count))
@@ -87,6 +99,7 @@ describe('Series checkout at reception', () => {
     })
     render(<MemoryRouter initialEntries={[{ pathname: '/member/pt-sale', state: { ptDraft: { memberId: 'member', coachId: 'coach', optionId: 'option', startDate: '2026-12-07', pattern } } }]}><HybridSalePage /></MemoryRouter>)
     fireEvent.click(await screen.findByRole('button', { name: 'Chọn lại lịch cho PT-OLD' }))
+    await screen.findByText('Giữ chỗ còn 0 giây.')
     const show = await screen.findByRole('button', { name: 'Xem trước toàn bộ lịch' })
     await waitFor(() => expect(show).toBeEnabled())
     fireEvent.click(show)
@@ -106,6 +119,7 @@ describe('Series checkout at reception', () => {
   })
   beforeEach(() => {
     vi.clearAllMocks(); auth.role = 'RECEPTIONIST'
+    vi.mocked(seriesApi.order).mockResolvedValue({ purchaseId: 'existing', memberId: 'member', coachId: 'coach', packageOptionId: 'option', hold: { expiresAt: null }, expectedCompletionAt: '', price: '2400000', items: [] })
     vi.mocked(deskApi.member).mockResolvedValue({id:'member', memberCode:'MEM1',user:{fullName:'Học viên'}} as Awaited<ReturnType<typeof deskApi.member>>)
     vi.mocked(hybridGet).mockImplementation(async url => url === '/coaches' ? [{id:'coach',fullName:'Coach Nam'}] : url === '/pt-package-options' ? [{id:'option',name:'Gói chuẩn',price:'2400000',sessionsPerWeek:3,sessionCount:12}] : [])
     vi.mocked(seriesApi.patterns).mockResolvedValue({sessionsPerWeek:3,slots:pattern.map(p=>({...p,available:true})),suggestions:[]})

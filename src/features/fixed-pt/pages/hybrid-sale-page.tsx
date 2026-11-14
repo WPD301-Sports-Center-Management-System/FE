@@ -11,12 +11,12 @@ import { PatternPicker, SeriesPreviewList } from '../components/pattern-picker'
 import { Page, Panel, Field, inputCls, Loadable, ErrorBanner, Notice, money } from '../components/ui'
 import { Btn } from '@/features/workspace/ui'
 import { counterPayment } from '@/features/workspace/counter-payment'
-import { centerDate } from '@/shared/utils/date'
+import { centerDate, formatDateTime } from '@/shared/utils/date'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { AppApiError } from '@/shared/api/api-error'
 import { tierLabel, type CoachTier } from '@/shared/utils/coach-tier'
 export function HybridSalePage() {
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const location = useLocation()
   type Draft = PtDraft
   const restored = (location.state as { ptDraft?: Draft } | null)?.ptDraft
@@ -34,7 +34,8 @@ export function HybridSalePage() {
   const [startDate, setDate] = useState(restored?.startDate ?? centerDate(new Date(Date.now() + 86400000).toISOString()))
   const [pattern, setPattern] = useState<PatternSlot[]>(restored?.pattern ?? [])
   const [preview, setPreview] = useState<SeriesPreview | null>(null)
-  const [order, setOrder] = useState<SeriesOrder | null>(restored?.purchaseId ? { purchaseId: restored.purchaseId, hold: { expiresAt: new Date(0).toISOString() }, expectedCompletionAt: '' } : null)
+  const [order, setOrder] = useState<SeriesOrder | null>(null)
+  const [resumeId, setResumeId] = useState(restored?.purchaseId ?? params.get('purchaseId') ?? '')
   const [paid, setPaid] = useState(false)
   const [receivedPayment, setReceivedPayment] = useState<string | null>(null)
   const [cash, setCash] = useState('')
@@ -55,6 +56,14 @@ export function HybridSalePage() {
     }
   }
   const pending = useLoad(() => hybridGet<{ id: string; purchaseCode: string; memberId: string; coachId: string; packageOptionId: string; status: string }[]>(self ? '/me/pt-packages' : '/pt-package-purchases', { memberId, status: 'PENDING_PAYMENT', limit: 100 }), [memberId], !!memberId)
+  const resumed = useLoad(() => seriesApi.order(resumeId), [resumeId], !!resumeId, false)
+  useEffect(() => {
+    if (!resumed.data) return
+    const saved = resumed.data
+    setMember(saved.memberId); setCoach(saved.coachId); setOption(saved.packageOptionId)
+    if (saved.items.length) setDate(centerDate(saved.items[0].startsAt))
+    setOrder(saved); setCash(saved.price ?? ''); setPreview(null)
+  }, [resumed.data])
   const slots = useLoad(() => checkTier(() => seriesApi.patterns(coachId, optionId, startDate, memberId, order?.purchaseId)), [coachId, optionId, startDate, memberId, order?.purchaseId], !!coachId && !!optionId && !!memberId && !!startDate)
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id) }, [])
   useEffect(() => { setPreview(null); setAcceptPolicy(false); setConsentSource('') }, [coachId, optionId, startDate, memberId])
@@ -67,7 +76,9 @@ export function HybridSalePage() {
   }, [renewal.data])
   const body: SeriesPreviewBody = { coachId, packageOptionId: optionId, memberId, startDate, pattern, consentEvidence: self || !consent ? undefined : consent, acceptPolicy: self && acceptPolicy ? true : undefined, purchaseId: order?.purchaseId }
   const changePattern = (p: PatternSlot[]) => { setPattern(p); setPreview(null); setAcceptPolicy(false); setConsentSource('') }
-  const remaining = order ? Math.max(0, Math.ceil((Date.parse(order.hold.expiresAt) - now) / 1000)) : null
+  const remaining = order ? Math.max(0, Math.ceil(((order.hold.expiresAt ? Date.parse(order.hold.expiresAt) : 0) - now) / 1000)) : null
+  const paymentPrice = order?.price ?? preview?.price
+  const restoringOrder = !!resumeId && !order
   useEffect(() => { if (order && remaining === 0) void slots.reload() }, [order?.purchaseId, remaining === 0])
   const previewBlocker = !pattern.length ? 'Chưa thể xem trước: hãy chọn ít nhất 1 ngày tập trong tuần.'
     : pattern.some(p => !p.startTime) ? 'Chưa thể xem trước: hãy chọn giờ cho tất cả các ngày đã chọn.'
@@ -76,18 +87,21 @@ export function HybridSalePage() {
   return <Page title={self ? "Chọn gói PT và lịch tập" : "Bán gói PT có lịch"} subtitle="Chọn lịch tập cho cả gói, sau đó xem trước từng buổi trước khi thu tiền.">
     <div className="rounded-xl bg-text-primary px-5 py-4 text-bg-surface"><p className="font-semibold">Xếp lịch cho toàn bộ gói</p><p className="mt-1 text-sm opacity-70">Một lịch tập rõ ràng, kiểm tra đủ các buổi trước khi tạo đơn.</p></div>
     {tierNotice && <Notice>{tierNotice}</Notice>}
-    <ErrorBanner message={act.error ?? renewal.error} />{params.get('renewFrom') && <Notice>Mua gói mới với Coach hiện tại. Kiểm tra lại gói, lịch, giá và đồng ý trước khi tạo đơn. Khung giờ gợi ý chưa được giữ.</Notice>}
+    <ErrorBanner message={act.error ?? resumed.error ?? renewal.error} />
+    {resumeId && resumed.loading && <Notice>Đang tải lại đơn và thời hạn giữ chỗ…</Notice>}
+    {resumed.error && <Btn onClick={() => void resumed.reload()}>Tải lại đơn PT</Btn>}
+    {params.get('renewFrom') && <Notice>Mua gói mới với Coach hiện tại. Kiểm tra lại gói, lịch, giá và đồng ý trước khi tạo đơn. Khung giờ gợi ý chưa được giữ.</Notice>}
     {receivedPayment && !paid && <Notice>Đã nhận tiền. Đơn đang chờ áp dụng hoặc đối soát, vui lòng không thu thêm. <Link className="font-semibold underline" to="/receptionist/payments">Mở thanh toán để theo dõi</Link></Notice>}
     {paid ? <Panel title="Đã hoàn tất bán gói"><Notice tone="success">Đã nhận tiền và tạo toàn bộ buổi tập. Hóa đơn đã mở.</Notice><div className="mt-4 flex flex-wrap gap-3"><Link className="font-semibold text-primary underline" to={`/receptionist/members/${memberId}`}>Xem gói và lịch của hội viên</Link><Link className="font-semibold text-primary underline" to="/receptionist/calendar">Mở lịch PT</Link></div></Panel> : <>
-    <Panel title="Thông tin gói tập"><fieldset disabled={act.busy || !!order && remaining !== 0} className="grid gap-4 md:grid-cols-2">
+    <Panel title="Thông tin gói tập"><fieldset disabled={act.busy || restoringOrder || !!order && remaining !== 0} className="grid gap-4 md:grid-cols-2">
       <div className="space-y-2"><p className="text-sm font-medium">Hội viên mua gói</p>{self ? <p className="font-semibold">{user?.fullName}</p> : <><PersonSearch label="Tìm hội viên mua PT" placeholder="Nhập tên, số điện thoại hoặc email…" find={findMember} onPick={m => setMember(m.id)} />{memberId && <Loadable state={member}>{m => <p className="rounded-lg bg-bg-surface-muted p-3 text-sm font-semibold">Đã chọn: {m.user.fullName} · {m.memberCode}</p>}</Loadable>}</>}</div>
       <Field label="Huấn luyện viên"><Loadable state={coaches}>{rows => <select aria-label="Huấn luyện viên" className={inputCls} value={coachId} onChange={e => { setCoach(e.target.value); setOption('') }}><option value="">Chọn huấn luyện viên</option>{rows.map(c => <option key={c.id} value={c.id}>{c.fullName}{!self && c.tier ? " · " + tierLabel(c.tier) : ""}</option>)}</select>}</Loadable></Field>
       <Field label="Gói PT">{coachId ? <Loadable state={options}>{() => <select aria-label="Gói PT" className={inputCls} value={optionId} onChange={e => { setOption(e.target.value); setTierNotice(''); setAcceptPolicy(false); setConsentSource('') }}><option value="">{(options.data ?? []).length ? 'Chọn gói PT' : 'Coach chưa có gói mở bán'}</option>{(options.data ?? []).map(o => <option key={o.id} value={o.id}>{o.name} · {o.sessionCount} buổi · {o.durationMinutes ?? '—'} phút/buổi · {money(o.price)}</option>)}</select>}</Loadable> : <p className="text-sm text-text-muted">Chọn HLV trước để xem gói PT.</p>}</Field>
       <Field label="Ngày bắt đầu"><input className={inputCls} type="date" min={centerDate()} value={startDate} onChange={e => setDate(e.target.value)} /></Field>
 
     </fieldset></Panel>
-    {!order && pending.data?.some(p => p.status === 'PENDING_PAYMENT') && <Panel title="Tiếp tục đơn chưa thanh toán">{pending.data.filter(p => p.status === 'PENDING_PAYMENT').map(p => <Btn key={p.id} onClick={() => { setCoach(p.coachId); setOption(p.packageOptionId); setOrder({ purchaseId: p.id, hold: { expiresAt: new Date(0).toISOString() }, expectedCompletionAt: '' }); setPreview(null) }}>Chọn lại lịch cho {p.purchaseCode}</Btn>)}</Panel>}
-    {optionId && <Panel title="Lịch tập hằng tuần"><fieldset disabled={act.busy || !!order && remaining !== 0} className="min-w-0 space-y-3">{memberId ? <Loadable state={slots}>{data => <PatternPicker data={data} summary={[{label:'Coach',value:coaches.data?.find(c=>c.id===coachId)?.fullName??'—'},{label:'Gói PT',value:options.data?.find(o=>o.id===optionId)?.name??'—'},{label:'Bắt đầu từ',value:startDate.split('-').reverse().join('/')},{label:'Tổng gói',value:`${options.data?.find(o=>o.id===optionId)?.sessionCount??'—'} buổi`}]} value={pattern} onChange={changePattern} />}</Loadable> : <p className="text-sm text-text-muted">Chọn hội viên ở bước 1 để kiểm tra giờ trống phù hợp.</p>}
+    {!order && pending.data?.some(p => p.status === 'PENDING_PAYMENT') && <Panel title="Tiếp tục đơn chưa thanh toán">{pending.data.filter(p => p.status === 'PENDING_PAYMENT').map(p => <Btn key={p.id} disabled={resumed.loading && !!resumeId} onClick={() => { setCoach(p.coachId); setOption(p.packageOptionId); setResumeId(p.id); setParams(current => { current.set('purchaseId', p.id); return current }, { replace: true }); setPreview(null) }}>Chọn lại lịch cho {p.purchaseCode}</Btn>)}</Panel>}
+    {optionId && (!order || remaining === 0) && <Panel title="Lịch tập hằng tuần"><fieldset disabled={act.busy || restoringOrder} className="min-w-0 space-y-3">{memberId ? <Loadable state={slots}>{data => <PatternPicker data={data} summary={[{label:'Coach',value:coaches.data?.find(c=>c.id===coachId)?.fullName??'—'},{label:'Gói PT',value:options.data?.find(o=>o.id===optionId)?.name??'—'},{label:'Bắt đầu từ',value:startDate.split('-').reverse().join('/')},{label:'Tổng gói',value:`${options.data?.find(o=>o.id===optionId)?.sessionCount??'—'} buổi`}]} value={pattern} onChange={changePattern} />}</Loadable> : <p className="text-sm text-text-muted">Chọn hội viên ở bước 1 để kiểm tra giờ trống phù hợp.</p>}
       <Btn variant="primary" className="w-full" busy={act.busy} disabled={pattern.length < 1 || pattern.length > 6 || new Set(pattern.map(p => p.weekday)).size !== pattern.length || pattern.some(p => !p.startTime || !slots.data?.slots.some(s => s.available && s.weekday === p.weekday && s.startTime === p.startTime)) || !!order && remaining !== 0} onClick={() => void act.run(async () => { setAcceptPolicy(false); setConsentSource(''); setPreview(await checkTier(() => seriesApi.preview(body))) })}>Xem trước toàn bộ lịch</Btn>
 <p className="text-sm text-text-muted">{previewBlocker ?? 'Xem trước chưa giữ lịch và chưa tạo đơn.'}</p>
     </fieldset></Panel>}
@@ -101,6 +115,7 @@ export function HybridSalePage() {
         try {
           const next = order ? await seriesApi.rehold(order.purchaseId, { pattern, startDate, idempotencyKey: key.current.key, consentEvidence: self ? undefined : consent }) : await checkTier(() => seriesApi.checkout({ coachId, packageOptionId: optionId, memberId, startDate, pattern, expectedPrice: Number(preview.price), consentEvidence: self ? undefined : consent, acceptPolicy: self && acceptPolicy ? true : undefined, idempotencyKey: key.current.key }))
           setOrder(next); setCash(String(next.price ?? preview.price))
+          setParams(current => { current.set('purchaseId', next.purchaseId); return current }, { replace: true })
         } catch (error) {
           if (error instanceof AppApiError && error.code === 'PRICE_CHANGED') {
             const details = error.details as { price?: string; coachTier?: CoachTier } | undefined
@@ -114,7 +129,10 @@ export function HybridSalePage() {
         }
       })}>{order ? 'Chọn lại lịch trên đơn này' : 'Giữ chuỗi và tạo đơn'}</Btn>
     </Panel>}
-    {order && <Panel title="Thanh toán đơn PT"><p>Giữ chỗ còn {remaining} giây.</p>{self ? <Btn busy={act.busy} disabled={remaining === 0 || !!receivedPayment} onClick={() => void act.run(async () => { const result = await deskApi.payVnpay({ ptPurchaseId: order.purchaseId }); window.location.assign(result.paymentUrl) })}>Thanh toán qua VNPay</Btn> : !desk ? <Notice>Chỉ tài khoản Lễ tân được thu tiền tại quầy. Manager xem được quầy nhưng không thu tiền; hãy đăng nhập bằng tài khoản Lễ tân.</Notice> : remaining === 0 ? <Notice>Giữ chỗ đã hết. Chọn lại khung tuần, xem trước và giữ lịch lại trước khi thu tiền.</Notice> : <><Field label="Tiền nhận"><input className={inputCls} type="number" inputMode="numeric" min={0} step={1000} value={cash} onChange={e => setCash(e.target.value.replace(/[^0-9]/g, ''))} /></Field><Btn busy={act.busy} disabled={!!receivedPayment || !preview || Number(cash) < Number(preview.price)} onClick={() => void act.run(async () => {
+    {order && <Panel title="Thanh toán đơn PT"><p>Giữ chỗ còn {remaining} giây.</p>
+      {paymentPrice && <p className="my-3 font-semibold">Giá đơn đã xác nhận: {money(paymentPrice)}</p>}
+      {!preview && !!order.items?.length && <ol className="my-3 space-y-1 text-sm">{order.items.map(item => <li key={item.startsAt}>{formatDateTime(item.startsAt)} – {formatDateTime(item.endsAt)}</li>)}</ol>}
+      {self ? <Btn busy={act.busy} disabled={remaining === 0 || !!receivedPayment} onClick={() => void act.run(async () => { const result = await deskApi.payVnpay({ ptPurchaseId: order.purchaseId }); window.location.assign(result.paymentUrl) })}>Thanh toán qua VNPay</Btn> : !desk ? <Notice>Chỉ tài khoản Lễ tân được thu tiền tại quầy. Manager xem được quầy nhưng không thu tiền; hãy đăng nhập bằng tài khoản Lễ tân.</Notice> : remaining === 0 ? <Notice>Giữ chỗ đã hết. Chọn lại khung tuần, xem trước và giữ lịch lại trước khi thu tiền.</Notice> : <><Field label="Tiền nhận"><input className={inputCls} type="number" inputMode="numeric" min={0} step={1000} value={cash} onChange={e => setCash(e.target.value.replace(/[^0-9]/g, ''))} /></Field><Btn busy={act.busy} disabled={!!receivedPayment || !paymentPrice || Number(cash) < Number(paymentPrice)} onClick={() => void act.run(async () => {
       if (receivedPayment) return
       const collect = (overrideReason?: string) => counterPayment<{ id: string; application: string }>({ ptPurchaseId: order.purchaseId, method: 'CASH', receivedAmount: Number(cash), ...(overrideReason ? { overrideReason } : {}) })
       // Checkout always opens a VNPay placeholder attempt; the BE refuses cash over it without a reason.

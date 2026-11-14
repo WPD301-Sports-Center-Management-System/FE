@@ -5,6 +5,7 @@ import { MemberGoalsPage } from '@/features/goal-lab/member-goals-page'
 import { DashboardLayout } from '@/layouts/dashboard-layout'
 import { LandingPage } from '@/pages/landing-page'
 import { LoginPage } from '@/features/auth/pages/login-page'
+import { ChangePasswordPage } from '@/features/auth/pages/change-password-page'
 import { ForgotPasswordPage } from '@/features/auth/pages/forgot-password-page'
 import { ResetPasswordPage } from '@/features/auth/pages/reset-password-page'
 import { PublicCoachProfilePage } from '@/features/coach-public/pages/public-coach-profile-page'
@@ -71,6 +72,7 @@ export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/coaches/:coachId', element: <PublicCoachProfilePage /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
+  { path: '/account/change-password', element: <ProtectedRoute><ChangePasswordPage /></ProtectedRoute> },
   { path: '/payment/vnpay-return', element: <VnPayReturnPage /> },
   { path: '/payment/vnpay/return', element: <VnPayReturnPage /> },
   { path: '/payments/vnpay-return', element: <VnPayReturnPage /> },

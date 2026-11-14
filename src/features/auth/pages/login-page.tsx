@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Dumbbell, AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/features/auth/context/auth-context'
@@ -12,6 +12,10 @@ export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [passwordChanged] = useState(() => {
+    try { return sessionStorage.getItem('sc_password_changed') === '1' } catch { return false }
+  })
+  useEffect(() => { try { sessionStorage.removeItem('sc_password_changed') } catch { /* Storage can be disabled. */ } }, [])
 
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
@@ -121,6 +125,7 @@ export function LoginPage() {
               <span>{errorMessage}</span>
             </div>
           )}
+          {(passwordChanged || (location.state as { passwordChanged?: boolean } | null)?.passwordChanged) && <p role="status" className="mb-4 text-sm text-text-primary">Đã đổi mật khẩu. Vui lòng đăng nhập bằng mật khẩu mới.</p>}
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <Input
               ref={identifierRef}

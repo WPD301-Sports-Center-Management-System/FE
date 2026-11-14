@@ -7,7 +7,7 @@ import { formatDateTime } from '@/shared/utils/date';
 import { Box, Btn, Err, Input, Select, LoadState } from './components';
 import { journeyApi } from './journey-api';
 import { JourneyProgress } from './journey-progress';
-import { journeyMetrics, metricLabels, goalLabels, type Journey, type Values } from './journey-types';
+import { journeyMetrics, metricLabels, goalLabels, goalDirectionIssues, type Journey, type Values } from './journey-types';
 
 export function JourneyInitialize({ data, done }: { data: Journey; done: () => void }) {
   const p = data.prefill;
@@ -17,6 +17,7 @@ export function JourneyInitialize({ data, done }: { data: Journey; done: () => v
   const [baseline, setBaseline] = useState<Record<string, string>>({});
   const [targets, setTargets] = useState<Record<string, string>>(p?.targetValue != null ? { [p.targetMetric]: String(p.targetValue) } : {});
   const act = useSubmit();
+  const directionIssues = goalDirectionIssues(f.goalType, baseline, targets);
   const set = (key: keyof typeof f) => (value: string) => setF(old => ({ ...old, [key]: value }));
   const numbers = (values: Record<string, string>): Values => Object.fromEntries(Object.entries(values).filter(([, v]) => v.trim()).map(([k, v]) => [k, Number(v.replace(',', '.'))]));
   const save = () => void act.run(async () => { await journeyApi.initialize(data.purchase.id, { ...f, medicalNotes: noHealthNotes ? undefined : f.medicalNotes.trim(), noHealthNotes: noHealthNotes ? true : undefined, heightCm: Number(f.heightCm.replace(',', '.')), baseline: numbers(baseline), targets: numbers(targets) }); done(); });
@@ -30,10 +31,10 @@ export function JourneyInitialize({ data, done }: { data: Journey; done: () => v
     <section className="space-y-3"><h3 className="font-semibold">Số đo đầu kỳ</h3><p className="text-sm text-text-muted">Nhập số thực sự đo ở lần này cho riêng gói hiện tại.</p><div className="grid gap-4 sm:grid-cols-2">{journeyMetrics.slice(0,2).map(key => <Input key={key} label={metricLabels[key] + ' *'} type="number" value={baseline[key] ?? ''} onChange={v => setBaseline(old => ({ ...old, [key]: v }))} />)}</div>
     <details open={journeyMetrics.slice(2).some(key => key in targets)}><summary className="cursor-pointer text-sm">Số đo tùy chọn</summary><div className="mt-3 grid gap-4 sm:grid-cols-2">{journeyMetrics.slice(2).map(key => <Input key={key} label={metricLabels[key]} type="number" value={baseline[key] ?? ''} onChange={v => setBaseline(old => ({ ...old, [key]: v }))} />)}</div></details></section>
     <section className="space-y-3"><h3 className="font-semibold">Mục tiêu</h3><Select label="Mục tiêu tập luyện *" value={f.goalType} onChange={set('goalType')} options={Object.entries(goalLabels).map(([value,label]) => ({value,label}))} />
-    {journeyMetrics.map(key => <div key={key} className="space-y-2"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={key in targets} onChange={e => setTargets(old => { const next = {...old}; if (e.target.checked) next[key] = ''; else delete next[key]; return next })} />{metricLabels[key]}</label>{key in targets && <Input label={'Mong muốn ' + metricLabels[key].toLowerCase()} type="number" value={targets[key] ?? ''} onChange={v => setTargets(old => ({ ...old, [key]: v }))} />}</div>)}</section>
+    {journeyMetrics.map(key => <div key={key} className="space-y-2"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={key in targets} onChange={e => setTargets(old => { const next = {...old}; if (e.target.checked) next[key] = ''; else delete next[key]; return next })} />{metricLabels[key]}</label>{key in targets && <Input label={'Mong muốn ' + metricLabels[key].toLowerCase()} type="number" value={targets[key] ?? ''} onChange={v => setTargets(old => ({ ...old, [key]: v }))} />}{directionIssues[key] && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{directionIssues[key]}</p>}</div>)}</section>
     <p className="text-xs text-text-muted">Nhập ít nhất một chỉ số mong muốn. Chỉ số có đích cần có mốc đầu tương ứng.</p>
     <Input label="Ngày kết thúc lộ trình *" type="date" value={f.deadline} onChange={set('deadline')} />
-    <Err error={act.error} /><Btn disabled={act.busy || !f.dateOfBirth || !f.gender || !f.heightCm || (!noHealthNotes && !f.medicalNotes.trim()) || !f.deadline || !baseline.weightKg || !baseline.waistCm || (!Object.values(targets).some(v => v.trim()) || Object.entries(targets).some(([key,v]) => v.trim() && !baseline[key]?.trim()))} onClick={save}>{act.busy ? 'Đang lưu…' : 'Lưu khởi tạo lộ trình'}</Btn>
+    <Err error={act.error} /><Btn disabled={act.busy || !f.dateOfBirth || !f.gender || !f.heightCm || (!noHealthNotes && !f.medicalNotes.trim()) || !f.deadline || !baseline.weightKg || !baseline.waistCm || (!Object.values(targets).some(v => v.trim()) || Object.entries(targets).some(([key,v]) => v.trim() && !baseline[key]?.trim())) || Object.keys(directionIssues).length > 0} onClick={save}>{act.busy ? 'Đang lưu…' : 'Lưu khởi tạo lộ trình'}</Btn>
   </Box>;
 }
 export function JourneyForPurchase({ purchaseId, coach = false }: { purchaseId: string; coach?: boolean }) {

@@ -16,6 +16,7 @@ export function FullPageLoader() {
 
 export function isPathAllowedForRole(path: string, role: UserRole | null | undefined): boolean {
   if (!role) return false
+  if (path === '/account/change-password') return true
   if (['/payment/vnpay-return', '/payment/vnpay/return', '/payments/vnpay-return'].includes(path)) return true
   if (path.startsWith('/pt-sessions/') || path.startsWith('/pt-purchases/')) return true
   // A Manager may return to the manager console, the front desk and shared detail pages, but never

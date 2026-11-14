@@ -36,7 +36,7 @@ describe('authService', () => {
     expect(apiClient.post).toHaveBeenCalledWith('/auth/login', {
       identifier: 'test@gym.local',
       password: 'Password@123',
-    })
+    }, { timeout: 90_000 })
     expect(result).toEqual(mockSession)
   })
 

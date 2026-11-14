@@ -34,6 +34,7 @@ export interface VNPayPaymentResponse {
 }
 
 export interface PaymentStatusResponse {
+  gatewayResponseCode?: string | null
   id: string
   status: PaymentStatus
   application?: 'APPLIED' | 'PENDING_REVIEW' | 'UNAPPLIED' | null

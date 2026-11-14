@@ -8,10 +8,23 @@ import { openReceipt } from '@/features/workspace/receipt-events'
 import { savePtContinuation } from '@/shared/utils/pt-continuation'
 
 vi.mock('@/features/auth/context/auth-context', () => ({ useAuth: vi.fn() }))
-vi.mock('../services/payments.service', () => ({ paymentsService: { getPaymentStatus: vi.fn(), getPaymentById: vi.fn(), getInvoiceById: vi.fn() } }))
+vi.mock('../services/payments.service', () => ({ paymentsService: { verifyVNPay: vi.fn().mockResolvedValue(undefined), getPaymentStatus: vi.fn(), getPaymentById: vi.fn(), getInvoiceById: vi.fn() } }))
 vi.mock('@/features/workspace/receipt-events', () => ({ openReceipt: vi.fn() }))
 const show = () => render(<MemoryRouter initialEntries={['/payment/vnpay-return?paymentId=p1&vnp_ResponseCode=00']}><VnPayReturnPage /></MemoryRouter>)
 describe('VNPay server confirmation and entitlement application', () => {
+  it('actively verifies a pending payment before displaying its new server status', async () => {
+    vi.mocked(paymentsService.getPaymentStatus).mockResolvedValueOnce({ status: 'PENDING' } as never).mockResolvedValue({ status: 'PAID', application: 'UNAPPLIED' } as never)
+    vi.mocked(paymentsService.getPaymentById).mockResolvedValue({ id: 'p1', status: 'PAID' } as never)
+    show()
+    await screen.findByText('Đã nhận tiền — đang đối soát')
+    expect(paymentsService.verifyVNPay).toHaveBeenCalledWith('p1')
+  })
+  it('shows cancellation only from the stored gateway result, not the URL', async () => {
+    vi.mocked(paymentsService.getPaymentStatus).mockResolvedValue({ status: 'FAILED', gatewayResponseCode: '24' } as never)
+    show()
+    await screen.findByText('Giao Dịch Đã Hủy')
+    expect(paymentsService.verifyVNPay).not.toHaveBeenCalled()
+  })
   beforeEach(() => { vi.clearAllMocks(); sessionStorage.clear(); vi.mocked(useAuth).mockReturnValue({ user: { id: 'u1', role: 'MEMBER' }, isInitializing: false } as never) })
   const draft = { memberId: 'member', coachId: 'coach', optionId: 'option', startDate: '2027-01-04', pattern: [{ weekday: 1, startTime: '18:00' }] }
   const saveDraft = () => savePtContinuation({ ownerId: 'u1', role: 'MEMBER', paymentId: 'p1', subscriptionId: 'sub1', draft })

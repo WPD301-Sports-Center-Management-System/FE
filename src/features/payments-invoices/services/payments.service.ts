@@ -11,6 +11,9 @@ import type {
 } from '../types/payments.types'
 
 export const paymentsService = {
+  async verifyVNPay(id: string): Promise<void> {
+    await apiClient.post(`/payments/${id}/vnpay/verify`, {})
+  },
   /**
    * [1] GET /payments - List payments with filters & pagination (Staff / Manager)
    */

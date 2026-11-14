@@ -12,7 +12,7 @@ export function QrScanner({ onDone }: { onDone: (message: string) => void }) {
   useEffect(() => () => { stream.current?.getTracks().forEach(t => t.stop()) }, [])
   const scan = async (value: string) => {
     const result = await hybridSend<{ action: string }>('post', '/check-ins/scan', /^\d{6}$/.test(value.trim()) ? { code: value.trim() } : { token: value.trim() })
-    const text = result.action === 'IN' ? 'Đã check-in vào gym và ghi đến buổi PT nếu trong cửa sổ cho phép.' : 'Đã check-out khỏi gym.'
+    const text = result.action === 'IN' ? 'Đã check-in vào gym.' : 'Đã check-out khỏi gym.'
     setMessage(text); onDone(text); setCode(''); stop()
   }
   useEffect(() => {

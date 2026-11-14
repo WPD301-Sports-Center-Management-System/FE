@@ -18,7 +18,8 @@ export const authService = {
    * Authenticate user with identifier (email/phone/username) and password
    */
   async login(credentials: LoginCredentials): Promise<AuthResponseData> {
-    const res = await apiClient.post<ApiSuccess<AuthResponseData>>('/auth/login', credentials)
+    // A sleeping host may need a cold start; do not retry the login mutation automatically.
+    const res = await apiClient.post<ApiSuccess<AuthResponseData>>('/auth/login', credentials, { timeout: 90_000 })
     const payload = res as unknown as ApiSuccess<AuthResponseData>
     return payload.data
   },

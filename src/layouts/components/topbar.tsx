@@ -1,6 +1,6 @@
 import { useAuth } from '@/features/auth/context/auth-context'
 import { Avatar } from '@/shared/components/ui/avatar'
-import { LogOut, ExternalLink, ShieldCheck } from 'lucide-react'
+import { LogOut, ExternalLink, ShieldCheck, LockKeyhole } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { NotificationBell } from '@/features/notifications/components/notification-bell'
 import { ThemeSelector } from '@/components/ThemeSelector'
@@ -30,6 +30,7 @@ export function Topbar({ navigation }: { navigation?: ReactNode }) {
           <span>Hồ sơ công khai</span>
         </Link>}
 
+        <Link to="/account/change-password" aria-label="Đổi mật khẩu" title="Đổi mật khẩu" className="grid h-11 w-11 shrink-0 place-items-center rounded-lg text-xs text-text-muted hover:bg-bg-surface-muted sm:w-auto sm:px-2"><LockKeyhole aria-hidden className="h-4 w-4 sm:hidden" /><span className="hidden sm:inline">Đổi mật khẩu</span></Link>
         {/* Theme Selector */}
         <ThemeSelector />
 

@@ -36,6 +36,7 @@ export function VnPayReturnPage() {
   const [pollCount, setPollCount] = useState(0)
   const [isPolling, setIsPolling] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [gatewayCode, setGatewayCode] = useState<string | null>(null)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
   const [continuation, setContinuation] = useState<PtContinuation | null>(null)
 
@@ -51,9 +52,15 @@ export function VnPayReturnPage() {
     }
     setErrorMessage(null)
     try {
-      const result = await paymentsService.getPaymentStatus(paymentId)
+      let result = await paymentsService.getPaymentStatus(paymentId)
+      if (result.status === 'PENDING' || result.status === 'EXPIRED') {
+        try { await paymentsService.verifyVNPay(paymentId) }
+        catch { if (current === generation.current) setErrorMessage('Chưa xác minh được với VNPay. Vui lòng kiểm tra lại trạng thái; không thanh toán lại khi chưa có kết luận.') }
+        if (current !== generation.current) return true
+        result = await paymentsService.getPaymentStatus(paymentId)
+      }
       if (current !== generation.current) return true
-      setStatus(result.status); setApplication(result.application ?? null)
+      setStatus(result.status); setApplication(result.application ?? null); setGatewayCode(result.gatewayResponseCode ?? null)
       // Only expose a saved draft after this account has successfully read this exact payment.
       const next = readPtContinuation(user.id, paymentId, user.role, user.memberProfilesUserId?.id)
       setContinuation(next)
@@ -71,7 +78,7 @@ export function VnPayReturnPage() {
         }
         return result.application === 'UNAPPLIED'
       }
-      return result.status !== 'PENDING'
+      return result.status !== 'PENDING' && result.status !== 'EXPIRED'
     } catch (err) {
       if (current === generation.current) setErrorMessage(isAppApiError(err) ? err.message : 'Không thể kết nối đến máy chủ để xác thực giao dịch.')
       return true
@@ -82,7 +89,7 @@ export function VnPayReturnPage() {
     if (isInitializing) return
     let active = true
     let polls = 0
-    setStatus('PENDING'); setPayment(null); setInvoice(null); setApplication(null); setPollCount(0); setIsPolling(true); setContinuation(null)
+    setStatus('PENDING'); setPayment(null); setInvoice(null); setApplication(null); setGatewayCode(null); setPollCount(0); setIsPolling(true); setContinuation(null)
     shownReceipt.current = null
     const poll = async () => {
       const terminal = await fetchStatusAndPayment()
@@ -138,14 +145,14 @@ export function VnPayReturnPage() {
                 {applied ? 'Thanh toán đã được áp dụng vào đơn.' : 'Quyền sử dụng chưa được xác nhận. Trung tâm đang xử lý giao dịch; không thanh toán lại.'}
               </p>
             </div>
-          ) : status === 'PENDING' ? (
+          ) : status === 'PENDING' || status === 'EXPIRED' ? (
             <div className="flex flex-col items-center gap-3">
               <div className="h-16 w-16 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
                 <Clock className="h-10 w-10 animate-pulse" />
               </div>
               <h1 className="text-2xl font-bold text-text-primary">Đang Chờ Xác Nhận</h1>
               <p className="text-xs text-text-muted">
-                Hệ thống đang đồng bộ kết quả giao dịch từ cổng VNPay...
+                {status === 'EXPIRED' ? 'Lượt thanh toán đã hết hạn nhưng kết quả nhận tiền chưa được xác minh. Vui lòng kiểm tra lại; không thanh toán lại khi chưa có kết luận.' : 'Hệ thống đang đồng bộ kết quả giao dịch từ cổng VNPay...'}
               </p>
               {isPolling && (
                 <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
@@ -159,7 +166,7 @@ export function VnPayReturnPage() {
               <div className="h-16 w-16 rounded-full bg-danger/15 border border-danger/30 flex items-center justify-center text-danger">
                 <XCircle className="h-10 w-10" />
               </div>
-              <h1 className="text-2xl font-bold text-text-primary">Giao Dịch Thất Bại</h1>
+              <h1 className="text-2xl font-bold text-text-primary">{gatewayCode === '24' ? 'Giao Dịch Đã Hủy' : 'Giao Dịch Thất Bại'}</h1>
               <p className="text-xs text-text-muted">
                 Thanh toán chưa hoàn tất hoặc đã bị hủy từ cổng thanh toán.
               </p>
@@ -211,16 +218,16 @@ export function VnPayReturnPage() {
               className={`font-semibold px-2 py-0.5 rounded text-xs ${
                 status === 'PAID'
                   ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                  : status === 'PENDING'
+                  : status === 'PENDING' || status === 'EXPIRED'
                   ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
                   : 'bg-danger/15 text-danger border border-danger/30'
               }`}
             >
               {status === 'PAID'
                 ? applied ? 'ĐÃ ÁP DỤNG' : 'ĐÃ NHẬN TIỀN'
-                : status === 'PENDING'
+                : status === 'PENDING' || status === 'EXPIRED'
                 ? 'CHỜ XÁC NHẬN'
-                : 'THẤT BẠI'}
+                : gatewayCode === '24' ? 'ĐÃ HỦY' : 'THẤT BẠI'}
             </span>
           </div>
 
@@ -279,7 +286,7 @@ export function VnPayReturnPage() {
           <p>Giá, lịch trống và giữ chỗ sẽ được kiểm tra lại. Cần xác nhận lại phương án trước khi tạo đơn.</p>
         </section>}
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
-          {(status === 'PENDING' || (status === 'PAID' && !invoice)) && (
+          {(status === 'PENDING' || status === 'EXPIRED' || (status === 'PAID' && !invoice)) && (
             <Button
               variant="outline"
               size="sm"

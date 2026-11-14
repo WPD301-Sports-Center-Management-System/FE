@@ -1,4 +1,5 @@
 import { PurchasePicker } from '../components/purchase-picker'
+import { CenterClosurePanel } from '../components/center-closure-panel'
 import { useState, type ReactNode } from 'react'
 import { Modal } from '@/shared/components/ui/modal'
 import { hybridSend } from '../hybrid-api'
@@ -30,6 +31,7 @@ export function ManagerSessionsPage() {
   return (
     <Page title="Buổi cần xử lý & gián đoạn dịch vụ">
       <ErrorBanner message={act.error} />
+      <CenterClosurePanel />
       <Panel title="Buổi cần xử lý">
         <Loadable state={review} empty="Không có buổi cần xử lý.">{items => (
           <Table head={['Thời gian', 'Member / Coach', 'Trạng thái', 'Quyết định']}>
@@ -103,7 +105,7 @@ export function DisruptionPanel({ initialPurchaseId = '', bookingId, from = '', 
           </tr>)}
         </Table>
       )}</Loadable>
-      {applying && <Modal isOpen title="Xác nhận áp dụng gián đoạn" onClose={() => { if (!act.busy) setApplying(null) }}><div className="space-y-3"><p>{applying.purchase.purchaseCode} · {formatDateTime(applying.scopeFrom)} → {formatDateTime(applying.scopeTo)}</p><p>Buổi đã lên lịch hoặc đã đến trong phạm vi sẽ bị hủy; buổi tập được giữ lại để Coach xếp lại, không trừ lượt nghỉ. Không tự phục hồi khi đóng hồ sơ.</p><ul>{applying.bookings.map(b => <li key={b.id}>{formatDateTime(b.plannedStartsAt)} · <Status value={b.status} /></li>)}</ul><Notice>Danh sách phản ánh lần tải gần nhất. Kiểm tra lại phạm vi trước khi áp dụng; các buổi còn lịch trong phạm vi này sẽ bị hủy.</Notice><ErrorBanner message={act.error} /><Button disabled={act.busy} onClick={() => void act.run(async () => { await fixedPtApi.disruptionAction(applying.id, 'approve'); setApplying(null); await list.reload() })}>Xác nhận áp dụng</Button></div></Modal>}
+      {applying && <Modal isOpen title="Xác nhận áp dụng gián đoạn" onClose={() => { if (!act.busy) setApplying(null) }}><div className="space-y-3"><p>{applying.purchase.purchaseCode} · {formatDateTime(applying.scopeFrom)} → {formatDateTime(applying.scopeTo)}</p><p>Buổi bị ảnh hưởng được bảo toàn và tự nối vào cuối lịch khi còn giờ phù hợp. Buổi không tự nối được mới chờ Coach xếp bù; không trừ lượt nghỉ, không tính công buổi hủy. Đóng hồ sơ không phục hồi buổi cũ.</p><ul>{applying.bookings.map(b => <li key={b.id}>{formatDateTime(b.plannedStartsAt)} · <Status value={b.status} /></li>)}</ul><Notice>Danh sách phản ánh lần tải gần nhất. Kiểm tra lại phạm vi trước khi áp dụng.</Notice><ErrorBanner message={act.error} /><Button disabled={act.busy} onClick={() => void act.run(async () => { await fixedPtApi.disruptionAction(applying.id, 'approve'); setApplying(null); await list.reload() })}>Xác nhận áp dụng</Button></div></Modal>}
       <ReasonDialog open={!!resolving} title="Kết thúc hồ sơ gián đoạn" busy={act.busy} error={act.error} description="Đóng gián đoạn để Coach tiếp tục xếp buổi bù. Các buổi đã hủy không tự phục hồi." onClose={() => setResolving(null)} onConfirm={resolution => void act.run(async () => { await fixedPtApi.disruptionAction(resolving!.id, 'resolve', { resolution }); setResolving(null); await list.reload() })} />
     </Panel>
   )

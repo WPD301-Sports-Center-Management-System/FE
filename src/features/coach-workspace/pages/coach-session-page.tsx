@@ -126,7 +126,8 @@ export function AssessmentChips({ a, prev }: { a?: Assessment; prev?: Assessment
 
 /** Session workout plan: draft → assign before the session; after it starts, edits are recorded as the actual content. */
 function ContentEditor({ bookingId, memberId, purchaseId, started, closed, onFlash }: { bookingId: string; memberId: string; purchaseId: string; started: boolean; closed: boolean; onFlash: (m: string) => void }) {
-  const content = useLoad(() => coachWs.content(bookingId), [bookingId])
+  // No live refresh: each refresh replaces `items` (effect below) and would wipe the Coach's unsaved edits.
+  const content = useLoad(() => coachWs.content(bookingId), [bookingId], true, false)
   const templates = useLoad(() => coachWs.templates(), [])
   const exercises = useLoad(() => coachWs.exercises(), [])
   const [items, setItems] = useState<ContentItem[] | null>(null)
@@ -190,7 +191,7 @@ function ContentEditor({ bookingId, memberId, purchaseId, started, closed, onFla
           </tr>)}</tbody>
         </table></div>}
       {editable && <div className="space-y-3 border-t border-border-subtle p-5 print:hidden">
-        <Btn size="sm" icon={<Plus aria-hidden className="h-4 w-4" />} disabled={items.length >= 40} onClick={() => setItems(l => [...l!, { exerciseId: null, name: '', sets: 3, reps: 10, restSeconds: 60, confirmed: true, needsExercise: true }])}>Thêm bài tập</Btn>
+        <Btn size="sm" icon={<Plus aria-hidden className="h-4 w-4" />} disabled={items.length >= 40} onClick={() => { setEditing(true); setItems(l => [...l!, { exerciseId: null, name: '', sets: 3, reps: 10, restSeconds: 60, confirmed: true, needsExercise: true }]) }}>Thêm bài tập</Btn>
         {started && <Field label="Lý do điều chỉnh so với giáo án đã giao" required><textarea rows={2} value={reason} onChange={e => setReason(e.target.value)} className={textareaCls} placeholder="VD: HV đau vai, giảm tạ bài đẩy…" /></Field>}
         <InlineError message={submit.error} />
         <div className="flex flex-wrap justify-end gap-2">

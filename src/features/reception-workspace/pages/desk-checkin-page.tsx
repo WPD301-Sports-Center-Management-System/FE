@@ -132,8 +132,9 @@ function CheckinPanel({ hit, openVisit, onClose, onDone }: { hit: PersonHit; ope
                   </div>
                 ) : (
                   <div className="mb-3 space-y-1">
-                    <label className="block text-xs font-medium text-text-muted">Chọn gói tập</label>
+                    <label htmlFor="quick-membership-plan" className="block text-xs font-medium text-text-muted">Chọn gói tập</label>
                     <select
+                      id="quick-membership-plan"
                       className="w-full rounded-md border border-border-strong bg-bg-surface px-2.5 py-1.5 text-xs focus:border-primary focus:outline-hidden"
                       value={selectedPlanId || plans.data?.[0]?.id || ''}
                       onChange={e => setSelectedPlanId(e.target.value)}

@@ -146,7 +146,7 @@ function normalizeError(error: unknown): AppApiError {
   const payload: ApiErrorPayload = {
     success: false,
     code: responseData?.code || (axiosErr.code === 'ECONNABORTED' ? 'TIMEOUT' : 'NETWORK_ERROR'),
-    message: responseData?.message || axiosErr.message || 'Không thể kết nối đến máy chủ',
+    message: responseData?.message || (axiosErr.code === 'ECONNABORTED' ? 'Máy chủ phản hồi chậm. Vui lòng thử lại sau.' : !axiosErr.response ? 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng.' : 'Yêu cầu không thành công. Vui lòng thử lại.'),
     errors: responseData?.errors,
     details: responseData?.details,
   }

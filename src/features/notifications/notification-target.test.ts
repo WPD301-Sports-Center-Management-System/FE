@@ -3,6 +3,11 @@ import { notificationTarget } from './notification-target'
 import type { AppNotification } from './types/notifications.types'
 const item = (relatedType: string, relatedId?: string) => ({ relatedType, relatedId, type:'TRAINING', message:'Nội dung mới' } as AppNotification)
 describe('Notification navigation',()=>{
+  it('uses role-appropriate pages for center closures rather than treating their IDs as bookings',()=>{
+    expect(notificationTarget(item('CenterClosure','closure-1'),'MEMBER')).toBe('/member')
+    expect(notificationTarget(item('CenterClosure','closure-1'),'MANAGER')).toBe('/manager/sessions')
+    expect(notificationTarget(item('CenterClosure','closure-1'),'RECEPTIONIST')).toBe('/receptionist/calendar')
+  })
   it('takes a Member to the exact result without interpreting message keywords',()=>{
     expect(notificationTarget(item('TrainingResult','r1'),'MEMBER')).toBe('/member/goals?resultId=r1')
   })
