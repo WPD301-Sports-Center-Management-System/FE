@@ -21,7 +21,7 @@ export function ManagerShell() {
     mgrApi.dashboard().then(setCounts).catch(() => setCounts(null))
     hybridGet<{ cvUrl: string | null }[]>('/coach-applications', { status: 'PENDING_REVIEW' }).then(a => setPending(a.filter(x => x.cvUrl).length)).catch(() => setPending(null))
   }, [])
-  useEffect(() => { refresh(); const t = setInterval(refresh, 120_000); return () => clearInterval(t) }, [refresh])
+  useEffect(() => { refresh(); const t = setInterval(refresh, 30_000); return () => clearInterval(t) }, [refresh])
   const find = useCallback(async (term: string) => (await deskApi.members({ search: term, limit: 8 })).items
     .map(m => ({ id: m.id, name: m.user.fullName, sub: `${m.memberCode}${m.user.phone ? ` · ${m.user.phone}` : ''}`, avatarUrl: m.user.avatarUrl })), [])
 

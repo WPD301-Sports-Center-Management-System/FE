@@ -38,7 +38,7 @@ export type ApiError = {
   success: false
   code: string
   message: string
-  errors?: Array<{ field: string; reason?: string; message?: string }>
+  errors?: Array<{ field: string; label?: string; reason?: string; message?: string }>
   details?: unknown
 }
 

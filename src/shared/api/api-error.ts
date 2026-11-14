@@ -3,7 +3,7 @@ import type { ApiError as ApiErrorPayload } from '@/shared/types/api'
 export class AppApiError extends Error {
   public readonly code: string
   public readonly status: number
-  public readonly errors?: Array<{ field: string; message: string; reason?: string }>
+  public readonly errors?: Array<{ field: string; label?: string; message: string; reason?: string }>
   public readonly details?: unknown
 
   constructor(status: number, payload: ApiErrorPayload) {
@@ -14,6 +14,7 @@ export class AppApiError extends Error {
     this.details = payload.details
     this.errors = payload.errors?.map((err) => ({
       field: err.field,
+      label: err.label,
       message: err.message || err.reason || 'Dữ liệu không hợp lệ',
       reason: err.reason,
     }))

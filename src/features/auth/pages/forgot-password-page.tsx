@@ -28,7 +28,7 @@ export function ForgotPasswordPage() {
       setIsSent(true)
     } catch (err) {
       if (isAppApiError(err)) {
-        setErrorMessage(err.message || 'Không tìm thấy tài khoản với email này.')
+        setErrorMessage(err.status === 503 || String(err.code).startsWith('RESET_DELIVERY') ? 'Hệ thống chưa gửi được email đặt lại mật khẩu. Vui lòng liên hệ lễ tân hoặc quản lý của trung tâm để được cấp lại mật khẩu.' : err.message || 'Không thể gửi yêu cầu. Vui lòng thử lại.')
       } else {
         setErrorMessage('Không thể gửi yêu cầu. Vui lòng kiểm tra lại kết nối mạng.')
       }

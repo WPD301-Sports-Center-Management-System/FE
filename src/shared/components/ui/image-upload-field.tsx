@@ -7,7 +7,7 @@ import type { ApiSuccess } from '@/shared/types/api'
 const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_BYTES = 5 * 1024 * 1024
 
-const toBase64 = (file: File) =>
+const toBase64 = (file: Blob) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '')
@@ -15,9 +15,39 @@ const toBase64 = (file: File) =>
     reader.readAsDataURL(file)
   })
 
+const MAX_SIDE = 1600
+const SKIP_UNDER_BYTES = 300 * 1024
+
+/**
+ * Phone/camera photos are several MB and the upload (base64, +33 %) is bound by the user's uplink, so a 4 MB photo takes ~30 s to
+ * reach the server. Shrink to <=1600 px JPEG first (usually 150-400 KB). Falls back to the original when anything goes wrong or it
+ * would not get smaller.
+ */
+export async function compressImage(file: File): Promise<Blob> {
+  if (file.size <= SKIP_UNDER_BYTES) return file
+  try {
+    const bitmap = await createImageBitmap(file)
+    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(bitmap.width * scale)
+    canvas.height = Math.round(bitmap.height * scale)
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return file
+    ctx.fillStyle = '#fff' // JPEG has no alpha
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    bitmap.close()
+    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82))
+    return blob && blob.size < file.size ? blob : file
+  } catch {
+    return file
+  }
+}
+
 /** Uploads an image to POST /uploads/images and returns its public URL. */
-export async function uploadImage(file: File) {
-  const res = (await apiClient.post('/uploads/images', { contentType: file.type, data: await toBase64(file) })) as ApiSuccess<{ url: string }>
+export async function uploadImage(original: File) {
+  const file = await compressImage(original)
+  const res = (await apiClient.post('/uploads/images', { contentType: file.type, data: await toBase64(file) }, { timeout: 90_000 })) as ApiSuccess<{ url: string }>
   return res.data.url
 }
 

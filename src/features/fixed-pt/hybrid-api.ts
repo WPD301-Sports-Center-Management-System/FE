@@ -11,8 +11,8 @@ const AVAILABILITY_REASONS: Record<string, string> = {
 export const availabilityReason = (reason: string | null) => reason ? AVAILABILITY_REASONS[reason] ?? reason : 'Chưa khả dụng'
 export const hybridGet = async <T>(url: string, params?: object) =>
   ((await apiClient.get(url, { params })) as unknown as { data: T }).data
-export const hybridSend = async <T>(method: 'post' | 'put' | 'patch', url: string, body: object) =>
-  ((await apiClient[method](url, body)) as unknown as { data: T }).data
+export const hybridSend = async <T>(method: 'post' | 'put' | 'patch', url: string, body: object, config?: { timeout?: number }) =>
+  ((await apiClient[method](url, body, config)) as unknown as { data: T }).data
 export interface WorkingInterval {
   weekday: number
   startTime: string

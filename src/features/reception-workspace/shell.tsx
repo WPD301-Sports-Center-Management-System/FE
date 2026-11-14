@@ -25,7 +25,7 @@ export function ReceptionShell() {
     deskApi.trials({ status: 'NEW' }).then(t => setNewTrials(t.length)).catch(() => setNewTrials(null))
     deskApi.scheduleChanges().then(c => setProposed(c.filter(x => x.status === 'PROPOSED').length)).catch(() => setProposed(null))
   }, [])
-  useEffect(() => { refresh(); const t = setInterval(refresh, 60_000); return () => clearInterval(t) }, [refresh])
+  useEffect(() => { refresh(); const t = setInterval(refresh, 30_000); return () => clearInterval(t) }, [refresh])
   const find = useCallback(async (term: string) => (await deskApi.members({ search: term, limit: 8 })).items
     .map(m => ({ id: m.id, name: m.user.fullName, sub: `${m.memberCode}${m.user.phone ? ` · ${m.user.phone}` : ''}`, avatarUrl: m.user.avatarUrl })), [])
 

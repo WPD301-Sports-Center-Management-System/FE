@@ -18,8 +18,8 @@ type View = 'sessions' | 'online' | 'history'
 type Filter = 'all' | 'waiting' | 'inside' | 'closed'
 
 export function TrialSessionsPanel() {
-  const sessions = useLoad(() => deskApi.trialSessions(), [])
-  const leads = useLoad(() => deskApi.trials(), [])
+  const sessions = useLoad(() => deskApi.trialSessions(), [], true, false)
+  const leads = useLoad(() => deskApi.trials(), [], true, false)
   const { refresh } = useDeskShell()
   const { node, flash } = useFlash()
   const [view, setView] = useState<View>('sessions')

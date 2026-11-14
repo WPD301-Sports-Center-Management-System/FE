@@ -2,6 +2,7 @@ import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from '
 import { Link } from 'react-router-dom'
 import { AlertTriangle, ChevronLeft, ChevronRight, Inbox, Loader2, RotateCw } from 'lucide-react'
 import type { Tone } from './utils'
+import { FIELD_ERRORS_EVENT, normalizeLabel, type FieldErrorMap } from './field-errors'
 
 // Building blocks of the Coach workspace (light enterprise layout, orange primary shared with Mobile).
 // Colors come from the theme tokens in styles/index.css so dark mode keeps working.
@@ -182,16 +183,43 @@ export function Async<T>({ state, empty, rows, children }: { state: { data: T | 
 
 export const inputCls = 'h-11 w-full rounded-lg border border-border-strong bg-bg-input px-3 text-base sm:text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring/30'
 export const textareaCls = 'w-full rounded-lg border border-border-subtle bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring/30'
+/** Vietnamese text for a failed browser-side check, whatever language the browser is set to. */
+function viValidity(el: HTMLInputElement) {
+  const v = el.validity
+  if (v.valueMissing) return el.type === 'file' ? 'Vui lòng chọn tệp' : el.tagName === 'SELECT' ? 'Vui lòng chọn một mục' : 'Vui lòng nhập thông tin này'
+  if (v.typeMismatch) return el.type === 'email' ? 'Email không hợp lệ (ví dụ: ten@email.com)' : el.type === 'url' ? 'Đường dẫn không hợp lệ' : 'Giá trị không đúng định dạng'
+  if (v.badInput) return 'Phải là một số hợp lệ'
+  if (v.rangeUnderflow) return `Giá trị tối thiểu là ${el.min}`
+  if (v.rangeOverflow) return `Giá trị tối đa là ${el.max}`
+  if (v.stepMismatch) return 'Giá trị chưa đúng bước cho phép'
+  if (v.tooShort) return `Cần ít nhất ${el.minLength} ký tự`
+  if (v.tooLong) return `Tối đa ${el.maxLength} ký tự`
+  if (v.patternMismatch) return el.title || 'Định dạng chưa đúng'
+  return el.validationMessage || 'Giá trị chưa hợp lệ'
+}
 export function Field({ label, hint, error, children, required }: { label: string; hint?: string; error?: string | null; children: ReactNode; required?: boolean }) {
-  return <label className="block space-y-1.5">
+  // A browser-side check (required, min/max, type, pattern) that fails turns this field red with its own message, and the
+  // message goes away as soon as the user edits it. The browser's own bubble (in the browser's language) is suppressed; the first bad field is focused instead.
+  const [native, setNative] = useState<string | null>(null)
+  const [server, setServer] = useState<string | null>(null)
+  useEffect(() => {
+    const key = normalizeLabel(label)
+    const on = (e: Event) => setServer((e as CustomEvent<FieldErrorMap>).detail[key] ?? null)
+    window.addEventListener(FIELD_ERRORS_EVENT, on)
+    return () => window.removeEventListener(FIELD_ERRORS_EVENT, on)
+  }, [label])
+  const shown = error ?? native ?? server
+  return <label className={`block space-y-1.5${shown ? ' [&_input]:!border-red-500 [&_select]:!border-red-500 [&_textarea]:!border-red-500 [&_input]:!ring-red-500/20 [&_textarea]:!ring-red-500/20' : ''}`}
+    onInvalidCapture={e => { const el = e.target as HTMLInputElement; e.preventDefault(); setNative(viValidity(el)); if (!(document.activeElement as HTMLElement | null)?.matches(':invalid')) el.focus() }}
+    onInputCapture={() => { setNative(null); setServer(null) }} onChangeCapture={() => { setNative(null); setServer(null) }}>
     <span className="text-sm font-medium text-text-primary">{label}{required && <span className="text-red-600" aria-hidden> *</span>}</span>
     {children}
-    {hint && !error && <span className="block text-xs text-text-muted">{hint}</span>}
-    {error && <span role="alert" className="block text-xs text-red-600">{error}</span>}
+    {hint && !shown && <span className="block text-xs text-text-muted">{hint}</span>}
+    {shown && <span role="alert" className="block text-xs font-medium text-red-600">{shown}</span>}
   </label>
 }
 export function InlineError({ message }: { message?: string | null }) {
-  return message ? <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">{message}</p> : null
+  return message ? <p role="alert" className="whitespace-pre-line rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">{message}</p> : null
 }
 
 /** Short success message announced politely and cleared after 4 s. */

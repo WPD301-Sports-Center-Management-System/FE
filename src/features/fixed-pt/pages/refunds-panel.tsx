@@ -10,7 +10,7 @@ export function RefundsPanel({ initialPurchaseId = '', onChanged }: { initialPur
   const refunds = useLoad(refundApi.list)
   const [purchaseId, setPurchaseId] = useState(initialPurchaseId), [reason, setReason] = useState('')
   const [view, setView] = useState<'pending' | 'paid'>('pending')
-  const quote = useLoad(() => refundApi.preview(purchaseId), [purchaseId], !!purchaseId)
+  const quote = useLoad(() => refundApi.preview(purchaseId), [purchaseId], !!purchaseId, false)
   const reloadQuote = quote.reload
   const act = useSubmit(), { flash, node } = useFlash()
   const refresh = () => { void refunds.reload(); if (purchaseId) void quote.reload(); onChanged?.() }

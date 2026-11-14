@@ -31,7 +31,7 @@ export function ManagerPoliciesPage() {
           setDraft({}); setSuccess('Đã lưu chính sách vận hành PT.'); await policies.reload()
         })
       }}>
-      <fieldset disabled={save.busy}>
+      <fieldset disabled={save.busy} className="min-w-0">
       <Panel title="Giá trị hiện hành">
         <Loadable state={policies}>{items => (
           <Table head={['Quyết định', 'Chính sách', 'Giá trị', 'Nguồn']}>
