@@ -212,10 +212,10 @@ export function Field({ label, hint, error, children, required }: { label: strin
   return <label className={`block space-y-1.5${shown ? ' [&_input]:!border-red-500 [&_select]:!border-red-500 [&_textarea]:!border-red-500 [&_input]:!ring-red-500/20 [&_textarea]:!ring-red-500/20' : ''}`}
     onInvalidCapture={e => { const el = e.target as HTMLInputElement; e.preventDefault(); setNative(viValidity(el)); if (!(document.activeElement as HTMLElement | null)?.matches(':invalid')) el.focus() }}
     onInputCapture={() => { setNative(null); setServer(null) }} onChangeCapture={() => { setNative(null); setServer(null) }}>
-    <span className="text-sm font-medium text-text-primary">{label}{required && <span className="text-red-600" aria-hidden> *</span>}</span>
+    <span className="text-sm font-medium text-text-primary">{label}{required && <span className="text-red-600 dark:text-red-400" aria-hidden> *</span>}</span>
     {children}
     {hint && !shown && <span className="block text-xs text-text-muted">{hint}</span>}
-    {shown && <span role="alert" className="block text-xs font-medium text-red-600">{shown}</span>}
+    {shown && <span role="alert" className="block text-xs font-medium text-red-600 dark:text-red-400">{shown}</span>}
   </label>
 }
 export function InlineError({ message }: { message?: string | null }) {

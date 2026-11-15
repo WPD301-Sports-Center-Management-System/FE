@@ -267,7 +267,7 @@ function MealViewer({ c, editable, onChange }: { c: MealPlanDraft; editable: boo
       <div className="self-end pb-2 text-sm">Mục tiêu <strong>{c.dailyCalorieTarget.toLocaleString('vi-VN')}</strong> kcal/ngày</div>
     </div>
     <div className="flex flex-wrap gap-2">{c.days.map(x => <button key={x.dayNumber} type="button" onClick={() => setDay(x.dayNumber)}
-      className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${x.dayNumber === day ? 'border-primary bg-primary text-white' : 'border-border-subtle bg-bg-surface-muted text-text-muted'}`}>Ngày {x.dayNumber} · {kcal(x).toLocaleString('vi-VN')} kcal</button>)}</div>
+      className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${x.dayNumber === day ? 'border-primary bg-primary text-primary-foreground' : 'border-border-subtle bg-bg-surface-muted text-text-muted'}`}>Ngày {x.dayNumber} · {kcal(x).toLocaleString('vi-VN')} kcal</button>)}</div>
     {d && <div className="max-h-[40vh] space-y-2 overflow-y-auto">{d.meals.map((m, mi) => <div key={mi} className="rounded-xl border border-border-subtle p-3">
       <p className="mb-1 text-xs font-bold">{m.mealType}</p>
       {m.items.map((it, ii) => <div key={ii} className="flex items-center gap-2 py-0.5 text-sm">

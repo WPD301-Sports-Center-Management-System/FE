@@ -1,0 +1,89 @@
+﻿/* The public landing follows the same persisted theme as the rest of ApexFIT. */
+.gc-landing .theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid #ffffff45;
+  border-radius: 50%;
+  color: #f5f2ee;
+  background: transparent;
+}
+.gc-landing .theme-toggle:hover { background: #ffffff12; }
+:root:not(.dark) .gc-landing {
+  --muted: #5e6265;
+  --line: #d9d8d4;
+  color: #191919;
+  background: #faf9f7;
+}
+:root:not(.dark) .gc-landing .nav { background: #faf9f7f7; border-color: #deddd9; }
+:root:not(.dark) .gc-landing .brand,
+:root:not(.dark) .gc-landing .brand-light,
+:root:not(.dark) .gc-landing .nav-links a,
+:root:not(.dark) .gc-landing .login-link,
+:root:not(.dark) .gc-landing .mobile-menu { color: #242424; }
+:root:not(.dark) .gc-landing .theme-toggle { color: #242424; border-color: #cbc9c4; }
+:root:not(.dark) .gc-landing .theme-toggle:hover { background: #eeece8; }
+:root:not(.dark) .gc-landing .nav-links.open { background: #faf9f7; }
+/* Keep the photographic hero and course overlays dark for legibility. */
+:root:not(.dark) .gc-landing .hero,
+:root:not(.dark) .gc-landing .course-card { color: #f5f2ee; }
+:root:not(.dark) .gc-landing .stats-strip { background: #efeeeb; }
+:root:not(.dark) .gc-landing .stats-intro strong { color: #242424; }
+:root:not(.dark) .gc-landing .coach-section,
+:root:not(.dark) .gc-landing .reviews-section { background: #f0efec; }
+:root:not(.dark) .gc-landing .journey { background: #eae8e3; }
+:root:not(.dark) .gc-landing .price-card,
+:root:not(.dark) .gc-landing .review-card,
+:root:not(.dark) .gc-landing .lead-form,
+:root:not(.dark) .gc-landing .modal { background: #fff; border-color: #d9d8d4; }
+:root:not(.dark) .gc-landing .price-card.featured { background: #fff5ef; border-color: #d9a389; }
+:root:not(.dark) .gc-landing .consult { background: #f0ece7; }
+:root:not(.dark) .gc-landing footer.section { background: #e8e7e3; }
+:root:not(.dark) .gc-landing .public-landing .section-head .muted,
+:root:not(.dark) .gc-landing .public-landing .benefit p,
+:root:not(.dark) .gc-landing .public-landing .journey-step p,
+:root:not(.dark) .gc-landing .public-landing .price-card p,
+:root:not(.dark) .gc-landing .public-landing .check-line,
+:root:not(.dark) .gc-landing .public-landing .faq-item > p,
+:root:not(.dark) .gc-landing .public-landing .lead-form > .muted,
+:root:not(.dark) .gc-landing .public-landing .coach-info > span,
+:root:not(.dark) .gc-landing .public-landing .coach-info > div,
+:root:not(.dark) .gc-landing .public-landing .image-note,
+:root:not(.dark) .gc-landing .public-landing .stats-note,
+:root:not(.dark) .gc-landing .public-landing .fine-print,
+:root:not(.dark) .gc-landing .public-landing .review-person small,
+:root:not(.dark) .gc-landing .public-landing .review-person b,
+:root:not(.dark) .gc-landing .public-landing .stat > span,
+:root:not(.dark) .gc-landing .public-landing .tabs button,
+:root:not(.dark) .gc-landing .public-landing .price-card .eyebrow,
+:root:not(.dark) .gc-landing .public-landing .lead-form label,
+:root:not(.dark) .gc-landing .public-landing .faq-item button,
+:root:not(.dark) .gc-landing .consult-copy > p:not(.eyebrow),
+:root:not(.dark) .gc-landing .price-aside p,
+:root:not(.dark) .gc-landing .review-card blockquote,
+:root:not(.dark) .gc-landing .footer-top p,
+:root:not(.dark) .gc-landing .footer-top > .text-link,
+:root:not(.dark) .gc-landing .footer-bottom { color: #505457; }
+:root:not(.dark) .gc-landing .public-landing .tabs button.active { color: #833008; background: #fce9df; border-color: #e9b49a; }
+:root:not(.dark) .gc-landing .journey h2 span,
+:root:not(.dark) .gc-landing .journey-step > span,
+:root:not(.dark) .gc-landing .journey .text-link,
+:root:not(.dark) .gc-landing .price-aside .text-link,
+:root:not(.dark) .gc-landing .consult-copy h2 span { color: #ac3f10; }
+:root:not(.dark) .gc-landing .btn.outline { color: #242424; border-color: #9c9a96; }
+:root:not(.dark) .gc-landing .lead-form input,
+:root:not(.dark) .gc-landing .lead-form select,
+:root:not(.dark) .gc-landing .lead-form textarea { background: #faf9f7; border-color: #c8c7c3; color: #191919; }
+:root:not(.dark) .gc-landing option { background: #fff; color: #191919; }
+:root:not(.dark) .gc-landing .field-error { color: #b3261e; }
+:root:not(.dark) .gc-landing .inline-message,
+:root:not(.dark) .gc-landing .error-box { background: #fff3ec; color: #742d0c; border-color: #e8bda7; }
+:root:not(.dark) .gc-landing .error-box p { color: #704a38; }
+:root:not(.dark) .gc-landing .skeleton { background: #e6e4e0; }
+:root:not(.dark) .gc-landing .stars-empty { color: #b4b0aa; }
+:root:not(.dark) .gc-landing .modal label,
+:root:not(.dark) .gc-landing .modal > .icon-btn { color: #505457; }
+:root:not(.dark) .gc-landing .modal-context { color: #ac3f10; }

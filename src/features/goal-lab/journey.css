@@ -9,3 +9,5 @@
 .journey-legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--color-text-muted)}.journey-legend span{display:flex;align-items:center;gap:6px}.journey-legend i{display:inline-block;width:20px;border-top:2px solid}.journey-legend .actual{border-color:var(--journey-data)}.journey-legend .plan{opacity:.6}.journey-legend .forecast{border-color:var(--journey-data);border-top-style:dashed}.journey-legend .target{border-color:var(--journey-green);border-top-style:dotted}
 @media(max-width:480px){.journey-metrics{grid-template-columns:1fr}.journey-metric{padding:16px}.journey-chart{min-height:0}.journey-bmi small{margin-left:0}}
 @container(min-width:900px){.journey-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+.dark .journey-green{color:#86efac}.dark .journey-yellow{color:#fcd34d}.dark .journey-red{color:#fca5a5}

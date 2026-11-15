@@ -705,7 +705,7 @@ export function MemberDashboardPage() {
                           onClick={() => setSelectedMealDay(d)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border ${
                             selectedMealDay === d
-                              ? 'bg-primary text-white border-primary'
+                              ? 'bg-primary text-primary-foreground border-primary'
                               : 'bg-bg-surface-muted text-text-muted border-border-subtle'
                           }`}
                         >

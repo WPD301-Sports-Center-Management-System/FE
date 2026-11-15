@@ -8,6 +8,33 @@ import { isAppApiError } from '@/shared/api/api-error'
 import { isPathAllowedForRole } from '@/features/auth/guards/auth-guards'
 import type { UserRole } from '@/shared/types/api'
 
+function LoginVideo() {
+  const video = useRef<HTMLVideoElement>(null)
+  const [motion, setMotion] = useState(false)
+  const [playing, setPlaying] = useState(false)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    if (!window.matchMedia) return
+    const desktop = window.matchMedia('(min-width: 1024px)')
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const update = () => setMotion(desktop.matches && !reduced.matches)
+    update()
+    desktop.addEventListener('change', update)
+    reduced.addEventListener('change', update)
+    return () => { desktop.removeEventListener('change', update); reduced.removeEventListener('change', update) }
+  }, [])
+  useEffect(() => {
+    const pause = () => { if (document.hidden) video.current?.pause() }
+    document.addEventListener('visibilitychange', pause)
+    return () => document.removeEventListener('visibilitychange', pause)
+  }, [])
+  return <div className="absolute inset-0 overflow-hidden bg-neutral-900">
+    {motion && !failed ? <video ref={video} src="/landing/training.mp4" poster="/landing/gym.jpg" autoPlay muted loop playsInline preload="metadata" aria-label="Video minh họa tập luyện" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onError={() => setFailed(true)} className="h-full w-full object-cover" /> : <img src="/landing/gym.jpg" alt="" className="h-full w-full object-cover" />}
+    <div aria-hidden className="pointer-events-none absolute inset-0 bg-black/65" />
+    {motion && !failed && <button type="button" onClick={() => { const player = video.current; if (!player) return; if (player.paused) void player.play().catch(() => undefined); else player.pause() }} className="absolute bottom-8 right-8 min-h-11 rounded-lg bg-black/75 px-4 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-white">{playing ? 'Tạm dừng video' : 'Phát video'}</button>}
+  </div>
+}
+
 export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -105,13 +132,14 @@ export function LoginPage() {
 
   return (
     <div className="grid min-h-dvh grid-cols-1 bg-bg-app text-text-primary lg:grid-cols-2">
-      <aside className="hidden flex-col justify-between border-r border-border-subtle bg-bg-surface p-12 lg:flex">
-        <Link to="/" className="flex items-center gap-3 text-xl font-bold"><Dumbbell aria-hidden className="h-8 w-8 text-primary" />ApexFIT</Link>
-        <div className="max-w-lg space-y-5">
+      <aside className="relative hidden flex-col overflow-hidden border-r border-border-subtle bg-neutral-900 p-12 text-white lg:flex">
+        <LoginVideo />
+        <Link to="/" className="relative flex items-center gap-3 text-xl font-bold"><Dumbbell aria-hidden className="h-8 w-8 text-orange-400" />ApexFIT</Link>
+        <div className="relative my-auto w-full max-w-2xl space-y-6 py-10">
           <h2 className="text-3xl font-semibold leading-tight tracking-tight">Mỗi buổi tập,<br />một bước tiến.</h2>
-          <p className="text-base leading-relaxed text-text-muted">Lịch tập, học viên và công việc tại trung tâm — cùng một nơi.</p>
+          <p className="text-base leading-relaxed text-white/90">Lịch tập, học viên và công việc tại trung tâm — cùng một nơi.</p>
         </div>
-        <p className="text-sm text-text-muted">ApexFIT · Phòng gym & huấn luyện cá nhân</p>
+        <p className="relative pr-36 text-sm text-white/80">ApexFIT · Phòng gym & huấn luyện cá nhân</p>
       </aside>
       <main className="flex items-center justify-center px-5 py-10 sm:p-12">
         <div className="w-full max-w-md space-y-6">

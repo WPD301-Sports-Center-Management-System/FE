@@ -106,7 +106,7 @@ function TemplateEditor({ manager, initial, foods, onClose, onDone }: { manager:
       {freeText > 0 && <p className="text-xs text-amber-700 dark:text-amber-300">{freeText} món tự nhập (ngoài thư viện) của mẫu gốc không sửa được ở đây và sẽ bị bỏ khi lưu.</p>}
       <div className="flex flex-wrap items-center gap-2 border-t border-border-subtle pt-3">
         {Array.from({ length: days }, (_, i) => i + 1).map(d => <button key={d} type="button" onClick={() => setDay(d)}
-          className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${day === d ? 'border-primary bg-primary text-white' : 'border-border-subtle bg-bg-surface-muted text-text-muted'}`}>Ngày {d} · {dayKcal(d).toLocaleString('vi-VN')} kcal</button>)}
+          className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${day === d ? 'border-primary bg-primary text-primary-foreground' : 'border-border-subtle bg-bg-surface-muted text-text-muted'}`}>Ngày {d} · {dayKcal(d).toLocaleString('vi-VN')} kcal</button>)}
         {days < 14 && <Btn size="sm" onClick={() => setDay(days + 1)}>+ Ngày</Btn>}
         {rows.some(r => r.dayNumber === day) && days < 14 && <Btn size="sm" icon={<Copy aria-hidden className="h-3.5 w-3.5" />} onClick={() => { const next = days + 1; setRows(rs => [...rs, ...rs.filter(r => r.dayNumber === day).map(r => ({ ...r, key: ++rowKey, dayNumber: next }))]); setDay(next) }}>Nhân bản sang ngày {days + 1}</Btn>}
         <span className="ml-auto text-xs text-text-muted">Trung bình: <strong className="text-text-primary">{avg.toLocaleString('vi-VN')} kcal/ngày</strong></span>

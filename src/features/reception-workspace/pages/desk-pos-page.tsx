@@ -86,7 +86,7 @@ export function DeskPosPage() {
         {plans.error ? <ErrorBox message={plans.error} onRetry={() => void plans.reload()} /> : !plans.data ? <Skeleton rows={4} className="p-0" /> : !plans.data.length ? <EmptyBox title="Chưa có vé nào mở bán" /> :
           <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">{plans.data.map(p => { const sel = plan?.id === p.id && !pending; return <button key={p.id} type="button" disabled={submit.busy} aria-pressed={sel} onClick={() => { setPlan(p); setPending(null) }}
             className={`relative rounded-xl border p-4 text-left transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/50 ${sel ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border-subtle bg-bg-surface'}`}>
-            {sel && <span aria-hidden className="absolute right-3 top-3 grid h-5 w-5 place-items-center rounded-full bg-primary text-white"><Check className="h-3.5 w-3.5" /></span>}
+            {sel && <span aria-hidden className="absolute right-3 top-3 grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground"><Check className="h-3.5 w-3.5" /></span>}
             <span aria-hidden className="mb-3 grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary"><Ticket className="h-5 w-5" /></span>
             <p className="font-semibold">{p.name}</p>
             <p className="mt-0.5 text-xs text-text-muted">{p.paidMonths} tháng{p.bonusMonths ? ` + tặng ${p.bonusMonths} tháng` : ''}{p.description ? ` · ${p.description}` : ''}</p>

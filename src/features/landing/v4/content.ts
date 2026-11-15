@@ -10,7 +10,7 @@ export const FAQ: [question: string, answer: string][] = [
   ],
   [
     'Tôi có cần đặt hết lịch ngay khi mua gói không?',
-    'Không. Bạn có thể mua trước, đặt sau hoặc chọn một phần lịch trước khi thanh toán. Xem trước lịch không giữ chỗ; lịch chỉ được xác nhận theo kết quả từ hệ thống.',
+    'Bạn chọn khung giờ hằng tuần và ngày bắt đầu trước khi thanh toán. Hệ thống kiểm tra toàn bộ chuỗi buổi; bước xem trước chưa giữ chỗ.',
   ],
   [
     'Tôi có thể đổi huấn luyện viên trong gói không?',

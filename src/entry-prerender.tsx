@@ -1,6 +1,7 @@
 import { renderToString } from 'react-dom/server'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
+import { ThemeProvider } from '@/context/ThemeContext'
 import { LandingV4 } from '@/features/landing/v4/LandingV4'
 
 export { FAQ, LANDING_DESCRIPTION, LANDING_TITLE } from '@/features/landing/v4/content'
@@ -16,7 +17,7 @@ export function render() {
   return renderToString(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={['/']}>
-        <LandingV4 />
+        <ThemeProvider><LandingV4 /></ThemeProvider>
       </MemoryRouter>
     </QueryClientProvider>,
   )

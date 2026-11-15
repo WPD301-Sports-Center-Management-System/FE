@@ -90,3 +90,92 @@
 .gc-landing .program-toolbar .tabs {
   flex-wrap: wrap;
 }
+
+/* Readable copy and stable content across screen sizes. */
+.gc-landing .public-landing .hero-desc,
+.gc-landing .public-landing .section-head .muted,
+.gc-landing .public-landing .benefit p,
+.gc-landing .public-landing .journey-step p,
+.gc-landing .public-landing .price-card p,
+.gc-landing .public-landing .check-line,
+.gc-landing .public-landing .faq-item > p,
+.gc-landing .public-landing .lead-form > .muted {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #d0d0ca;
+}
+.gc-landing .public-landing .course-bottom p,
+.gc-landing .public-landing .coach-info > span,
+.gc-landing .public-landing .coach-info > div,
+.gc-landing .public-landing .course-meta,
+.gc-landing .public-landing .image-note,
+.gc-landing .public-landing .stats-note,
+.gc-landing .public-landing .hero-note,
+.gc-landing .public-landing .lead-form label,
+.gc-landing .public-landing .faq-item button {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #d0d0ca;
+}
+.gc-landing .public-landing .hero-copy { animation: none; pointer-events: auto; }
+.gc-landing .landing-motion .reveal-item,
+.gc-landing .landing-motion .section-head.reveal-item,
+.gc-landing .landing-motion .course-card.reveal-item { opacity: 1; transform: none; }
+.gc-landing .public-landing .course-card { box-shadow: none; }
+.gc-landing .public-landing .course-meta { gap: 12px; }
+.gc-landing .public-landing .course-meta > span:first-child { min-width: 0; }
+.gc-landing .public-landing .course-meta .round-arrow { flex: 0 0 37px; }
+.gc-landing .public-landing .benefits { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 48px; }
+.gc-landing .public-landing .benefit-list { display: grid; gap: 24px; }
+.gc-landing .public-landing .benefit { display: grid; grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1.2fr); gap: 20px; align-items: baseline; }
+.gc-landing .public-landing .benefit h3 { font-size: 16px; line-height: 1.5; margin: 0; }
+.gc-landing .public-landing .benefit p { margin: 0; }
+.gc-landing .public-landing .lead-form input,
+.gc-landing .public-landing .lead-form select,
+.gc-landing .public-landing .consult-copy > p:not(.eyebrow),
+.gc-landing .public-landing .price-aside p { font-size: 15px; line-height: 1.6; }
+.gc-landing .coach-initials { background: #252321; }
+.gc-landing .public-landing .coach-photo:has(.coach-initials) { height: 180px; }
+.gc-landing .public-landing .coach-photo:has(.coach-initials) .coach-initials { font-size: 64px; }
+.gc-landing .public-landing .fine-print,
+.gc-landing .public-landing .review-person small,
+.gc-landing .public-landing .review-person b,
+.gc-landing .public-landing .coach-profile-cta,
+.gc-landing .public-landing .stat > span,
+.gc-landing .public-landing .tabs button,
+.gc-landing .public-landing .scroll-cue,
+.gc-landing .public-landing .price-card .eyebrow {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #d0d0ca;
+}
+.gc-landing .public-landing .course-bottom .tag { font-size: 13px; line-height: 1.5; color: #f2f2ee; }
+.gc-landing .public-landing .hero-film .film-poster { width: 100%; height: 100%; object-fit: cover; }
+.gc-landing .public-landing .film-control {
+  position: absolute;
+  right: 7%;
+  bottom: 24px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid #ffffff80;
+  border-radius: 50%;
+  background: #111a;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.gc-landing .public-landing .film-control:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+@media (max-width: 900px) {
+  .gc-landing .public-landing .benefits { grid-template-columns: 1fr; gap: 28px; }
+  .gc-landing .public-landing .benefit-intro { grid-column: auto; }
+}
+@media (max-width: 600px) {
+  .gc-landing .public-landing .benefits { grid-template-columns: 1fr; gap: 28px; }
+  .gc-landing .public-landing .benefit { grid-template-columns: 1fr; gap: 6px; }
+  .gc-landing .public-landing .film-control { bottom: 16px; right: 6%; }
+  .gc-landing .public-landing .course-card { height: auto; min-height: 440px; }
+}
