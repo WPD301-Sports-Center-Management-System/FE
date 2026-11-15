@@ -6,8 +6,8 @@ import { calendarSessions, type CalendarSession as Session } from '../calendar-s
 import { centerDate } from '@/shared/utils/date'
 import { coachWs, type TimeOff } from '../api'
 import { useCoachShell } from '../shell'
-import { Badge, Btn, Card, Dot, ErrorBox, LinkBtn, PageHeader, Segmented, Skeleton, btnCls } from '@/features/workspace/ui'
-import { addDays, dayEnd, dayStart, downloadCsv, hhmm, isoWeek, isScheduled, longDate, minutesBetween, mondayOf, SESSION_LABEL, shortDate, WEEKDAY_NAMES, weekdayOf } from '@/features/workspace/utils'
+import { Badge, Btn, Card, ErrorBox, LinkBtn, PageHeader, Segmented, Skeleton, btnCls } from '@/features/workspace/ui'
+import { addDays, dayEnd, dayStart, downloadCsv, hhmm, isScheduled, longDate, minutesBetween, mondayOf, SESSION_LABEL, shortDate, WEEKDAY_NAMES, weekdayOf } from '@/features/workspace/utils'
 
 type Kind = 'trial' | 'pt' | 'makeup' | 'live' | 'done' | 'absent' | 'cancelled'
 const KIND: Record<Kind, { card: string; time: string; label: string }> = {
@@ -53,8 +53,8 @@ export function CoachSchedulePage() {
 
   const title = view === 'week' ? `Tuần ${shortDate(monday)} – ${shortDate(days[6]!)}/${days[6]!.slice(0, 4)}` : longDate(anchor)
   return <div>
-    <PageHeader title="Lịch dạy theo ngày / tuần"
-      subtitle={<>{sessions.data ? <span>{scheduled.length} ca · ~{Math.round(hours * 10) / 10} giờ dạy · tối đa 300 buổi PT và 1.000 buổi tập thử đã tải</span> : <span>{sessions.error ? 'Không tải được lịch' : 'Đang tải…'}</span>}<Dot /><span>Tuần {isoWeek(monday)} · {shortDate(monday)} – {shortDate(days[6]!)}/{days[6]!.slice(0, 4)}</span></>}
+    <PageHeader title="Lịch theo ngày / tuần"
+      subtitle={sessions.data ? <span>{scheduled.length} ca · khoảng {Math.round(hours * 10) / 10} giờ dạy</span> : <span>{sessions.error ? 'Không tải được lịch' : 'Đang tải…'}</span>}
       actions={<Btn icon={<Download aria-hidden className="h-4 w-4" />} onClick={exportCsv} disabled={!all.length}>Xuất lịch đã tải</Btn>} />
 
     <Card flush title={title}
@@ -80,16 +80,17 @@ export function CoachSchedulePage() {
           </div></div>
           : <DayList day={anchor} sessions={byDay.get(anchor) ?? []} offs={offsByDay(anchor)} />}
       <div className="flex flex-wrap justify-between gap-2 border-t border-border-subtle px-5 py-3 text-sm text-text-muted">
-        <span>{scheduled.length} ca PT · {scheduled.filter(s => s.status === 'COMPLETED').length} hoàn thành · {scheduled.filter(s => s.isMakeup).length} học bù — thẻ xếp theo thứ tự thời gian trong từng ngày</span>
+        <span>{scheduled.length} ca · {scheduled.filter(s => s.status === 'COMPLETED').length} hoàn thành · {scheduled.filter(s => s.isMakeup).length} học bù</span>
         <span>Tổng: {Math.round(hours * 10) / 10} giờ dạy</span>
       </div>
     </Card>
+    <p className="mt-3 text-xs text-text-muted">Lịch sử dụng tối đa 300 buổi PT và 1.000 buổi tập thử đã tải trong khoảng đang xem.</p>
   </div>
 }
 
 function DayColumn({ day, today, sessions, offs, onPick }: { day: string; today: string; sessions: Session[]; offs: TimeOff[]; onPick: () => void }) {
   const isToday = day === today
-  return <div className={`flex min-h-[420px] flex-col rounded-xl border ${isToday ? 'border-primary/40 bg-primary/[0.03]' : 'border-border-subtle bg-bg-surface-muted/30'}`}>
+  return <div className={`flex min-h-[260px] flex-col rounded-lg border ${isToday ? 'border-primary/40 bg-primary/[0.03]' : 'border-border-subtle bg-bg-surface-muted/30'}`}>
     <button type="button" onClick={onPick} className={`border-b border-border-subtle px-2 py-3 text-center hover:bg-bg-surface-muted/60 ${isToday ? 'text-primary' : ''}`} aria-label={`Xem ngày ${longDate(day)}`}>
       <span className="block text-sm font-semibold">{WEEKDAY_NAMES[weekdayOf(day)]}</span>
       <span className="text-xs text-text-muted">{shortDate(day)}{isToday ? ' · Hôm nay' : ''}</span>
@@ -97,7 +98,7 @@ function DayColumn({ day, today, sessions, offs, onPick }: { day: string; today:
     <div className="flex flex-1 flex-col gap-2 p-2">
       {offs.map(o => <OffCard key={o.id} off={o} />)}
       {sessions.map(s => <SessionCard key={s.id} s={s} />)}
-      {!sessions.length && !offs.length && <p className="m-auto text-sm text-text-muted">Trống</p>}
+      {!sessions.length && !offs.length && <p className="px-1 py-2 text-xs text-text-muted">Không có ca</p>}
     </div>
   </div>
 }
@@ -109,14 +110,16 @@ function SessionCard({ s, wide }: { s: Session; wide?: boolean }) {
     <p className="mt-1 text-sm font-semibold">Tập thử PT · {s.memberName}</p>
     <p className="mt-0.5 text-xs text-text-muted">{s.trialPhone} · {SESSION_LABEL[s.status] ?? s.status}</p>
   </div>
-  return <Link to={`/coach/sessions/${s.id}`} className={`block rounded-lg border p-2.5 transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/50 ${k.card} ${wide ? 'flex flex-wrap items-center gap-x-6 gap-y-1' : ''}`}>
+  return <Link to={`/coach/sessions/${s.id}`} className={`block rounded-lg border p-2.5 transition-colors hover:border-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/50 ${k.card} ${wide ? 'flex flex-wrap items-center gap-x-6 gap-y-1' : ''}`}>
     <p className={`flex items-center justify-between gap-1 text-xs font-bold tabular-nums ${k.time}`}>
       <span>{hhmm(s.startsAt)} – {hhmm(s.endsAt)} · {minutesBetween(s.startsAt, s.endsAt)}'</span>
-      {s.status === 'COMPLETED' && <Check aria-label="Hoàn thành" className="h-4 w-4 text-emerald-600" />}
+      {s.status === 'COMPLETED' && <Check aria-hidden className="h-4 w-4 text-emerald-600" />}
     </p>
     {s.status === 'IN_PROGRESS' && <p className="mt-1 text-xs font-semibold text-primary">● Đang dạy</p>}
-    <p className={`mt-1 text-sm font-semibold leading-snug text-text-primary ${!isScheduled(s) ? 'line-through' : ''}`}>{s.credit ? `Buổi ${s.credit.creditIndex}/${s.purchase?.totalCredits ?? '?'}` : 'Buổi PT'} · {s.courseName ?? s.purchase?.packageNameSnapshot}</p>
-    <p className="mt-0.5 text-xs text-text-muted">{s.memberName}{!['CONFIRMED', 'IN_PROGRESS', 'COMPLETED'].includes(s.status) ? ` · ${SESSION_LABEL[s.status]}` : ''}</p>
+    <p className={`mt-1 text-sm font-semibold leading-snug text-text-primary ${!isScheduled(s) ? 'line-through' : ''}`}>{s.memberName}</p>
+    <p className="mt-0.5 text-xs text-text-muted">{s.credit ? `Buổi ${s.credit.creditIndex}/${s.purchase?.totalCredits ?? '?'}` : 'Buổi PT'} · {s.courseName ?? s.purchase?.packageNameSnapshot}</p>
+    {s.status === 'COMPLETED' && <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">Hoàn thành</p>}
+    {!['CONFIRMED', 'IN_PROGRESS', 'COMPLETED'].includes(s.status) && <p className="mt-1 text-xs text-text-muted">{SESSION_LABEL[s.status] ?? s.status}</p>}
   </Link>
 }
 

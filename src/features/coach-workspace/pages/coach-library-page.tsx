@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Archive, BookOpenText, Copy, Dumbbell, Eye, Pencil, Plus, Search, Send, Trash2 } from 'lucide-react'
+import { Archive, BookOpenText, Copy, Eye, Pencil, Plus, Search, Send, Trash2 } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/modal'
 import { useLoad, useSubmit } from '@/features/fixed-pt/hooks'
 import { fixedPtApi } from '@/features/fixed-pt/api'
 import { ProgramLibrary } from '@/features/fixed-pt/pages/coach-program-page'
 import { coachWs, type LibraryTemplate } from '../api'
-import { Badge, Btn, Card, EmptyBox, ErrorBox, Field, InlineError, Segmented, Skeleton, inputCls, textareaCls, useFlash } from '@/features/workspace/ui'
+import { Btn, Card, EmptyBox, ErrorBox, Field, InlineError, Skeleton, inputCls, textareaCls, useFlash } from '@/features/workspace/ui'
 
 const exerciseNames = (t: LibraryTemplate) => t.items.map(i => i.exercise?.name ?? i.candidateNames[0] ?? i.roleName ?? '').filter(Boolean)
 
@@ -38,29 +38,30 @@ export function CoachLibraryPage() {
   return <div>
     {node}
     <Card flush>
-      <div className="flex flex-wrap items-center gap-3 border-b border-border-subtle p-4">
-        <Segmented label="Lọc giáo án" value={tab} onChange={setTab} items={tabs} />
-        <label className="relative ml-auto min-w-56 flex-1 sm:max-w-xs"><span className="sr-only">Tìm giáo án</span><Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-          <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Tìm giáo án, bài tập…" className={`${inputCls} pl-9`} /></label>
-        <Btn variant="primary" icon={<Plus aria-hidden className="h-4 w-4" />} onClick={() => setCreate(true)}>Tạo giáo án mẫu</Btn>
+      <div className="border-b border-border-subtle px-5 py-5 sm:px-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h2 className="text-lg font-semibold tracking-tight">Giáo án mẫu</h2>
+          <Btn variant="primary" icon={<Plus aria-hidden className="h-4 w-4" />} onClick={() => setCreate(true)}>Tạo giáo án mẫu</Btn>
+        </div>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <label className="relative min-w-56 flex-1 sm:max-w-sm"><span className="sr-only">Tìm giáo án</span><Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" /><input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Tìm giáo án, bài tập…" className={`${inputCls} pl-9`} /></label>
+          <label className="sr-only" htmlFor="library-focus">Lọc theo trọng tâm</label><select id="library-focus" value={tab.startsWith('f:') ? tab : 'all'} onChange={e => setTab(e.target.value)} className={`${inputCls} sm:max-w-xs`}><option value="all">Mọi trọng tâm</option>{focuses.map(f => <option key={f} value={`f:${f}`}>{f}</option>)}</select>
+        </div>
+        <div className="mt-5 flex gap-5 text-sm" role="group" aria-label="Nguồn giáo án">{tabs.slice(0, 2).map(item => <button key={item.key} type="button" onClick={() => setTab(item.key)} aria-pressed={tab === item.key} className={`border-b-2 pb-2 font-medium transition-colors ${tab === item.key ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text-primary'}`}>{item.label} <span className="ml-1 text-xs tabular-nums">{item.count}</span></button>)}</div>
       </div>
       {templates.error ? <ErrorBox message={templates.error} onRetry={() => void templates.reload()} /> : !templates.data ? <Skeleton rows={4} /> : !rows.length
         ? <EmptyBox icon={<BookOpenText className="h-5 w-5" />} title={list.length ? 'Không có giáo án phù hợp' : 'Thư viện đang trống'} action={<Btn onClick={() => setCreate(true)}>Tạo giáo án mới</Btn>} />
-        : <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          {rows.map(t => <article key={t.id} className="flex flex-col rounded-xl border border-border-subtle bg-bg-surface p-4 transition-shadow hover:shadow-md">
-            <div className="flex items-start gap-3">
-              <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><Dumbbell className="h-5 w-5" /></span>
-              <div className="min-w-0"><h3 className="font-semibold leading-snug">{t.name}</h3><p className="mt-0.5 text-xs text-text-muted">{t.items.length} bài · phiên bản {t.version}</p></div>
+        : <div className="px-5 sm:px-6">
+          <div aria-hidden className="hidden grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_auto] gap-6 border-b border-border-subtle py-3 text-xs text-text-muted lg:grid">
+            <span>Giáo án</span><span>Bài tập &amp; trọng tâm</span><span className="w-52">Thao tác</span>
+          </div>
+          <div className="divide-y divide-border-subtle">{rows.map(t => <article key={t.id} className="grid gap-3 py-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_auto] lg:items-center lg:gap-6">
+            <div className="min-w-0"><div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted"><span>{t.coachId ? 'Của tôi' : 'Mẫu hệ thống'}</span><span aria-hidden>·</span><span>{t.items.length} bài tập</span></div>
+              <h3 className="mt-1.5 font-semibold leading-snug"><button type="button" onClick={() => setView(t)} className="text-left hover:text-primary focus-visible:outline-2 focus-visible:outline-primary">{t.name}</button></h3>
             </div>
-            {t.description && <p className="mt-2 line-clamp-2 text-sm text-text-muted">{t.description}</p>}
-            <p className="mt-2 line-clamp-2 text-xs text-text-muted">{exerciseNames(t).join(' · ')}</p>
-            <div className="mt-3 flex flex-wrap gap-1.5">{t.focus && <Badge tone="info">{t.focus}</Badge>}<Badge tone={t.coachId ? 'violet' : 'neutral'}>{t.coachId ? 'Của tôi' : 'Mẫu hệ thống'}</Badge></div>
-            <div className="mt-auto flex flex-wrap gap-1.5 pt-4">
-              <DuplicateBtn t={t} onDone={done} />
-              <Btn size="sm" icon={<Eye aria-hidden className="h-3.5 w-3.5" />} onClick={() => setView(t)}>Xem</Btn>
-              <Btn size="sm" variant="soft" icon={<Send aria-hidden className="h-3.5 w-3.5" />} onClick={() => setApply(t)}>Áp cho gói học viên</Btn>
-            </div>
-          </article>)}
+            <div className="min-w-0 text-sm"><p className="line-clamp-2 leading-relaxed text-text-muted">{exerciseNames(t).join(' · ') || 'Chưa có bài tập'}</p>{t.focus && <p className="mt-2 text-xs font-medium text-text-primary">{t.focus}</p>}</div>
+            <div className="flex flex-wrap items-center gap-2 lg:w-52"><Btn size="sm" variant="soft" icon={<Send aria-hidden className="h-3.5 w-3.5" />} onClick={() => setApply(t)}>Áp cho học viên</Btn><Btn size="sm" icon={<Eye aria-hidden className="h-3.5 w-3.5" />} onClick={() => setView(t)}>Xem</Btn><DuplicateBtn t={t} onDone={done} /></div>
+          </article>)}</div>
         </div>}
     </Card>
     <div className="mt-6"><ProgramLibrary /></div>
