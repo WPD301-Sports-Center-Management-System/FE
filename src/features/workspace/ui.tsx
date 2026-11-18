@@ -130,7 +130,8 @@ export function Segmented<K extends string>({ items, value, onChange, label }: {
 export const th = 'whitespace-nowrap px-4 py-3 text-left text-xs font-medium text-text-muted'
 export const td = 'px-4 py-3 align-middle text-sm text-text-primary'
 export function Table({ head, children, minWidth = 860, alignLast = true }: { head: string[]; children: ReactNode; minWidth?: number; alignLast?: boolean }) {
-  return <div className="overflow-x-auto">
+  // `relative` keeps absolutely positioned cell content (sr-only labels) inside the scroller on phones.
+  return <div className="relative overflow-x-auto">
     <table className="w-full border-collapse" style={{ minWidth }}>
       <thead className="border-b border-border-subtle"><tr>{head.map((h, i) => <th key={h + i} scope="col" className={`${th} ${alignLast && i === head.length - 1 ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
       <tbody className="divide-y divide-border-subtle">{children}</tbody>

@@ -1,5 +1,5 @@
 export const appConfig = {
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1',
+  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '/api/v1', // same-origin: Vite proxy locally, vercel.json rewrite in production
   appName: import.meta.env.VITE_APP_NAME || 'ApexFIT',
   useMock: import.meta.env.VITE_USE_MOCK === 'true', // Real API by default, mock only when explicitly true
   // Account that receives counter bank transfers (shown with a VietQR code). Leave empty to hide the QR.

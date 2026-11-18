@@ -486,10 +486,11 @@ export function CoachMealPlanPage() {
       await mealPlansService.archiveMealPlan(plan.id)
       setPendingArchive(null)
       setViewingPlan(null)
-      setSuccessMessage(`Đã lưu trữ "${plan.title}".`)
+      const isDraft = plan.status === 'DRAFT'
+      setSuccessMessage(isDraft ? `Đã xóa bản nháp "${plan.title}".` : `Đã ngừng áp dụng "${plan.title}".`)
       await loadData()
     } catch (err) {
-      setErrorMessage(isAppApiError(err) ? err.message : 'Không lưu trữ được thực đơn.')
+      setErrorMessage(isAppApiError(err) ? err.message : plan.status === 'DRAFT' ? 'Không xóa được bản nháp.' : 'Không ngừng áp dụng được thực đơn.')
     } finally {
       setIsSubmitting(false)
     }
@@ -889,7 +890,7 @@ export function CoachMealPlanPage() {
                     <Button size="sm" variant={plan.status === 'DRAFT' ? 'primary' : 'outline'} disabled={isSubmitting || isGenerating} onClick={() => plan.status === 'DRAFT' ? void openDraftForEdit(plan) : void handleViewPlanDetail(plan)}>{plan.status === 'DRAFT' ? 'Soạn tiếp' : 'Xem thực đơn'}</Button>
                     <details className="relative"><summary className="min-h-11 cursor-pointer py-2 text-sm text-text-muted">Thao tác khác</summary><div className="absolute right-0 z-10 mt-1 flex min-w-44 flex-col gap-1 rounded-lg border border-border-subtle bg-bg-surface p-2 shadow-sm">
                       <Button size="sm" variant="ghost" onClick={() => void handleDuplicatePlan(plan)} disabled={isSubmitting}>{plan.status === 'ACTIVE' ? 'Tạo bản điều chỉnh' : 'Sao chép thực đơn'}</Button>
-                      {plan.status !== 'ARCHIVED' && <Button size="sm" variant="ghost" onClick={() => setPendingArchive(plan)} disabled={isSubmitting}>{plan.status === 'DRAFT' ? 'Lưu trữ bản nháp' : 'Ngừng áp dụng'}</Button>}
+                      {plan.status !== 'ARCHIVED' && <Button size="sm" variant="ghost" onClick={() => setPendingArchive(plan)} disabled={isSubmitting}>{plan.status === 'DRAFT' ? 'Xóa bản nháp' : 'Ngừng áp dụng'}</Button>}
                     </div></details>
                   </div>
 
@@ -1421,9 +1422,12 @@ export function CoachMealPlanPage() {
       />
       <ConfirmDialog
         isOpen={!!pendingArchive}
-        title={pendingArchive?.status === 'DRAFT' ? 'Lưu trữ bản nháp?' : 'Ngừng áp dụng thực đơn?'}
-        message={<>“{pendingArchive?.title}” {pendingArchive?.status === 'DRAFT' ? 'sẽ được chuyển vào danh sách đã lưu trữ.' : 'sẽ không còn là thực đơn hiện tại của học viên.'} Bạn vẫn có thể xem và sao chép sau này.</>}
-        confirmLabel={pendingArchive?.status === 'DRAFT' ? 'Lưu trữ bản nháp' : 'Ngừng áp dụng'}
+        title={pendingArchive?.status === 'DRAFT' ? 'Xóa bản nháp?' : 'Ngừng áp dụng thực đơn?'}
+        message={pendingArchive?.status === 'DRAFT'
+          ? <>Bản nháp “{pendingArchive?.title}” chưa giao cho học viên và sẽ bị xóa, không khôi phục được. Muốn giữ lại để dùng sau, hãy “Lưu thành mẫu” trước khi xóa.</>
+          : <>“{pendingArchive?.title}” sẽ không còn là thực đơn hiện tại của học viên. Bạn vẫn có thể xem và sao chép sau này trong mục Đã lưu trữ.</>}
+        tone={pendingArchive?.status === 'DRAFT' ? 'danger' : undefined}
+        confirmLabel={pendingArchive?.status === 'DRAFT' ? 'Xóa bản nháp' : 'Ngừng áp dụng'}
         isLoading={isSubmitting}
         onCancel={() => setPendingArchive(null)}
         onConfirm={() => pendingArchive && void handleArchivePlan(pendingArchive)}
