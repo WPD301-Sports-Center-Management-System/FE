@@ -14,9 +14,10 @@ vi.mock('../api', () => ({ coachWs: {
 describe('CoachHomePage', () => {
   it('shows zero sessions after loading and states the scope of the loaded data', async () => {
     render(<MemoryRouter><CoachHomePage /></MemoryRouter>)
-    expect(await screen.findByText('0 ca dạy trong tối đa 100 buổi đã tải')).toBeInTheDocument()
+    expect(await screen.findByText('0 ca dạy hôm nay')).toBeInTheDocument()
     const tile = screen.getByText('Ca dạy hôm nay').parentElement!.parentElement!
     expect(within(tile).getByText('0')).toBeInTheDocument()
-    expect(tile).toHaveTextContent('0/0')
+    expect(tile).toHaveTextContent(/0\s*ca/)
+    expect(screen.getByText(/Dữ liệu đã tải: tối đa 100 buổi hôm nay/)).toBeInTheDocument()
   })
 })

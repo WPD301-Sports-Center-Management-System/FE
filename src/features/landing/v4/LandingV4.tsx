@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Activity, ArrowDown, ArrowUpRight, CalendarDays, Check, Dumbbell, Menu, Minus, Plus, RefreshCw, ShieldCheck, Target, X,
+  ArrowDown, ArrowUpRight, Check, Dumbbell, Menu, Minus, Moon, Plus, RefreshCw, ShieldCheck, Sun, X,
 } from 'lucide-react'
+import { useTheme } from '@/context/ThemeContext'
 import { formatVND } from '@/shared/utils/currency'
 import { formatDate } from '@/shared/utils/date'
 import { initialsOf } from '@/shared/components/ui/avatar'
@@ -16,6 +17,7 @@ import { FAQ, STOCK_IMAGES } from './content'
 import { useLandingMotion } from './useLandingMotion'
 import './landing-v4.css'
 import './landing-v4-extra.css'
+import './landing-v4-light.css'
 
 type OpenConsult = (context?: TrialContext) => void
 
@@ -28,13 +30,14 @@ const NAV_LINKS = [
 ] as const
 
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const muscleLabel = (name: string) => ({ Arms: 'Tay', Back: 'Lưng', Chest: 'Ngực', Core: 'Cơ trung tâm', 'Full Body': 'Toàn thân', Glutes: 'Mông', Legs: 'Chân', Shoulders: 'Vai' } as Record<string, string>)[name] ?? name
 
-/** Smooth in-page navigation that keeps a real `#hash` href (works without JS too). */
+/** Scroll without changing the URL; the anchor remains usable without JavaScript. */
 function scrollToSection(id: string) {
   const target = document.getElementById(id)
   if (!target) return false
   target.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })
-  history.replaceState(null, '', `#${id}`)
+  if (window.location.hash) history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}`)
   return true
 }
 
@@ -61,6 +64,7 @@ function ErrorBox({ text, retry }: { text: string; retry?: () => void }) {
 
 function Nav({ onConsult }: { onConsult: OpenConsult }) {
   const [open, setOpen] = useState(false)
+  const { resolvedTheme, toggleTheme } = useTheme()
   return (
     <nav className="nav" aria-label="Điều hướng chính">
       <Brand />
@@ -72,6 +76,10 @@ function Nav({ onConsult }: { onConsult: OpenConsult }) {
         ))}
       </div>
       <div className="nav-actions">
+        <button type="button" className="icon-btn theme-toggle" onClick={toggleTheme}
+          aria-label={resolvedTheme === 'dark' ? 'Chuy?n sang giao di?n s?ng' : 'Chuy?n sang giao di?n t?i'}>
+          {resolvedTheme === 'dark' ? <Sun size={19} aria-hidden="true" /> : <Moon size={19} aria-hidden="true" />}
+        </button>
         <Link className="login-link" to="/login">
           Đăng nhập
         </Link>
@@ -101,14 +109,10 @@ function Nav({ onConsult }: { onConsult: OpenConsult }) {
   )
 }
 
-function SectionHead({ eyebrow, title, text }: { eyebrow: string; title: string; text?: string }) {
+function SectionHead({ title, text }: { eyebrow: string; title: string; text?: string }) {
   return (
     <div className="section-head">
       <div>
-        <p className="eyebrow">
-          <span />
-          {eyebrow}
-        </p>
         <h2>{title}</h2>
         {text && <p className="muted">{text}</p>}
       </div>
@@ -128,18 +132,14 @@ function CourseCard({ course, index, onConsult }: { course: PublicCourse; index:
       aria-label={`${course.name} – Đăng ký tư vấn khóa này`}
     >
       <img src={course.imageUrl || STOCK_IMAGES[index % STOCK_IMAGES.length]} alt={course.name} loading="lazy" decoding="async" />
-      <div className="course-top">
-        <span>PT 1:1</span>
-        <span>{String(index + 1).padStart(2, '0')} /</span>
-      </div>
       <div className="course-bottom">
-        <span className="tag">{difficultyLabel(course.difficultyLevel) || 'Huấn luyện cá nhân'}</span>
+        {difficultyLabel(course.difficultyLevel) && <span className="tag">{difficultyLabel(course.difficultyLevel)}</span>}
         <h3>{course.name}</h3>
         {(course.objective || course.description) && <p>{course.objective || course.description}</p>}
         <div className="course-meta">
           <span>
-            {course.coachCount} Coach đồng hành
-            {course.priceFrom != null && ` · Từ ${formatVND(course.priceFrom)}`}
+            {course.coachCount > 0 ? `${course.coachCount} HLV được duyệt` : 'Chưa có HLV được duyệt'}
+            {course.priceFrom != null && ` · Gói PT từ ${formatVND(course.priceFrom)}`}
           </span>
           <span className="round-arrow">
             <ArrowUpRight size={19} />
@@ -173,16 +173,13 @@ function Programs({ onConsult }: { onConsult: OpenConsult }) {
             </button>
             {groups.map((g) => (
               <button type="button" key={g} className={group === g ? 'active' : ''} aria-pressed={group === g} onClick={() => setGroup(g)}>
-                {g}
+              {muscleLabel(g)}
               </button>
             ))}
           </div>
         ) : (
           <span />
         )}
-        <span className="subtle-label">
-          CÁ NHÂN HÓA CÙNG COACH <ArrowUpRight size={15} />
-        </span>
       </div>
       {catalog.isError ? (
         <ErrorBox text="Không tải được danh sách chương trình tập." retry={() => catalog.refetch()} />
@@ -200,6 +197,11 @@ function Programs({ onConsult }: { onConsult: OpenConsult }) {
       {usesStock && <p className="image-note">Ảnh stock dùng để minh họa chương trình, không phải hồ sơ nhân sự.</p>}
     </section>
   )
+}
+
+function CoachPhoto({ url, name }: { url?: string | null; name: string }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  return url && failedUrl !== url ? <img src={url} alt={`Huấn luyện viên ${name}`} loading="lazy" decoding="async" onError={() => setFailedUrl(url)} /> : <span className="coach-initials" aria-hidden="true">{initialsOf(name)}</span>
 }
 
 function Coaches() {
@@ -224,15 +226,7 @@ function Coaches() {
             return (
               <Link to={`/coaches/${c.id}`} className="coach-card" key={c.id}>
                 <div className="coach-photo">
-                  {c.avatarUrl ? (
-                    <img src={c.avatarUrl} alt={`Huấn luyện viên ${c.fullName}`} loading="lazy" decoding="async" />
-                  ) : (
-                    <span className="coach-initials" aria-hidden="true">{initialsOf(c.fullName)}</span>
-                  )}
-                  <span className="coach-status">
-                    <i />
-                    KHÁM PHÁ HỒ SƠ
-                  </span>
+                  <CoachPhoto url={c.avatarUrl} name={c.fullName} />
                   <span className="coach-go" aria-hidden="true">
                     <ArrowUpRight size={24} />
                   </span>
@@ -320,9 +314,9 @@ function Pricing({ onConsult }: { onConsult: OpenConsult }) {
               <p>Giá của gói thấp nhất đang mở bán · Một Coach cố định suốt gói</p>
               <div className="check-line">
                 <Check size={16} />
-                Mua trước, đặt sau hoặc giữ lịch rồi thanh toán
+                Chọn khung giờ hằng tuần trước khi thanh toán
               </div>
-              <p>Giáo án cá nhân hóa theo từng buổi. Mua gói không đồng nghĩa đã có lịch tập.</p>
+              <p>Hệ thống kiểm tra toàn bộ chuỗi buổi trước khi giữ lịch. Giáo án được cá nhân hóa theo từng buổi.</p>
               <button type="button" className={'btn ' + (i === 0 ? 'lime' : 'outline')} onClick={() => onConsult({ interest: `Gói PT khóa ${c.name}` })}>
                 Tư vấn gói PT này <ArrowUpRight size={17} />
               </button>
@@ -444,10 +438,6 @@ export function LandingV4() {
         <div className="landing-progress" aria-hidden="true" />
         <section className="hero" id="about">
           <div className="hero-copy">
-            <p className="eyebrow">
-              <span />
-              GYM & PERSONAL TRAINING
-            </p>
             <h1>
               Huấn luyện
               <br />
@@ -487,29 +477,24 @@ export function LandingV4() {
 
         <section className="section benefits" aria-labelledby="benefits-title">
           <div className="benefit-intro">
-            <p className="eyebrow">
-              <span />
-              HUẤN LUYỆN CÓ KẾ HOẠCH
-            </p>
             <h2 id="benefits-title">
               Có người hướng dẫn.
               <br />
               Có kế hoạch rõ ràng.
             </h2>
           </div>
-          {(
+          <div className="benefit-list">{(
             [
-              [Target, 'Giáo án cá nhân hóa', 'Giáo án PT 1:1 theo mục tiêu, thể trạng và nhịp sống của bạn.'],
-              [CalendarDays, 'Lịch tập, bạn chủ động', 'Chọn từng buổi hoặc lịch theo tuần. Mua trước, đặt lịch sau.'],
-              [Activity, 'Theo dõi kết quả', 'Theo dõi từng buổi tập và kết quả cùng Coach của bạn.'],
+              ['Giáo án cá nhân hóa', 'Giáo án PT 1:1 theo mục tiêu, thể trạng và nhịp sống của bạn.'],
+              ['Lịch tập, bạn chủ động', 'Chọn khung giờ hằng tuần và ngày bắt đầu phù hợp.'],
+              ['Theo dõi kết quả', 'Theo dõi từng buổi tập và kết quả cùng Coach của bạn.'],
             ] as const
-          ).map(([Icon, title, text]) => (
+          ).map(([title, text]) => (
             <div className="benefit" key={title}>
-              <Icon size={25} aria-hidden="true" />
               <h3>{title}</h3>
               <p>{text}</p>
             </div>
-          ))}
+          ))}</div>
         </section>
 
         <Programs onConsult={openConsult} />
@@ -517,10 +502,6 @@ export function LandingV4() {
 
         <section className="journey section" aria-labelledby="journey-title">
           <div>
-            <p className="eyebrow">
-              <span />
-              BẮT ĐẦU THẬT ĐƠN GIẢN
-            </p>
             <h2 id="journey-title">
               Bắt đầu tập luyện
               <br />
@@ -533,7 +514,7 @@ export function LandingV4() {
           <div className="steps">
             {[
               ['01', 'Chọn huấn luyện viên', 'Khám phá Coach và lựa chọn chuyên môn phù hợp.'],
-              ['02', 'Chọn gói & cách bắt đầu', 'Mua trước đặt sau, hoặc giữ lịch rồi thanh toán.'],
+              ['02', 'Chọn gói và lịch tập', 'Chọn khung tuần và ngày bắt đầu; kiểm tra toàn bộ chuỗi buổi trước khi thanh toán.'],
               ['03', 'Tập theo lịch đã xác nhận', 'Lịch được xác nhận, giáo án được cá nhân hóa cho bạn.'],
             ].map(([n, t, d]) => (
               <div className="journey-step" key={n}>
@@ -557,10 +538,6 @@ export function LandingV4() {
 
         <section className="consult section" id="consult" aria-labelledby="consult-title">
           <div className="consult-copy">
-            <p className="eyebrow">
-              <span />
-              TƯ VẤN CHƯƠNG TRÌNH TẬP
-            </p>
             <h2 id="consult-title">
               Trao đổi mục tiêu.
               <br />
@@ -583,16 +560,11 @@ export function LandingV4() {
 
         <section className="faq section" id="faq" aria-labelledby="faq-title">
           <div>
-            <p className="eyebrow">
-              <span />
-              BẠN HỎI, CHÚNG TÔI TRẢ LỜI
-            </p>
             <h2 id="faq-title">
               Thông tin cần biết
               <br />
               trước khi đăng ký.
             </h2>
-            <p className="muted">Một hành trình tốt bắt đầu từ sự thấu hiểu.</p>
           </div>
           <div className="faq-list">
             {FAQ.map(([q, a], i) => (

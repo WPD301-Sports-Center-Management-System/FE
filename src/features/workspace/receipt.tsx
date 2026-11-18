@@ -94,7 +94,7 @@ function Invoice({ data, titleId, footer }: { data: ReceiptData; titleId: string
     </table>
     <dl className="mt-5 space-y-2 text-[15px]">
       <div className="flex justify-between"><dt className="text-text-muted">Tạm tính</dt><dd className="font-semibold tabular-nums">{vnd(subtotal)}</dd></div>
-      {discount > 0 && <div className="flex justify-between"><dt className="text-text-muted">Giảm giá</dt><dd className="font-semibold tabular-nums text-emerald-700">−{vnd(discount)}</dd></div>}
+      {discount > 0 && <div className="flex justify-between"><dt className="text-text-muted">Giảm giá</dt><dd className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">−{vnd(discount)}</dd></div>}
     </dl>
     <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-primary/10 px-5 py-4">
       <span className="text-sm font-bold uppercase tracking-[0.12em] text-primary">Tổng cộng</span>
@@ -102,7 +102,7 @@ function Invoice({ data, titleId, footer }: { data: ReceiptData; titleId: string
     </div>
     {data.change ? <p className="mt-3 text-right text-sm text-text-muted">Tiền thối cho khách: <span className="font-semibold text-text-primary">{vnd(data.change)}</span></p> : null}
     <p className="mt-6 text-center text-sm text-text-muted">Cảm ơn quý khách, hẹn gặp lại tại phòng tập!</p>
-    {error && <p role="alert" className="no-print mt-3 text-center text-sm text-red-600">{error}</p>}
+    {error && <p role="alert" className="no-print mt-3 text-center text-sm text-red-600 dark:text-red-400">{error}</p>}
     <div className="no-print mt-6 grid gap-3 sm:grid-cols-2">
       <button type="button" disabled={!data.invoiceId || busy} title={data.invoiceId ? undefined : 'Hóa đơn được xuất sau khi thanh toán xong'}
         onClick={async () => { setBusy(true); setError(null); try { await downloadBlob((await apiClient.get(`/invoices/${data.invoiceId}/pdf`, { responseType: 'blob' })) as unknown as Blob, `${data.number ?? 'hoa-don'}.pdf`) } catch (e) { setError(e instanceof Error ? e.message : 'Không tải được hóa đơn.') } finally { setBusy(false) } }}
@@ -148,7 +148,7 @@ function TransferPanel({ data, onConfirm }: { data: ReceiptData; onConfirm?: (re
       </dl>
       <p className="text-sm text-text-muted">Khách quét bằng app ngân hàng bất kỳ (NAPAS 247). Kiểm tra tiền đã vào tài khoản rồi mới xác nhận.</p>
     </> : <p className="rounded-xl border border-dashed border-border-strong bg-bg-surface p-4 text-sm text-text-muted">Thông tin chuyển khoản chưa sẵn sàng. Vui lòng liên hệ quầy để lấy tài khoản nhận tiền và kiểm tra giao dịch trước khi xác nhận.</p>}
-    {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+    {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
     {onConfirm && <form className="mt-auto space-y-3 border-t border-border-subtle pt-4" onSubmit={async e => { e.preventDefault(); setBusy(true); setError(''); try { await onConfirm(ref.trim()) } catch (e) { setError(e instanceof Error ? e.message : 'Không xác nhận được giao dịch.') } finally { setBusy(false) } }}>
       <label className="block space-y-1.5"><span className="text-sm font-medium">Mã giao dịch ngân hàng (nếu có)</span>
         <input value={ref} onChange={e => setRef(e.target.value)} maxLength={120} className="h-10 w-full rounded-lg border border-border-subtle bg-bg-input px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring/30" placeholder="VD: FT26301123456" /></label>

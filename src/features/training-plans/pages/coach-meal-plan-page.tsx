@@ -958,7 +958,7 @@ export function CoachMealPlanPage() {
                     onClick={() => setSelectedDay(d)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 cursor-pointer border ${
                       isSelected
-                        ? 'bg-primary text-white border-primary'
+                        ? 'bg-primary text-primary-foreground border-primary'
                         : 'bg-bg-surface-muted text-text-muted border-border-subtle hover:text-text-primary'
                     }`}
                   >
@@ -1297,7 +1297,7 @@ export function CoachMealPlanPage() {
                       onClick={() => setViewingSelectedDay(d)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border ${
                         viewingSelectedDay === d
-                          ? 'bg-primary text-white border-primary'
+                          ? 'bg-primary text-primary-foreground border-primary'
                           : 'bg-bg-surface-muted text-text-muted border-border-subtle'
                       }`}
                     >

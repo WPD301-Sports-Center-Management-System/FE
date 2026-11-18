@@ -40,7 +40,7 @@ describe('V3 coach income and withdrawal', () => {
   it('keeps a REQUESTED withdrawal open even when more money is available', async () => {
     vi.mocked(walletApi.mine).mockResolvedValue({ ...wallet, reserved: 50000, withdrawals: [request] })
     renderWallet()
-    expect(await screen.findByText('Bạn có thể gửi yêu cầu tiếp theo khi phiếu này hoàn tất.', {exact:false})).toBeInTheDocument()
+    expect(await screen.findByText(/Có thể gửi yêu cầu tiếp theo khi yêu cầu này hoàn tất/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Gửi yêu cầu rút tiền' })).not.toBeInTheDocument()
   })
   it('shows recovery as a deduction from future earnings without a negative available amount', async () => {

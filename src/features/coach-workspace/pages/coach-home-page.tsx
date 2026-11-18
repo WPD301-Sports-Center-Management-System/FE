@@ -52,9 +52,9 @@ export function CoachHomePage() {
     <div className="mb-5"><CoachTrialRequests compact /></div>
     {node}
     <PageHeader title="Hôm nay của bạn"
-      subtitle={<><span>{longDate(today)}</span><Dot /><span className="font-medium text-text-primary">{sessions.data ? `${list.length} ca dạy trong tối đa 100 buổi đã tải` : sessions.error ? 'Không tải được lịch' : 'Đang tải lịch…'}</span></>}
+      subtitle={<><span>{longDate(today)}</span><Dot /><span className="font-medium text-text-primary">{sessions.data ? `${list.length} ca dạy hôm nay` : sessions.error ? 'Không tải được lịch' : 'Đang tải lịch…'}</span></>}
       actions={<>
-        <LinkBtn to="/coach/ai-recommendation" icon={<Sparkles aria-hidden className="h-4 w-4 text-violet-600" />}>Gợi ý AI {aiDrafts.data ? <Badge tone="violet">{aiDrafts.data} nháp</Badge> : null}</LinkBtn>
+        <LinkBtn to="/coach/ai-recommendation" icon={<Sparkles aria-hidden className="h-4 w-4" />}>Gợi ý AI {aiDrafts.data ? <Badge>{aiDrafts.data} nháp</Badge> : null}</LinkBtn>
         <Btn title={!list.length ? 'Chưa có ca để xuất' : 'Tải các buổi đã tải dạng CSV'} icon={<Download aria-hidden className="h-4 w-4" />} onClick={exportToday} disabled={!list.length}>Xuất lịch đã tải</Btn>
       </>} />
 
@@ -62,25 +62,25 @@ export function CoachHomePage() {
       <div className="min-w-0 space-y-6">
         <div className="grid rounded-xl border border-border-subtle bg-bg-surface sm:grid-cols-3 [&>div]:rounded-none [&>div]:border-0 [&>div]:bg-transparent [&>div]:p-4">
           <StatTile label="Ca dạy hôm nay" icon={<CalendarDays className="h-[18px] w-[18px]" />} iconTone="info"
-            value={sessions.data ? <>{counts.done}<span className="text-lg font-medium text-text-muted">/{list.length}</span></> : '—'} unit={sessions.data ? 'ca' : undefined}
+            value={sessions.data ? list.length : '—'} unit={sessions.data ? 'ca' : undefined}
             progress={sessions.data && list.length ? { value: counts.done, max: list.length } : undefined}
-            hint={sessions.data ? `${counts.done} đã xong · ${counts.live} đang dạy · tối đa 100 buổi đã tải` : undefined} />
+            hint={sessions.data ? `${counts.done} đã xong · ${counts.live} đang dạy` : undefined} />
           <StatTile label="Học viên đang quản lý" icon={<Users className="h-[18px] w-[18px]" />} iconTone="violet"
-            value={purchases.data ? activeMembers : '—'} unit="người" hint={purchases.data ? `${active.length} gói PT đang dạy · tối đa 1.000 gói đã tải` : undefined} />
+            value={purchases.data ? activeMembers : '—'} unit="người" hint={purchases.data ? `${active.length} gói PT đang dạy` : undefined} />
           <StatTile label="Thu nhập có thể rút" icon={<Wallet className="h-[18px] w-[18px]" />} iconTone="success" tone="success"
             value={payable === null ? '—' : fmtNumber(payable)} unit="₫"
-            hint={s ? <>{pendingConfirm > 0 && <Badge tone="warning">{fmtMoney(pendingConfirm)} chờ đối soát</Badge>}<span>Đã nhận {fmtMoney(s.paidOut)} · đang chờ {fmtMoney(s.reserved)}</span><Link to="/coach/earnings" className="font-medium text-text-primary underline underline-offset-2">Rút tiền</Link></> : undefined} />
+            hint={s ? <>{pendingConfirm > 0 && <Badge tone="warning">{fmtMoney(pendingConfirm)} chờ đối soát</Badge>}<span>Đã nhận {fmtMoney(s.paidOut)} · đang chờ {fmtMoney(s.reserved)}</span><Link to="/coach/earnings" className="font-medium text-text-primary underline underline-offset-2">Xem thu nhập</Link></> : undefined} />
         </div>
 
         <Card flush title="Lịch dạy & Điểm danh hôm nay" badge={sessions.data ? <Badge>{list.length} ca</Badge> : null}
-          actions={<Segmented label="Lọc ca dạy" value={tab} onChange={setTab} items={TABS.map(t => ({ key: t.key, label: t.label, count: sessions.data ? counts[t.key] : undefined }))} />}>
+          actions={list.length > 0 ? <Segmented label="Lọc ca dạy" value={tab} onChange={setTab} items={TABS.map(t => ({ key: t.key, label: t.label, count: sessions.data ? counts[t.key] : undefined }))} /> : undefined}>
           <Async state={sessions} rows={5} empty={() => rows.length ? false : <EmptyBox title={list.length ? 'Không có ca ở trạng thái này' : 'Hôm nay chưa có ca dạy'} hint={list.length ? undefined : 'Mở lịch tuần để xem buổi sắp tới, hoặc mở giờ làm việc để học viên chọn khi mua gói.'} action={!list.length && <div className="flex flex-wrap justify-center gap-2"><LinkBtn to="/coach/schedule" size="sm">Xem lịch tuần</LinkBtn><LinkBtn to="/coach/slots" size="sm" variant="soft">Mở khung giờ làm việc</LinkBtn></div>} />}>
             {() => <Table head={['Khung giờ', 'Học viên', 'Gói PT', 'Buổi tập', 'Trạng thái', '']} minWidth={920}>
               {rows.map(x => { const mins = minutesBetween(x.startsAt, x.endsAt); const left = isLive(x) ? minutesBetween(new Date().toISOString(), x.endsAt) : null
                 return <tr key={x.id} className="hover:bg-bg-surface-muted/40">
                   <td className={td}><p className="whitespace-nowrap font-semibold tabular-nums">{hhmm(x.startsAt)} – {hhmm(x.endsAt)}</p><p className="whitespace-nowrap text-xs text-text-muted">{mins} phút{left !== null && left > 0 ? ` · còn ${left}'` : ''}</p></td>
                   <td className={td}><Link to={`/coach/sessions/${x.id}`} className="flex items-center gap-3 hover:text-primary"><Person name={x.memberName} /><span><span className="block whitespace-nowrap font-semibold">{x.memberName}</span><span className="text-xs text-text-muted">{x.bookingCode}</span></span></Link></td>
-                  <td className={td}><Badge tone="violet">{x.purchase?.packageNameSnapshot ?? x.courseName}</Badge></td>
+                  <td className={td}>{x.purchase?.packageNameSnapshot ?? x.courseName}</td>
                   <td className={td}><p>{x.credit ? `Buổi ${x.credit.creditIndex}/${x.purchase?.totalCredits ?? '?'}` : 'Buổi PT'}{x.isMakeup && <Badge tone="info" className="ml-2">Học bù</Badge>}</p>
                     <p className="text-xs text-text-muted">{x.arrivedAt ? `Đã đến ${hhmm(x.arrivedAt)}` : x.courseName}{x.actualStartedAt ? ` · bắt đầu ${hhmm(x.actualStartedAt)}` : ''}</p></td>
                   <td className={td}><Badge tone={SESSION_TONE[x.status]} dot={isLive(x)}>{SESSION_LABEL[x.status] ?? x.status}</Badge></td>
@@ -97,7 +97,7 @@ export function CoachHomePage() {
           <Async state={templates} rows={4} empty={t => !t.length && <EmptyBox title="Chưa có giáo án mẫu" action={<LinkBtn size="sm" to="/coach/library">Mở thư viện</LinkBtn>} />}>
             {t => <><ul className="divide-y divide-border-subtle">{t.slice(0, 5).map(x => <li key={x.id} className="flex items-center gap-3 px-5 py-3">
               <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><HeartPulse className="h-5 w-5" /></span>
-              <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{x.name}</p><p className="truncate text-xs text-text-muted">{x.items.length} bài tập{x.focus ? ` · ${x.focus}` : ''}{x.coachId ? '' : ' · mẫu hệ thống'}</p></div>
+              <div className="min-w-0 flex-1"><p className="text-sm font-semibold">{x.name}</p><p className="text-xs text-text-muted">{x.items.length} bài tập{x.focus ? ` · ${x.focus}` : ''}{x.coachId ? '' : ' · mẫu hệ thống'}</p></div>
               <DuplicateButton id={x.id} name={x.name} onDone={m => { flash(m); void templates.reload() }} />
             </li>)}</ul>
               <div className="border-t border-border-subtle p-3 text-center"><LinkBtn size="sm" to="/coach/library">Xem tất cả trong Thư viện ({t.length})</LinkBtn></div></>}
@@ -105,6 +105,7 @@ export function CoachHomePage() {
         </Card>
       </div>
     </div>
+    <p className="mt-5 text-xs text-text-muted">Dữ liệu đã tải: tối đa 100 buổi hôm nay, 1.000 gói và 200 buổi sắp tới trong 14 ngày.</p>
   </div>
 }
 
@@ -115,6 +116,7 @@ function DuplicateButton({ id, name, onDone }: { id: string; name: string; onDon
 }
 
 type Flag = { label: string; tone: 'warning' | 'danger' | 'info' }
+const hasHealthNote = (note?: string | null) => !!note?.trim() && note.trim().toLocaleLowerCase('vi') !== 'không có lưu ý sức khỏe được khai báo'
 /** Members whose active package needs action: few sessions left, close to expiry, health notes, or nothing booked. */
 function attention(purchases: CoachPurchase[], upcoming: Session[] | null) {
   const today = centerDate()
@@ -126,25 +128,25 @@ function attention(purchases: CoachPurchase[], upcoming: Session[] | null) {
     if (!p.seriesMode && p.expiresAt && centerDate(p.expiresAt) <= addDays(today, 14)) flags.push({ label: `Hạn gói ${centerDate(p.expiresAt).slice(8, 10)}/${centerDate(p.expiresAt).slice(5, 7)}`, tone: 'danger' })
     if (upcoming && !next && p.availableCredits > 0) flags.push({ label: 'Không thấy buổi trong 14 ngày đã tải', tone: 'info' })
     return { p, next, flags, remaining }
-  }).filter(x => x.flags.length || x.p.medicalNotes)
+  }).filter(x => x.flags.length || hasHealthNote(x.p.medicalNotes))
     .sort((a, b) => (a.next ? new Date(a.next.startsAt).getTime() : Infinity) - (b.next ? new Date(b.next.startsAt).getTime() : Infinity))
 }
 
 function AttentionCard({ purchases, upcoming }: { purchases: { data: CoachPurchase[] | null; loading: boolean; error: string | null; reload: () => void }; upcoming: Session[] | null }) {
   const list = useMemo(() => attention(purchases.data ?? [], upcoming), [purchases.data, upcoming])
-  return <Card flush title="Việc cần xử lý" badge={purchases.data ? <Badge tone={list.length ? 'warning' : 'success'}>{list.length}</Badge> : null} subtitle="Tối đa 1.000 gói và 200 buổi sắp tới trong 14 ngày đã tải">
+  return <Card flush title="Học viên cần lưu ý" badge={purchases.data ? <Badge tone={list.length ? 'warning' : 'success'}>{list.length}</Badge> : null} subtitle="Gói sắp hết, sắp hết hạn, chưa có lịch hoặc có lưu ý sức khỏe">
     <Async state={purchases} rows={3} empty={() => !list.length && <EmptyBox title="Không có gói cần nhắc ở mục này" hint="Xem mục tiêu, phiếu và phản ánh trong danh sách công việc để kiểm tra các việc còn lại." icon={<Check className="h-5 w-5" />} />}>
       {() => <ul className="divide-y divide-border-subtle">{list.slice(0, 4).map(({ p, next, flags }) => <li key={p.id} className="space-y-2.5 px-5 py-4">
         <div className="flex items-start gap-3">
           <Person name={p.memberName} src={p.avatarUrl} size={40} />
           <div className="min-w-0 flex-1">
-            <p className="flex flex-wrap items-center gap-2"><Link to={`/coach/students/${p.memberId}`} className="font-semibold hover:text-primary">{p.memberName}</Link><Badge tone="violet">{p.packageNameSnapshot}</Badge></p>
+            <p><Link to={`/coach/students/${p.memberId}`} className="font-semibold hover:text-primary">{p.memberName}</Link></p><p className="mt-0.5 text-sm text-text-muted">{p.packageNameSnapshot}</p>
             <p className="mt-0.5 text-xs text-text-muted">{next ? <>Ca tiếp theo <span className="font-semibold text-text-primary">{relativeSlot(next.startsAt)}</span>{next.credit ? ` · Buổi ${next.credit.creditIndex}/${p.totalCredits}` : ''}</> : `${p.consumedCredits}/${p.totalCredits} buổi đã dùng`}</p>
           </div>
           <MemberTrend memberId={p.memberId} />
         </div>
         <div className="flex flex-wrap items-center gap-1.5">{flags.map(f => <Badge key={f.label} tone={f.tone}>{f.label}</Badge>)}{flags.some(f => f.label === 'Không thấy buổi trong 14 ngày đã tải') && <LinkBtn to="/coach/schedule" size="sm" variant="soft">Xếp lịch</LinkBtn>}</div>
-        {p.medicalNotes && <p className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"><AlertTriangle aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" /><span><span className="font-semibold">Lưu ý sức khỏe:</span> {p.medicalNotes}</span></p>}
+        {hasHealthNote(p.medicalNotes) && <p className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"><AlertTriangle aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" /><span><span className="font-semibold">Lưu ý sức khỏe:</span> {p.medicalNotes}</span></p>}
       </li>)}</ul>}
     </Async>
   </Card>

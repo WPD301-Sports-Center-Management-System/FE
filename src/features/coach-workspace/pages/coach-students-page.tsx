@@ -35,7 +35,8 @@ export function buildStudents(purchases: CoachPurchase[], sessions: Session[]): 
       : remaining <= 2 ? 'low'
       : attendance !== null && attendance < 70 ? 'attention'
       : !next && p.availableCredits > 0 ? 'unscheduled' : 'ok'
-    return { memberId: p.memberId, name: p.memberName, code: p.memberCode, phone: p.phone, avatarUrl: p.avatarUrl, purchase: p, packages: list.length, next, attendance, status: STATUSES.find(s => s.key === key)! }
+    const status = p.status === 'EXPIRED' ? { key: 'finished', label: 'Đã hết hạn', tone: 'neutral' as const } : STATUSES.find(s => s.key === key)!
+    return { memberId: p.memberId, name: p.memberName, code: p.memberCode, phone: p.phone, avatarUrl: p.avatarUrl, purchase: p, packages: list.length, next, attendance, status }
   }).sort((a, b) => a.name.localeCompare(b.name, 'vi'))
 }
 
@@ -63,22 +64,23 @@ export function CoachStudentsPage() {
 
   return <div>
     <PageHeader title="Danh sách học viên"
-      subtitle={rows ? <><span>{active.length} học viên đang tập</span><Dot /><span>{rows.length - active.length} không còn gói đang tập</span><Dot /><span>Tối đa 1.000 gói và 1.000 buổi đã tải; chuyên cần trong 60 ngày</span></> : error ? 'Không tải được dữ liệu' : 'Đang tải…'}
+      subtitle={rows ? <><span>{active.length} học viên đang tập</span><Dot /><span>{rows.length - active.length} không còn gói đang tập</span></> : error ? 'Không tải được dữ liệu' : 'Đang tải…'}
       actions={<Btn icon={<Download aria-hidden className="h-4 w-4" />} onClick={exportCsv} disabled={!filtered.length}>Xuất dữ liệu đã tải</Btn>} />
+    {rows && <p className="mb-4 text-sm text-text-muted">Chuyên cần tính trên các buổi trong 60 ngày qua. Danh sách sử dụng tối đa 1.000 gói và 1.000 buổi đã tải.</p>}
     <Card flush>
       <div className="flex flex-wrap items-end gap-3 border-b border-border-subtle p-4">
-        <label className="relative min-w-60 flex-1"><span className="sr-only">Tìm học viên</span>
+        <label className="relative w-full sm:min-w-60 sm:flex-1"><span className="sr-only">Tìm học viên</span>
           <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
           <input type="search" value={q} onChange={e => { setQ(e.target.value); setPage(1) }} placeholder="Tìm học viên theo tên / SĐT / mã…" className={`${inputCls} pl-9`} /></label>
-        <label className="w-56"><span className="sr-only">Lọc theo gói PT</span><select value={pkg} onChange={e => { setPkg(e.target.value); setPage(1) }} className={inputCls}><option value="">Tất cả gói PT</option>{packages.map(p => <option key={p}>{p}</option>)}</select></label>
-        <label className="w-48"><span className="sr-only">Lọc theo trạng thái</span><select value={status} onChange={e => { setStatus(e.target.value); setPage(1) }} className={inputCls}><option value="">Mọi trạng thái</option>{STATUSES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}</select></label>
+        <label className="min-w-0 flex-1 sm:w-56 sm:flex-none"><span className="sr-only">Lọc theo gói PT</span><select value={pkg} onChange={e => { setPkg(e.target.value); setPage(1) }} className={inputCls}><option value="">Tất cả gói PT</option>{packages.map(p => <option key={p}>{p}</option>)}</select></label>
+        <label className="min-w-0 flex-1 sm:w-48 sm:flex-none"><span className="sr-only">Lọc theo trạng thái</span><select value={status} onChange={e => { setStatus(e.target.value); setPage(1) }} className={inputCls}><option value="">Mọi trạng thái</option>{STATUSES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}</select></label>
       </div>
       {error ? <ErrorBox message={error} onRetry={reload} /> : !rows ? <Skeleton rows={6} /> : !filtered.length
         ? <EmptyBox icon={<Users className="h-5 w-5" />} title={rows.length ? 'Không có học viên phù hợp bộ lọc' : 'Bạn chưa có học viên'} hint={rows.length ? undefined : 'Học viên xuất hiện khi họ mua gói PT với bạn và thanh toán xong.'} />
-        : <><Table head={['Học viên', 'Gói PT', 'Buổi đã dùng', 'Buổi tiếp theo', 'Chuyên cần', 'Trạng thái', 'Thao tác']} minWidth={1020}>
+        : <><div className="hidden xl:block"><Table head={['Học viên', 'Gói PT', 'Buổi đã dùng', 'Buổi tiếp theo', 'Chuyên cần', 'Trạng thái', 'Thao tác']} minWidth={1020}>
           {shown.map(r => { const p = r.purchase; const remaining = p.totalCredits - p.consumedCredits; return <tr key={r.memberId} className="hover:bg-bg-surface-muted/40">
             <td className={td}><Link to={`/coach/students/${r.memberId}`} className="flex items-center gap-3 hover:text-primary"><Person name={r.name} src={r.avatarUrl} /><span><span className="block font-semibold">{r.name}</span><span className="text-xs text-text-muted">{r.code}{r.phone ? ` · ${r.phone}` : ''}</span></span></Link></td>
-            <td className={td}><Badge tone="violet">{p.packageNameSnapshot}</Badge>{r.packages > 1 && <p className="mt-1 text-xs text-text-muted">{r.packages} gói với bạn</p>}</td>
+            <td className={td}><span className="font-medium">{p.packageNameSnapshot}</span>{r.packages > 1 && <p className="mt-1 text-xs text-text-muted">{r.packages} gói với bạn</p>}</td>
             <td className={td}><div className="flex items-center gap-2"><ProgressBar className="w-28" value={p.consumedCredits} max={p.totalCredits} tone={remaining <= 2 ? 'warning' : 'primary'} label={`${p.consumedCredits}/${p.totalCredits} buổi`} /><span className="text-xs tabular-nums text-text-muted">{p.consumedCredits}/{p.totalCredits}</span></div></td>
             <td className={td}>{r.next ? <><p className="font-semibold">{relativeSlot(r.next.startsAt)}</p><p className="text-xs text-text-muted">{r.next.credit ? `buổi ${r.next.credit.creditIndex}/${p.totalCredits}` : r.next.courseName}</p></> : <><p>—</p><p className="text-xs text-text-muted">{p.status === 'ACTIVE' ? 'chưa có buổi sắp tới' : 'đã kết thúc'}</p></>}</td>
             <td className={`${td} tabular-nums`}>{r.attendance === null ? <span className="text-text-muted">—</span> : `${r.attendance}%`}</td>
@@ -86,7 +88,12 @@ export function CoachStudentsPage() {
             <td className={`${td} text-right`}><div className="flex justify-end gap-1.5"><LinkBtn size="sm" variant="soft" to={`/coach/students/${r.memberId}`} icon={<User aria-hidden className="h-3.5 w-3.5" />}>Hồ sơ</LinkBtn>
               {r.next && <LinkBtn size="sm" to={`/coach/sessions/${r.next.id}`}>Buổi tiếp</LinkBtn>}</div></td>
           </tr> })}
-        </Table>
+        </Table></div>
+          <ul className="divide-y divide-border-subtle xl:hidden">{shown.map(r => { const p = r.purchase; const remaining = p.totalCredits - p.consumedCredits; return <li key={r.memberId} className="space-y-4 p-4">
+            <div className="flex items-start justify-between gap-3"><Link to={`/coach/students/${r.memberId}`} className="flex min-w-0 items-center gap-3 hover:text-primary"><Person name={r.name} src={r.avatarUrl} /><span className="min-w-0"><span className="block font-semibold">{r.name}</span><span className="block text-sm text-text-muted">{r.code}{r.phone ? ` · ${r.phone}` : ''}</span></span></Link><Badge tone={r.status.tone}>{r.status.label}</Badge></div>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm"><div className="col-span-2"><dt className="text-text-muted">Gói PT</dt><dd className="mt-1 font-medium">{p.packageNameSnapshot}{r.packages > 1 && <span className="ml-2 font-normal text-text-muted">· {r.packages} gói với bạn</span>}</dd></div><div><dt className="text-text-muted">Buổi đã dùng</dt><dd className="mt-1 flex items-center gap-2 tabular-nums"><ProgressBar className="w-20" value={p.consumedCredits} max={p.totalCredits} tone={remaining <= 2 ? 'warning' : 'primary'} label={`${p.consumedCredits}/${p.totalCredits} buổi`} />{p.consumedCredits}/{p.totalCredits}</dd></div><div><dt className="text-text-muted">Chuyên cần</dt><dd className="mt-1 tabular-nums">{r.attendance === null ? '—' : `${r.attendance}%`}</dd></div><div className="col-span-2"><dt className="text-text-muted">Buổi tiếp theo</dt><dd className="mt-1">{r.next ? <><span className="font-medium">{relativeSlot(r.next.startsAt)}</span>{(r.next.credit || r.next.courseName) && <span className="ml-2 text-text-muted">{r.next.credit ? `buổi ${r.next.credit.creditIndex}/${p.totalCredits}` : r.next.courseName}</span>}</> : p.status === 'ACTIVE' ? 'Chưa có buổi sắp tới' : 'Đã kết thúc'}</dd></div></dl>
+            <div className="flex flex-wrap gap-2"><LinkBtn size="sm" variant="soft" to={`/coach/students/${r.memberId}`} icon={<User aria-hidden className="h-3.5 w-3.5" />}>Hồ sơ</LinkBtn>{r.next && <LinkBtn size="sm" to={`/coach/sessions/${r.next.id}`}>Buổi tiếp</LinkBtn>}</div>
+          </li> })}</ul>
           <Pagination page={page} pageSize={PAGE} total={filtered.length} onChange={setPage} noun="học viên" /></>}
     </Card>
   </div>
