@@ -27,5 +27,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Tests read files from the sibling BE repo, which is absent on Vercel; vitest runs them, the app build does not need them.
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/__tests__", "src/test"]
 }
