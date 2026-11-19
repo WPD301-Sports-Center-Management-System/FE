@@ -2,7 +2,7 @@
 export interface WeeklySlot { weekday: number; startTime: string; durationMinutes: number }
 export interface TimeItem { startsAt: string; endsAt: string }
 export interface PreviewItem extends TimeItem { seq: number; coachBusy: boolean; memberBusy: boolean; coachTimeOff: boolean; available: boolean }
-export interface PolicyRow { key: string; decision: string; label: string; value: unknown; source: 'APPROVED' | 'INTERIM' | 'MISSING'; interim: unknown }
+export interface PolicyRow { key: string; group: string; unit: string; label: string; hint: string; value: unknown; source: 'APPROVED' | 'INTERIM' | 'MISSING'; interim: unknown }
 
 export interface IntakeRule {
   id: string; title: string; status: 'DRAFT' | 'PUBLISHED' | 'PAUSED' | 'ARCHIVED'; validFrom: string; validTo?: string | null; version: number; offeringId: string

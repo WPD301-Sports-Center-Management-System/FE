@@ -15,7 +15,6 @@ export function MgrOpsPage() {
   const reviews = useLoad(() => mgrApi.reviews(), [])
   const audit = useLoad(() => mgrApi.auditTotal(addDays(centerDate(), -30)), [])
   const support = useLoad(() => mgrApi.support(), [])
-  const missing = (policies.data ?? []).filter(p => p.source !== 'APPROVED').length
   const openDisruptions = (disruptions.data ?? []).filter(d => d.status !== 'RESOLVED').length
   const visible = (reviews.data ?? []).filter(r => r.moderationStatus === 'VISIBLE')
   const avg = visible.length ? visible.reduce((n, r) => n + r.rating, 0) / visible.length : null
@@ -24,7 +23,7 @@ export function MgrOpsPage() {
   const late = openSupport.filter(s => Date.now() - new Date(s.createdAt).getTime() > 24 * 3600_000).length
   const status = (ready: boolean, error: string | null, value: string) => ready ? value : error ? 'Không tải được' : 'Đang tải…'
   const priority = [
-    { to: '/manager/policies', title: 'Chính sách cần phê duyệt', detail: status(!!policies.data, policies.error, `${missing} chính sách`), warn: missing > 0 },
+    { to: '/manager/policies', title: 'Chính sách vận hành', detail: status(!!policies.data, policies.error, `${(policies.data ?? []).filter(p => p.source === 'APPROVED').length}/${(policies.data ?? []).length} chính sách đang áp dụng`), warn: false },
     { to: '/manager/sessions', title: 'Buổi tập và gián đoạn cần xử lý', detail: `${counts ? `${counts.sessionsNeedingReview} buổi cần kiểm tra` : 'Đang tải buổi tập…'} · ${status(!!disruptions.data, disruptions.error, `${openDisruptions} gián đoạn đang mở`)}`, warn: !!counts?.sessionsNeedingReview || openDisruptions > 0 },
     { to: '/manager/support', title: 'Yêu cầu hỗ trợ', detail: status(!!support.data, support.error, `${openSupport.length} đang mở · ${late} quá 24 giờ`), warn: late > 0 },
     { to: '/manager/payments?tab=reconciliation', title: 'Đối soát tiền nhận', detail: counts ? `${counts.openReconciliation} hồ sơ chưa kết luận` : 'Đang tải…', warn: !!counts?.openReconciliation },

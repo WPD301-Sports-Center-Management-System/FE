@@ -15,6 +15,7 @@ const del = async <T>(url: string) => ((await apiClient.delete(url)) as unknown 
 export const fixedPtApi = {
   retryPaymentApplication: (id: string, reason: string) => post<{ application: string | null }>(`/payments/${id}/retry-application`, { reason }),
   policies: () => get<PolicyRow[]>('/policy-settings'),
+  resetPolicies: () => del<PolicyRow[]>('/policy-settings'),
   setPolicies: (settings: { key: string; value: unknown; note?: string }[]) => patch('/policy-settings', { settings }),
 
   optionsForCoach: (coachId: string) => get<{ id: string; name: string; sessionCount: number; price: string; coachTier: import('@/shared/utils/coach-tier').CoachTier; durationMinutes: number }[]>('/pt-package-options', { coachId, limit: 100 }),

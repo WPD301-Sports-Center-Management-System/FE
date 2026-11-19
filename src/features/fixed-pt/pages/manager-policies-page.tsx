@@ -5,55 +5,61 @@ import { useLoad, useSubmit } from '../hooks'
 import type { PolicyRow } from '../types'
 import { ErrorBanner, inputCls, Loadable, Notice, Page, Panel, Table, td } from '../components/ui'
 
-const OPTIONS: Record<string, [string, string][]> = {
-  LATE_OUTCOME_EARNING: [['MANAGER_CONFIRM', 'Chờ Manager xác nhận'], ['AUTO', 'Tự động đủ điều kiện']],
-}
-const SOURCE = { APPROVED: 'Đã phê duyệt', INTERIM: 'Tạm thời (an toàn) – chưa phê duyệt', MISSING: 'Chưa có – chức năng liên quan bị chặn' }
+const GROUPS = ['Đặt lịch tập', 'Hủy và đổi lịch', 'Thanh toán', 'Điểm danh', 'Bảo lưu gói tập', 'Phân chia doanh thu']
 
-// Manager records the product owner's decisions (D-xx). Missing values block the dependent action
-// instead of the system inventing a number.
+// Manager maintains the PT operating rules. Each order keeps the values it was sold under.
 export function ManagerPoliciesPage() {
   const policies = useLoad(() => fixedPtApi.policies(), [])
   const [draft, setDraft] = useState<Record<string, string>>({})
   const [note, setNote] = useState('')
   const [success, setSuccess] = useState('')
   const save = useSubmit()
+  const reset = useSubmit()
   const dirty = Object.keys(draft)
   const valueOf = (p: PolicyRow) => draft[p.key] ?? (p.value === null || p.value === undefined ? '' : String(p.value))
   return (
-    <Page title="Chính sách vận hành PT">
-      <Notice tone="warning">Chỉ nhập giá trị đã được chủ sản phẩm phê duyệt. Không để trống giá trị đang sửa; chính sách chỉ có thể cập nhật, không thể xóa. Đơn đã mua giữ chính sách được lưu tại thời điểm mua.</Notice>
+    <Page title="Chính sách vận hành" subtitle="Quy định áp dụng cho việc đặt lịch, hủy và đổi lịch, thanh toán, điểm danh và phân chia doanh thu gói tập cá nhân.">
       {success && <Notice tone="success">{success}</Notice>}
       <form onSubmit={e => {
         e.preventDefault()
         void save.run(async () => {
-          await fixedPtApi.setPolicies(dirty.map(k => ({ key: k, value: OPTIONS[k] ? draft[k] : Number(draft[k]), note: note.trim() || undefined })))
-          setDraft({}); setSuccess('Đã lưu chính sách vận hành PT.'); await policies.reload()
+          await fixedPtApi.setPolicies(dirty.map(k => ({ key: k, value: Number(draft[k]), note: note.trim() || undefined })))
+          setDraft({}); setSuccess('Cập nhật chính sách thành công.'); await policies.reload()
         })
       }}>
-      <fieldset disabled={save.busy} className="min-w-0">
-      <Panel title="Giá trị hiện hành">
+      <fieldset disabled={save.busy || reset.busy} className="min-w-0 space-y-4">
         <Loadable state={policies}>{items => (
-          <Table head={['Quyết định', 'Chính sách', 'Giá trị', 'Nguồn']}>
-            {items.map(p => <tr key={p.key}>
-              <td className={td}>{p.decision}</td>
-              <td className={td}>{p.label}<div className="text-xs text-text-muted">{p.key}</div></td>
-              <td className={td}>{OPTIONS[p.key]
-                ? <select aria-label={p.label} className={inputCls} value={valueOf(p)} onChange={e => setDraft({ ...draft, [p.key]: e.target.value })}>{OPTIONS[p.key]!.map(([v, t]) => <option key={v} value={v}>{t}</option>)}</select>
-                : <input aria-label={p.label} type="number" required={p.key in draft} step={1} min={p.key === 'PT_BUFFER_MINUTES' ? 0 : 1} className={inputCls} value={valueOf(p)} onChange={e => setDraft({ ...draft, [p.key]: e.target.value })} />}</td>
-              <td className={td}><span className={p.source === 'MISSING' ? 'text-danger' : p.source === 'INTERIM' ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}>{SOURCE[p.source]}</span></td>
-            </tr>)}
-          </Table>
+          <>
+            {GROUPS.map(group => {
+              const rows = items.filter(p => p.group === group)
+              if (!rows.length) return null
+              return (
+                <Panel key={group} title={group}>
+                  <Table head={['Chính sách', 'Giá trị', 'Đơn vị']}>
+                    {rows.map(p => <tr key={p.key}>
+                      <td className={td}>{p.label}<div className="text-xs text-text-muted">{p.hint}</div></td>
+                      <td className={td}><input aria-label={p.label} type="number" required={p.key in draft} step={1} min={p.key === 'PT_BUFFER_MINUTES' || p.key === 'GYM_SHARE_PERCENT' || p.key === 'AUTO_RESCHEDULE_LIMIT' ? 0 : 1} className={`${inputCls} max-w-32`} value={valueOf(p)} placeholder={p.value === null ? 'Không giới hạn' : undefined} onChange={e => setDraft({ ...draft, [p.key]: e.target.value })} /></td>
+                      <td className={td}>{p.unit}</td>
+                    </tr>)}
+                  </Table>
+                </Panel>
+              )
+            })}
+          </>
         )}</Loadable>
-        <div className="mt-3 flex flex-wrap items-end gap-2">
-          <input aria-label="Ghi chú phê duyệt" placeholder="Ghi chú/biên bản phê duyệt" className={`${inputCls} max-w-md`} value={note} onChange={e => setNote(e.target.value)} />
-          <Button type="submit" isLoading={save.busy} disabled={!dirty.length || dirty.some(k => !draft[k]?.trim())}>Lưu {dirty.length || ''} thay đổi</Button>
-        </div>
-        <ErrorBanner message={save.error} />
-      </Panel>
+        <Panel>
+          <div className="flex flex-wrap items-end gap-2">
+            <input aria-label="Lý do điều chỉnh" placeholder="Lý do điều chỉnh (không bắt buộc)" className={`${inputCls} max-w-md`} value={note} onChange={e => setNote(e.target.value)} />
+            <Button type="submit" isLoading={save.busy} disabled={!dirty.length || dirty.some(k => !draft[k]?.trim())}>Lưu thay đổi{dirty.length ? ` (${dirty.length})` : ''}</Button>
+            <Button type="button" variant="outline" isLoading={reset.busy} onClick={() => {
+              if (!window.confirm('Xác nhận khôi phục toàn bộ chính sách về giá trị mặc định?')) return
+              void reset.run(async () => { await fixedPtApi.resetPolicies(); setDraft({}); setSuccess('Đã khôi phục chính sách về giá trị mặc định.'); await policies.reload() })
+            }}>Khôi phục mặc định</Button>
+          </div>
+          <ErrorBanner message={save.error ?? reset.error} />
+        </Panel>
       </fieldset>
       </form>
-
     </Page>
   )
 }
