@@ -3,7 +3,7 @@ export type Metric = typeof journeyMetrics[number];
 export const metricLabels: Record<Metric, string> = { weightKg: 'Cân nặng', waistCm: 'Vòng eo', bodyFatPercent: 'Tỷ lệ mỡ', muscleMassKg: 'Khối lượng cơ' };
 export const goalLabels: Record<string, string> = { WEIGHT_LOSS: 'Giảm cân', WEIGHT_GAIN: 'Tăng cân', FAT_LOSS: 'Giảm mỡ', MUSCLE_GAIN: 'Tăng cơ', RECOMPOSITION: 'Tăng cơ giảm mỡ', BODY_SHAPING: 'Cải thiện vóc dáng' };
 /** Mirrors BE GOAL_DIRECTIONS: a target must move this way from baseline (-1 lower, +1 higher). */
-const goalDirections: Record<string, Partial<Record<Metric, -1 | 1>>> = { WEIGHT_LOSS: { weightKg: -1 }, WEIGHT_GAIN: { weightKg: 1 }, FAT_LOSS: { weightKg: -1, waistCm: -1, bodyFatPercent: -1 }, MUSCLE_GAIN: { muscleMassKg: 1 }, RECOMPOSITION: { bodyFatPercent: -1, muscleMassKg: 1 }, BODY_SHAPING: { waistCm: -1, bodyFatPercent: -1 } };
+const goalDirections: Record<string, Partial<Record<Metric, -1 | 1>>> = { WEIGHT_LOSS: { weightKg: -1 }, WEIGHT_GAIN: { weightKg: 1 }, FAT_LOSS: { weightKg: -1, waistCm: -1, bodyFatPercent: -1 }, MUSCLE_GAIN: { muscleMassKg: 1 }, RECOMPOSITION: { waistCm: -1, bodyFatPercent: -1, muscleMassKg: 1 }, BODY_SHAPING: { waistCm: -1, bodyFatPercent: -1 } };
 /** Form-level messages for targets that contradict the chosen goal, keyed by metric. */
 export const goalDirectionIssues = (goalType: string, baseline: Record<string, string>, targets: Record<string, string>) => {
   const num = (v?: string) => v?.trim() ? Number(v.replace(',', '.')) : NaN;
