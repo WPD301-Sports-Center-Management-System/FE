@@ -15,6 +15,10 @@ describe('Notification navigation',()=>{
     expect(notificationTarget(item('PtEnrollment','e1'),'COACH')).toBe('/coach/packages')
     expect(notificationTarget(item('PtEnrollment','e1'),'RECEPTIONIST')).toBe('/receptionist/members')
   })
+  it('opens the Coach schedule-change inbox for Member reschedule requests and absences',()=>{
+    expect(notificationTarget(item('PtScheduleChange','c1'),'COACH')).toBe('/coach/schedule-changes?requestId=c1')
+    expect(notificationTarget(item('MemberAbsence','p1'),'COACH')).toBe('/coach/schedule-changes?inbox=1')
+  })
   it('does not route Receptionists to health data or Managers to a missing calendar route',()=>{
     expect(notificationTarget(item('TrainingResult','r1'),'RECEPTIONIST')).toBeNull()
     expect(notificationTarget(item('PtScheduleChange','c1'),'MANAGER')).toBe('/manager/pt-board')

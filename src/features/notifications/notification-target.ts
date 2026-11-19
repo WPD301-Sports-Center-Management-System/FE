@@ -15,7 +15,8 @@ export function notificationTarget(item: AppNotification, role?: UserRole | null
     case 'TrainingResult': return member ? `/member/goals${id ? `?resultId=${id}` : ''}` : coach ? '/coach/goals' : manager ? '/manager/goals' : null
     case 'FitnessGoal': return member ? '/member/goals' : coach ? '/coach/goals' : manager ? '/manager/goals' : null
     case 'ResultDispute': return manager ? '/manager/goals' : coach ? '/coach/goals' : member ? '/member/goals' : null
-    case 'PtScheduleChange': return coach ? '/coach/schedule-changes' : member ? '/member' : manager ? '/manager/pt-board' : '/receptionist/calendar?tab=changes'
+    case 'PtScheduleChange': return coach ? `/coach/schedule-changes${id ? `?requestId=${id}` : ''}` : member ? '/member' : manager ? '/manager/pt-board' : '/receptionist/calendar?tab=changes'
+    case 'MemberAbsence': return coach ? '/coach/schedule-changes?inbox=1' : member ? '/member' : manager ? '/manager/pt-board' : '/receptionist/calendar?tab=changes'
     case 'CoachWithdrawal': return coach ? '/coach/earnings' : manager ? '/manager/coach-income' : null
     case 'ServiceDisruption': return member ? '/member' : coach ? '/coach/schedule-changes' : `${base}/support`
   }
