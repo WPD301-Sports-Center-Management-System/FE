@@ -40,18 +40,24 @@ const fileCls = 'block w-full text-sm text-text-muted file:mr-3 file:cursor-poin
 
 export function CoachApplicationPage() {
   const state = useLoad(() => hybridGet<Application>('/coaches/me/application'))
+  // The toast lives on the page so it survives the form re-rendering after reload.
+  const { flash, node } = useFlash()
   return <div>
+    {node}
     <PageHeader title="Hồ sơ huấn luyện viên" />
-    {state.error ? <ErrorBox message={state.error} onRetry={() => void state.reload()} /> : !state.data ? <Skeleton rows={5} /> : <ApplicationForm p={state.data} reload={() => void state.reload()} />}
+    {state.error ? <ErrorBox message={state.error} onRetry={() => void state.reload()} /> : !state.data ? <Skeleton rows={5} /> : <ApplicationForm p={state.data} reload={() => void state.reload()} flash={flash} />}
   </div>
 }
 
-function ApplicationForm({ p, reload }: { p: Application; reload: () => void }) {
+function ApplicationForm({ p, reload, flash }: { p: Application; reload: () => void; flash: (message: string) => void }) {
   const [form, setForm] = useState({ bio: p.bio ?? '', specialization: p.specialization ?? '', years: String(p.yearsOfExperience ?? 0), certification: p.certification ?? '' })
   const [avatar, setAvatar] = useState<File | null>(null)
   const [cv, setCv] = useState<File | null>(null)
   const [certificates, setCertificates] = useState<File[]>([])
+  // Bumped after a successful save so the file pickers are cleared.
+  const [filesKey, setFilesKey] = useState(0)
   const act = useSubmit()
+  const done = (message: string) => { setAvatar(null); setCv(null); setCertificates([]); setFilesKey(k => k + 1); flash(message); reload() }
   const status = statusOf(p)
   // Pending applications stay editable (the BE accepts a resubmit and keeps it in the queue); only an approved one is locked.
   const editable = status !== 'APPROVED'
@@ -59,8 +65,7 @@ function ApplicationForm({ p, reload }: { p: Application; reload: () => void }) 
   const saveApproved = () => void act.run(async () => {
     await hybridSend('patch', `/coaches/${p.id}`, { bio: form.bio.trim(), specialization: form.specialization.trim(), yearsOfExperience: Number(form.years), ...(form.certification.trim() ? { certification: form.certification.trim() } : {}) })
     if (avatar) await hybridSend('patch', '/auth/me', { avatarUrl: await upload(avatar, false) })
-    setAvatar(null)
-    reload()
+    done('Đã lưu thay đổi hồ sơ.')
   })
   const submit = () => void act.run(async () => {
     if (!cv && !p.cvUrl) throw new Error('Cần tải CV dạng PDF.')
@@ -72,7 +77,7 @@ function ApplicationForm({ p, reload }: { p: Application; reload: () => void }) 
       avatar ? upload(avatar, false) : Promise.resolve(undefined),
     ])
     await hybridSend('put', '/coaches/me/application', { bio: form.bio, specialization: form.specialization, yearsOfExperience: Number(form.years), avatarUrl, cvUrl, certificateUrls }, { timeout: UPLOAD_TIMEOUT_MS })
-    reload()
+    done(status === 'DRAFT' ? 'Nộp hồ sơ thành công. Hồ sơ đã được gửi Manager xét duyệt.' : status === 'PENDING_REVIEW' ? 'Cập nhật hồ sơ thành công.' : 'Nộp lại hồ sơ thành công. Hồ sơ đã được gửi Manager xét duyệt.')
   })
   return <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
     <Card title="Trạng thái">
@@ -86,7 +91,7 @@ function ApplicationForm({ p, reload }: { p: Application; reload: () => void }) 
     </Card>
     <Card title="Thông tin hồ sơ" subtitle={editable ? (status === 'PENDING_REVIEW' ? 'Hồ sơ đang chờ duyệt; bạn vẫn có thể bổ sung rồi cập nhật.' : 'Các mục có dấu * là bắt buộc.') : 'Hồ sơ đã duyệt: bạn tự cập nhật giới thiệu, chuyên môn, chứng chỉ và ảnh đại diện. CV và ảnh chứng chỉ đã nộp được giữ nguyên.'}>
       <form className="space-y-4" onSubmit={e => { e.preventDefault(); if (editable) submit(); else saveApproved() }}>
-        <fieldset disabled={act.busy} className="space-y-4">
+        <fieldset key={filesKey} disabled={act.busy} className="space-y-4">
           <Field label="Giới thiệu bản thân" required><textarea required rows={4} className={textareaCls} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} /></Field>
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_160px]">
             <Field label="Chuyên môn" required><input required className={inputCls} value={form.specialization} onChange={e => setForm({ ...form, specialization: e.target.value })} placeholder="VD: Giảm mỡ, tăng cơ, phục hồi chấn thương" /></Field>
